@@ -1,0 +1,6 @@
+C:/Users/lynxe/Documents/GitHub/ra8e1_prj/build/Debug/CMakeFiles/rasc.dir
+C:/Users/lynxe/Documents/GitHub/ra8e1_prj/build/Debug/CMakeFiles/ra8e1_prj.elf.dir
+C:/Users/lynxe/Documents/GitHub/ra8e1_prj/build/Debug/CMakeFiles/obj_copy.dir
+C:/Users/lynxe/Documents/GitHub/ra8e1_prj/build/Debug/CMakeFiles/generate_content.dir
+C:/Users/lynxe/Documents/GitHub/ra8e1_prj/build/Debug/CMakeFiles/edit_cache.dir
+C:/Users/lynxe/Documents/GitHub/ra8e1_prj/build/Debug/CMakeFiles/rebuild_cache.dir

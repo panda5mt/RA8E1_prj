@@ -1,0 +1,33 @@
+{
+  "cmake.configureOnOpen": true,
+  "cmake.configureOnEdit": true,
+  "cmake.options.statusBarVisibility": "visible",
+  "cmake.sourceDirectory": "${workspaceFolder}",
+  "cmake.buildDirectory": "${workspaceFolder}/build/${buildType}",
+  "cmake.preferredGenerators": [
+    "Ninja",
+    "MinGW Makefiles",
+    "Unix Makefiles"
+  ],
+  "cmake.debugConfig": {
+    "type": "renesas-hardware",
+    "request": "launch",
+    "name": "Renesas GDB Debugging",
+    "target": {
+      "debuggerType": "SEGGERJLINKARM",
+      "deviceFamily": "RA",
+      "device": "R7FA8E1AF"
+    },
+    "cwd": "${command:renesas.debug.supportFolder}"
+  },
+  "clangd.arguments": [
+    "--query-driver=${env:ARM_GCC_TOOLCHAIN_PATH}*",
+    "--compile-commands-dir=${workspaceFolder}",
+    "--background-index"
+  ],
+  "cmake.copyCompileCommands": "${workspaceFolder}/compile_commands.json",
+  // 自動フォーマット設定
+  "editor.defaultFormatter": "ms-vscode.cpptools",
+  "editor.formatOnSave": true,
+  "editor.formatOnType": true,
+}
