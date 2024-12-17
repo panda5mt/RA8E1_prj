@@ -65,4 +65,4 @@ add_git.sh
 */FreeRTOS-Kernel/
 */FreeRTOS-Kernel/.git
 */FreeRTOS-Kernel/*
-.cache/
+/.cache/
