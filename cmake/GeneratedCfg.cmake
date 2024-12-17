@@ -3,7 +3,7 @@
 
 set(RASC_TARGET_DEVICE R7FA8E1AF)
 set(RASC_TARGET_ARCH cortex-m85)
-set(RASC_PROJECT_NAME ra8e1_prj)
+set(RASC_PROJECT_NAME RA8E1_prj)
 SET(RASC_TOOLCHAIN_NAME GCC)
 
 SET(RASC_CMAKE_ASM_FLAGS "-mfloat-abi=hard;-mcpu=cortex-m85;-Wunused;-Wuninitialized;-Wall;-Wextra;-Wmissing-declarations;-Wconversion;-Wpointer-arith;-Wshadow;-Wlogical-op;-Waggregate-return;-Wfloat-equal;-fmessage-length=0;-fsigned-char;-ffunction-sections;-fdata-sections;-mthumb;-x;assembler-with-cpp;-MMD;-MP")
