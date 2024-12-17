@@ -30,4 +30,7 @@
   "editor.defaultFormatter": "ms-vscode.cpptools",
   "editor.formatOnSave": true,
   "editor.formatOnType": true,
+  "files.associations": {
+    "blinky_thread.h": "c"
+  },
 }

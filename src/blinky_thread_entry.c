@@ -61,3 +61,7 @@ void blinky_thread_entry(void *pvParameters)
         vTaskDelay(pdMS_TO_TICKS(20));
     }
 }
+
+void blinky_thread_entry2(void *pvParameters)
+{
+}

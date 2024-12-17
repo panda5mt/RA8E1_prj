@@ -234,6 +234,10 @@
       <description>Capture Engine Unit (r_ceu)</description>
       <originalPack>Renesas.RA.5.7.0.pack</originalPack>
     </component>
+    <component apiversion="" class="CMSIS" condition="" group="CMSIS5" subgroup="DSP" variant="" vendor="Arm" version="1.16.2+fsp.5.7.0">
+      <description>Arm DSP Library Source</description>
+      <originalPack>Arm.CMSIS-DSP.1.16.2+fsp.5.7.0.pack</originalPack>
+    </component>
   </raComponentSelection>
   <raElcConfiguration/>
   <raIcuConfiguration/>
@@ -546,6 +550,17 @@
       <configSetting altId="sci9.mode.asynchronousuart.free" configurationId="sci9.mode"/>
       <configSetting altId="sci9.rxd9.p101" configurationId="sci9.rxd9"/>
       <configSetting altId="sci9.txd9.p102" configurationId="sci9.txd9"/>
+      <lockSetting id="ceu.vio_clk" lock="true"/>
+      <lockSetting id="ceu.vio_d0" lock="true"/>
+      <lockSetting id="ceu.vio_d1" lock="true"/>
+      <lockSetting id="ceu.vio_d2" lock="true"/>
+      <lockSetting id="ceu.vio_d3" lock="true"/>
+      <lockSetting id="ceu.vio_d4" lock="true"/>
+      <lockSetting id="ceu.vio_d5" lock="true"/>
+      <lockSetting id="ceu.vio_d6" lock="true"/>
+      <lockSetting id="ceu.vio_d7" lock="true"/>
+      <lockSetting id="ceu.vio_hd" lock="true"/>
+      <lockSetting id="ceu.vio_vd" lock="true"/>
     </pincfg>
     <pincfg active="false" name="R7FA8E1AFDCFB.pincfg" selected="false" symbol="">
       <configSetting altId="jtag_fslash_swd.mode.jtag.free" configurationId="jtag_fslash_swd.mode"/>

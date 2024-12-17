@@ -11,6 +11,8 @@
   ],
   "excludedFilePaths": [],
   "includePaths": [
+    "ra/arm/CMSIS-DSP/Include",
+    "ra/arm/CMSIS-DSP/PrivateInclude",
     "ra/arm/CMSIS_6/CMSIS/Core/Include",
     "ra/aws/FreeRTOS/FreeRTOS/Source/include",
     "ra/fsp/inc",
