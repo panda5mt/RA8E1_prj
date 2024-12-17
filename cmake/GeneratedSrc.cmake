@@ -61,8 +61,8 @@ target_link_libraries(${PROJECT_NAME}.elf
 )
 
 add_custom_target(obj_copy ALL
-    COMMAND ${CMAKE_OBJCOPY} -O srec ${PROJECT_NAME}.elf ${PROJECT_NAME}.srec
-    COMMENT "Creating S-record file in ${PROJECT_BINARY_DIR}"
+    COMMAND ${CMAKE_OBJCOPY} ${PROJECT_NAME}.elf -O ihex  ${PROJECT_NAME}.ihex
+    COMMENT "Creating Intel Hex file in ${PROJECT_BINARY_DIR}"
 )
 
 add_dependencies(obj_copy ${PROJECT_NAME}.elf)
@@ -72,7 +72,7 @@ add_custom_command(
     OUTPUT
         configuration.xml.stamp
     COMMAND
-        ${RASC_EXE_PATH}  -nosplash --launcher.suppressErrors --generate --devicefamily ra --compiler GCC --toolchainversion ${CMAKE_C_COMPILER_VERSION} ${CMAKE_CURRENT_SOURCE_DIR}/configuration.xml
+        ${RASC_EXE_PATH}  -nosplash --launcher.suppressErrors --generate --devicefamily ra --compiler LLVMARM --toolchainversion ${CMAKE_C_COMPILER_VERSION} ${CMAKE_CURRENT_SOURCE_DIR}/configuration.xml
     COMMAND
         ${CMAKE_COMMAND} -E touch configuration.xml.stamp
     COMMENT
@@ -96,6 +96,6 @@ add_custom_command(
     COMMAND
         echo Running RASC post-build to generate Smart Bundle (.sbd) file
     COMMAND
-        ${RASC_EXE_PATH} -nosplash --launcher.suppressErrors --gensmartbundle --devicefamily ra --compiler GCC --toolchainversion ${CMAKE_C_COMPILER_VERSION}  ${CMAKE_CURRENT_SOURCE_DIR}/configuration.xml ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.elf 
+        ${RASC_EXE_PATH} -nosplash --launcher.suppressErrors --gensmartbundle --devicefamily ra --compiler LLVMARM --toolchainversion ${CMAKE_C_COMPILER_VERSION}  ${CMAKE_CURRENT_SOURCE_DIR}/configuration.xml ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.elf 
     VERBATIM
 )

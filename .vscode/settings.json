@@ -14,14 +14,14 @@
     "request": "launch",
     "name": "Renesas GDB Debugging",
     "target": {
+      "device": "R7FA8E1AF",
       "debuggerType": "SEGGERJLINKARM",
-      "deviceFamily": "RA",
-      "device": "R7FA8E1AF"
+      "deviceFamily": "RA"
     },
     "cwd": "${command:renesas.debug.supportFolder}"
   },
   "clangd.arguments": [
-    "--query-driver=${env:ARM_GCC_TOOLCHAIN_PATH}*",
+    "--query-driver=${env:ARM_LLVM_TOOLCHAIN_PATH}*",
     "--compile-commands-dir=${workspaceFolder}",
     "--background-index"
   ],

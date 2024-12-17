@@ -4,8 +4,8 @@
       "name": "Generic",
       "configurationProvider": "ms-vscode.cmake-tools",
       "defines": [],
-      "intelliSenseMode": "gcc-arm",
-      "compilerPath": "${env:ARM_GCC_TOOLCHAIN_PATH}/arm-none-eabi-gcc",
+      "intelliSenseMode": "clang-arm",
+      "compilerPath": "${env:ARM_LLVM_TOOLCHAIN_PATH}/clang",
       "compilerArgs": [],
       "browse": {
         "path": [],
