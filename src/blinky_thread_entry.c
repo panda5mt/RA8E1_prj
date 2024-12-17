@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2020 - 2024 Renesas Electronics Corporation and/or its affiliates
- *
- * SPDX-License-Identifier: BSD-3-Clause
- */
+* Copyright (c) 2020 - 2024 Renesas Electronics Corporation and/or its affiliates
+*
+* SPDX-License-Identifier: BSD-3-Clause
+*/
 
 #include "blinky_thread.h"
 
 extern bsp_leds_t g_bsp_leds;
 
 /* Blinky Thread entry function */
-void blinky_thread_entry(void *pvParameters)
+void blinky_thread_entry (void * pvParameters)
 {
     FSP_PARAMETER_NOT_USED(pvParameters);
 
@@ -21,7 +21,7 @@ void blinky_thread_entry(void *pvParameters)
     {
         while (1)
         {
-            ; // There are no LEDs on this board
+            ;                          // There are no LEDs on this board
         }
     }
 
@@ -42,7 +42,7 @@ void blinky_thread_entry(void *pvParameters)
             uint32_t pin = leds.p_leds[i];
 
             /* Write to this pin */
-            R_BSP_PinWrite((bsp_io_port_pin_t)pin, pin_level);
+            R_BSP_PinWrite((bsp_io_port_pin_t) pin, pin_level);
         }
 
         /* Protect PFS registers */
@@ -58,10 +58,6 @@ void blinky_thread_entry(void *pvParameters)
             pin_level = BSP_IO_LEVEL_LOW;
         }
 
-        vTaskDelay(pdMS_TO_TICKS(20));
+        vTaskDelay(configTICK_RATE_HZ);
     }
-}
-
-void blinky_thread_entry2(void *pvParameters)
-{
 }

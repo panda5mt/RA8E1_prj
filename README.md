@@ -19,6 +19,6 @@ Build: ```cmake --build build/Debug```
 Example:
 
 ```set ARM_GCC_TOOLCHAIN_PATH=C:/12_2_mpacbti_rel1/bin```
-```cd "c:/Users/lynxe/Desktop/ra_first" && code .```
+```cd "C:/Users/lynxe/Documents/GitHub/RA8E1_prj" && code .```
 
 - Click build in VS Code status bar
