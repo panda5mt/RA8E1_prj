@@ -25,5 +25,8 @@
     "--compile-commands-dir=${workspaceFolder}",
     "--background-index"
   ],
-  "cmake.copyCompileCommands": "${workspaceFolder}/compile_commands.json"
+  "cmake.copyCompileCommands": "${workspaceFolder}/compile_commands.json",
+  "editor.defaultFormatter": "ms-vscode.cpptools",
+  "editor.formatOnSave": true,
+  "editor.formatOnType": true,
 }
