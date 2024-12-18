@@ -72,5 +72,14 @@
             <slot name="P804" secure="true"/>
             <slot name="P809" secure="true"/>
         </peripheral>
+        <peripheral name="CEU" security="s"/>
+        <peripheral name="IIC0" group="IIC" security="s"/>
+        <peripheral name="ICU">
+            <slot name="IRQ0" secure="true"/>
+            <slot name="IRQ1" secure="true"/>
+            <slot name="IRQ2" secure="true"/>
+            <slot name="IRQ3" secure="true"/>
+            <slot name="IRQ4" secure="true"/>
+        </peripheral>
     </partition>
 </azone>

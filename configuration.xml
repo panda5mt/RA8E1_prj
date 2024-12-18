@@ -242,6 +242,10 @@
       <description>Capture Engine Unit (r_ceu)</description>
       <originalPack>Renesas.RA.5.7.0.pack</originalPack>
     </component>
+    <component apiversion="" class="HAL Drivers" condition="" group="all" subgroup="r_iic_master" variant="" vendor="Renesas" version="5.7.0">
+      <description>I2C Master Interface</description>
+      <originalPack>Renesas.RA.5.7.0.pack</originalPack>
+    </component>
   </raComponentSelection>
   <raElcConfiguration/>
   <raIcuConfiguration/>
@@ -256,10 +260,55 @@
     </module>
     <module id="module.middleware.rm_freertos_port.0"/>
     <module id="module.arm.cmsis5.dsp.1308017668"/>
+    <module id="module.driver.ceu_on_capture.1361809864">
+      <property id="module.driver.ceu.name" value="g_ceu0"/>
+      <property id="module.driver.ceu.capture_format" value="module.driver.ceu.capture_format.data_synchronous"/>
+      <property id="module.driver.ceu.bus_size" value="module.driver.ceu.bus_size.8_bit"/>
+      <property id="module.driver.ceu.hsync_polarity" value="module.driver.ceu.hsync_polarity.high"/>
+      <property id="module.driver.ceu.vsync_polarity" value="module.driver.ceu.vsync_polarity.high"/>
+      <property id="module.driver.ceu.byte_swapping" value=""/>
+      <property id="module.driver.ceu.burst_mode" value="module.driver.ceu.burst_mode.x8"/>
+      <property id="module.driver.ceu.p_callback" value="g_ceu0_user_callback"/>
+      <property id="module.driver.ceu.ipl" value="board.icu.common.irq.priority12"/>
+      <property id="module.driver.ceu.interrupts_enabled.cpeie" value="module.driver.ceu.interrupts_enabled.cpeie.enabled"/>
+      <property id="module.driver.ceu.interrupts_enabled.hdie" value="module.driver.ceu.interrupts_enabled.hdie.disabled"/>
+      <property id="module.driver.ceu.interrupts_enabled.vdie" value="module.driver.ceu.interrupts_enabled.vdie.enabled"/>
+      <property id="module.driver.ceu.interrupts_enabled.cdtofie" value="module.driver.ceu.interrupts_enabled.cdtofie.enabled"/>
+      <property id="module.driver.ceu.interrupts_enabled.ighsie" value="module.driver.ceu.interrupts_enabled.ighsie.disabled"/>
+      <property id="module.driver.ceu.interrupts_enabled.igvsie" value="module.driver.ceu.interrupts_enabled.igvsie.disabled"/>
+      <property id="module.driver.ceu.interrupts_enabled.vbpie" value="module.driver.ceu.interrupts_enabled.vbpie.enabled"/>
+      <property id="module.driver.ceu.interrupts_enabled.nhdie" value="module.driver.ceu.interrupts_enabled.nhdie.enabled"/>
+      <property id="module.driver.ceu.interrupts_enabled.nvdie" value="module.driver.ceu.interrupts_enabled.nvdie.enabled"/>
+      <property id="module.driver.ceu.x_pixels" value="640"/>
+      <property id="module.driver.ceu.y_pixels" value="480"/>
+      <property id="module.driver.ceu.x_start_pixel" value="0"/>
+      <property id="module.driver.ceu.y_start_pixel" value="0"/>
+      <property id="module.driver.ceu.dsel" value="module.driver.ceu.dsel.rising"/>
+      <property id="module.driver.ceu.hdsel" value="module.driver.ceu.hdsel.rising"/>
+      <property id="module.driver.ceu.vdsel" value="module.driver.ceu.vdsel.rising"/>
+      <property id="module.driver.ceu.image_buffer_size" value="0"/>
+    </module>
+    <module id="module.driver.i2c_on_iic_master.284495667">
+      <property id="module.driver.i2c_master.name" value="g_i2c_master0"/>
+      <property id="module.driver.i2c_master.channel" value="0"/>
+      <property id="module.driver.i2c_master.rate" value="module.driver.i2c_master.rate.rate_standard"/>
+      <property id="module.driver.i2c_master.rate_value" value="0"/>
+      <property id="module.driver.i2c_master.rise_time_ns" value="120"/>
+      <property id="module.driver.i2c_master.fall_time_ns" value="120"/>
+      <property id="module.driver.i2c_master.duty" value="50"/>
+      <property id="module.driver.i2c_master.slave" value="0x00"/>
+      <property id="module.driver.i2c_master.addr_mode" value="module.driver.i2c_master.addr_mode.addr_mode_7bit"/>
+      <property id="module.driver.i2c_master.timeout_mode" value="module.driver.i2c_master.timeout_mode.short_mode"/>
+      <property id="module.driver.i2c_master.timeout_scl_low" value="module.driver.i2c_master.timeout_scl_low.enabled"/>
+      <property id="module.driver.i2c_master.p_callback" value="NULL"/>
+      <property id="module.driver.i2c_master.ipl" value="board.icu.common.irq.priority12"/>
+    </module>
     <context id="_hal.0">
       <stack module="module.driver.ioport_on_ioport.0"/>
       <stack module="module.middleware.rm_freertos_port.0"/>
       <stack module="module.arm.cmsis5.dsp.1308017668"/>
+      <stack module="module.driver.ceu_on_capture.1361809864"/>
+      <stack module="module.driver.i2c_on_iic_master.284495667"/>
     </context>
     <context id="rtos.awsfreertos.thread.0">
       <property id="_symbol" value="blinky_thread"/>
@@ -270,6 +319,11 @@
       <property id="rtos.awsfreertos.thread.allocation" value="rtos.awsfreertos.thread.allocation.static"/>
       <property id="rtos.awsfreertos.thread.secure_context" value="rtos.awsfreertos.thread.secure_context.enable"/>
     </context>
+    <config id="config.driver.iic_master">
+      <property id="config.driver.iic_master.param_checking_enable" value="config.driver.iic_master.param_checking_enable.bsp"/>
+      <property id="config.driver.iic_master.dtc_enable" value="config.driver.iic_master.dtc_enable.disabled"/>
+      <property id="config.driver.iic_master.addr_mode_10_bit_enable" value="config.driver.iic_master.addr_mode_10_bit_enable.disabled"/>
+    </config>
     <config id="config.driver.ioport">
       <property id="config.driver.ioport.checking" value="config.driver.ioport.checking.system"/>
     </config>
@@ -417,7 +471,7 @@
     <symbolicName propertyId="p806.symbolic_name" value="CAM_E34"/>
     <symbolicName propertyId="p809.symbolic_name" value="PMOD2_P10"/>
     <symbolicName propertyId="p905.symbolic_name" value="Arduino_D4"/>
-    <pincfg active="true" name="RA8E1 FPB" selected="true" symbol="g_bsp_pin_cfg">
+    <pincfg active="true" name="RA8E1 FPB" selected="false" symbol="g_bsp_pin_cfg">
       <configSetting altId="ceu.mode.custom.b" configurationId="ceu.mode"/>
       <configSetting altId="ceu.pairing.b" configurationId="ceu.pairing"/>
       <configSetting altId="ceu.vio_clk.p708" configurationId="ceu.vio_clk"/>
@@ -557,7 +611,10 @@
       <configSetting altId="sci9.rxd9.p101" configurationId="sci9.rxd9"/>
       <configSetting altId="sci9.txd9.p102" configurationId="sci9.txd9"/>
     </pincfg>
-    <pincfg active="false" name="R7FA8E1AFDCFB.pincfg" selected="false" symbol="">
+    <pincfg active="false" name="R7FA8E1AFDCFB.pincfg" selected="true" symbol="">
+      <configSetting altId="iic0.mode.enabled.a" configurationId="iic0.mode"/>
+      <configSetting altId="iic0.scl0.p410" configurationId="iic0.scl0"/>
+      <configSetting altId="iic0.sda0.p409" configurationId="iic0.sda0"/>
       <configSetting altId="jtag_fslash_swd.mode.jtag.free" configurationId="jtag_fslash_swd.mode"/>
       <configSetting altId="jtag_fslash_swd.tck.p211" configurationId="jtag_fslash_swd.tck"/>
       <configSetting altId="jtag_fslash_swd.tdi.p208" configurationId="jtag_fslash_swd.tdi"/>
@@ -571,6 +628,14 @@
       <configSetting altId="p210.gpio_mode.gpio_mode_peripheral" configurationId="p210.gpio_mode"/>
       <configSetting altId="p211.jtag_fslash_swd.tck" configurationId="p211"/>
       <configSetting altId="p211.gpio_mode.gpio_mode_peripheral" configurationId="p211.gpio_mode"/>
+      <configSetting altId="p409.iic0.sda0" configurationId="p409"/>
+      <configSetting altId="p409.gpio_speed.gpio_speed_m" configurationId="p409.gpio_drivecapacity"/>
+      <configSetting altId="p409.gpio_mode.gpio_mode_peripheral" configurationId="p409.gpio_mode"/>
+      <configSetting altId="p410.iic0.scl0" configurationId="p410"/>
+      <configSetting altId="p410.gpio_speed.gpio_speed_m" configurationId="p410.gpio_drivecapacity"/>
+      <configSetting altId="p410.gpio_mode.gpio_mode_peripheral" configurationId="p410.gpio_mode"/>
+      <lockSetting id="iic0.scl0" lock="true"/>
+      <lockSetting id="iic0.sda0" lock="true"/>
     </pincfg>
   </raPinConfiguration>
 </raConfiguration>

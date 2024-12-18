@@ -80,17 +80,17 @@
   </raClockConfiguration>
   <raPinConfiguration>
     <pincfg active="true" name="" symbol="">
-      <configSetting altId="ceu.vio_clk.p708" configurationId="ceu.vio_clk" peripheral="CEU"/>
-      <configSetting altId="ceu.vio_d0.p400" configurationId="ceu.vio_d0" peripheral="CEU"/>
-      <configSetting altId="ceu.vio_d1.p401" configurationId="ceu.vio_d1" peripheral="CEU"/>
-      <configSetting altId="ceu.vio_d2.p405" configurationId="ceu.vio_d2" peripheral="CEU"/>
-      <configSetting altId="ceu.vio_d3.p406" configurationId="ceu.vio_d3" peripheral="CEU"/>
-      <configSetting altId="ceu.vio_d4.p700" configurationId="ceu.vio_d4" peripheral="CEU"/>
-      <configSetting altId="ceu.vio_d5.p701" configurationId="ceu.vio_d5" peripheral="CEU"/>
-      <configSetting altId="ceu.vio_d6.p702" configurationId="ceu.vio_d6" peripheral="CEU"/>
-      <configSetting altId="ceu.vio_d7.p703" configurationId="ceu.vio_d7" peripheral="CEU"/>
-      <configSetting altId="ceu.vio_hd.p709" configurationId="ceu.vio_hd" peripheral="CEU"/>
-      <configSetting altId="ceu.vio_vd.p710" configurationId="ceu.vio_vd" peripheral="CEU"/>
+      <configSetting altId="ceu.vio_clk.p708" configurationId="ceu.vio_clk" isUsedByDriver="true" peripheral="CEU"/>
+      <configSetting altId="ceu.vio_d0.p400" configurationId="ceu.vio_d0" isUsedByDriver="true" peripheral="CEU"/>
+      <configSetting altId="ceu.vio_d1.p401" configurationId="ceu.vio_d1" isUsedByDriver="true" peripheral="CEU"/>
+      <configSetting altId="ceu.vio_d2.p405" configurationId="ceu.vio_d2" isUsedByDriver="true" peripheral="CEU"/>
+      <configSetting altId="ceu.vio_d3.p406" configurationId="ceu.vio_d3" isUsedByDriver="true" peripheral="CEU"/>
+      <configSetting altId="ceu.vio_d4.p700" configurationId="ceu.vio_d4" isUsedByDriver="true" peripheral="CEU"/>
+      <configSetting altId="ceu.vio_d5.p701" configurationId="ceu.vio_d5" isUsedByDriver="true" peripheral="CEU"/>
+      <configSetting altId="ceu.vio_d6.p702" configurationId="ceu.vio_d6" isUsedByDriver="true" peripheral="CEU"/>
+      <configSetting altId="ceu.vio_d7.p703" configurationId="ceu.vio_d7" isUsedByDriver="true" peripheral="CEU"/>
+      <configSetting altId="ceu.vio_hd.p709" configurationId="ceu.vio_hd" isUsedByDriver="true" peripheral="CEU"/>
+      <configSetting altId="ceu.vio_vd.p710" configurationId="ceu.vio_vd" isUsedByDriver="true" peripheral="CEU"/>
       <configSetting altId="irq11.irq11_dash_ds.p006" configurationId="irq11.irq11_dash_ds" peripheral="IRQ11"/>
       <configSetting altId="irq13.irq13_dash_ds.p009" configurationId="irq13.irq13_dash_ds" peripheral="IRQ13"/>
       <configSetting altId="irq14.irq14.p010" configurationId="irq14.irq14" peripheral="IRQ14"/>

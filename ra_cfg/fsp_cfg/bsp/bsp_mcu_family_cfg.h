@@ -78,7 +78,7 @@
 #ifndef BSP_TZ_CFG_PSARB
 #define BSP_TZ_CFG_PSARB (\
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 8) /* IIC1 */ | \
-            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 9) /* IIC0 */ | \
+            (((1 > 0) ? 0U : 1U) << 9) /* IIC0 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 11) /* USBFS */ | \
             (1 << 15) /* ETHERC/EDMAC */ | \
             (1 << 16) /* OSPI */ | \
@@ -98,7 +98,7 @@
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 7) /* SSIE1 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 8) /* SSIE0 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 13) /* DOC */ | \
-            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 16) /* CEU */ | \
+            (((1 > 0) ? 0U : 1U) << 16) /* CEU */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 26) /* CANFD1 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 27) /* CANFD0 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 31) /* RSIP-E51A */)

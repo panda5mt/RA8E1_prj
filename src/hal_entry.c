@@ -1,20 +1,20 @@
 /*
-* Copyright (c) 2020 - 2024 Renesas Electronics Corporation and/or its affiliates
-*
-* SPDX-License-Identifier: BSD-3-Clause
-*/
+ * Copyright (c) 2020 - 2024 Renesas Electronics Corporation and/or its affiliates
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 
 #include "hal_data.h"
 
 void R_BSP_WarmStart(bsp_warm_start_event_t event);
 
-/*******************************************************************************************************************//**
- * This function is called at various points during the startup process.  This implementation uses the event that is
- * called right before main() to set up the pins.
- *
- * @param[in]  event    Where at in the start up process the code is currently at
- **********************************************************************************************************************/
-void R_BSP_WarmStart (bsp_warm_start_event_t event)
+/*******************************************************************************************************************/ /**
+                                                                                                                       * This function is called at various points during the startup process.  This implementation uses the event that is
+                                                                                                                       * called right before main() to set up the pins.
+                                                                                                                       *
+                                                                                                                       * @param[in]  event    Where at in the start up process the code is currently at
+                                                                                                                       **********************************************************************************************************************/
+void R_BSP_WarmStart(bsp_warm_start_event_t event)
 {
     if (BSP_WARM_START_RESET == event)
     {
