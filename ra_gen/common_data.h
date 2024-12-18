@@ -3,6 +3,7 @@
 #define COMMON_DATA_H_
 #include <stdint.h>
 #include "bsp_api.h"
+#include "arm_math.h"
 #include "r_ioport.h"
 #include "bsp_pin_cfg.h"
 FSP_HEADER

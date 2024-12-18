@@ -423,6 +423,7 @@ FSP Configuration
     Parameter Checking: Default (BSP)
     
   Module "FreeRTOS Port (rm_freertos_port)"
+  Module "Arm CMSIS DSP Library Source"
   FreeRTOS
     General: Custom FreeRTOSConfig.h: 
     General: Use Preemption: Enabled
@@ -501,6 +502,7 @@ FSP Configuration
       Pin Configuration Name: g_bsp_pin_cfg
       
     Instance "FreeRTOS Port (rm_freertos_port)"
+    Instance "Arm CMSIS DSP Library Source"
   Thread "Blinky Thread"
     Symbol: blinky_thread
     Name: Blinky Thread

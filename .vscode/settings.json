@@ -21,12 +21,9 @@
     "cwd": "${command:renesas.debug.supportFolder}"
   },
   "clangd.arguments": [
-    "--query-driver=${env:ARM_GCC_TOOLCHAIN_PATH}*",
+    "--query-driver=${env:ARM_LLVM_TOOLCHAIN_PATH}*",
     "--compile-commands-dir=${workspaceFolder}",
     "--background-index"
   ],
-  "cmake.copyCompileCommands": "${workspaceFolder}/compile_commands.json",
-  "editor.defaultFormatter": "ms-vscode.cpptools",
-  "editor.formatOnSave": true,
-  "editor.formatOnType": true,
+  "cmake.copyCompileCommands": "${workspaceFolder}/compile_commands.json"
 }

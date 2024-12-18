@@ -11,7 +11,7 @@
     <option key="#pinconfiguration#" value="R7FA8E1AFDCFB.pincfg"/>
     <option key="#FSPVersion#" value="5.7.0"/>
     <option key="#ConfigurationFragments#" value="Renesas##BSP##Board##ra8e1_fpb##"/>
-    <option key="#SELECTED_TOOLCHAIN#" value="com.renesas.cdt.managedbuild.gnuarm.toolchain."/>
+    <option key="#SELECTED_TOOLCHAIN#" value="com.renesas.cdt.managedbuild.llvm.arm."/>
   </generalSettings>
   <raBspConfiguration>
     <config id="config.bsp.ra8e1.R7FA8E1AFDCFB">
@@ -230,6 +230,14 @@
       <description>RA8E1-FPB Board Support Files</description>
       <originalPack>Renesas.RA_board_ra8e1_fpb.5.7.0.pack</originalPack>
     </component>
+    <component apiversion="" class="Middleware" condition="" group="all" subgroup="rm_cmsis_dsp" variant="" vendor="Renesas" version="5.7.0">
+      <description>MACL DSP</description>
+      <originalPack>Renesas.RA.5.7.0.pack</originalPack>
+    </component>
+    <component apiversion="" class="CMSIS" condition="" group="CMSIS5" subgroup="DSP" variant="" vendor="Arm" version="1.16.2+fsp.5.7.0">
+      <description>Arm DSP Library Source</description>
+      <originalPack>Arm.CMSIS-DSP.1.16.2+fsp.5.7.0.pack</originalPack>
+    </component>
   </raComponentSelection>
   <raElcConfiguration/>
   <raIcuConfiguration/>
@@ -243,9 +251,11 @@
       <property id="module.driver.ioport.pincfg" value="g_bsp_pin_cfg"/>
     </module>
     <module id="module.middleware.rm_freertos_port.0"/>
+    <module id="module.arm.cmsis5.dsp.1308017668"/>
     <context id="_hal.0">
       <stack module="module.driver.ioport_on_ioport.0"/>
       <stack module="module.middleware.rm_freertos_port.0"/>
+      <stack module="module.arm.cmsis5.dsp.1308017668"/>
     </context>
     <context id="rtos.awsfreertos.thread.0">
       <property id="_symbol" value="blinky_thread"/>

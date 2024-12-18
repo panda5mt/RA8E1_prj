@@ -11,7 +11,7 @@
     <option key="#pinconfiguration#" value="R7FA8E1AFDCFB.pincfg"/>
     <option key="#FSPVersion#" value="5.7.0"/>
     <option key="#ConfigurationFragments#" value="Renesas##BSP##Board##ra8e1_fpb##"/>
-    <option key="#SELECTED_TOOLCHAIN#" value="com.renesas.cdt.managedbuild.gnuarm.toolchain."/>
+    <option key="#SELECTED_TOOLCHAIN#" value="com.renesas.cdt.managedbuild.llvm.arm."/>
   </generalSettings>
   <raBspConfiguration/>
   <raClockConfiguration>

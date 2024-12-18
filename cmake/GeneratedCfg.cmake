@@ -4,16 +4,14 @@
 set(RASC_TARGET_DEVICE R7FA8E1AF)
 set(RASC_TARGET_ARCH cortex-m85)
 set(RASC_PROJECT_NAME RA8E1_prj)
-SET(RASC_TOOLCHAIN_NAME GCC)
+SET(RASC_TOOLCHAIN_NAME LLVMARM)
 
-SET(RASC_CMAKE_ASM_FLAGS "-mfloat-abi=hard;-mcpu=cortex-m85;-Wunused;-Wuninitialized;-Wall;-Wextra;-Wmissing-declarations;-Wconversion;-Wpointer-arith;-Wshadow;-Wlogical-op;-Waggregate-return;-Wfloat-equal;-fmessage-length=0;-fsigned-char;-ffunction-sections;-fdata-sections;-mthumb;-x;assembler-with-cpp;-MMD;-MP")
-SET(RASC_CMAKE_C_FLAGS "-mfloat-abi=hard;-mcpu=cortex-m85;-Wunused;-Wuninitialized;-Wall;-Wextra;-Wmissing-declarations;-Wconversion;-Wpointer-arith;-Wshadow;-Wlogical-op;-Waggregate-return;-Wfloat-equal;-fmessage-length=0;-fsigned-char;-ffunction-sections;-fdata-sections;-mthumb;-std=c99;-MMD;-MP")
-SET(RASC_CMAKE_CXX_FLAGS "-mfloat-abi=hard;-mcpu=cortex-m85;-Wunused;-Wuninitialized;-Wall;-Wextra;-Wmissing-declarations;-Wconversion;-Wpointer-arith;-Wshadow;-Wlogical-op;-Waggregate-return;-Wfloat-equal;-fmessage-length=0;-fsigned-char;-ffunction-sections;-fdata-sections;-mthumb;-std=c++11;-MMD;-MP")
-SET(RASC_CMAKE_EXE_LINKER_FLAGS "-mfloat-abi=hard;-mcpu=cortex-m85;-Wunused;-Wuninitialized;-Wall;-Wextra;-Wmissing-declarations;-Wconversion;-Wpointer-arith;-Wshadow;-Wlogical-op;-Waggregate-return;-Wfloat-equal;-fmessage-length=0;-fsigned-char;-ffunction-sections;-fdata-sections;-mthumb;-T;script/fsp.ld;-Wl,--gc-sections;-Wl,-Map,${PROJECT_NAME}.map;--specs=nano.specs;-o;${CMAKE_BINARY_DIR}/${PROJECT_NAME}.elf")
+SET(RASC_CMAKE_ASM_FLAGS "-mfloat-abi=hard;--target=arm-none-eabi;-mcpu=cortex-m85;-Wunused;-Wuninitialized;-Wall;-Wextra;-Wmissing-declarations;-Wconversion;-Wpointer-arith;-Wshadow;-Waggregate-return;-Wno-parentheses-equality;-Wfloat-equal;-fshort-enums;-fno-unroll-loops;-fmessage-length=0;-fsigned-char;-ffunction-sections;-fdata-sections;-mthumb;-mlittle-endian;-x;assembler-with-cpp;-MP")
+SET(RASC_CMAKE_C_FLAGS "-mfloat-abi=hard;--target=arm-none-eabi;-mcpu=cortex-m85;-Wunused;-Wuninitialized;-Wall;-Wextra;-Wmissing-declarations;-Wconversion;-Wpointer-arith;-Wshadow;-Waggregate-return;-Wno-parentheses-equality;-Wfloat-equal;-fshort-enums;-fno-unroll-loops;-fmessage-length=0;-fsigned-char;-ffunction-sections;-fdata-sections;-mthumb;-mlittle-endian;-std=c99;-MP")
+SET(RASC_CMAKE_CXX_FLAGS "-mfloat-abi=hard;--target=arm-none-eabi;-mcpu=cortex-m85;-Wunused;-Wuninitialized;-Wall;-Wextra;-Wmissing-declarations;-Wconversion;-Wpointer-arith;-Wshadow;-Waggregate-return;-Wno-parentheses-equality;-Wfloat-equal;-fshort-enums;-fno-unroll-loops;-fmessage-length=0;-fsigned-char;-ffunction-sections;-fdata-sections;-mthumb;-mlittle-endian;-std=c++11;-MP")
+SET(RASC_CMAKE_EXE_LINKER_FLAGS "-mfloat-abi=hard;--target=arm-none-eabi;-mcpu=cortex-m85;-Wunused;-Wuninitialized;-Wall;-Wextra;-Wmissing-declarations;-Wconversion;-Wpointer-arith;-Wshadow;-Waggregate-return;-Wno-parentheses-equality;-Wfloat-equal;-fshort-enums;-fno-unroll-loops;-fmessage-length=0;-fsigned-char;-ffunction-sections;-fdata-sections;--target=arm-none-eabi;-mthumb;-mlittle-endian;-T;script/fsp.lld;-Wl,-Map=${PROJECT_NAME}.map;-Wl,--gc-sections;-Wl,--cref;-Wl,--icf=none;-o;${CMAKE_BINARY_DIR}/${PROJECT_NAME}.elf")
 SET(RASC_CMAKE_DEFINITIONS "_RA_CORE=CM85;_RA_ORDINAL=1;_RENESAS_RA_")
 SET(RASC_ASM_FILES "${CMAKE_CURRENT_SOURCE_DIR}/ra_gen/*.asm")
-
-
 
 # ADD COMPILE FLAGS FOR GCC version >= 12.2
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU" AND CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL 12.2)

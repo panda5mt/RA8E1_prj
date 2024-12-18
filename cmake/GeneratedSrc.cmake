@@ -18,6 +18,11 @@ add_executable(${PROJECT_NAME}.elf
 	${ALL_FILES}
 )
 
+target_compile_definitions(${PROJECT_NAME}.elf PRIVATE _CONFIG_HELIUM_=1)
+target_compile_options(${PROJECT_NAME}.elf PRIVATE -O2)
+target_compile_options(${PROJECT_NAME}.elf PRIVATE -Wno-sign-conversion)
+
+
 target_compile_options(${PROJECT_NAME}.elf
                        PRIVATE
                        $<$<CONFIG:Debug>:${RASC_DEBUG_FLAGS}>
@@ -27,6 +32,8 @@ target_compile_options(${PROJECT_NAME}.elf
 
 target_compile_options(${PROJECT_NAME}.elf PRIVATE  $<$<COMPILE_LANGUAGE:C>:${RASC_CMAKE_C_FLAGS}>)
 target_compile_options(${PROJECT_NAME}.elf PRIVATE  $<$<COMPILE_LANGUAGE:CXX>:${RASC_CMAKE_CXX_FLAGS}>)
+
+
 
 target_link_options(${PROJECT_NAME}.elf PRIVATE $<$<LINK_LANGUAGE:C>:${RASC_CMAKE_EXE_LINKER_FLAGS}>)
 target_link_options(${PROJECT_NAME}.elf PRIVATE $<$<LINK_LANGUAGE:CXX>:${RASC_CMAKE_EXE_LINKER_FLAGS}>)
@@ -47,6 +54,8 @@ target_include_directories(${PROJECT_NAME}.elf
     ${CMAKE_CURRENT_SOURCE_DIR}/ra_gen
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/ra/arm/CMSIS-DSP/PrivateInclude
+    ${CMAKE_CURRENT_SOURCE_DIR}/ra/arm/CMSIS-DSP/Include
 )
 
 target_link_directories(${PROJECT_NAME}.elf
@@ -61,8 +70,8 @@ target_link_libraries(${PROJECT_NAME}.elf
 )
 
 add_custom_target(obj_copy ALL
-    COMMAND ${CMAKE_OBJCOPY} -O srec ${PROJECT_NAME}.elf ${PROJECT_NAME}.srec
-    COMMENT "Creating S-record file in ${PROJECT_BINARY_DIR}"
+    COMMAND ${CMAKE_OBJCOPY} ${PROJECT_NAME}.elf -O ihex  ${PROJECT_NAME}.ihex
+    COMMENT "Creating Intel Hex file in ${PROJECT_BINARY_DIR}"
 )
 
 add_dependencies(obj_copy ${PROJECT_NAME}.elf)
@@ -72,7 +81,7 @@ add_custom_command(
     OUTPUT
         configuration.xml.stamp
     COMMAND
-        ${RASC_EXE_PATH}  -nosplash --launcher.suppressErrors --generate --devicefamily ra --compiler GCC --toolchainversion ${CMAKE_C_COMPILER_VERSION} ${CMAKE_CURRENT_SOURCE_DIR}/configuration.xml
+        ${RASC_EXE_PATH}  -nosplash --launcher.suppressErrors --generate --devicefamily ra --compiler LLVMARM --toolchainversion ${CMAKE_C_COMPILER_VERSION} ${CMAKE_CURRENT_SOURCE_DIR}/configuration.xml
     COMMAND
         ${CMAKE_COMMAND} -E touch configuration.xml.stamp
     COMMENT
@@ -96,6 +105,6 @@ add_custom_command(
     COMMAND
         echo Running RASC post-build to generate Smart Bundle (.sbd) file
     COMMAND
-        ${RASC_EXE_PATH} -nosplash --launcher.suppressErrors --gensmartbundle --devicefamily ra --compiler GCC --toolchainversion ${CMAKE_C_COMPILER_VERSION}  ${CMAKE_CURRENT_SOURCE_DIR}/configuration.xml ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.elf 
+        ${RASC_EXE_PATH} -nosplash --launcher.suppressErrors --gensmartbundle --devicefamily ra --compiler LLVMARM --toolchainversion ${CMAKE_C_COMPILER_VERSION}  ${CMAKE_CURRENT_SOURCE_DIR}/configuration.xml ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.elf 
     VERBATIM
 )
