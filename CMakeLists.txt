@@ -1,12 +1,8 @@
 # Please see README.md for build instructions
 
 cmake_minimum_required(VERSION 3.16.4)
-
 set(CMAKE_SYSTEM_NAME Generic)
-
 set(CMAKE_CONFIGURATION_TYPES Debug Release RelWithDebInfo MinSizeRel)
-
-cmake_minimum_required(VERSION 3.16.4)
 
 # Project configuration
 project(RA8E1_prj

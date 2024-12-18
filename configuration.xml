@@ -238,6 +238,10 @@
       <description>Arm DSP Library Source</description>
       <originalPack>Arm.CMSIS-DSP.1.16.2+fsp.5.7.0.pack</originalPack>
     </component>
+    <component apiversion="" class="HAL Drivers" condition="" group="all" subgroup="r_ceu" variant="" vendor="Renesas" version="5.7.0">
+      <description>Capture Engine Unit (r_ceu)</description>
+      <originalPack>Renesas.RA.5.7.0.pack</originalPack>
+    </component>
   </raComponentSelection>
   <raElcConfiguration/>
   <raIcuConfiguration/>
@@ -336,6 +340,9 @@
       <property id="config.awsfreertos.thread.include_time_and_task" value="config.awsfreertos.thread.include_time_and_task.disabled"/>
       <property id="config.awsfreertos.thread.debug_logging_name" value="Log Name"/>
       <property id="config.awsfreertos.thread.logging_level" value="config.awsfreertos.thread.logging_level.log_none"/>
+    </config>
+    <config id="config.driver.ceu">
+      <property id="config.driver.ceu.param_checking_enable" value="config.driver.ceu.param_checking_enable.bsp"/>
     </config>
   </raModuleConfiguration>
   <raPinConfiguration>
