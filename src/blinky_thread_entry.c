@@ -5,8 +5,6 @@
  */
 
 #include "blinky_thread.h"
-#include <stdio.h>
-#include <string.h>
 #include "xprintf_helper.h"
 
 extern bsp_leds_t g_bsp_leds;
