@@ -42,7 +42,7 @@ void blinky_thread_entry(void *pvParameters)
         R_BSP_PinAccessEnable();
 
         uint32_t uptime_ms = xTaskGetTickCount() * portTICK_PERIOD_MS;
-        xprintf("time = %d[msec]\n", uptime_ms);
+        xprintf("upset time = %d[msec]\n", uptime_ms);
 
         // SEGGER_RTT_printf(unsigned int BufferIndex, const char *sFormat, ...)
         /* Update all board LEDs */
