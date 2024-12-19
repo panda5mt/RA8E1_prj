@@ -35,7 +35,7 @@ void blinky_thread_create(void)
 #endif
         blinky_thread_func,
         (const char *)"Blinky Thread",
-        512 / 4,                           // In words, not bytes
+        512,                               // In words, not bytes
         (void *)&blinky_thread_parameters, // pvParameters
         1,
 #if 1

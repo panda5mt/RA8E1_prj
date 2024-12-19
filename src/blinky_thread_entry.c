@@ -7,6 +7,7 @@
 #include "blinky_thread.h"
 #include <stdio.h>
 #include <string.h>
+#include "xprintf_helper.h"
 
 extern bsp_leds_t g_bsp_leds;
 
@@ -17,6 +18,9 @@ void blinky_thread_entry(void *pvParameters)
 
     /* LED type structure */
     bsp_leds_t leds = g_bsp_leds;
+
+    // init UART
+    xdev_out(put_char_ra8);
 
     /* If this board has no LEDs then trap here */
     if (0 == leds.led_count)
@@ -30,7 +34,6 @@ void blinky_thread_entry(void *pvParameters)
     /* Holds level to set for pins */
     bsp_io_level_t pin_level = BSP_IO_LEVEL_LOW;
 
-    R_SCI_B_UART_Open(&g_uart0_ctrl, &g_uart0_cfg);
     while (1)
     {
         /* Enable access to the PFS registers. If using r_ioport module then register protection is automatically
@@ -38,11 +41,10 @@ void blinky_thread_entry(void *pvParameters)
          */
         R_BSP_PinAccessEnable();
 
-        uint8_t data[256];
         uint32_t uptime_ms = xTaskGetTickCount() * portTICK_PERIOD_MS;
-        sprintf((char *)data, "time:%u[ms]\n", (unsigned int)uptime_ms); // sprintfにはchar*が必要なためキャスト
-        R_SCI_B_UART_Write(&g_uart0_ctrl, data, strlen((char *)data));   // strlenもchar*を要求するのでキャスト
+        xprintf("time = %d[msec]\n", uptime_ms);
 
+        // SEGGER_RTT_printf(unsigned int BufferIndex, const char *sFormat, ...)
         /* Update all board LEDs */
         for (uint32_t i = 0; i < leds.led_count; i++)
         {

@@ -30,6 +30,7 @@
   "editor.formatOnSave": true,
   "editor.formatOnType": true,
   "files.associations": {
-    "bsp_api.h": "c"
+    "bsp_api.h": "c",
+    "blinky_thread.h": "c"
   },
 }
