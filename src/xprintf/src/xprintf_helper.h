@@ -8,7 +8,6 @@ bool first_call = true;
 
 void put_char_ra8(uint8_t ch)
 {
-
     uint8_t *p;
     p = (uint8_t *)&ch;
     if (first_call == true)
