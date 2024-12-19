@@ -102,7 +102,7 @@ FSP Configuration
     PLL2R Div /2
     Clock Src: PLL1P
     CLKOUT Disabled
-    SCICLK Disabled
+    SCICLK Src: PLL1P
     SPICLK Disabled
     CANFDCLK Disabled
     UCK Disabled
@@ -141,10 +141,10 @@ FSP Configuration
       P014 120 GPIO Arduino_A4 - - "Input mode" - - "ADC0: AN007; DAC120: DA0" - None - - 
       P015 119 GPIO Arduino_A5 - - "Input mode" - - "ADC1: AN105; IRQ13: IRQ13" - None - - 
       P100 108 - - - - Disabled - - "AGT0: AGTIO0; GPT_POEGA: GTETRGA; IRQ2: IRQ2; OSPI: OM_SIO0; SCI9: DE9; SCI9: SCK9; SPI1: MISO1" - None - - 
-      P101 105 SCI9_RXD9 JLINK_VCOM_RXD - - "Peripheral mode" - - "AGT0: AGTEE0; GPT_POEGB: GTETRGB; IRQ1: IRQ1; OSPI: OM_SIO3; SCI9: RXD9; SPI1: MOSI1" - None - - 
-      P102 104 SCI9_TXD9 JLINK_VCOM_TXD - - "Peripheral mode" - - "ADC(Digital): ADTRG0; AGT0: AGTO0; CANFD0: CRX0; GPT2: GTIOC2B; OSPI: OM_SIO4; SCI9: TXD9; SPI1: RSPCK1" - None - - 
-      P103 103 - JLINK_VCOM_CTS_RTS - - Disabled - - "CANFD0: CTX0; GPT2: GTIOC2A; OSPI: OM_SIO2; SCI9: CTS_RTS9; SCI9: DE9; SPI1: SSLB0" - None - - 
-      P104 102 - JLINK_VCOM_CTS - - Disabled - - "GPT1: GTIOC1B; GPT_POEGB: GTETRGB; IRQ1: IRQ1; OSPI: OM_CS1; SCI9: CTS9; SPI1: SSLB1" - None - - 
+      P101 105 SCI9_RXD9 JLINK_VCOM_RXD L None "Peripheral mode" - - "AGT0: AGTEE0; GPT_POEGB: GTETRGB; IRQ1: IRQ1; OSPI: OM_SIO3; SCI9: RXD9; SPI1: MOSI1" - I - - 
+      P102 104 SCI9_TXD9 JLINK_VCOM_TXD L - "Peripheral mode" - - "ADC(Digital): ADTRG0; AGT0: AGTO0; CANFD0: CRX0; GPT2: GTIOC2B; OSPI: OM_SIO4; SCI9: TXD9; SPI1: RSPCK1" - O - - 
+      P103 103 - JLINK_VCOM_CTS_RTS L - Disabled - - "CANFD0: CTX0; GPT2: GTIOC2A; OSPI: OM_SIO2; SCI9: CTS_RTS9; SCI9: DE9; SPI1: SSLB0" - IO - - 
+      P104 102 - JLINK_VCOM_CTS L None Disabled - - "GPT1: GTIOC1B; GPT_POEGB: GTETRGB; IRQ1: IRQ1; OSPI: OM_CS1; SCI9: CTS9; SPI1: SSLB1" - I - - 
       P105 101 GPIO Ardiuno_RST - - "Input mode" - - "GPT1: GTIOC1A; IRQ0: IRQ0; OSPI: OM_ECSINT1; SPI1: SSLB2; ULPT1: ULPTO1_A-DS" - None - - 
       P106 100 GPIO PMOD2_RST - - "Input mode" - - "AGT0: AGTOB0; OSPI: OM_RESET; SPI1: SSLB3; ULPT1: ULPTEE1_A-DS" - None - - 
       P107 99 GPIO PMOD2_P9 - - "Output mode (Initial Low)" - - "AGT0: AGTOA0; OSPI: OM_CS0" - None - - 
@@ -286,10 +286,10 @@ FSP Configuration
       P014 120 - Arduino_A4 - - Disabled - - "ADC0: AN007; DAC120: DA0" - None - - 
       P015 119 - Arduino_A5 - - Disabled - - "ADC1: AN105; IRQ13: IRQ13" - None - - 
       P100 108 - - - - Disabled - - "AGT0: AGTIO0; GPT_POEGA: GTETRGA; IRQ2: IRQ2; OSPI: OM_SIO0; SCI9: DE9; SCI9: SCK9; SPI1: MISO1" - None - - 
-      P101 105 - JLINK_VCOM_RXD - - Disabled - - "AGT0: AGTEE0; GPT_POEGB: GTETRGB; IRQ1: IRQ1; OSPI: OM_SIO3; SCI9: RXD9; SPI1: MOSI1" - None - - 
-      P102 104 - JLINK_VCOM_TXD - - Disabled - - "ADC(Digital): ADTRG0; AGT0: AGTO0; CANFD0: CRX0; GPT2: GTIOC2B; OSPI: OM_SIO4; SCI9: TXD9; SPI1: RSPCK1" - None - - 
-      P103 103 - JLINK_VCOM_CTS_RTS - - Disabled - - "CANFD0: CTX0; GPT2: GTIOC2A; OSPI: OM_SIO2; SCI9: CTS_RTS9; SCI9: DE9; SPI1: SSLB0" - None - - 
-      P104 102 - JLINK_VCOM_CTS - - Disabled - - "GPT1: GTIOC1B; GPT_POEGB: GTETRGB; IRQ1: IRQ1; OSPI: OM_CS1; SCI9: CTS9; SPI1: SSLB1" - None - - 
+      P101 105 SCI9_RXD9 JLINK_VCOM_RXD L None "Peripheral mode" - - "AGT0: AGTEE0; GPT_POEGB: GTETRGB; IRQ1: IRQ1; OSPI: OM_SIO3; SCI9: RXD9; SPI1: MOSI1" - I - - 
+      P102 104 SCI9_TXD9 JLINK_VCOM_TXD L - "Peripheral mode" - - "ADC(Digital): ADTRG0; AGT0: AGTO0; CANFD0: CRX0; GPT2: GTIOC2B; OSPI: OM_SIO4; SCI9: TXD9; SPI1: RSPCK1" - O - - 
+      P103 103 SCI9_CTS_RTS9 JLINK_VCOM_CTS_RTS L - "Peripheral mode" - - "CANFD0: CTX0; GPT2: GTIOC2A; OSPI: OM_SIO2; SCI9: CTS_RTS9; SCI9: DE9; SPI1: SSLB0" - IO - - 
+      P104 102 SCI9_CTS9 JLINK_VCOM_CTS L None "Peripheral mode" - - "GPT1: GTIOC1B; GPT_POEGB: GTETRGB; IRQ1: IRQ1; OSPI: OM_CS1; SCI9: CTS9; SPI1: SSLB1" - I - - 
       P105 101 - Ardiuno_RST - - Disabled - - "GPT1: GTIOC1A; IRQ0: IRQ0; OSPI: OM_ECSINT1; SPI1: SSLB2; ULPT1: ULPTO1_A-DS" - None - - 
       P106 100 - PMOD2_RST - - Disabled - - "AGT0: AGTOB0; OSPI: OM_RESET; SPI1: SSLB3; ULPT1: ULPTEE1_A-DS" - None - - 
       P107 99 - PMOD2_P9 - - Disabled - - "AGT0: AGTOA0; OSPI: OM_CS0" - None - - 
@@ -432,6 +432,12 @@ FSP Configuration
     DTC on Transmission and Reception: Disabled
     10-bit slave addressing: Disabled
     
+  Module "UART (r_sci_b_uart)"
+    Parameter Checking: Enabled
+    FIFO Support: Enable
+    DTC Support: Enable
+    Flow Control Support: Enable
+    
   FreeRTOS
     General: Custom FreeRTOSConfig.h: 
     General: Use Preemption: Enabled
@@ -553,6 +559,32 @@ FSP Configuration
       Timeout during SCL Low: Enabled
       Callback: NULL
       Interrupt Priority Level: Priority 12
+      
+    Instance "g_uart0 UART (r_sci_b_uart)"
+      General: Name: g_uart0
+      General: Channel: 9
+      General: Data Bits: 8bits
+      General: Parity: None
+      General: Stop Bits: 1bit
+      Baud: Baud Rate: 115200
+      Baud: Baud Rate Modulation: Disabled
+      Baud: Max Error (%): 5
+      Flow Control: CTS/RTS Selection: Hardware RTS
+      Flow Control: Software RTS Port: Disabled
+      Flow Control: Software RTS Pin: Disabled
+      Extra: Clock Source: Internal Clock
+      Extra: Start bit detection: Falling Edge
+      Extra: Noise Filter: Disable
+      Extra: Receive FIFO Trigger Level: Max
+      Extra: RS-485: DE Pin: Disable
+      Extra: RS-485: DE Pin Polarity: Active High
+      Extra: RS-485: DE Pin Assertion Time: 1
+      Extra: RS-485: DE Pin Negation Time: 1
+      Interrupts: Callback: NULL
+      Interrupts: Receive Interrupt Priority: Priority 12
+      Interrupts: Transmit Data Empty Interrupt Priority: Priority 12
+      Interrupts: Transmit End Interrupt Priority: Priority 12
+      Interrupts: Error Interrupt Priority: Priority 12
       
   Thread "Blinky Thread"
     Symbol: blinky_thread

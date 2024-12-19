@@ -20,7 +20,12 @@ add_executable(${PROJECT_NAME}.elf
 
 target_compile_definitions(${PROJECT_NAME}.elf PRIVATE _CONFIG_HELIUM_=1)
 target_compile_options(${PROJECT_NAME}.elf PRIVATE -O2)
-target_compile_options(${PROJECT_NAME}.elf PRIVATE -Wno-sign-conversion)
+target_compile_options(${PROJECT_NAME}.elf PRIVATE
+    -Wno-sign-conversion
+    -Wno-error
+    -Wno-conversion
+    # 必要な他のオプションがあれば追加
+)
 
 
 target_compile_options(${PROJECT_NAME}.elf

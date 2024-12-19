@@ -1,6 +1,8 @@
 /* generated main source file - do not edit */
 #include "bsp_api.h"
 #include "FreeRTOS.h"
+#include "hal_data.h"
+#include "r_sci_b_uart.h"
 #include "task.h"
 #include "semphr.h"
 extern void blinky_thread_create(void);

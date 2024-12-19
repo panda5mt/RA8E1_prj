@@ -35,6 +35,10 @@ void blinky_thread_entry(void *pvParameters)
          */
         R_BSP_PinAccessEnable();
 
+        uint8_t data[] = "UART check!\n\r";
+        R_SCI_B_UART_Open(&g_uart0_ctrl, &g_uart0_cfg);
+        R_SCI_B_UART_Write(&g_uart0_ctrl, data, sizeof(data));
+
         /* Update all board LEDs */
         for (uint32_t i = 0; i < leds.led_count; i++)
         {

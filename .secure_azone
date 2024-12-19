@@ -80,6 +80,10 @@
             <slot name="IRQ2" secure="true"/>
             <slot name="IRQ3" secure="true"/>
             <slot name="IRQ4" secure="true"/>
+            <slot name="IRQ5" secure="true"/>
+            <slot name="IRQ6" secure="true"/>
+            <slot name="IRQ7" secure="true"/>
+            <slot name="IRQ8" secure="true"/>
         </peripheral>
     </partition>
 </azone>

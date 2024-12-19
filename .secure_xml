@@ -42,7 +42,7 @@
     <node id="board.clock.pll2r.display" option="board.clock.pll2r.display.value"/>
     <node id="board.clock.clock.source" option="board.clock.clock.source.pll1p"/>
     <node id="board.clock.clkout.source" option="board.clock.clkout.source.disabled"/>
-    <node id="board.clock.sciclk.source" option="board.clock.sciclk.source.disabled"/>
+    <node id="board.clock.sciclk.source" option="board.clock.sciclk.source.pll1p"/>
     <node id="board.clock.spiclk.source" option="board.clock.spiclk.source.disabled"/>
     <node id="board.clock.canfdclk.source" option="board.clock.canfdclk.source.disabled"/>
     <node id="board.clock.uck.source" option="board.clock.uck.source.disabled"/>
@@ -132,8 +132,8 @@
       <configSetting altId="p803.input" configurationId="p803"/>
       <configSetting altId="p804.input" configurationId="p804"/>
       <configSetting altId="p809.input" configurationId="p809"/>
-      <configSetting altId="sci9.rxd9.p101" configurationId="sci9.rxd9" peripheral="SCI9"/>
-      <configSetting altId="sci9.txd9.p102" configurationId="sci9.txd9" peripheral="SCI9"/>
+      <configSetting altId="sci9.rxd9.p101" configurationId="sci9.rxd9" isUsedByDriver="true" peripheral="SCI9"/>
+      <configSetting altId="sci9.txd9.p102" configurationId="sci9.txd9" isUsedByDriver="true" peripheral="SCI9"/>
     </pincfg>
   </raPinConfiguration>
 </raConfiguration>

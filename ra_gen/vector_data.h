@@ -6,7 +6,7 @@
         #endif
                 /* Number of interrupts allocated */
         #ifndef VECTOR_DATA_IRQ_COUNT
-        #define VECTOR_DATA_IRQ_COUNT    (5)
+        #define VECTOR_DATA_IRQ_COUNT    (9)
         #endif
         /* ISR prototypes */
         void ceu_isr(void);
@@ -14,6 +14,10 @@
         void iic_master_txi_isr(void);
         void iic_master_tei_isr(void);
         void iic_master_eri_isr(void);
+        void sci_b_uart_rxi_isr(void);
+        void sci_b_uart_txi_isr(void);
+        void sci_b_uart_tei_isr(void);
+        void sci_b_uart_eri_isr(void);
 
         /* Vector table allocations */
         #define VECTOR_NUMBER_CEU_CEUI ((IRQn_Type) 0) /* CEU CEUI (CEU interrupt) */
@@ -26,6 +30,14 @@
         #define IIC0_TEI_IRQn          ((IRQn_Type) 3) /* IIC0 TEI (Transmit end) */
         #define VECTOR_NUMBER_IIC0_ERI ((IRQn_Type) 4) /* IIC0 ERI (Transfer error) */
         #define IIC0_ERI_IRQn          ((IRQn_Type) 4) /* IIC0 ERI (Transfer error) */
+        #define VECTOR_NUMBER_SCI9_RXI ((IRQn_Type) 5) /* SCI9 RXI (Receive data full) */
+        #define SCI9_RXI_IRQn          ((IRQn_Type) 5) /* SCI9 RXI (Receive data full) */
+        #define VECTOR_NUMBER_SCI9_TXI ((IRQn_Type) 6) /* SCI9 TXI (Transmit data empty) */
+        #define SCI9_TXI_IRQn          ((IRQn_Type) 6) /* SCI9 TXI (Transmit data empty) */
+        #define VECTOR_NUMBER_SCI9_TEI ((IRQn_Type) 7) /* SCI9 TEI (Transmit end) */
+        #define SCI9_TEI_IRQn          ((IRQn_Type) 7) /* SCI9 TEI (Transmit end) */
+        #define VECTOR_NUMBER_SCI9_ERI ((IRQn_Type) 8) /* SCI9 ERI (Receive error) */
+        #define SCI9_ERI_IRQn          ((IRQn_Type) 8) /* SCI9 ERI (Receive error) */
         #ifdef __cplusplus
         }
         #endif
