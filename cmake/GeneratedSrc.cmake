@@ -18,16 +18,6 @@ add_executable(${PROJECT_NAME}.elf
 	${ALL_FILES}
 )
 
-target_compile_definitions(${PROJECT_NAME}.elf PRIVATE _CONFIG_HELIUM_=1)
-target_compile_options(${PROJECT_NAME}.elf PRIVATE -O2)
-target_compile_options(${PROJECT_NAME}.elf PRIVATE
-    -Wno-sign-conversion
-    -Wno-error
-    -Wno-conversion
-    # 必要な他のオプションがあれば追加
-)
-
-
 target_compile_options(${PROJECT_NAME}.elf
                        PRIVATE
                        $<$<CONFIG:Debug>:${RASC_DEBUG_FLAGS}>
@@ -38,7 +28,14 @@ target_compile_options(${PROJECT_NAME}.elf
 target_compile_options(${PROJECT_NAME}.elf PRIVATE  $<$<COMPILE_LANGUAGE:C>:${RASC_CMAKE_C_FLAGS}>)
 target_compile_options(${PROJECT_NAME}.elf PRIVATE  $<$<COMPILE_LANGUAGE:CXX>:${RASC_CMAKE_CXX_FLAGS}>)
 
-
+target_compile_definitions(${PROJECT_NAME}.elf PRIVATE _CONFIG_HELIUM_=1)
+target_compile_options(${PROJECT_NAME}.elf PRIVATE -O2)
+target_compile_options(${PROJECT_NAME}.elf PRIVATE
+    -Wno-sign-conversion
+    -Wno-error
+    -Wno-conversion
+    # 必要な他のオプションがあれば追加
+)
 
 target_link_options(${PROJECT_NAME}.elf PRIVATE $<$<LINK_LANGUAGE:C>:${RASC_CMAKE_EXE_LINKER_FLAGS}>)
 target_link_options(${PROJECT_NAME}.elf PRIVATE $<$<LINK_LANGUAGE:CXX>:${RASC_CMAKE_EXE_LINKER_FLAGS}>)
