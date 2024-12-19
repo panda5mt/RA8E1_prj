@@ -5,6 +5,8 @@
  */
 
 #include "blinky_thread.h"
+#include <stdio.h>
+#include <string.h>
 
 extern bsp_leds_t g_bsp_leds;
 
@@ -28,6 +30,7 @@ void blinky_thread_entry(void *pvParameters)
     /* Holds level to set for pins */
     bsp_io_level_t pin_level = BSP_IO_LEVEL_LOW;
 
+    R_SCI_B_UART_Open(&g_uart0_ctrl, &g_uart0_cfg);
     while (1)
     {
         /* Enable access to the PFS registers. If using r_ioport module then register protection is automatically
@@ -35,9 +38,10 @@ void blinky_thread_entry(void *pvParameters)
          */
         R_BSP_PinAccessEnable();
 
-        uint8_t data[] = "UART check!\n\r";
-        R_SCI_B_UART_Open(&g_uart0_ctrl, &g_uart0_cfg);
-        R_SCI_B_UART_Write(&g_uart0_ctrl, data, sizeof(data));
+        uint8_t data[256];
+        uint32_t uptime_ms = xTaskGetTickCount() * portTICK_PERIOD_MS;
+        sprintf((char *)data, "time:%u[ms]\n", (unsigned int)uptime_ms); // sprintfにはchar*が必要なためキャスト
+        R_SCI_B_UART_Write(&g_uart0_ctrl, data, strlen((char *)data));   // strlenもchar*を要求するのでキャスト
 
         /* Update all board LEDs */
         for (uint32_t i = 0; i < leds.led_count; i++)
