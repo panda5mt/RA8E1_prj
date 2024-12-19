@@ -163,8 +163,8 @@ FSP Configuration
       P209 52 JTAG/SWD_TDO DEBUG_TDO L - "Peripheral mode" - - "CANFD1: CTX1; CLKOUT: CLKOUT; GPT1: GTIOC1A; JTAG/SWD: TDO; SCI9: TXD9; TRACE: TRACESWO" - IO - - 
       P210 51 JTAG/SWD_TMS DEBUG_TMS L - "Peripheral mode" - - "GPT0: GTIOC0B; JTAG/SWD: SWDIO; JTAG/SWD: TMS; SCI9: CTS_RTS9; SCI9: DE9" - IO - - 
       P211 50 JTAG/SWD_TCK DEBUG_TCK L - "Peripheral mode" - - "GPT0: GTIOC0A; JTAG/SWD: SWCLK; JTAG/SWD: TCK; SCI9: DE9; SCI9: SCK9" - IO - - 
-      P212 20 - EXTAL - - Disabled - - "AGT1: AGTEE1; CGC: EXTAL; GPT0: GTIOC0B; GPT_POEGD: GTETRGD; IRQ3: IRQ3; SCI1: RXD1" - None - - 
-      P213 19 - XTAL - - Disabled - - "ADC(Digital): ADTRG1; CGC: XTAL; GPT0: GTIOC0A; GPT_POEGC: GTETRGC; IRQ2: IRQ2; SCI1: TXD1; ULPT0: ULPTEE0" - None - - 
+      P212 20 - EXTAL L None Disabled - - "AGT1: AGTEE1; CGC: EXTAL; GPT0: GTIOC0B; GPT_POEGD: GTETRGD; IRQ3: IRQ3; SCI1: RXD1" - IO - - 
+      P213 19 - XTAL L None Disabled - - "ADC(Digital): ADTRG1; CGC: XTAL; GPT0: GTIOC0A; GPT_POEGC: GTETRGC; IRQ2: IRQ2; SCI1: TXD1; ULPT0: ULPTEE0" - IO - - 
       P300 72 GPIO Arduino_D2 - - "Input mode" - - "ETHER_MII: ET0_RX_CLK; ETHER_RMII: RMII0_RX_ER; GPT3: GTIOC3A; IRQ4: IRQ4; SCI0: DE0; SCI0: SCK0; SPI0: SSLA3; ULPT0: ULPTEVI0_A-DS" - None - - 
       P301 71 - - - - Disabled - - "AGT0: AGTIO0; ETHER_MII: ET0_ERXD0; ETHER_RMII: RMII0_RXD1; GPT4: GTIOC4B; IRQ6: IRQ6; ULPT0: ULPTEE0_A-DS" - None - - 
       P302 70 GPIO Arduino_D7 - - "Input mode" - - "ETHER_MII: ET0_ERXD1; ETHER_RMII: RMII0_RXD0; GPT4: GTIOC4A; IRQ5: IRQ5; ULPT0: ULPTO0_A-DS" - None - - 
@@ -308,8 +308,8 @@ FSP Configuration
       P209 52 JTAG/SWD_TDO DEBUG_TDO L - "Peripheral mode" - - "CANFD1: CTX1; CLKOUT: CLKOUT; GPT1: GTIOC1A; JTAG/SWD: TDO; SCI9: TXD9; TRACE: TRACESWO" - IO - - 
       P210 51 JTAG/SWD_TMS DEBUG_TMS L - "Peripheral mode" - - "GPT0: GTIOC0B; JTAG/SWD: SWDIO; JTAG/SWD: TMS; SCI9: CTS_RTS9; SCI9: DE9" - IO - - 
       P211 50 JTAG/SWD_TCK DEBUG_TCK L - "Peripheral mode" - - "GPT0: GTIOC0A; JTAG/SWD: SWCLK; JTAG/SWD: TCK; SCI9: DE9; SCI9: SCK9" - IO - - 
-      P212 20 - EXTAL - - Disabled - - "AGT1: AGTEE1; CGC: EXTAL; GPT0: GTIOC0B; GPT_POEGD: GTETRGD; IRQ3: IRQ3; SCI1: RXD1" - None - - 
-      P213 19 - XTAL - - Disabled - - "ADC(Digital): ADTRG1; CGC: XTAL; GPT0: GTIOC0A; GPT_POEGC: GTETRGC; IRQ2: IRQ2; SCI1: TXD1; ULPT0: ULPTEE0" - None - - 
+      P212 20 GPT0_GTIOC0B EXTAL L None "Peripheral mode" - - "AGT1: AGTEE1; CGC: EXTAL; GPT0: GTIOC0B; GPT_POEGD: GTETRGD; IRQ3: IRQ3; SCI1: RXD1" - IO - - 
+      P213 19 GPT0_GTIOC0A XTAL L None "Peripheral mode" - - "ADC(Digital): ADTRG1; CGC: XTAL; GPT0: GTIOC0A; GPT_POEGC: GTETRGC; IRQ2: IRQ2; SCI1: TXD1; ULPT0: ULPTEE0" - IO - - 
       P300 72 - Arduino_D2 - - Disabled - - "ETHER_MII: ET0_RX_CLK; ETHER_RMII: RMII0_RX_ER; GPT3: GTIOC3A; IRQ4: IRQ4; SCI0: DE0; SCI0: SCK0; SPI0: SSLA3; ULPT0: ULPTEVI0_A-DS" - None - - 
       P301 71 - - - - Disabled - - "AGT0: AGTIO0; ETHER_MII: ET0_ERXD0; ETHER_RMII: RMII0_RXD1; GPT4: GTIOC4B; IRQ6: IRQ6; ULPT0: ULPTEE0_A-DS" - None - - 
       P302 70 - Arduino_D7 - - Disabled - - "ETHER_MII: ET0_ERXD1; ETHER_RMII: RMII0_RXD0; GPT4: GTIOC4A; IRQ5: IRQ5; ULPT0: ULPTO0_A-DS" - None - - 
@@ -437,6 +437,11 @@ FSP Configuration
     FIFO Support: Enable
     DTC Support: Enable
     Flow Control Support: Enable
+    
+  Module "Timer, General PWM (r_gpt)"
+    Parameter Checking: Default (BSP)
+    Pin Output Support: Enabled
+    Write Protect Enable: Disabled
     
   FreeRTOS
     General: Custom FreeRTOSConfig.h: 
@@ -585,6 +590,58 @@ FSP Configuration
       Interrupts: Transmit Data Empty Interrupt Priority: Priority 12
       Interrupts: Transmit End Interrupt Priority: Priority 12
       Interrupts: Error Interrupt Priority: Priority 12
+      
+    Instance "g_timer0 Timer, General PWM (r_gpt)"
+      General: Name: g_timer0
+      General: Channel: 0
+      General: Mode: Periodic
+      General: Period: 0x10000
+      General: Compare Match: Compare Match A: Status: Disabled
+      General: Compare Match: Compare Match A: Compare match value: 0
+      General: Compare Match: Compare Match B: Status: Disabled
+      General: Compare Match: Compare Match B: Compare match value: 0
+      General: Period Unit: Raw Counts
+      Output: Custom Waveform: GTIOA: Initial Output Level: Pin Level Low
+      Output: Custom Waveform: GTIOA: Cycle End Output Level: Pin Level Retain
+      Output: Custom Waveform: GTIOA: Compare Match Output Level: Pin Level Retain
+      Output: Custom Waveform: GTIOA: Retain Output Level at Count Stop: Disabled
+      Output: Custom Waveform: GTIOB: Initial Output Level: Pin Level Low
+      Output: Custom Waveform: GTIOB: Cycle End Output Level: Pin Level Retain
+      Output: Custom Waveform: GTIOB: Compare Match Output Level: Pin Level Retain
+      Output: Custom Waveform: GTIOB: Retain Output Level at Count Stop: Disabled
+      Output: Custom Waveform: Custom Waveform Enable: Disabled
+      Output: Duty Cycle Percent (only applicable in PWM mode): 50
+      Output: GTIOCA Output Enabled: True
+      Output: GTIOCA Stop Level: Pin Level Low
+      Output: GTIOCB Output Enabled: False
+      Output: GTIOCB Stop Level: Pin Level Low
+      Input: Count Up Source: 
+      Input: Count Down Source: 
+      Input: Start Source: 
+      Input: Stop Source: 
+      Input: Clear Source: 
+      Input: Capture A Source: 
+      Input: Capture B Source: 
+      Input: Noise Filter A Sampling Clock Select: No Filter
+      Input: Noise Filter B Sampling Clock Select: No Filter
+      Interrupts: Callback: NULL
+      Interrupts: Overflow/Crest Interrupt Priority: Disabled
+      Interrupts: Capture/Compare match A Interrupt Priority: Disabled
+      Interrupts: Capture/Compare match B Interrupt Priority: Disabled
+      Interrupts: Underflow/Trough Interrupt Priority: Disabled
+      Extra Features: Extra Features: Disabled
+      Extra Features: Output Disable: POEG Link: POEG Channel 0
+      Extra Features: Output Disable: Output Disable POEG Trigger: 
+      Extra Features: ADC Trigger: Start Event Trigger (Channels with GTINTAD only): 
+      Extra Features: ADC Trigger: ADC A Compare Match (Raw Counts): 0
+      Extra Features: ADC Trigger: ADC B Compare Match (Raw Counts): 0
+      Extra Features: Dead Time (Value range varies with Channel): Dead Time Count Up (Raw Counts): 0
+      Extra Features: Dead Time (Value range varies with Channel): Dead Time Count Down (Raw Counts) (Channels with GTDVD only): 0
+      Extra Features: Interrupt Skipping (Channels with GTITC only): Interrupt to Count: None
+      Extra Features: Interrupt Skipping (Channels with GTITC only): Interrupt Skip Count: 0
+      Extra Features: Interrupt Skipping (Channels with GTITC only): Skip ADC Events: None
+      Extra Features: Output Disable: GTIOCA Disable Setting: Disable Prohibited
+      Extra Features: Output Disable: GTIOCB Disable Setting: Disable Prohibited
       
   Thread "Blinky Thread"
     Symbol: blinky_thread
