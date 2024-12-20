@@ -31,7 +31,7 @@ const gpt_extended_cfg_t g_timer3_extend =
                 .stop_level     = GPT_PIN_LEVEL_HIGH
               },
     .gtiocb = { .output_enabled = true,
-                .stop_level     = GPT_PIN_LEVEL_LOW
+                .stop_level     = GPT_PIN_LEVEL_HIGH
               },
     .start_source        = (gpt_source_t) ( GPT_SOURCE_NONE),
     .stop_source         = (gpt_source_t) ( GPT_SOURCE_NONE),
@@ -69,7 +69,7 @@ const gpt_extended_cfg_t g_timer3_extend =
     .gtior_setting.gtior_b.nfaen  = ((uint32_t) GPT_CAPTURE_FILTER_NONE & 1U),
     .gtior_setting.gtior_b.nfcsa  = ((uint32_t) GPT_CAPTURE_FILTER_NONE >> 1U),
     .gtior_setting.gtior_b.gtiob  = (0U << 4U) | (0U << 2U) | (0U << 0U),
-    .gtior_setting.gtior_b.obdflt = (uint32_t) GPT_PIN_LEVEL_LOW,
+    .gtior_setting.gtior_b.obdflt = (uint32_t) GPT_PIN_LEVEL_HIGH,
     .gtior_setting.gtior_b.obhld  = 0U,
     .gtior_setting.gtior_b.obe    = (uint32_t) true,
     .gtior_setting.gtior_b.obdf   = (uint32_t) GPT_GTIOC_DISABLE_PROHIBITED,
@@ -82,7 +82,7 @@ const gpt_extended_cfg_t g_timer3_extend =
 
 const timer_cfg_t g_timer3_cfg =
 {
-    .mode                = TIMER_MODE_PWM,
+    .mode                = TIMER_MODE_PERIODIC,
     /* Actual period: 1 seconds. Actual duty: 50%. */ .period_counts = (uint32_t) 0x7270e00, .duty_cycle_counts = 0x3938700, .source_div = (timer_source_div_t)0,
     .channel             = 3,
     .p_callback          = NULL,
