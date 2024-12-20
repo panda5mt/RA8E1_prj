@@ -74,7 +74,7 @@
         </peripheral>
         <peripheral name="CEU" security="s"/>
         <peripheral name="IIC0" group="IIC" security="s"/>
-        <peripheral name="GPT0" group="GPT" security="s"/>
+        <peripheral name="GPT3" group="GPT" security="s"/>
         <peripheral name="ICU">
             <slot name="IRQ0" secure="true"/>
             <slot name="IRQ1" secure="true"/>

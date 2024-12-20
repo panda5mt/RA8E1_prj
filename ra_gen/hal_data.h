@@ -14,11 +14,11 @@
             #include "r_ceu.h"
 FSP_HEADER
 /** Timer on GPT Instance. */
-extern const timer_instance_t g_timer0;
+extern const timer_instance_t g_timer3;
 
 /** Access the GPT instance using these structures when calling API functions directly (::p_api is not used). */
-extern gpt_instance_ctrl_t g_timer0_ctrl;
-extern const timer_cfg_t g_timer0_cfg;
+extern gpt_instance_ctrl_t g_timer3_ctrl;
+extern const timer_cfg_t g_timer3_cfg;
 
 #ifndef NULL
 void NULL(timer_callback_args_t * p_args);

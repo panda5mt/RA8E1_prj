@@ -1,13 +1,13 @@
 /* generated HAL source file - do not edit */
 #include "hal_data.h"
 
-gpt_instance_ctrl_t g_timer0_ctrl;
+gpt_instance_ctrl_t g_timer3_ctrl;
 #if 0
-const gpt_extended_pwm_cfg_t g_timer0_pwm_extend =
+const gpt_extended_pwm_cfg_t g_timer3_pwm_extend =
 {
     .trough_ipl          = (BSP_IRQ_DISABLED),
-#if defined(VECTOR_NUMBER_GPT0_COUNTER_UNDERFLOW)
-    .trough_irq          = VECTOR_NUMBER_GPT0_COUNTER_UNDERFLOW,
+#if defined(VECTOR_NUMBER_GPT3_COUNTER_UNDERFLOW)
+    .trough_irq          = VECTOR_NUMBER_GPT3_COUNTER_UNDERFLOW,
 #else
     .trough_irq          = FSP_INVALID_VECTOR,
 #endif
@@ -25,12 +25,12 @@ const gpt_extended_pwm_cfg_t g_timer0_pwm_extend =
     .gtiocb_disable_setting = GPT_GTIOC_DISABLE_PROHIBITED,
 };
 #endif
-const gpt_extended_cfg_t g_timer0_extend =
+const gpt_extended_cfg_t g_timer3_extend =
 {
     .gtioca = { .output_enabled = true,
-                .stop_level     = GPT_PIN_LEVEL_LOW
+                .stop_level     = GPT_PIN_LEVEL_HIGH
               },
-    .gtiocb = { .output_enabled = false,
+    .gtiocb = { .output_enabled = true,
                 .stop_level     = GPT_PIN_LEVEL_LOW
               },
     .start_source        = (gpt_source_t) ( GPT_SOURCE_NONE),
@@ -42,13 +42,13 @@ const gpt_extended_cfg_t g_timer0_extend =
     .capture_b_source    = (gpt_source_t) ( GPT_SOURCE_NONE),
     .capture_a_ipl       = (BSP_IRQ_DISABLED),
     .capture_b_ipl       = (BSP_IRQ_DISABLED),
-#if defined(VECTOR_NUMBER_GPT0_CAPTURE_COMPARE_A)
-    .capture_a_irq       = VECTOR_NUMBER_GPT0_CAPTURE_COMPARE_A,
+#if defined(VECTOR_NUMBER_GPT3_CAPTURE_COMPARE_A)
+    .capture_a_irq       = VECTOR_NUMBER_GPT3_CAPTURE_COMPARE_A,
 #else
     .capture_a_irq       = FSP_INVALID_VECTOR,
 #endif
-#if defined(VECTOR_NUMBER_GPT0_CAPTURE_COMPARE_B)
-    .capture_b_irq       = VECTOR_NUMBER_GPT0_CAPTURE_COMPARE_B,
+#if defined(VECTOR_NUMBER_GPT3_CAPTURE_COMPARE_B)
+    .capture_b_irq       = VECTOR_NUMBER_GPT3_CAPTURE_COMPARE_B,
 #else
     .capture_b_irq       = FSP_INVALID_VECTOR,
 #endif
@@ -56,13 +56,13 @@ const gpt_extended_cfg_t g_timer0_extend =
     .capture_filter_gtioca       = GPT_CAPTURE_FILTER_NONE,
     .capture_filter_gtiocb       = GPT_CAPTURE_FILTER_NONE,
 #if 0
-    .p_pwm_cfg                   = &g_timer0_pwm_extend,
+    .p_pwm_cfg                   = &g_timer3_pwm_extend,
 #else
     .p_pwm_cfg                   = NULL,
 #endif
 #if 0
     .gtior_setting.gtior_b.gtioa  = (0U << 4U) | (0U << 2U) | (0U << 0U),
-    .gtior_setting.gtior_b.oadflt = (uint32_t) GPT_PIN_LEVEL_LOW,
+    .gtior_setting.gtior_b.oadflt = (uint32_t) GPT_PIN_LEVEL_HIGH,
     .gtior_setting.gtior_b.oahld  = 0U,
     .gtior_setting.gtior_b.oae    = (uint32_t) true,
     .gtior_setting.gtior_b.oadf   = (uint32_t) GPT_GTIOC_DISABLE_PROHIBITED,
@@ -71,7 +71,7 @@ const gpt_extended_cfg_t g_timer0_extend =
     .gtior_setting.gtior_b.gtiob  = (0U << 4U) | (0U << 2U) | (0U << 0U),
     .gtior_setting.gtior_b.obdflt = (uint32_t) GPT_PIN_LEVEL_LOW,
     .gtior_setting.gtior_b.obhld  = 0U,
-    .gtior_setting.gtior_b.obe    = (uint32_t) false,
+    .gtior_setting.gtior_b.obe    = (uint32_t) true,
     .gtior_setting.gtior_b.obdf   = (uint32_t) GPT_GTIOC_DISABLE_PROHIBITED,
     .gtior_setting.gtior_b.nfben  = ((uint32_t) GPT_CAPTURE_FILTER_NONE & 1U),
     .gtior_setting.gtior_b.nfcsb  = ((uint32_t) GPT_CAPTURE_FILTER_NONE >> 1U),
@@ -80,11 +80,11 @@ const gpt_extended_cfg_t g_timer0_extend =
 #endif
 };
 
-const timer_cfg_t g_timer0_cfg =
+const timer_cfg_t g_timer3_cfg =
 {
-    .mode                = TIMER_MODE_PERIODIC,
-    /* Actual period: 0.0005461333333333333 seconds. Actual duty: 50%. */ .period_counts = (uint32_t) 0x10000, .duty_cycle_counts = 0x8000, .source_div = (timer_source_div_t)0,
-    .channel             = 0,
+    .mode                = TIMER_MODE_PWM,
+    /* Actual period: 1 seconds. Actual duty: 50%. */ .period_counts = (uint32_t) 0x7270e00, .duty_cycle_counts = 0x3938700, .source_div = (timer_source_div_t)0,
+    .channel             = 3,
     .p_callback          = NULL,
     /** If NULL then do not add & */
 #if defined(NULL)
@@ -92,19 +92,19 @@ const timer_cfg_t g_timer0_cfg =
 #else
     .p_context           = &NULL,
 #endif
-    .p_extend            = &g_timer0_extend,
+    .p_extend            = &g_timer3_extend,
     .cycle_end_ipl       = (BSP_IRQ_DISABLED),
-#if defined(VECTOR_NUMBER_GPT0_COUNTER_OVERFLOW)
-    .cycle_end_irq       = VECTOR_NUMBER_GPT0_COUNTER_OVERFLOW,
+#if defined(VECTOR_NUMBER_GPT3_COUNTER_OVERFLOW)
+    .cycle_end_irq       = VECTOR_NUMBER_GPT3_COUNTER_OVERFLOW,
 #else
     .cycle_end_irq       = FSP_INVALID_VECTOR,
 #endif
 };
 /* Instance structure to use this module. */
-const timer_instance_t g_timer0 =
+const timer_instance_t g_timer3 =
 {
-    .p_ctrl        = &g_timer0_ctrl,
-    .p_cfg         = &g_timer0_cfg,
+    .p_ctrl        = &g_timer3_ctrl,
+    .p_cfg         = &g_timer3_cfg,
     .p_api         = &g_timer_on_gpt
 };
 sci_b_uart_instance_ctrl_t     g_uart0_ctrl;

@@ -254,6 +254,10 @@
       <description>General PWM Timer</description>
       <originalPack>Renesas.RA.5.7.0.pack</originalPack>
     </component>
+    <component apiversion="" class="HAL Drivers" condition="" group="all" subgroup="r_poeg" variant="" vendor="Renesas" version="5.7.0">
+      <description>Port Output Enable for GPT</description>
+      <originalPack>Renesas.RA.5.7.0.pack</originalPack>
+    </component>
   </raComponentSelection>
   <raElcConfiguration/>
   <raIcuConfiguration/>
@@ -338,15 +342,15 @@
       <property id="module.driver.uart.eri_ipl" value="board.icu.common.irq.priority12"/>
     </module>
     <module id="module.driver.timer_on_gpt.1265511517">
-      <property id="module.driver.timer.name" value="g_timer0"/>
-      <property id="module.driver.timer.channel" value="0"/>
-      <property id="module.driver.timer.mode" value="module.driver.timer.mode.mode_periodic"/>
-      <property id="module.driver.timer.period" value="0x10000"/>
+      <property id="module.driver.timer.name" value="g_timer3"/>
+      <property id="module.driver.timer.channel" value="3"/>
+      <property id="module.driver.timer.mode" value="module.driver.timer.mode.mode_pwm"/>
+      <property id="module.driver.timer.period" value="1"/>
       <property id="module.driver.timer.compare_match.a.status" value="module.driver.timer.compare_match.a.status.disabled"/>
       <property id="module.driver.timer.compare_match.a.value" value="0"/>
       <property id="module.driver.timer.compare_match.b.status" value="module.driver.timer.compare_match.b.status.disabled"/>
       <property id="module.driver.timer.compare_match.b.value" value="0"/>
-      <property id="module.driver.timer.unit" value="module.driver.timer.unit.unit_period_raw_counts"/>
+      <property id="module.driver.timer.unit" value="module.driver.timer.unit.unit_period_sec"/>
       <property id="module.driver.timer.gtior.gtioa.initial_output_level" value="module.driver.timer.gtior.gtioa.initial_output_level.low"/>
       <property id="module.driver.timer.gtior.gtioa.cycle_end_output_level" value="module.driver.timer.gtior.gtioa.cycle_end_output_level.retain"/>
       <property id="module.driver.timer.gtior.gtioa.compare_match_output_level" value="module.driver.timer.gtior.gtioa.compare_match_output_level.retain"/>
@@ -358,8 +362,8 @@
       <property id="module.driver.timer.gtior.custom_waveform_enable" value="module.driver.timer.gtior.custom_waveform_enable.disabled"/>
       <property id="module.driver.timer.duty_cycle" value="50"/>
       <property id="module.driver.timer.gtioca_output_enabled" value="module.driver.timer.gtioca_output_enabled.true"/>
-      <property id="module.driver.timer.gtioca_stop_level" value="module.driver.timer.gtioca_stop_level.pin_level_low"/>
-      <property id="module.driver.timer.gtiocb_output_enabled" value="module.driver.timer.gtiocb_output_enabled.false"/>
+      <property id="module.driver.timer.gtioca_stop_level" value="module.driver.timer.gtioca_stop_level.pin_level_high"/>
+      <property id="module.driver.timer.gtiocb_output_enabled" value="module.driver.timer.gtiocb_output_enabled.true"/>
       <property id="module.driver.timer.gtiocb_stop_level" value="module.driver.timer.gtiocb_stop_level.pin_level_low"/>
       <property id="module.driver.timer.count_up_source" value=""/>
       <property id="module.driver.timer.count_down_source" value=""/>
@@ -425,6 +429,9 @@
     </config>
     <config id="config.driver.ioport">
       <property id="config.driver.ioport.checking" value="config.driver.ioport.checking.system"/>
+    </config>
+    <config id="config.driver.poeg">
+      <property id="config.driver.poeg.param_checking_enable" value="config.driver.poeg.param_checking_enable.bsp"/>
     </config>
     <config id="config.awsfreertos.thread">
       <property id="config.awsfreertos.custom_freertosconfig" value=""/>
@@ -711,9 +718,9 @@
       <configSetting altId="sci9.txd9.p102" configurationId="sci9.txd9"/>
     </pincfg>
     <pincfg active="false" name="R7FA8E1AFDCFB.pincfg" selected="true" symbol="">
-      <configSetting altId="gpt0.gtioc0a.p213" configurationId="gpt0.gtioc0a"/>
-      <configSetting altId="gpt0.gtioc0b.p212" configurationId="gpt0.gtioc0b"/>
-      <configSetting altId="gpt0.mode.gtiocaorgtiocb.free" configurationId="gpt0.mode"/>
+      <configSetting altId="gpt3.gtioc3a.p403" configurationId="gpt3.gtioc3a"/>
+      <configSetting altId="gpt3.gtioc3b.p404" configurationId="gpt3.gtioc3b"/>
+      <configSetting altId="gpt3.mode.gtiocaorgtiocb.free" configurationId="gpt3.mode"/>
       <configSetting altId="iic0.mode.enabled.a" configurationId="iic0.mode"/>
       <configSetting altId="iic0.scl0.p410" configurationId="iic0.scl0"/>
       <configSetting altId="iic0.sda0.p409" configurationId="iic0.sda0"/>
@@ -738,10 +745,11 @@
       <configSetting altId="p210.gpio_mode.gpio_mode_peripheral" configurationId="p210.gpio_mode"/>
       <configSetting altId="p211.jtag_fslash_swd.tck" configurationId="p211"/>
       <configSetting altId="p211.gpio_mode.gpio_mode_peripheral" configurationId="p211.gpio_mode"/>
-      <configSetting altId="p212.gpt0.gtioc0b" configurationId="p212"/>
-      <configSetting altId="p212.gpio_mode.gpio_mode_peripheral" configurationId="p212.gpio_mode"/>
-      <configSetting altId="p213.gpt0.gtioc0a" configurationId="p213"/>
-      <configSetting altId="p213.gpio_mode.gpio_mode_peripheral" configurationId="p213.gpio_mode"/>
+      <configSetting altId="p403.gpt3.gtioc3a" configurationId="p403"/>
+      <configSetting altId="p403.gpio_mode.gpio_mode_peripheral" configurationId="p403.gpio_mode"/>
+      <configSetting altId="p404.gpt3.gtioc3b" configurationId="p404"/>
+      <configSetting altId="p404.gpio_speed.gpio_speed_m" configurationId="p404.gpio_drivecapacity"/>
+      <configSetting altId="p404.gpio_mode.gpio_mode_peripheral" configurationId="p404.gpio_mode"/>
       <configSetting altId="p409.iic0.sda0" configurationId="p409"/>
       <configSetting altId="p409.gpio_speed.gpio_speed_m" configurationId="p409.gpio_drivecapacity"/>
       <configSetting altId="p409.gpio_mode.gpio_mode_peripheral" configurationId="p409.gpio_mode"/>
@@ -753,6 +761,8 @@
       <configSetting altId="sci9.mode.asynchronousuart.free" configurationId="sci9.mode"/>
       <configSetting altId="sci9.rxd9.p101" configurationId="sci9.rxd9"/>
       <configSetting altId="sci9.txd9.p102" configurationId="sci9.txd9"/>
+      <lockSetting id="gpt3.gtioc3a" lock="true"/>
+      <lockSetting id="gpt3.gtioc3b" lock="true"/>
       <lockSetting id="iic0.scl0" lock="true"/>
       <lockSetting id="iic0.sda0" lock="true"/>
       <lockSetting id="sci9.cts9" lock="true"/>

@@ -163,8 +163,8 @@ FSP Configuration
       P209 52 JTAG/SWD_TDO DEBUG_TDO L - "Peripheral mode" - - "CANFD1: CTX1; CLKOUT: CLKOUT; GPT1: GTIOC1A; JTAG/SWD: TDO; SCI9: TXD9; TRACE: TRACESWO" - IO - - 
       P210 51 JTAG/SWD_TMS DEBUG_TMS L - "Peripheral mode" - - "GPT0: GTIOC0B; JTAG/SWD: SWDIO; JTAG/SWD: TMS; SCI9: CTS_RTS9; SCI9: DE9" - IO - - 
       P211 50 JTAG/SWD_TCK DEBUG_TCK L - "Peripheral mode" - - "GPT0: GTIOC0A; JTAG/SWD: SWCLK; JTAG/SWD: TCK; SCI9: DE9; SCI9: SCK9" - IO - - 
-      P212 20 - EXTAL L None Disabled - - "AGT1: AGTEE1; CGC: EXTAL; GPT0: GTIOC0B; GPT_POEGD: GTETRGD; IRQ3: IRQ3; SCI1: RXD1" - IO - - 
-      P213 19 - XTAL L None Disabled - - "ADC(Digital): ADTRG1; CGC: XTAL; GPT0: GTIOC0A; GPT_POEGC: GTETRGC; IRQ2: IRQ2; SCI1: TXD1; ULPT0: ULPTEE0" - IO - - 
+      P212 20 - EXTAL - - Disabled - - "AGT1: AGTEE1; CGC: EXTAL; GPT0: GTIOC0B; GPT_POEGD: GTETRGD; IRQ3: IRQ3; SCI1: RXD1" - None - - 
+      P213 19 - XTAL - - Disabled - - "ADC(Digital): ADTRG1; CGC: XTAL; GPT0: GTIOC0A; GPT_POEGC: GTETRGC; IRQ2: IRQ2; SCI1: TXD1; ULPT0: ULPTEE0" - None - - 
       P300 72 GPIO Arduino_D2 - - "Input mode" - - "ETHER_MII: ET0_RX_CLK; ETHER_RMII: RMII0_RX_ER; GPT3: GTIOC3A; IRQ4: IRQ4; SCI0: DE0; SCI0: SCK0; SPI0: SSLA3; ULPT0: ULPTEVI0_A-DS" - None - - 
       P301 71 - - - - Disabled - - "AGT0: AGTIO0; ETHER_MII: ET0_ERXD0; ETHER_RMII: RMII0_RXD1; GPT4: GTIOC4B; IRQ6: IRQ6; ULPT0: ULPTEE0_A-DS" - None - - 
       P302 70 GPIO Arduino_D7 - - "Input mode" - - "ETHER_MII: ET0_ERXD1; ETHER_RMII: RMII0_RXD0; GPT4: GTIOC4A; IRQ5: IRQ5; ULPT0: ULPTO0_A-DS" - None - - 
@@ -182,8 +182,8 @@ FSP Configuration
       P400 1 CEU_VIO_D0 CAM_D0 - - "Peripheral mode" - - "ADC(Digital): ADTRG1; AGT1: AGTIO1; CEU: VIO_D0; ETHER_MII: ET0_WOL; ETHER_RMII: ET0_WOL; IRQ0: IRQ0; SCI1: TXD1; SSIE: AUDIO_CLK" - None - - 
       P401 2 CEU_VIO_D1 CAM_D1 - - "Peripheral mode" - - "CANFD0: CTX0; CEU: VIO_D1; ETHER_MII: ET0_MDC; ETHER_RMII: ET0_MDC; GPT_POEGA: GTETRGA; IRQ5: IRQ5-DS; SCI1: RXD1" - None - - 
       P402 3 - - - - Disabled - - "CAC: CACREF; CANFD0: CRX0; ETHER_MII: ET0_MDIO; ETHER_RMII: ET0_MDIO; IRQ4: IRQ4-DS; RTC: RTCIC0; SCI1: DE1; SCI1: SCK1; SSIE: AUDIO_CLK" - None - - 
-      P403 4 - CAM_XCLK - - Disabled - - "ETHER_MII: ET0_LINKSTA; ETHER_RMII: ET0_LINKSTA; GPT3: GTIOC3A; IRQ14: IRQ14-DS; RTC: RTCIC1; SCI1: CTS_RTS1; SCI1: DE1; SSIE0: SSISCK0" - None - - 
-      P404 5 GPIO LED_G2 - - "Output mode (Initial Low)" - - "CEU: VIO_D3; ETHER_MII: ET0_EXOUT; ETHER_RMII: ET0_EXOUT; GPT3: GTIOC3B; IRQ15: IRQ15-DS; RTC: RTCIC2; SCI1: CTS1; SSIE0: SSIWS0" - None - - 
+      P403 4 - CAM_XCLK L None Disabled - - "ETHER_MII: ET0_LINKSTA; ETHER_RMII: ET0_LINKSTA; GPT3: GTIOC3A; IRQ14: IRQ14-DS; RTC: RTCIC1; SCI1: CTS_RTS1; SCI1: DE1; SSIE0: SSISCK0" - IO - - 
+      P404 5 GPIO LED_G2 L None "Output mode (Initial Low)" - - "CEU: VIO_D3; ETHER_MII: ET0_EXOUT; ETHER_RMII: ET0_EXOUT; GPT3: GTIOC3B; IRQ15: IRQ15-DS; RTC: RTCIC2; SCI1: CTS1; SSIE0: SSIWS0" - IO - - 
       P405 6 CEU_VIO_D2 CAM_D2 - - "Peripheral mode" - - "AGT1: AGTIO1; CEU: VIO_D2; ETHER_MII: ET0_TX_EN; ETHER_RMII: RMII0_TXD_EN; GPT1: GTIOC1A; SCI2: DE2; SCI2: SCK2; SSIE0: SSITXD0" - None - - 
       P406 7 CEU_VIO_D3 CAM_D3 - - "Peripheral mode" - - "CEU: VIO_D3; CGC: EXCIN; ETHER_MII: ET0_RX_ER; ETHER_RMII: RMII0_TXD1; GPT1: GTIOC1B; SCI2: TXD2; SPI0: SSLA3; SSIE0: SSIRXD0" - None - - 
       P407 36 - - - - Disabled - - "ADC(Digital): ADTRG0; AGT0: AGTIO0; GPT10: GTIOC10B; IIC0: SDA0; RTC: RTCOUT; SCI4: CTS_RTS4; SCI4: DE4; SPI0: SSLA3; USB FS: USB_VBUS" - None - - 
@@ -308,8 +308,8 @@ FSP Configuration
       P209 52 JTAG/SWD_TDO DEBUG_TDO L - "Peripheral mode" - - "CANFD1: CTX1; CLKOUT: CLKOUT; GPT1: GTIOC1A; JTAG/SWD: TDO; SCI9: TXD9; TRACE: TRACESWO" - IO - - 
       P210 51 JTAG/SWD_TMS DEBUG_TMS L - "Peripheral mode" - - "GPT0: GTIOC0B; JTAG/SWD: SWDIO; JTAG/SWD: TMS; SCI9: CTS_RTS9; SCI9: DE9" - IO - - 
       P211 50 JTAG/SWD_TCK DEBUG_TCK L - "Peripheral mode" - - "GPT0: GTIOC0A; JTAG/SWD: SWCLK; JTAG/SWD: TCK; SCI9: DE9; SCI9: SCK9" - IO - - 
-      P212 20 GPT0_GTIOC0B EXTAL L None "Peripheral mode" - - "AGT1: AGTEE1; CGC: EXTAL; GPT0: GTIOC0B; GPT_POEGD: GTETRGD; IRQ3: IRQ3; SCI1: RXD1" - IO - - 
-      P213 19 GPT0_GTIOC0A XTAL L None "Peripheral mode" - - "ADC(Digital): ADTRG1; CGC: XTAL; GPT0: GTIOC0A; GPT_POEGC: GTETRGC; IRQ2: IRQ2; SCI1: TXD1; ULPT0: ULPTEE0" - IO - - 
+      P212 20 - EXTAL - - Disabled - - "AGT1: AGTEE1; CGC: EXTAL; GPT0: GTIOC0B; GPT_POEGD: GTETRGD; IRQ3: IRQ3; SCI1: RXD1" - None - - 
+      P213 19 - XTAL - - Disabled - - "ADC(Digital): ADTRG1; CGC: XTAL; GPT0: GTIOC0A; GPT_POEGC: GTETRGC; IRQ2: IRQ2; SCI1: TXD1; ULPT0: ULPTEE0" - None - - 
       P300 72 - Arduino_D2 - - Disabled - - "ETHER_MII: ET0_RX_CLK; ETHER_RMII: RMII0_RX_ER; GPT3: GTIOC3A; IRQ4: IRQ4; SCI0: DE0; SCI0: SCK0; SPI0: SSLA3; ULPT0: ULPTEVI0_A-DS" - None - - 
       P301 71 - - - - Disabled - - "AGT0: AGTIO0; ETHER_MII: ET0_ERXD0; ETHER_RMII: RMII0_RXD1; GPT4: GTIOC4B; IRQ6: IRQ6; ULPT0: ULPTEE0_A-DS" - None - - 
       P302 70 - Arduino_D7 - - Disabled - - "ETHER_MII: ET0_ERXD1; ETHER_RMII: RMII0_RXD0; GPT4: GTIOC4A; IRQ5: IRQ5; ULPT0: ULPTO0_A-DS" - None - - 
@@ -327,8 +327,8 @@ FSP Configuration
       P400 1 - CAM_D0 - - Disabled - - "ADC(Digital): ADTRG1; AGT1: AGTIO1; CEU: VIO_D0; ETHER_MII: ET0_WOL; ETHER_RMII: ET0_WOL; IRQ0: IRQ0; SCI1: TXD1; SSIE: AUDIO_CLK" - None - - 
       P401 2 - CAM_D1 - - Disabled - - "CANFD0: CTX0; CEU: VIO_D1; ETHER_MII: ET0_MDC; ETHER_RMII: ET0_MDC; GPT_POEGA: GTETRGA; IRQ5: IRQ5-DS; SCI1: RXD1" - None - - 
       P402 3 - - - - Disabled - - "CAC: CACREF; CANFD0: CRX0; ETHER_MII: ET0_MDIO; ETHER_RMII: ET0_MDIO; IRQ4: IRQ4-DS; RTC: RTCIC0; SCI1: DE1; SCI1: SCK1; SSIE: AUDIO_CLK" - None - - 
-      P403 4 - CAM_XCLK - - Disabled - - "ETHER_MII: ET0_LINKSTA; ETHER_RMII: ET0_LINKSTA; GPT3: GTIOC3A; IRQ14: IRQ14-DS; RTC: RTCIC1; SCI1: CTS_RTS1; SCI1: DE1; SSIE0: SSISCK0" - None - - 
-      P404 5 - LED_G2 - - Disabled - - "CEU: VIO_D3; ETHER_MII: ET0_EXOUT; ETHER_RMII: ET0_EXOUT; GPT3: GTIOC3B; IRQ15: IRQ15-DS; RTC: RTCIC2; SCI1: CTS1; SSIE0: SSIWS0" - None - - 
+      P403 4 GPT3_GTIOC3A CAM_XCLK L None "Peripheral mode" - - "ETHER_MII: ET0_LINKSTA; ETHER_RMII: ET0_LINKSTA; GPT3: GTIOC3A; IRQ14: IRQ14-DS; RTC: RTCIC1; SCI1: CTS_RTS1; SCI1: DE1; SSIE0: SSISCK0" - IO - - 
+      P404 5 GPT3_GTIOC3B LED_G2 M None "Peripheral mode" - - "CEU: VIO_D3; ETHER_MII: ET0_EXOUT; ETHER_RMII: ET0_EXOUT; GPT3: GTIOC3B; IRQ15: IRQ15-DS; RTC: RTCIC2; SCI1: CTS1; SSIE0: SSIWS0" - IO - - 
       P405 6 - CAM_D2 - - Disabled - - "AGT1: AGTIO1; CEU: VIO_D2; ETHER_MII: ET0_TX_EN; ETHER_RMII: RMII0_TXD_EN; GPT1: GTIOC1A; SCI2: DE2; SCI2: SCK2; SSIE0: SSITXD0" - None - - 
       P406 7 - CAM_D3 - - Disabled - - "CEU: VIO_D3; CGC: EXCIN; ETHER_MII: ET0_RX_ER; ETHER_RMII: RMII0_TXD1; GPT1: GTIOC1B; SCI2: TXD2; SPI0: SSLA3; SSIE0: SSIRXD0" - None - - 
       P407 36 - - - - Disabled - - "ADC(Digital): ADTRG0; AGT0: AGTIO0; GPT10: GTIOC10B; IIC0: SDA0; RTC: RTCOUT; SCI4: CTS_RTS4; SCI4: DE4; SPI0: SSLA3; USB FS: USB_VBUS" - None - - 
@@ -591,16 +591,16 @@ FSP Configuration
       Interrupts: Transmit End Interrupt Priority: Priority 12
       Interrupts: Error Interrupt Priority: Priority 12
       
-    Instance "g_timer0 Timer, General PWM (r_gpt)"
-      General: Name: g_timer0
-      General: Channel: 0
-      General: Mode: Periodic
-      General: Period: 0x10000
+    Instance "g_timer3 Timer, General PWM (r_gpt)"
+      General: Name: g_timer3
+      General: Channel: 3
+      General: Mode: Saw-wave PWM
+      General: Period: 1
       General: Compare Match: Compare Match A: Status: Disabled
       General: Compare Match: Compare Match A: Compare match value: 0
       General: Compare Match: Compare Match B: Status: Disabled
       General: Compare Match: Compare Match B: Compare match value: 0
-      General: Period Unit: Raw Counts
+      General: Period Unit: Seconds
       Output: Custom Waveform: GTIOA: Initial Output Level: Pin Level Low
       Output: Custom Waveform: GTIOA: Cycle End Output Level: Pin Level Retain
       Output: Custom Waveform: GTIOA: Compare Match Output Level: Pin Level Retain
@@ -612,8 +612,8 @@ FSP Configuration
       Output: Custom Waveform: Custom Waveform Enable: Disabled
       Output: Duty Cycle Percent (only applicable in PWM mode): 50
       Output: GTIOCA Output Enabled: True
-      Output: GTIOCA Stop Level: Pin Level Low
-      Output: GTIOCB Output Enabled: False
+      Output: GTIOCA Stop Level: Pin Level High
+      Output: GTIOCB Output Enabled: True
       Output: GTIOCB Stop Level: Pin Level Low
       Input: Count Up Source: 
       Input: Count Down Source: 

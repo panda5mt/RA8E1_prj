@@ -5,6 +5,7 @@
  */
 
 #include "blinky_thread.h"
+#include "r_gpt.h"
 #include "xprintf_helper.h"
 
 extern bsp_leds_t g_bsp_leds;
@@ -17,8 +18,23 @@ void blinky_thread_entry(void *pvParameters)
     /* LED type structure */
     bsp_leds_t leds = g_bsp_leds;
 
-    // init UART
+    // init UART & printf
     xdev_out(put_char_ra8);
+
+    // init PWM
+    if (FSP_SUCCESS == R_GPT_Start(&g_timer3_ctrl))
+    {
+        xprintf("GPT Start OK!\n");
+    }
+    if (FSP_SUCCESS == R_GPT_Open(&g_timer3_ctrl, &g_timer3_cfg))
+    {
+        xprintf("GPT Open OK!\n");
+    }
+
+    if (FSP_SUCCESS == R_GPT_Enable(&g_timer3_ctrl))
+    {
+        xprintf("GPT Enable OK!\n");
+    }
 
     /* If this board has no LEDs then trap here */
     if (0 == leds.led_count)
@@ -47,10 +63,10 @@ void blinky_thread_entry(void *pvParameters)
         for (uint32_t i = 0; i < leds.led_count; i++)
         {
             /* Get pin to toggle */
-            uint32_t pin = leds.p_leds[i];
+            // uint32_t pin = leds.p_leds[i];
 
             /* Write to this pin */
-            R_BSP_PinWrite((bsp_io_port_pin_t)pin, pin_level);
+            // R_BSP_PinWrite((bsp_io_port_pin_t)pin, pin_level);
         }
 
         /* Protect PFS registers */
