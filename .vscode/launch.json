@@ -6,9 +6,9 @@
       "request": "launch",
       "name": "Renesas GDB Debugging",
       "target": {
-        "debuggerType": "SEGGERJLINKARM",
+        "device": "R7FA8E1AF",
         "deviceFamily": "RA",
-        "device": "R7FA8E1AF"
+        "debuggerType": "SEGGERJLINKARM"
       }
     }
   ]

@@ -42,8 +42,8 @@
     <node id="board.clock.pll2r.display" option="board.clock.pll2r.display.value"/>
     <node id="board.clock.clock.source" option="board.clock.clock.source.pll1p"/>
     <node id="board.clock.clkout.source" option="board.clock.clkout.source.disabled"/>
-    <node id="board.clock.sciclk.source" option="board.clock.sciclk.source.pll1p"/>
-    <node id="board.clock.spiclk.source" option="board.clock.spiclk.source.disabled"/>
+    <node id="board.clock.sciclk.source" option="board.clock.sciclk.source.moco"/>
+    <node id="board.clock.spiclk.source" option="board.clock.spiclk.source.hoco"/>
     <node id="board.clock.canfdclk.source" option="board.clock.canfdclk.source.disabled"/>
     <node id="board.clock.uck.source" option="board.clock.uck.source.disabled"/>
     <node id="board.clock.octaspiclk.source" option="board.clock.octaspiclk.source.disabled"/>
@@ -57,7 +57,7 @@
     <node id="board.clock.bclk.div" option="board.clock.bclk.div.12"/>
     <node id="board.clock.fclk.div" option="board.clock.fclk.div.6"/>
     <node id="board.clock.clkout.div" option="board.clock.clkout.div.1"/>
-    <node id="board.clock.sciclk.div" option="board.clock.sciclk.div.4"/>
+    <node id="board.clock.sciclk.div" option="board.clock.sciclk.div.2"/>
     <node id="board.clock.spiclk.div" option="board.clock.spiclk.div.4"/>
     <node id="board.clock.canfdclk.div" option="board.clock.canfdclk.div.8"/>
     <node id="board.clock.uck.div" option="board.clock.uck.div.5"/>
@@ -80,17 +80,18 @@
   </raClockConfiguration>
   <raPinConfiguration>
     <pincfg active="true" name="" symbol="">
-      <configSetting altId="ceu.vio_clk.p708" configurationId="ceu.vio_clk" isUsedByDriver="true" peripheral="CEU"/>
-      <configSetting altId="ceu.vio_d0.p400" configurationId="ceu.vio_d0" isUsedByDriver="true" peripheral="CEU"/>
-      <configSetting altId="ceu.vio_d1.p401" configurationId="ceu.vio_d1" isUsedByDriver="true" peripheral="CEU"/>
-      <configSetting altId="ceu.vio_d2.p405" configurationId="ceu.vio_d2" isUsedByDriver="true" peripheral="CEU"/>
-      <configSetting altId="ceu.vio_d3.p406" configurationId="ceu.vio_d3" isUsedByDriver="true" peripheral="CEU"/>
-      <configSetting altId="ceu.vio_d4.p700" configurationId="ceu.vio_d4" isUsedByDriver="true" peripheral="CEU"/>
-      <configSetting altId="ceu.vio_d5.p701" configurationId="ceu.vio_d5" isUsedByDriver="true" peripheral="CEU"/>
-      <configSetting altId="ceu.vio_d6.p702" configurationId="ceu.vio_d6" isUsedByDriver="true" peripheral="CEU"/>
-      <configSetting altId="ceu.vio_d7.p703" configurationId="ceu.vio_d7" isUsedByDriver="true" peripheral="CEU"/>
-      <configSetting altId="ceu.vio_hd.p709" configurationId="ceu.vio_hd" isUsedByDriver="true" peripheral="CEU"/>
-      <configSetting altId="ceu.vio_vd.p710" configurationId="ceu.vio_vd" isUsedByDriver="true" peripheral="CEU"/>
+      <configSetting altId="ceu.vio_clk.p708" configurationId="ceu.vio_clk" peripheral="CEU"/>
+      <configSetting altId="ceu.vio_d0.p400" configurationId="ceu.vio_d0" peripheral="CEU"/>
+      <configSetting altId="ceu.vio_d1.p401" configurationId="ceu.vio_d1" peripheral="CEU"/>
+      <configSetting altId="ceu.vio_d2.p405" configurationId="ceu.vio_d2" peripheral="CEU"/>
+      <configSetting altId="ceu.vio_d3.p406" configurationId="ceu.vio_d3" peripheral="CEU"/>
+      <configSetting altId="ceu.vio_d4.p700" configurationId="ceu.vio_d4" peripheral="CEU"/>
+      <configSetting altId="ceu.vio_d5.p701" configurationId="ceu.vio_d5" peripheral="CEU"/>
+      <configSetting altId="ceu.vio_d6.p702" configurationId="ceu.vio_d6" peripheral="CEU"/>
+      <configSetting altId="ceu.vio_d7.p703" configurationId="ceu.vio_d7" peripheral="CEU"/>
+      <configSetting altId="ceu.vio_hd.p709" configurationId="ceu.vio_hd" peripheral="CEU"/>
+      <configSetting altId="ceu.vio_vd.p710" configurationId="ceu.vio_vd" peripheral="CEU"/>
+      <configSetting altId="gpt3.gtioc3b.p404" configurationId="gpt3.gtioc3b" isUsedByDriver="true" peripheral="GPT3"/>
       <configSetting altId="irq11.irq11_dash_ds.p006" configurationId="irq11.irq11_dash_ds" peripheral="IRQ11"/>
       <configSetting altId="irq13.irq13_dash_ds.p009" configurationId="irq13.irq13_dash_ds" peripheral="IRQ13"/>
       <configSetting altId="irq14.irq14.p010" configurationId="irq14.irq14" peripheral="IRQ14"/>
@@ -118,7 +119,6 @@
       <configSetting altId="p309.input" configurationId="p309"/>
       <configSetting altId="p310.input" configurationId="p310"/>
       <configSetting altId="p311.input" configurationId="p311"/>
-      <configSetting altId="p404.output.low" configurationId="p404"/>
       <configSetting altId="p408.output.low" configurationId="p408"/>
       <configSetting altId="p604.input" configurationId="p604"/>
       <configSetting altId="p605.input" configurationId="p605"/>
@@ -132,6 +132,8 @@
       <configSetting altId="p803.input" configurationId="p803"/>
       <configSetting altId="p804.input" configurationId="p804"/>
       <configSetting altId="p809.input" configurationId="p809"/>
+      <configSetting altId="sci9.cts9.p104" configurationId="sci9.cts9" isUsedByDriver="true" peripheral="SCI9"/>
+      <configSetting altId="sci9.cts_rts9.p103" configurationId="sci9.cts_rts9" isUsedByDriver="true" peripheral="SCI9"/>
       <configSetting altId="sci9.rxd9.p101" configurationId="sci9.rxd9" isUsedByDriver="true" peripheral="SCI9"/>
       <configSetting altId="sci9.txd9.p102" configurationId="sci9.txd9" isUsedByDriver="true" peripheral="SCI9"/>
     </pincfg>

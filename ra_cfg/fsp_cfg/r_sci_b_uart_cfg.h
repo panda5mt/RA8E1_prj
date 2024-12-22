@@ -5,7 +5,7 @@
             extern "C" {
             #endif
 
-            #define SCI_B_UART_CFG_PARAM_CHECKING_ENABLE (1)
+            #define SCI_B_UART_CFG_PARAM_CHECKING_ENABLE (BSP_CFG_PARAM_CHECKING_ENABLE)
             #define SCI_B_UART_CFG_FIFO_SUPPORT (1)
             #define SCI_B_UART_CFG_DTC_SUPPORTED (1)
             #define SCI_B_UART_CFG_FLOW_CONTROL_SUPPORT (1)

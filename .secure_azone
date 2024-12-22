@@ -16,6 +16,8 @@
         <peripheral name="PORT1" group="PORT">
             <slot name="P101" secure="true"/>
             <slot name="P102" secure="true"/>
+            <slot name="P103" secure="true"/>
+            <slot name="P104" secure="true"/>
             <slot name="P105" secure="true"/>
             <slot name="P106" secure="true"/>
             <slot name="P107" secure="true"/>
@@ -72,19 +74,12 @@
             <slot name="P804" secure="true"/>
             <slot name="P809" secure="true"/>
         </peripheral>
-        <peripheral name="CEU" security="s"/>
-        <peripheral name="IIC0" group="IIC" security="s"/>
         <peripheral name="GPT3" group="GPT" security="s"/>
         <peripheral name="ICU">
             <slot name="IRQ0" secure="true"/>
             <slot name="IRQ1" secure="true"/>
             <slot name="IRQ2" secure="true"/>
             <slot name="IRQ3" secure="true"/>
-            <slot name="IRQ4" secure="true"/>
-            <slot name="IRQ5" secure="true"/>
-            <slot name="IRQ6" secure="true"/>
-            <slot name="IRQ7" secure="true"/>
-            <slot name="IRQ8" secure="true"/>
         </peripheral>
     </partition>
 </azone>

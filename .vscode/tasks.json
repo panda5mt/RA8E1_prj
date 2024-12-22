@@ -11,12 +11,12 @@
         "rasc"
       ],
       "presentation": {
-        "panel": "shared",
         "echo": false,
-        "focus": false,
-        "reveal": "silent",
+        "panel": "shared",
+        "clear": false,
         "showReuseMessage": false,
-        "clear": false
+        "reveal": "silent",
+        "focus": false
       }
     },
     {

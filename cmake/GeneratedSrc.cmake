@@ -45,8 +45,8 @@ target_compile_definitions(${PROJECT_NAME}.elf PRIVATE ${RASC_CMAKE_DEFINITIONS}
 target_include_directories(${PROJECT_NAME}.elf
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/ra/arm/CMSIS_6/CMSIS/Core/Include
-    ${CMAKE_CURRENT_SOURCE_DIR}/ra/arm/CMSIS-DSP/PrivateInclude
     ${CMAKE_CURRENT_SOURCE_DIR}/ra/arm/CMSIS-DSP/Include
+    ${CMAKE_CURRENT_SOURCE_DIR}/ra/arm/CMSIS-DSP/PrivateInclude
     ${CMAKE_CURRENT_SOURCE_DIR}/ra/aws/FreeRTOS/FreeRTOS/Source/include
     ${CMAKE_CURRENT_SOURCE_DIR}/ra/fsp/inc
     ${CMAKE_CURRENT_SOURCE_DIR}/ra/fsp/inc/api
@@ -59,7 +59,6 @@ target_include_directories(${PROJECT_NAME}.elf
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/xprintf/src
     ${CMAKE_CURRENT_SOURCE_DIR}
-
 )
 
 target_link_directories(${PROJECT_NAME}.elf
@@ -69,7 +68,8 @@ target_link_directories(${PROJECT_NAME}.elf
 )
 
 target_link_libraries(${PROJECT_NAME}.elf
-    PRIVATE    
+    PRIVATE
+    
 )
 
 add_custom_target(obj_copy ALL
@@ -79,26 +79,25 @@ add_custom_target(obj_copy ALL
 
 add_dependencies(obj_copy ${PROJECT_NAME}.elf)
 
-# 下記カスタムコマンドをコメント解除すると、ra_gen/ディレクトリを再生成するようになる。当面必要ないと思われるのでコメントにしている。
 # Pre-build step: run RASC to generate project content if configuration.xml is changed
-# add_custom_command(
-#     OUTPUT
-#         configuration.xml.stamp
-#     COMMAND
-#         ${RASC_EXE_PATH}  -nosplash --launcher.suppressErrors --generate --devicefamily ra --compiler LLVMARM --toolchainversion ${CMAKE_C_COMPILER_VERSION} ${CMAKE_CURRENT_SOURCE_DIR}/configuration.xml
-#     COMMAND
-#         ${CMAKE_COMMAND} -E touch configuration.xml.stamp
-#     COMMENT
-#         "RASC pre-build to generate project content"
-#     DEPENDS
-#         ${CMAKE_CURRENT_SOURCE_DIR}/configuration.xml
-# )
+add_custom_command(
+    OUTPUT
+        configuration.xml.stamp
+    COMMAND
+        ${RASC_EXE_PATH}  -nosplash --launcher.suppressErrors --generate --devicefamily ra --compiler LLVMARM --toolchainversion ${CMAKE_C_COMPILER_VERSION} ${CMAKE_CURRENT_SOURCE_DIR}/configuration.xml
+    COMMAND
+        ${CMAKE_COMMAND} -E touch configuration.xml.stamp
+    COMMENT
+        "RASC pre-build to generate project content"
+    DEPENDS
+        ${CMAKE_CURRENT_SOURCE_DIR}/configuration.xml
+)
 
-# add_custom_target(generate_content ALL
-#   DEPENDS configuration.xml.stamp
-# )
+add_custom_target(generate_content ALL
+  DEPENDS configuration.xml.stamp
+)
 
-# add_dependencies(${PROJECT_NAME}.elf generate_content)
+add_dependencies(${PROJECT_NAME}.elf generate_content)
 
 
 # Post-build step: run RASC to generate the SmartBundle file

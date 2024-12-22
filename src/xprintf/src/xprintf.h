@@ -35,6 +35,7 @@ extern "C"
     void xsprintf(char *buff, const char *fmt, ...);
     void xfprintf(void (*func)(int), const char *fmt, ...);
     void put_dump(const void *buff, unsigned long addr, int len, size_t width);
+
 #endif
 
 #if XF_USE_INPUT

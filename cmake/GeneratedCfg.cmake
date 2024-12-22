@@ -13,6 +13,8 @@ SET(RASC_CMAKE_EXE_LINKER_FLAGS "-mfloat-abi=hard;--target=arm-none-eabi;-mcpu=c
 SET(RASC_CMAKE_DEFINITIONS "_RA_CORE=CM85;_RA_ORDINAL=1;_RENESAS_RA_")
 SET(RASC_ASM_FILES "${CMAKE_CURRENT_SOURCE_DIR}/ra_gen/*.asm")
 
+
+
 # ADD COMPILE FLAGS FOR GCC version >= 12.2
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU" AND CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL 12.2)
     list(INSERT RASC_CMAKE_C_FLAGS 0 "--param=min-pagesize=0;-Wno-format-truncation;-Wno-stringop-overflow")

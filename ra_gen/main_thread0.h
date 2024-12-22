@@ -1,16 +1,16 @@
 /* generated thread header file - do not edit */
-#ifndef BLINKY_THREAD_H_
-#define BLINKY_THREAD_H_
+#ifndef MAIN_THREAD0_H_
+#define MAIN_THREAD0_H_
 #include "bsp_api.h"
                 #include "FreeRTOS.h"
                 #include "task.h"
                 #include "semphr.h"
                 #include "hal_data.h"
                 #ifdef __cplusplus
-                extern "C" void blinky_thread_entry(void * pvParameters);
+                extern "C" void main_thread0_entry(void * pvParameters);
                 #else
-                extern void blinky_thread_entry(void * pvParameters);
+                extern void main_thread0_entry(void * pvParameters);
                 #endif
 FSP_HEADER
 FSP_FOOTER
-#endif /* BLINKY_THREAD_H_ */
+#endif /* MAIN_THREAD0_H_ */
