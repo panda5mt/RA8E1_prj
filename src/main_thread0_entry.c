@@ -29,7 +29,8 @@ void main_thread0_entry(void *pvParameters)
     /* TODO: add your own code here */
     while (1)
     {
-        xprintf(".");
+        uint32_t uptime_ms = xTaskGetTickCount() * portTICK_PERIOD_MS;
+        xprintf("upset time = %d[msec]\n", uptime_ms);
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
