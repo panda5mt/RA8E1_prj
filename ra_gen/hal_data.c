@@ -5,15 +5,15 @@ sci_b_uart_instance_ctrl_t     g_uart9_ctrl;
 
             sci_b_baud_setting_t               g_uart9_baud_setting =
             {
-                /* Baud rate calculated with 0.394% error. */ .baudrate_bits_b.abcse = 0, .baudrate_bits_b.abcs = 0, .baudrate_bits_b.bgdm = 1, .baudrate_bits_b.cks = 0, .baudrate_bits_b.brr = 1, .baudrate_bits_b.mddr = (uint8_t) 235, .baudrate_bits_b.brme = true
+                /* Baud rate calculated with 3.340% error. */ .baudrate_bits_b.abcse = 1, .baudrate_bits_b.abcs = 0, .baudrate_bits_b.bgdm = 0, .baudrate_bits_b.cks = 0, .baudrate_bits_b.brr = 6, .baudrate_bits_b.mddr = (uint8_t) 256, .baudrate_bits_b.brme = false
             };
 
             /** UART extended configuration for UARTonSCI HAL driver */
             const sci_b_uart_extended_cfg_t g_uart9_cfg_extend =
             {
                 .clock                = SCI_B_UART_CLOCK_INT,
-                .rx_edge_start          = SCI_B_UART_START_BIT_FALLING_EDGE,
-                .noise_cancel         = SCI_B_UART_NOISE_CANCELLATION_DISABLE,
+                .rx_edge_start          = SCI_B_UART_START_BIT_LOW_LEVEL,
+                .noise_cancel         = SCI_B_UART_NOISE_CANCELLATION_ENABLE,
                 .rx_fifo_trigger        = SCI_B_UART_RX_FIFO_TRIGGER_MAX,
                 .p_baud_setting         = &g_uart9_baud_setting,
                 .flow_control           = SCI_B_UART_FLOW_CONTROL_RTS,

@@ -41,8 +41,8 @@
     <node id="board.clock.pll2r.div" option="board.clock.pll2r.div.2"/>
     <node id="board.clock.pll2r.display" option="board.clock.pll2r.display.value"/>
     <node id="board.clock.clock.source" option="board.clock.clock.source.pll1p"/>
-    <node id="board.clock.clkout.source" option="board.clock.clkout.source.disabled"/>
-    <node id="board.clock.sciclk.source" option="board.clock.sciclk.source.moco"/>
+    <node id="board.clock.clkout.source" option="board.clock.clkout.source.moco"/>
+    <node id="board.clock.sciclk.source" option="board.clock.sciclk.source.hoco"/>
     <node id="board.clock.spiclk.source" option="board.clock.spiclk.source.hoco"/>
     <node id="board.clock.canfdclk.source" option="board.clock.canfdclk.source.disabled"/>
     <node id="board.clock.uck.source" option="board.clock.uck.source.disabled"/>
@@ -57,7 +57,7 @@
     <node id="board.clock.bclk.div" option="board.clock.bclk.div.12"/>
     <node id="board.clock.fclk.div" option="board.clock.fclk.div.6"/>
     <node id="board.clock.clkout.div" option="board.clock.clkout.div.1"/>
-    <node id="board.clock.sciclk.div" option="board.clock.sciclk.div.2"/>
+    <node id="board.clock.sciclk.div" option="board.clock.sciclk.div.4"/>
     <node id="board.clock.spiclk.div" option="board.clock.spiclk.div.4"/>
     <node id="board.clock.canfdclk.div" option="board.clock.canfdclk.div.8"/>
     <node id="board.clock.uck.div" option="board.clock.uck.div.5"/>

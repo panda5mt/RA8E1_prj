@@ -101,8 +101,8 @@ FSP Configuration
     PLL2Q Div /2
     PLL2R Div /2
     Clock Src: PLL1P
-    CLKOUT Disabled
-    SCICLK Src: MOCO
+    CLKOUT Src: MOCO
+    SCICLK Src: HOCO
     SPICLK Src: HOCO
     CANFDCLK Disabled
     UCK Disabled
@@ -117,7 +117,7 @@ FSP Configuration
     BCLK Div /12
     FCLK Div /6
     CLKOUT Div /1
-    SCICLK Div /2
+    SCICLK Div /4
     SPICLK Div /4
     CANFDCLK Div /8
     UCK Div /5
@@ -573,14 +573,14 @@ FSP Configuration
       General: Parity: None
       General: Stop Bits: 1bit
       Baud: Baud Rate: 115200
-      Baud: Baud Rate Modulation: Enabled
+      Baud: Baud Rate Modulation: Disabled
       Baud: Max Error (%): 5
       Flow Control: CTS/RTS Selection: Hardware RTS
       Flow Control: Software RTS Port: Disabled
       Flow Control: Software RTS Pin: Disabled
       Extra: Clock Source: Internal Clock
-      Extra: Start bit detection: Falling Edge
-      Extra: Noise Filter: Disable
+      Extra: Start bit detection: Low Level
+      Extra: Noise Filter: Enable
       Extra: Receive FIFO Trigger Level: Max
       Extra: RS-485: DE Pin: Disable
       Extra: RS-485: DE Pin Polarity: Active High
