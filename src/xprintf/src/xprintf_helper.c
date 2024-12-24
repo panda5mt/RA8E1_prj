@@ -15,7 +15,7 @@ void put_char_ra8(uint8_t ch)
         first_call = false;
     }
 
-    uint32_t len = sizeof(ch) / sizeof(uint8_t);
+    uint32_t len = (uint32_t)(sizeof(ch) / sizeof(uint8_t));
 
     R_SCI_B_UART_Write(&g_uart9_ctrl,
                        &ch,

@@ -6,13 +6,14 @@
         #endif
                 /* Number of interrupts allocated */
         #ifndef VECTOR_DATA_IRQ_COUNT
-        #define VECTOR_DATA_IRQ_COUNT    (4)
+        #define VECTOR_DATA_IRQ_COUNT    (5)
         #endif
         /* ISR prototypes */
         void sci_b_uart_rxi_isr(void);
         void sci_b_uart_txi_isr(void);
         void sci_b_uart_tei_isr(void);
         void sci_b_uart_eri_isr(void);
+        void ceu_isr(void);
 
         /* Vector table allocations */
         #define VECTOR_NUMBER_SCI9_RXI ((IRQn_Type) 0) /* SCI9 RXI (Receive data full) */
@@ -23,6 +24,8 @@
         #define SCI9_TEI_IRQn          ((IRQn_Type) 2) /* SCI9 TEI (Transmit end) */
         #define VECTOR_NUMBER_SCI9_ERI ((IRQn_Type) 3) /* SCI9 ERI (Receive error) */
         #define SCI9_ERI_IRQn          ((IRQn_Type) 3) /* SCI9 ERI (Receive error) */
+        #define VECTOR_NUMBER_CEU_CEUI ((IRQn_Type) 4) /* CEU CEUI (CEU interrupt) */
+        #define CEU_CEUI_IRQn          ((IRQn_Type) 4) /* CEU CEUI (CEU interrupt) */
         #ifdef __cplusplus
         }
         #endif

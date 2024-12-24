@@ -435,6 +435,9 @@ FSP Configuration
     DTC Support: Enable
     Flow Control Support: Enable
     
+  Module "Capture Engine Unit (r_ceu)"
+    Parameter Checking: Default (BSP)
+    
   FreeRTOS
     General: Custom FreeRTOSConfig.h: 
     General: Use Preemption: Enabled
@@ -592,10 +595,47 @@ FSP Configuration
       Interrupts: Transmit End Interrupt Priority: Priority 12
       Interrupts: Error Interrupt Priority: Priority 12
       
-  Thread "Main Thread"
+    Instance "g_ceu0 Capture Engine Unit (r_ceu)"
+      General: Name: g_ceu0
+      Input: Capture Mode: Data Synchronous Fetch
+      Input: Data Bus Specifications: Data Bus Size: 8-bit
+      Input: Data Bus Specifications: HSYNC Polarity: High
+      Input: Data Bus Specifications: VSYNC Polarity: High
+      Output: Byte Swapping: 
+      Output: Burst Transfer Mode: Transfer in 256-byte units
+      Interrupts: Callback: g_ceu0_user_callback
+      Interrupts: CEU Interrupt Priority: Priority 12
+      Interrupts: Selectable CEU Events: One-Frame Capture End Event: Enabled
+      Interrupts: Selectable CEU Events: Horizontal Sync Event: Disabled
+      Interrupts: Selectable CEU Events: Vertical Sync Event: Enabled
+      Interrupts: Selectable CEU Events: CRAM Buffer Overflow Error: Enabled
+      Interrupts: Selectable CEU Events: H-Sync Validation Error: Disabled
+      Interrupts: Selectable CEU Events: V-Sync Validation Error: Disabled
+      Interrupts: Selectable CEU Events: V-Sync Error: Enabled
+      Interrupts: Selectable CEU Events: No H-Sync error: Enabled
+      Interrupts: Selectable CEU Events: No V-Sync error: Enabled
+      Input: Capture Specifications: Horizontal capture resolution: 640
+      Input: Capture Specifications: Vertical capture resolution: 480
+      Input: Capture Specifications: Horizontal pixel offset: 0
+      Input: Capture Specifications: Vertical pixel offset: 0
+      Input: Capture Specifications: Sample Points: Data Sample Point: Rising edge of the camera clock
+      Input: Capture Specifications: Sample Points: H-Sync Sample Point: Rising edge of the camera clock
+      Input: Capture Specifications: Sample Points: V-Sync Sample Point: Rising edge of the camera clock
+      Output: Buffer: Data Enable Buffer Size: 0
+      
+  Thread "Main Thread0"
     Symbol: main_thread0
-    Name: Main Thread
+    Name: Main Thread0
     Stack size (bytes): 8192
+    Priority: 1
+    Thread Context: NULL
+    Memory Allocation: Static
+    Allocate Secure Context: Enable
+    
+  Thread "Main Thread1"
+    Symbol: main_thread1
+    Name: Main Thread1
+    Stack size (bytes): 1024
     Priority: 1
     Thread Context: NULL
     Memory Allocation: Static

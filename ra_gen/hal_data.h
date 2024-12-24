@@ -4,11 +4,21 @@
 #include <stdint.h>
 #include "bsp_api.h"
 #include "common_data.h"
+#include "r_capture_api.h"
+            #include "r_ceu.h"
 #include "r_sci_b_uart.h"
             #include "r_uart_api.h"
 #include "r_gpt.h"
 #include "r_timer_api.h"
 FSP_HEADER
+/* CEU on CAPTURE instance */
+            extern const capture_instance_t g_ceu0;
+            /* Access the CEU instance using these structures when calling API functions directly (::p_api is not used). */
+            extern ceu_instance_ctrl_t g_ceu0_ctrl;
+            extern const capture_cfg_t g_ceu0_cfg;
+            #ifndef g_ceu0_user_callback
+            void g_ceu0_user_callback(capture_callback_args_t * p_args);
+            #endif
 /** UART on SCI Instance. */
             extern const uart_instance_t      g_uart9;
 
