@@ -8,14 +8,13 @@
 void main_thread0_entry(void *pvParameters)
 {
     FSP_PARAMETER_NOT_USED(pvParameters);
-    R_BSP_MODULE_START(FSP_IP_SCI, 9);
-    R_SCI_B_UART_Open(&g_uart9_ctrl, &g_uart9_cfg);
 
-    xdev_out(put_char_ra8);
     //  init UART & printf
+    xdev_out(put_char_ra8);
 
+    //  init PWM(GPT)
     R_BSP_MODULE_START(FSP_IP_GPT, 3);
-    //  init PWM
+
     if (FSP_SUCCESS == R_GPT_Open(&g_timer3_ctrl, &g_timer3_cfg))
     {
         xprintf("GPT Open OK!\n");
