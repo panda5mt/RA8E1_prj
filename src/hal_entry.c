@@ -14,18 +14,20 @@ FSP_CPP_FOOTER
 void hal_entry(void)
 {
     /* TODO: add your own code here */
+
 #if BSP_TZ_SECURE_BUILD
     /* Enter non-secure code */
     R_BSP_NonSecureEnter();
 #endif
 }
 
-/*******************************************************************************************************************/ /**
-                                                                                                                       * This function is called at various points during the startup process.  This implementation uses the event that is
-                                                                                                                       * called right before main() to set up the pins.
-                                                                                                                       *
-                                                                                                                       * @param[in]  event    Where at in the start up process the code is currently at
-                                                                                                                       **********************************************************************************************************************/
+/*******************************************************************************************************************/
+/**
+ * This function is called at various points during the startup process.  This implementation uses the event that is
+ * called right before main() to set up the pins.
+ *
+ * @param[in]  event    Where at in the start up process the code is currently at
+ **********************************************************************************************************************/
 void R_BSP_WarmStart(bsp_warm_start_event_t event)
 {
     if (BSP_WARM_START_RESET == event)
