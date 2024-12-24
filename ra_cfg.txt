@@ -579,7 +579,7 @@ FSP Configuration
       Flow Control: Software RTS Port: Disabled
       Flow Control: Software RTS Pin: Disabled
       Extra: Clock Source: Internal Clock
-      Extra: Start bit detection: Low Level
+      Extra: Start bit detection: Falling Edge
       Extra: Noise Filter: Enable
       Extra: Receive FIFO Trigger Level: Max
       Extra: RS-485: DE Pin: Disable

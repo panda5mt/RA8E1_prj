@@ -12,7 +12,7 @@ sci_b_uart_instance_ctrl_t     g_uart9_ctrl;
             const sci_b_uart_extended_cfg_t g_uart9_cfg_extend =
             {
                 .clock                = SCI_B_UART_CLOCK_INT,
-                .rx_edge_start          = SCI_B_UART_START_BIT_LOW_LEVEL,
+                .rx_edge_start          = SCI_B_UART_START_BIT_FALLING_EDGE,
                 .noise_cancel         = SCI_B_UART_NOISE_CANCELLATION_ENABLE,
                 .rx_fifo_trigger        = SCI_B_UART_RX_FIFO_TRIGGER_MAX,
                 .p_baud_setting         = &g_uart9_baud_setting,
