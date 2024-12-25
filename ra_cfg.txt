@@ -438,6 +438,12 @@ FSP Configuration
   Module "Capture Engine Unit (r_ceu)"
     Parameter Checking: Default (BSP)
     
+  Module "I2C Communication Device (rm_comms_i2c)"
+    Parameter Checking: Default (BSP)
+    
+  Module "I2C Shared Bus (rm_comms_i2c)"
+    Parameter Checking: Default (BSP)
+    
   Module "I2C Master (r_iic_master)"
     Parameter Checking: Default (BSP)
     DTC on Transmission and Reception: Disabled
@@ -463,8 +469,8 @@ FSP Configuration
     General: Idle Should Yield: Enabled
     General: Use Task Notifications: Enabled
     General: Task Notification Array Entries: 1
-    General: Use Mutexes: Disabled
-    General: Use Recursive Mutexes: Disabled
+    General: Use Mutexes: Enabled
+    General: Use Recursive Mutexes: Enabled
     General: Use Counting Semaphores: Enabled
     Hooks: Check For Stack Overflow: Disabled
     General: Queue Registry Size: 10
@@ -628,21 +634,36 @@ FSP Configuration
       Input: Capture Specifications: Sample Points: V-Sync Sample Point: Rising edge of the camera clock
       Output: Buffer: Data Enable Buffer Size: 0
       
-    Instance "g_i2c_master1 I2C Master (r_iic_master)"
-      Name: g_i2c_master1
-      Channel: 1
-      Rate: Standard
-      Custom Rate (bps): 0
-      Rise Time (ns): 120
-      Fall Time (ns): 120
-      Duty Cycle (%): 50
-      Slave Address: 0x78
+    Instance "g_comms_i2c_device0 I2C Communication Device (rm_comms_i2c)"
+      Name: g_comms_i2c_device0
+      Semaphore Timeout (RTOS only): 0xFFFFFFFF
+      Slave Address: 0x00
       Address Mode: 7-Bit
-      Timeout Mode: Long Mode
-      Timeout during SCL Low: Disabled
-      Callback: g_i2c_callback
-      Interrupt Priority Level: Priority 12
+      Callback: comms_i2c_callback
       
+      Instance "g_comms_i2c_bus0 I2C Shared Bus (rm_comms_i2c)"
+        Name: g_comms_i2c_bus0
+        Bus Timeout: 0xFFFFFFFF
+        Semaphore for Blocking (RTOS only): Unuse
+        Recursive Mutex for Bus (RTOS only): Unuse
+        Channel: 1
+        Rate: Standard
+        
+        Instance "g_i2c_master0 I2C Master (r_iic_master)"
+          Name: g_i2c_master0
+          Channel: 1
+          Rate: Standard
+          Custom Rate (bps): 0
+          Rise Time (ns): 120
+          Fall Time (ns): 120
+          Duty Cycle (%): 50
+          Slave Address: 0x78
+          Address Mode: 7-Bit
+          Timeout Mode: Short Mode
+          Timeout during SCL Low: Enabled
+          Callback: rm_comms_i2c_callback
+          Interrupt Priority Level: Priority 12
+          
   Thread "Main Thread0"
     Symbol: main_thread0
     Name: Main Thread0

@@ -1,12 +1,384 @@
 
 #include "hal_data.h"
 #include "xprintf_helper.h"
+#include "xprintf.h"
+
 #include "sccb_if.h"
 
 #define NEED_XPRINTF_MESSAGE (1)
+fsp_err_t err;
+static const cam_reg_value_t ov5642_init_reg_tbl[] = {
+    // PLL
+    {0x31, 0x03, 0x93}, // Reset system
+    {0x30, 0x08, 0x82}, // output enable(1)
+    {0x30, 0x17, 0x7f}, // output enable(2)
+    {0x30, 0x18, 0xfc}, // HV offset setting
+    {0x38, 0x10, 0xc2}, // analog setting
+    {0x36, 0x15, 0xf0}, // block init
+    {0x30, 0x00, 0x00},
+    {0x30, 0x01, 0x00},
+    {0x30, 0x02, 0x00},
+    {0x30, 0x03, 0x00},
+    {0x30, 0x00, 0xf8},
+    {0x30, 0x01, 0x48},
+    {0x30, 0x02, 0x5c},
+    {0x30, 0x03, 0x02}, // block clock enable
+    {0x30, 0x04, 0x07},
+    {0x30, 0x05, 0xb7},
+    {0x30, 0x06, 0x43},
+    {0x30, 0x07, 0x37}, // PLL(FPS)
+    // 0x3011=0x08:15fps
+    // 0x3011=0x10:30fps
+    {0x30, 0x11, 0x08},
+    {0x30, 0x10, 0x10}, // VFIFO
+    {0x46, 0x0c, 0x22}, // unknown settings
+    {0x38, 0x15, 0x04}, // array control
+    {0x37, 0x0d, 0x06}, // analog settings
+    {0x37, 0x0c, 0xa0},
+    {0x36, 0x02, 0xfc},
+    {0x36, 0x12, 0xff},
+    {0x36, 0x34, 0xc0},
+    {0x36, 0x13, 0x00},
+    {0x36, 0x05, 0x7c}, // array control
+    {0x36, 0x21, 0x09}, // analog settings
+    {0x36, 0x22, 0x00},
+    {0x36, 0x04, 0x40},
+    {0x36, 0x03, 0xa7},
+    {0x36, 0x03, 0x27}, // black color level
+    {0x40, 0x00, 0x21},
+    {0x40, 0x1d, 0x02}, // analog settings
+    {0x36, 0x00, 0x54},
+    {0x36, 0x05, 0x04},
+    {0x36, 0x06, 0x3f}, // flicker
+    {0x3c, 0x01, 0x80}, // ISP
+    {0x50, 0x00, 0x4f}, // unknown
+    {0x50, 0x20, 0x04}, // AWB
+    {0x51, 0x81, 0x79},
+    {0x51, 0x82, 0x00},
+    {0x51, 0x85, 0x22},
+    {0x51, 0x97, 0x01}, // ISP
+    {0x50, 0x01, 0xff}, // UV adjust
+    {0x55, 0x00, 0x0a},
+    {0x55, 0x04, 0x00},
+    {0x55, 0x05, 0x7f}, // ISP
+    {0x50, 0x80, 0x08}, // MIPI
+    {0x30, 0x0e, 0x18}, // unknown
+    {0x46, 0x10, 0x00}, // DVP output
+    {0x47, 0x1d, 0x05},
+    {0x47, 0x08, 0x06}, // analog setting register
+    {0x37, 0x10, 0x10},
+    {0x36, 0x32, 0x41},
+    {0x37, 0x02, 0x40},
+    {0x36, 0x20, 0x37},
+    {0x36, 0x31, 0x01}, // output setting
+    {0x38, 0x08, 0x01},
+    {0x38, 0x09, 0x00},
+    {0x38, 0x0a, 0x01},
+    {0x38, 0x0b, 0x00}, // 0xe0;
+
+    // V-size:0x01e0 = 480, 0x0200 = 512, 0x0100 = 256
+    {0x38, 0x0e, 0x07},
+    {0x38, 0x0f, 0xd0}, // V-pixel:0x07d0 = 2000
+
+    // select output format
+    {0x50, 0x1f, 0x00}, // ISP Settings
+    {0x50, 0x00, 0x4f}, // output format settings
+    {0x51, 0x1e, 0x2a},
+    {0x50, 0x02, 0xf8},
+    {0x50, 0x1f, 0x01},
+    {0x43, 0x00, 0x61}, // 0x61=RGB565, 0xF9=YUV422(=Y8,U4,V4)
+    // AEC Settings
+    {0x35, 0x03, 0x07}, // VTS Manual
+    {0x35, 0x01, 0x73}, // shutter speed
+    {0x35, 0x02, 0x80}, // shutter speed
+    {0x35, 0x0b, 0x00}, // AGC Gain
+    {0x35, 0x03, 0x07}, // VTS manual
+    // unknown
+    {0x38, 0x24, 0x11}, // AEC Settings
+    {0x35, 0x01, 0x1e},
+    {0x35, 0x02, 0x80}, // AGC Settings
+    {0x35, 0x0b, 0x7f}, // output timing settings
+    {0x38, 0x0c, 0x0c},
+    {0x38, 0x0d, 0x80},
+    {0x38, 0x0e, 0x03},
+    {0x38, 0x0f, 0xe8}, // flicker-less settings
+    {0x3a, 0x0d, 0x04}, // 60Hz
+    {0x3a, 0x0e, 0x03}, // 50Hz
+    // timing and mirror and flip settings
+    // ov5642 default position (0 degrees)
+    // 0x3818 = 0xC1,
+    // 0x3621 = 0xC7,
+    // or if you use ov5642 upside down (turn 180 degrees)
+    // 0x3818 = 0xA1,
+    // 0x3621 = 0xA7,
+    {0x38, 0x18, 0xA1}, // analog settings register
+    {0x37, 0x05, 0xdb},
+    {0x37, 0x0a, 0x81},
+    // array control
+    {0x36, 0x21, 0xA7},
+    // output timing
+    {0x38, 0x01, 0x50}, // H-Start:80
+    {0x38, 0x03, 0x08}, // V-Start:8
+    // unknown
+    {0x38, 0x27, 0x08}, // HV offset settings
+    {0x38, 0x10, 0xc0}, // output timing
+    {0x38, 0x04, 0x05},
+    {0x38, 0x05, 0x00}, // Statistics Settings
+    {0x56, 0x82, 0x05},
+    {0x56, 0x83, 0x00}, // output timing
+    {0x38, 0x06, 0x03},
+    {0x38, 0x07, 0xc0}, // V-pixel:960
+    // Statistics Settings
+    {0x56, 0x86, 0x03},
+    {0x56, 0x87, 0xc0}, // V-pixel:960
+    // #102:AEC Settings
+    {0x3a, 0x00, 0x78},
+    {0x3a, 0x1a, 0x04},
+    {0x3a, 0x13, 0x30},
+    {0x3a, 0x18, 0x00},
+    {0x3a, 0x19, 0x7c}, // #107: flicker-less settings
+    {0x3a, 0x08, 0x12},
+    {0x3a, 0x09, 0xc0},
+    {0x3a, 0x0a, 0x0f},
+    {0x3a, 0x0b, 0xa0}, // #111: block clock enable
+    {0x30, 0x04, 0xff}, // #112: AEC Settings
+    {0x35, 0x0c, 0x07},
+    {0x35, 0x0d, 0xd0},
+    {0x35, 0x00, 0x00},
+    {0x35, 0x01, 0x00},
+    {0x35, 0x02, 0x00}, // #117: AGC/AEC Settings
+    {0x35, 0x0a, 0x00},
+    {0x35, 0x0b, 0x00},
+    {0x35, 0x03, 0x00}, // #120: De-Noise Settings
+    {0x52, 0x8a, 0x02},
+    {0x52, 0x8b, 0x04},
+    {0x52, 0x8c, 0x08},
+    {0x52, 0x8d, 0x08},
+    {0x52, 0x8e, 0x08},
+    {0x52, 0x8f, 0x10},
+    {0x52, 0x90, 0x10},
+    {0x52, 0x92, 0x00},
+    {0x52, 0x93, 0x02},
+    {0x52, 0x94, 0x00},
+    {0x52, 0x95, 0x02},
+    {0x52, 0x96, 0x00},
+    {0x52, 0x97, 0x02},
+    {0x52, 0x98, 0x00},
+    {0x52, 0x99, 0x02},
+    {0x52, 0x9a, 0x00},
+    {0x52, 0x9b, 0x02},
+    {0x52, 0x9c, 0x00},
+    {0x52, 0x9d, 0x02},
+    {0x52, 0x9e, 0x00},
+    {0x52, 0x9f, 0x02}, // #141: AEC Settings
+    {0x3a, 0x0f, 0x3c},
+    {0x3a, 0x10, 0x30},
+    {0x3a, 0x1b, 0x3c},
+    {0x3a, 0x1e, 0x30},
+    {0x3a, 0x11, 0x70},
+    {0x3a, 0x1f, 0x10}, // #147: system settings
+    {0x30, 0x30, 0x0b}, // #148: AEC Settings
+    {0x3a, 0x02, 0x00},
+    {0x3a, 0x03, 0x7d},
+    {0x3a, 0x04, 0x00},
+    {0x3a, 0x14, 0x00},
+    {0x3a, 0x15, 0x7d},
+    {0x3a, 0x16, 0x00},
+    {0x3a, 0x00, 0x7c}, // #155: flicker-less settings
+    {0x3a, 0x08, 0x09},
+    {0x3a, 0x09, 0x60},
+    {0x3a, 0x0a, 0x07},
+    {0x3a, 0x0b, 0xd0},
+    {0x3a, 0x0d, 0x08},
+    {0x3a, 0x0e, 0x06}, // #161: AWB settings
+    {0x51, 0x93, 0x70}, // #162: analog settings
+    {0x36, 0x20, 0x57},
+    {0x37, 0x03, 0x98},
+    {0x37, 0x04, 0x1c}, // #165: unknown settings
+    {0x58, 0x9b, 0x04},
+    {0x58, 0x9a, 0xc5}, // #167: De-Noise Settings
+    {0x52, 0x8a, 0x00},
+    {0x52, 0x8b, 0x02},
+    {0x52, 0x8c, 0x08},
+    {0x52, 0x8d, 0x10},
+    {0x52, 0x8e, 0x20},
+    {0x52, 0x8f, 0x28},
+    {0x52, 0x90, 0x30},
+    {0x52, 0x92, 0x00},
+    {0x52, 0x93, 0x00},
+    {0x52, 0x94, 0x00},
+    {0x52, 0x95, 0x02},
+    {0x52, 0x96, 0x00},
+    {0x52, 0x97, 0x08},
+    {0x52, 0x98, 0x00},
+    {0x52, 0x99, 0x10},
+    {0x52, 0x9a, 0x00},
+    {0x52, 0x9b, 0x20},
+    {0x52, 0x9c, 0x00},
+    {0x52, 0x9d, 0x28},
+    {0x52, 0x9e, 0x00},
+    {0x52, 0x9f, 0x30},
+    {0x52, 0x82, 0x00}, // #189: CIP
+    {0x53, 0x00, 0x00},
+    {0x53, 0x01, 0x20},
+    {0x53, 0x02, 0x00},
+    {0x53, 0x03, 0x7c},
+    {0x53, 0x0c, 0x00},
+    {0x53, 0x0d, 0x0c},
+    {0x53, 0x0e, 0x20},
+    {0x53, 0x0f, 0x80},
+    {0x53, 0x10, 0x20},
+    {0x53, 0x11, 0x80},
+    {0x53, 0x08, 0x20},
+    {0x53, 0x09, 0x40},
+    {0x53, 0x04, 0x00},
+    {0x53, 0x05, 0x30},
+    {0x53, 0x06, 0x00},
+    {0x53, 0x07, 0x80},
+    {0x53, 0x14, 0x08},
+    {0x53, 0x15, 0x20},
+    {0x53, 0x19, 0x30},
+    {0x53, 0x16, 0x10},
+    {0x53, 0x17, 0x08},
+    {0x53, 0x18, 0x02}, // #211: Color Matrix Settings
+    {0x53, 0x80, 0x01},
+    {0x53, 0x81, 0x00},
+    {0x53, 0x82, 0x00},
+    {0x53, 0x83, 0x4e},
+    {0x53, 0x84, 0x00},
+    {0x53, 0x85, 0x0f},
+    {0x53, 0x86, 0x00},
+    {0x53, 0x87, 0x00},
+    {0x53, 0x88, 0x01},
+    {0x53, 0x89, 0x15},
+    {0x53, 0x8a, 0x00},
+    {0x53, 0x8b, 0x31},
+    {0x53, 0x8c, 0x00},
+    {0x53, 0x8d, 0x00},
+    {0x53, 0x8e, 0x00},
+    {0x53, 0x8f, 0x0f},
+    {0x53, 0x90, 0x00},
+    {0x53, 0x91, 0xab},
+    {0x53, 0x92, 0x00},
+    {0x53, 0x93, 0xa2},
+    {0x53, 0x94, 0x08}, // #232: Gamma Setings
+    {0x54, 0x80, 0x14},
+    {0x54, 0x81, 0x21},
+    {0x54, 0x82, 0x36},
+    {0x54, 0x83, 0x57},
+    {0x54, 0x84, 0x65},
+    {0x54, 0x85, 0x71},
+    {0x54, 0x86, 0x7d},
+    {0x54, 0x87, 0x87},
+    {0x54, 0x88, 0x91},
+    {0x54, 0x89, 0x9a},
+    {0x54, 0x8a, 0xaa},
+    {0x54, 0x8b, 0xb8},
+    {0x54, 0x8c, 0xcd},
+    {0x54, 0x8d, 0xdd},
+    {0x54, 0x8e, 0xea},
+    {0x54, 0x8f, 0x10},
+    {0x54, 0x90, 0x05},
+    {0x54, 0x91, 0x00},
+    {0x54, 0x92, 0x04},
+    {0x54, 0x93, 0x20},
+    {0x54, 0x94, 0x03},
+    {0x54, 0x95, 0x60},
+    {0x54, 0x96, 0x02},
+    {0x54, 0x97, 0xb8},
+    {0x54, 0x98, 0x02},
+    {0x54, 0x99, 0x86},
+    {0x54, 0x9a, 0x02},
+    {0x54, 0x9b, 0x5b},
+    {0x54, 0x9c, 0x02},
+    {0x54, 0x9d, 0x3b},
+    {0x54, 0x9e, 0x02},
+    {0x54, 0x9f, 0x1c},
+    {0x54, 0xa0, 0x02},
+    {0x54, 0xa1, 0x04},
+    {0x54, 0xa2, 0x01},
+    {0x54, 0xa3, 0xed},
+    {0x54, 0xa4, 0x01},
+    {0x54, 0xa5, 0xc5},
+    {0x54, 0xa6, 0x01},
+    {0x54, 0xa7, 0xa5},
+    {0x54, 0xa8, 0x01},
+    {0x54, 0xa9, 0x6c},
+    {0x54, 0xaa, 0x01},
+    {0x54, 0xab, 0x41},
+    {0x54, 0xac, 0x01},
+    {0x54, 0xad, 0x20},
+    {0x54, 0xae, 0x00},
+    {0x54, 0xaf, 0x16}, // #280: AWB Settings
+    {0x34, 0x06, 0x00},
+    {0x51, 0x92, 0x04},
+    {0x51, 0x91, 0xf8},
+    {0x51, 0x93, 0xf0}, // R
+    {0x51, 0x94, 0x40}, // G
+    {0x51, 0x95, 0xf0}, // B
+    {0x51, 0x8d, 0x3d},
+    {0x51, 0x8f, 0x54},
+    {0x51, 0x8e, 0x3d},
+    {0x51, 0x90, 0x54},
+    {0x51, 0x8b, 0xc0},
+    {0x51, 0x8c, 0xbd},
+    {0x51, 0x87, 0x18},
+    {0x51, 0x88, 0x18},
+    {0x51, 0x89, 0x6e},
+    {0x51, 0x8a, 0x68},
+    {0x51, 0x86, 0x1c},
+    {0x51, 0x81, 0x50}, // #298: AWB Settings
+    {0x51, 0x84, 0x25},
+    {0x51, 0x82, 0x11},
+    {0x51, 0x83, 0x14},
+    {0x51, 0x84, 0x25},
+    {0x51, 0x85, 0x24}, // ISP Settings
+    {0x50, 0x25, 0x82}, // #304: AEC Settings
+    {0x3a, 0x0f, 0x7e},
+    {0x3a, 0x10, 0x72},
+    {0x3a, 0x1b, 0x80},
+    {0x3a, 0x1e, 0x70},
+    {0x3a, 0x11, 0xd0},
+    {0x3a, 0x1f, 0x40}, // #310: Digital effect
+    {0x55, 0x83, 0x40},
+    {0x55, 0x84, 0x40},
+    {0x55, 0x80, 0x02}, // #313: Analog settings register
+    {0x36, 0x33, 0x07},
+    {0x37, 0x02, 0x10},
+    {0x37, 0x03, 0xb2},
+    {0x37, 0x04, 0x18},
+    {0x37, 0x0b, 0x40}, // array control
+    {0x37, 0x0d, 0x02}, // #319: analog settings register
+    {0x36, 0x20, 0x52},
+#if 1 // pclk=6MHz
+    {0x30, 0x11, 0x08},
+    {0x30, 0x12, 0x00},
+    {0x30, 0x10, 0x70},
+    {0x46, 0x0c, 0x22},
+    {0x38, 0x0c, 0x0c},
+    {0x38, 0x0d, 0x80},
+    {0x3a, 0x00, 0x78},
+    {0x3a, 0x08, 0x09},
+    {0x3a, 0x09, 0x60},
+    {0x3a, 0x0a, 0x07},
+    {0x3a, 0x0b, 0xd0},
+    {0x3a, 0x0d, 0x08},
+    {0x3a, 0x0e, 0x06},
+#endif
+    // VSYNC Active-Low & Gate PCLK under VSYNC & HREF
+    {0x47, 0x40, 0x2d},
+    {0xFF, 0xFF, 0xFF}, // END MARKER
+};
+
+i2c_master_event_t g_i2c_callback_event;
+
+void g_i2c_callback(i2c_master_callback_args_t *p_args)
+{
+    g_i2c_callback_event = p_args->event;
+}
 
 // Write n byte to the specified register
-int32_t reg_write(uint8_t addr, // Camera's hw address
+int32_t reg_write(uint32_t addr, // Camera's hw address
                   uint8_t *buf,
                   const uint8_t nbytes)
 {
@@ -25,2197 +397,54 @@ int32_t reg_write(uint8_t addr, // Camera's hw address
     {
         msg[i] = buf[i];
     }
-    xprintf("send address\n");
+
     // Write device address over I2C
-    if (FSP_SUCCESS == R_IIC_MASTER_Write(&g_i2c_master1_ctrl, &addr, 1, true))
-    {
-#if NEED_XPRINTF_MESSAGE
-        xprintf("address sent OK\n");
-    }
-    else
-    {
-        xprintf("address error!\n");
-#endif
-    }
+    // R_IIC_MASTER_SlaveAddressSet(&g_i2c_master1_ctrl, addr, I2C_MASTER_ADDR_MODE_7BIT);
+
+    /* Send data to I2C slave */
+    g_i2c_callback_event = I2C_MASTER_EVENT_ABORTED;
 
     // Write data to register(s) over I2C
-    if (FSP_SUCCESS == R_IIC_MASTER_Write(&g_i2c_master1_ctrl, msg, nbytes, false))
-    {
-#if NEED_XPRINTF_MESSAGE
-        xprintf("data sent OK\n");
-    }
-    else
-    {
-        xprintf("data sent error!\n");
-#endif
-    }
+    err = R_IIC_MASTER_Write(&g_i2c_master1_ctrl, msg, nbytes, false);
+    /* Handle any errors. This function should be defined by the user. */
+    assert(FSP_SUCCESS == err);
+
+    // wait until complete;
+    while ((I2C_MASTER_EVENT_TX_COMPLETE != g_i2c_callback_event))
+        ;
+
     num_bytes_read = nbytes;
     return num_bytes_read;
 }
 
-void sccb_init(uint8_t device_is)
+void sccb_init(void)
 {
+    uint8_t sccb_dat[3];
+    const cam_reg_value_t *reg_tbl = ov5642_init_reg_tbl;
     uint8_t CAM_ADDR = 0x00;
 
     R_BSP_MODULE_START(FSP_IP_IIC, 1);
-    if (FSP_SUCCESS == R_IIC_MASTER_Open(&g_i2c_master1_ctrl, &g_i2c_master1_cfg))
+    err = R_IIC_MASTER_Open(&g_i2c_master1_ctrl, &g_i2c_master1_cfg);
+    /* Handle any errors. This function should be defined by the user. */
+    assert(FSP_SUCCESS == err);
+
+    CAM_ADDR = (0x78 >> 1U);
+    uint16_t i = 0;
+    while (1)
     {
-#if NEED_XPRINTF_MESSAGE
-        xprintf("SCCB(I2C) master Init OK\n");
-#endif
-    }
+        sccb_dat[0] = reg_tbl[i].reg_high;
+        sccb_dat[1] = reg_tbl[i].reg_low;
+        sccb_dat[2] = reg_tbl[i].val;
 
-    uint8_t sccb_dat[3];
-    switch (device_is)
-    {
-
-    case DEV_OV2640:
-        CAM_ADDR = (0x60 >> 1);
-
-        sccb_dat[0] = 0xff;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Device control register list Table 12 */
-        sccb_dat[0] = 0x2c;
-        sccb_dat[1] = 0xff;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Reserved                              */
-        sccb_dat[0] = 0x2e;
-        sccb_dat[1] = 0xdf;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Reserved                              */
-        sccb_dat[0] = 0xff;
-        sccb_dat[1] = 0x01;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Device control register list Table 13 */
-        sccb_dat[0] = 0x3c;
-        sccb_dat[1] = 0x32;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Reserved                              */
-        sccb_dat[0] = 0x11;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Clock Rate Control                    */
-        sccb_dat[0] = 0x09;
-        sccb_dat[1] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Common control 2                      */
-        sccb_dat[0] = 0x04;
-        sccb_dat[1] = 0x28;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Mirror                                */
-        sccb_dat[0] = 0x13;
-        sccb_dat[1] = 0xe5;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Common control 8                      */
-        sccb_dat[0] = 0x14;
-        sccb_dat[1] = 0x48;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Common control 9                      */
-        sccb_dat[0] = 0x2c;
-        sccb_dat[1] = 0x0c;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Reserved                              */
-        sccb_dat[0] = 0x33;
-        sccb_dat[1] = 0x78;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Reserved                              */
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x33;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Reserved                              */
-        sccb_dat[0] = 0x3b;
-        sccb_dat[1] = 0xfB;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Reserved                              */
-        sccb_dat[0] = 0x3e;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Reserved                              */
-        sccb_dat[0] = 0x43;
-        sccb_dat[1] = 0x11;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Reserved                              */
-        sccb_dat[0] = 0x16;
-        sccb_dat[1] = 0x10;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Reserved                              */
-        sccb_dat[0] = 0x4a;
-        sccb_dat[1] = 0x81;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Reserved                              */
-        sccb_dat[0] = 0x21;
-        sccb_dat[1] = 0x99;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Reserved                              */
-        sccb_dat[0] = 0x24;
-        sccb_dat[1] = 0x40;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Luminance signal High range           */
-        sccb_dat[0] = 0x25;
-        sccb_dat[1] = 0x38;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Luminance signal low range            */
-        sccb_dat[0] = 0x26;
-        sccb_dat[1] = 0x82;
-        reg_write(CAM_ADDR, sccb_dat, 2); /*                                       */
-        sccb_dat[0] = 0x5c;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Reserved                              */
-        sccb_dat[0] = 0x63;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Reserved                              */
-        sccb_dat[0] = 0x46;
-        sccb_dat[1] = 0x3f;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Frame length adjustment               */
-        sccb_dat[0] = 0x0c;
-        sccb_dat[1] = 0x3c;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Common control 3                      */
-        sccb_dat[0] = 0x61;
-        sccb_dat[1] = 0x70;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Histogram algo low level              */
-        sccb_dat[0] = 0x62;
-        sccb_dat[1] = 0x80;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Histogram algo high level             */
-        sccb_dat[0] = 0x7c;
-        sccb_dat[1] = 0x05;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Reserved                              */
-        sccb_dat[0] = 0x20;
-        sccb_dat[1] = 0x80;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Reserved                              */
-        sccb_dat[0] = 0x28;
-        sccb_dat[1] = 0x30;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Reserved                              */
-        sccb_dat[0] = 0x6c;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Reserved                              */
-        sccb_dat[0] = 0x6d;
-        sccb_dat[1] = 0x80;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Reserved                              */
-        sccb_dat[0] = 0x6e;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Reserved                              */
-        sccb_dat[0] = 0x70;
-        sccb_dat[1] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Reserved                              */
-        sccb_dat[0] = 0x71;
-        sccb_dat[1] = 0x94;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Reserved                              */
-        sccb_dat[0] = 0x73;
-        sccb_dat[1] = 0xc1;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Reserved                              */
-        sccb_dat[0] = 0x3d;
-        sccb_dat[1] = 0x34;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Reserved                              */
-        sccb_dat[0] = 0x5a;
-        sccb_dat[1] = 0x57;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Reserved                              */
-        sccb_dat[0] = 0x12;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Common control 7                      */
-        sccb_dat[0] = 0x11;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Clock Rate Control                   2*/
-        sccb_dat[0] = 0x17;
-        sccb_dat[1] = 0x11;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Horiz window start MSB 8bits          */
-        sccb_dat[0] = 0x18;
-        sccb_dat[1] = 0x75;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Horiz window end MSB 8bits            */
-        sccb_dat[0] = 0x19;
-        sccb_dat[1] = 0x01;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Vert window line start MSB 8bits      */
-        sccb_dat[0] = 0x1a;
-        sccb_dat[1] = 0x97;
-        reg_write(CAM_ADDR, sccb_dat, 2); /* Vert window line end MSB 8bits        */
-        sccb_dat[0] = 0x32;
-        sccb_dat[1] = 0x36;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x03;
-        sccb_dat[1] = 0x0f;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x37;
-        sccb_dat[1] = 0x40;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x4f;
-        sccb_dat[1] = 0xbb;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x50;
-        sccb_dat[1] = 0x9c;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x5a;
-        sccb_dat[1] = 0x57;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x6d;
-        sccb_dat[1] = 0x80;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x6d;
-        sccb_dat[1] = 0x38;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x39;
-        sccb_dat[1] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x35;
-        sccb_dat[1] = 0x88;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x22;
-        sccb_dat[1] = 0x0a;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x37;
-        sccb_dat[1] = 0x40;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x23;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x34;
-        sccb_dat[1] = 0xa0;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x36;
-        sccb_dat[1] = 0x1a;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x06;
-        sccb_dat[1] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x07;
-        sccb_dat[1] = 0xc0;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x0d;
-        sccb_dat[1] = 0xb7;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x0e;
-        sccb_dat[1] = 0x01;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x4c;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xff;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xe5;
-        sccb_dat[1] = 0x7f;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xf9;
-        sccb_dat[1] = 0xc0;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x41;
-        sccb_dat[1] = 0x24;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xe0;
-        sccb_dat[1] = 0x14;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x76;
-        sccb_dat[1] = 0xff;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x33;
-        sccb_dat[1] = 0xa0;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x42;
-        sccb_dat[1] = 0x20;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x43;
-        sccb_dat[1] = 0x18;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x4c;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x87;
-        sccb_dat[1] = 0xd0;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x88;
-        sccb_dat[1] = 0x3f;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xd7;
-        sccb_dat[1] = 0x03;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xd9;
-        sccb_dat[1] = 0x10;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xd3;
-        sccb_dat[1] = 0x82;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xc8;
-        sccb_dat[1] = 0x08;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xc9;
-        sccb_dat[1] = 0x80;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x7d;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x7c;
-        sccb_dat[1] = 0x03;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x7d;
-        sccb_dat[1] = 0x48;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x7c;
-        sccb_dat[1] = 0x08;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x7d;
-        sccb_dat[1] = 0x20;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x7d;
-        sccb_dat[1] = 0x10;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x7d;
-        sccb_dat[1] = 0x0e;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x90;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x91;
-        sccb_dat[1] = 0x0e;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x91;
-        sccb_dat[1] = 0x1a;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x91;
-        sccb_dat[1] = 0x31;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x91;
-        sccb_dat[1] = 0x5a;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x91;
-        sccb_dat[1] = 0x69;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x91;
-        sccb_dat[1] = 0x75;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x91;
-        sccb_dat[1] = 0x7e;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x91;
-        sccb_dat[1] = 0x88;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x91;
-        sccb_dat[1] = 0x8f;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x91;
-        sccb_dat[1] = 0x96;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x91;
-        sccb_dat[1] = 0xa3;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x91;
-        sccb_dat[1] = 0xaf;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x91;
-        sccb_dat[1] = 0xc4;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x91;
-        sccb_dat[1] = 0xd7;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x91;
-        sccb_dat[1] = 0xe8;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x91;
-        sccb_dat[1] = 0x20;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x92;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x93;
-        sccb_dat[1] = 0x06;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x93;
-        sccb_dat[1] = 0xe3;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x93;
-        sccb_dat[1] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x93;
-        sccb_dat[1] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x93;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x93;
-        sccb_dat[1] = 0x04;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x93;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x93;
-        sccb_dat[1] = 0x03;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x93;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x93;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x93;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x93;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x93;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x93;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x93;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x96;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x97;
-        sccb_dat[1] = 0x08;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x97;
-        sccb_dat[1] = 0x19;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x97;
-        sccb_dat[1] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x97;
-        sccb_dat[1] = 0x0c;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x97;
-        sccb_dat[1] = 0x24;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x97;
-        sccb_dat[1] = 0x30;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x97;
-        sccb_dat[1] = 0x28;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x97;
-        sccb_dat[1] = 0x26;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x97;
-        sccb_dat[1] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x97;
-        sccb_dat[1] = 0x98;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x97;
-        sccb_dat[1] = 0x80;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x97;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x97;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xc3;
-        sccb_dat[1] = 0xef;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xff;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xba;
-        sccb_dat[1] = 0xdc;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xbb;
-        sccb_dat[1] = 0x08;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xb6;
-        sccb_dat[1] = 0x24;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xb8;
-        sccb_dat[1] = 0x33;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xb7;
-        sccb_dat[1] = 0x20;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xb9;
-        sccb_dat[1] = 0x30;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xb3;
-        sccb_dat[1] = 0xb4;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xb4;
-        sccb_dat[1] = 0xca;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xb5;
-        sccb_dat[1] = 0x43;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xb0;
-        sccb_dat[1] = 0x5c;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xb1;
-        sccb_dat[1] = 0x4f;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xb2;
-        sccb_dat[1] = 0x06;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xc7;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xc6;
-        sccb_dat[1] = 0x51;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xc5;
-        sccb_dat[1] = 0x11;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xc4;
-        sccb_dat[1] = 0x9c;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xbf;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xbc;
-        sccb_dat[1] = 0x64;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xa6;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xa7;
-        sccb_dat[1] = 0x1e;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xa7;
-        sccb_dat[1] = 0x6b;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xa7;
-        sccb_dat[1] = 0x47;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xa7;
-        sccb_dat[1] = 0x33;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xa7;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xa7;
-        sccb_dat[1] = 0x23;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xa7;
-        sccb_dat[1] = 0x2e;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xa7;
-        sccb_dat[1] = 0x85;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xa7;
-        sccb_dat[1] = 0x42;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xa7;
-        sccb_dat[1] = 0x33;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xa7;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xa7;
-        sccb_dat[1] = 0x23;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xa7;
-        sccb_dat[1] = 0x1b;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xa7;
-        sccb_dat[1] = 0x74;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xa7;
-        sccb_dat[1] = 0x42;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xa7;
-        sccb_dat[1] = 0x33;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xa7;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xa7;
-        sccb_dat[1] = 0x23;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xc0;
-        sccb_dat[1] = 0xc8;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xc1;
-        sccb_dat[1] = 0x96;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x8c;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x86;
-        sccb_dat[1] = 0x3d;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x50;
-        sccb_dat[1] = 0x92;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x90;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x2c;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x55;
-        sccb_dat[1] = 0x88;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x5a;
-        sccb_dat[1] = 0x50;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x5b;
-        sccb_dat[1] = 0x3c;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x5c;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xd3;
-        sccb_dat[1] = 0x04;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x7f;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xDA;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xe5;
-        sccb_dat[1] = 0x1f;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xe1;
-        sccb_dat[1] = 0x67;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xe0;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xdd;
-        sccb_dat[1] = 0x7f;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x05;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xff;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xe0;
-        sccb_dat[1] = 0x04;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xc0;
-        sccb_dat[1] = 0xc8;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xc1;
-        sccb_dat[1] = 0x96;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x86;
-        sccb_dat[1] = 0x3d;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x50;
-        sccb_dat[1] = 0x92;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x90;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x2c;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x55;
-        sccb_dat[1] = 0x88;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x57;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x5a;
-        sccb_dat[1] = 0x50;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x5b;
-        sccb_dat[1] = 0x3c;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x5c;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xd3;
-        sccb_dat[1] = 0x04;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xe0;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xFF;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x05;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xDA;
-        sccb_dat[1] = 0x08;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xDA;
-        sccb_dat[1] = 0x08;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x98;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x99;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x00;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xff;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xe0;
-        sccb_dat[1] = 0x04;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xc0;
-        sccb_dat[1] = 0xc8;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xc1;
-        sccb_dat[1] = 0x96;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x86;
-        sccb_dat[1] = 0x3d;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x50;
-        sccb_dat[1] = 0x89;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x90;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x2c;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x55;
-        sccb_dat[1] = 0x88;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x57;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x5a;
-        sccb_dat[1] = 0xA0;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x5b;
-        sccb_dat[1] = 0x78;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0x5c;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xd3;
-        sccb_dat[1] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        sccb_dat[0] = 0xe0;
-        sccb_dat[1] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 2);
-        break;
-
-    case DEV_OV5642:
-
-        CAM_ADDR = (0x78 >> 1);
-        // PLL
-        sccb_dat[0] = 0x31;
-        sccb_dat[1] = 0x03;
-        sccb_dat[2] = 0x93;
-        return;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // Reset system
-        sccb_dat[0] = 0x30;
-        sccb_dat[1] = 0x08;
-        sccb_dat[2] = 0x82;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // output enable(1)
-        sccb_dat[0] = 0x30;
-        sccb_dat[1] = 0x17;
-        sccb_dat[2] = 0x7f;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // output enable(2)
-        sccb_dat[0] = 0x30;
-        sccb_dat[1] = 0x18;
-        sccb_dat[2] = 0xfc;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // HV offset setting
-        sccb_dat[0] = 0x38;
-        sccb_dat[1] = 0x10;
-        sccb_dat[2] = 0xc2;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // analog setting
-        sccb_dat[0] = 0x36;
-        sccb_dat[1] = 0x15;
-        sccb_dat[2] = 0xf0;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // block init
-        sccb_dat[0] = 0x30;
-        sccb_dat[1] = 0x00;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x30;
-        sccb_dat[1] = 0x01;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x30;
-        sccb_dat[1] = 0x02;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x30;
-        sccb_dat[1] = 0x03;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x30;
-        sccb_dat[1] = 0x00;
-        sccb_dat[2] = 0xf8;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x30;
-        sccb_dat[1] = 0x01;
-        sccb_dat[2] = 0x48;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x30;
-        sccb_dat[1] = 0x02;
-        sccb_dat[2] = 0x5c;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x30;
-        sccb_dat[1] = 0x03;
-        sccb_dat[2] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // block clock enable
-        sccb_dat[0] = 0x30;
-        sccb_dat[1] = 0x04;
-        sccb_dat[2] = 0x07;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x30;
-        sccb_dat[1] = 0x05;
-        sccb_dat[2] = 0xb7;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x30;
-        sccb_dat[1] = 0x06;
-        sccb_dat[2] = 0x43;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x30;
-        sccb_dat[1] = 0x07;
-        sccb_dat[2] = 0x37;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // PLL(FPS)
-        // 0x3011=0x08:15fps
-        // 0x3011=0x10:30fps
-        sccb_dat[0] = 0x30;
-        sccb_dat[1] = 0x11;
-        sccb_dat[2] = 0x08;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x30;
-        sccb_dat[1] = 0x10;
-        sccb_dat[2] = 0x10;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // VFIFO
-        sccb_dat[0] = 0x46;
-        sccb_dat[1] = 0x0c;
-        sccb_dat[2] = 0x22;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // unknown settings
-        sccb_dat[0] = 0x38;
-        sccb_dat[1] = 0x15;
-        sccb_dat[2] = 0x04;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // array control
-        sccb_dat[0] = 0x37;
-        sccb_dat[1] = 0x0d;
-        sccb_dat[2] = 0x06;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // analog settings
-        sccb_dat[0] = 0x37;
-        sccb_dat[1] = 0x0c;
-        sccb_dat[2] = 0xa0;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x36;
-        sccb_dat[1] = 0x02;
-        sccb_dat[2] = 0xfc;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x36;
-        sccb_dat[1] = 0x12;
-        sccb_dat[2] = 0xff;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x36;
-        sccb_dat[1] = 0x34;
-        sccb_dat[2] = 0xc0;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x36;
-        sccb_dat[1] = 0x13;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x36;
-        sccb_dat[1] = 0x05;
-        sccb_dat[2] = 0x7c;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // array control
-        sccb_dat[0] = 0x36;
-        sccb_dat[1] = 0x21;
-        sccb_dat[2] = 0x09;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // analog settings
-        sccb_dat[0] = 0x36;
-        sccb_dat[1] = 0x22;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x36;
-        sccb_dat[1] = 0x04;
-        sccb_dat[2] = 0x40;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x36;
-        sccb_dat[1] = 0x03;
-        sccb_dat[2] = 0xa7;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x36;
-        sccb_dat[1] = 0x03;
-        sccb_dat[2] = 0x27;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // black color level
-        sccb_dat[0] = 0x40;
-        sccb_dat[1] = 0x00;
-        sccb_dat[2] = 0x21;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x40;
-        sccb_dat[1] = 0x1d;
-        sccb_dat[2] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // analog settings
-        sccb_dat[0] = 0x36;
-        sccb_dat[1] = 0x00;
-        sccb_dat[2] = 0x54;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x36;
-        sccb_dat[1] = 0x05;
-        sccb_dat[2] = 0x04;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x36;
-        sccb_dat[1] = 0x06;
-        sccb_dat[2] = 0x3f;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // flicker
-        sccb_dat[0] = 0x3c;
-        sccb_dat[1] = 0x01;
-        sccb_dat[2] = 0x80;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // ISP
-        sccb_dat[0] = 0x50;
-        sccb_dat[1] = 0x00;
-        sccb_dat[2] = 0x4f;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // unknown
-        sccb_dat[0] = 0x50;
-        sccb_dat[1] = 0x20;
-        sccb_dat[2] = 0x04;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // AWB
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x81;
-        sccb_dat[2] = 0x79;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x82;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x85;
-        sccb_dat[2] = 0x22;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x97;
-        sccb_dat[2] = 0x01;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // ISP
-        sccb_dat[0] = 0x50;
-        sccb_dat[1] = 0x01;
-        sccb_dat[2] = 0xff;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // UV adjust
-        sccb_dat[0] = 0x55;
-        sccb_dat[1] = 0x00;
-        sccb_dat[2] = 0x0a;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x55;
-        sccb_dat[1] = 0x04;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x55;
-        sccb_dat[1] = 0x05;
-        sccb_dat[2] = 0x7f;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // ISP
-        sccb_dat[0] = 0x50;
-        sccb_dat[1] = 0x80;
-        sccb_dat[2] = 0x08;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // MIPI
-        sccb_dat[0] = 0x30;
-        sccb_dat[1] = 0x0e;
-        sccb_dat[2] = 0x18;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // unknown
-        sccb_dat[0] = 0x46;
-        sccb_dat[1] = 0x10;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // DVP output
-        sccb_dat[0] = 0x47;
-        sccb_dat[1] = 0x1d;
-        sccb_dat[2] = 0x05;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x47;
-        sccb_dat[1] = 0x08;
-        sccb_dat[2] = 0x06;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // analog setting register
-        sccb_dat[0] = 0x37;
-        sccb_dat[1] = 0x10;
-        sccb_dat[2] = 0x10;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x36;
-        sccb_dat[1] = 0x32;
-        sccb_dat[2] = 0x41;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x37;
-        sccb_dat[1] = 0x02;
-        sccb_dat[2] = 0x40;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x36;
-        sccb_dat[1] = 0x20;
-        sccb_dat[2] = 0x37;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x36;
-        sccb_dat[1] = 0x31;
-        sccb_dat[2] = 0x01;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // output setting
-        sccb_dat[0] = 0x38;
-        sccb_dat[1] = 0x08;
-        sccb_dat[2] = 0x01;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x38;
-        sccb_dat[1] = 0x09;
-        sccb_dat[2] = 0x00; // 0x80; // H-size:0x0280 = 640, 0x0200 = 512, 0x0100 = 256
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x38;
-        sccb_dat[1] = 0x0a;
-        sccb_dat[2] = 0x01;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x38;
-        sccb_dat[1] = 0x0b;
-        sccb_dat[2] = 0x00; // 0xe0; // V-size:0x01e0 = 480, 0x0200 = 512, 0x0100 = 256
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x38;
-        sccb_dat[1] = 0x0e;
-        sccb_dat[2] = 0x07;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x38;
-        sccb_dat[1] = 0x0f;
-        sccb_dat[2] = 0xd0; // V-pixel:0x07d0 = 2000
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // select output format
-        sccb_dat[0] = 0x50;
-        sccb_dat[1] = 0x1f;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // ISP Settings
-        sccb_dat[0] = 0x50;
-        sccb_dat[1] = 0x00;
-        sccb_dat[2] = 0x4f;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // output format settings
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x1e;
-        sccb_dat[2] = 0x2a;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x50;
-        sccb_dat[1] = 0x02;
-        sccb_dat[2] = 0xf8;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x50;
-        sccb_dat[1] = 0x1f;
-        sccb_dat[2] = 0x01;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x43;
-        sccb_dat[1] = 0x00;
-        sccb_dat[2] = 0x61; // 0x61=RGB565, 0xF9=YUV422(=Y8,U4,V4)
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // AEC Settings
-        sccb_dat[0] = 0x35;
-        sccb_dat[1] = 0x03;
-        sccb_dat[2] = 0x07; // VTS Manual
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x35;
-        sccb_dat[1] = 0x01;
-        sccb_dat[2] = 0x73; // shutter speed
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x35;
-        sccb_dat[1] = 0x02;
-        sccb_dat[2] = 0x80; // shutter speed
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x35;
-        sccb_dat[1] = 0x0b;
-        sccb_dat[2] = 0x00; // AGC Gain
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x35;
-        sccb_dat[1] = 0x03;
-        sccb_dat[2] = 0x07; // VTS manual
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // unknown
-        sccb_dat[0] = 0x38;
-        sccb_dat[1] = 0x24;
-        sccb_dat[2] = 0x11;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // AEC Settings
-        sccb_dat[0] = 0x35;
-        sccb_dat[1] = 0x01;
-        sccb_dat[2] = 0x1e;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x35;
-        sccb_dat[1] = 0x02;
-        sccb_dat[2] = 0x80;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // AGC Settings
-        sccb_dat[0] = 0x35;
-        sccb_dat[1] = 0x0b;
-        sccb_dat[2] = 0x7f;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // output timing settings
-        sccb_dat[0] = 0x38;
-        sccb_dat[1] = 0x0c;
-        sccb_dat[2] = 0x0c;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x38;
-        sccb_dat[1] = 0x0d;
-        sccb_dat[2] = 0x80;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x38;
-        sccb_dat[1] = 0x0e;
-        sccb_dat[2] = 0x03;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x38;
-        sccb_dat[1] = 0x0f;
-        sccb_dat[2] = 0xe8;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // flicker-less settings
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x0d;
-        sccb_dat[2] = 0x04; // 60Hz
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x0e;
-        sccb_dat[2] = 0x03; // 50Hz
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // timing and mirror and flip settings
-        // ov5642 default position (0 degrees)
-        // 0x3818 = 0xC1;
-        // 0x3621 = 0xC7;
-        // or if you use ov5642 upside down (turn 180 degrees)
-        // 0x3818 = 0xA1;
-        // 0x3621 = 0xA7;
-        sccb_dat[0] = 0x38;
-        sccb_dat[1] = 0x18;
-        sccb_dat[2] = 0xA1;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // analog settings register
-        sccb_dat[0] = 0x37;
-        sccb_dat[1] = 0x05;
-        sccb_dat[2] = 0xdb;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x37;
-        sccb_dat[1] = 0x0a;
-        sccb_dat[2] = 0x81;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // array control
-        sccb_dat[0] = 0x36;
-        sccb_dat[1] = 0x21;
-        sccb_dat[2] = 0xA7;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // output timing
-        sccb_dat[0] = 0x38;
-        sccb_dat[1] = 0x01;
-        sccb_dat[2] = 0x50; // H-Start:80
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x38;
-        sccb_dat[1] = 0x03;
-        sccb_dat[2] = 0x08; // V-Start:8
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // unknown
-        sccb_dat[0] = 0x38;
-        sccb_dat[1] = 0x27;
-        sccb_dat[2] = 0x08;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // HV offset settings
-        sccb_dat[0] = 0x38;
-        sccb_dat[1] = 0x10;
-        sccb_dat[2] = 0xc0;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // output timing
-        sccb_dat[0] = 0x38;
-        sccb_dat[1] = 0x04;
-        sccb_dat[2] = 0x05;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x38;
-        sccb_dat[1] = 0x05;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // Statistics Settings
-        sccb_dat[0] = 0x56;
-        sccb_dat[1] = 0x82;
-        sccb_dat[2] = 0x05;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x56;
-        sccb_dat[1] = 0x83;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // output timing
-        sccb_dat[0] = 0x38;
-        sccb_dat[1] = 0x06;
-        sccb_dat[2] = 0x03;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x38;
-        sccb_dat[1] = 0x07;
-        sccb_dat[2] = 0xc0; // V-pixel:960
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // Statistics Settings
-        sccb_dat[0] = 0x56;
-        sccb_dat[1] = 0x86;
-        sccb_dat[2] = 0x03;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x56;
-        sccb_dat[1] = 0x87;
-        sccb_dat[2] = 0xc0; // V-pixel:960
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // #102:AEC Settings
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x00;
-        sccb_dat[2] = 0x78;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x1a;
-        sccb_dat[2] = 0x04;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x13;
-        sccb_dat[2] = 0x30;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x18;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x19;
-        sccb_dat[2] = 0x7c;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // #107: flicker-less settings
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x08;
-        sccb_dat[2] = 0x12;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x09;
-        sccb_dat[2] = 0xc0;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x0a;
-        sccb_dat[2] = 0x0f;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x0b;
-        sccb_dat[2] = 0xa0;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // #111: block clock enable
-        sccb_dat[0] = 0x30;
-        sccb_dat[1] = 0x04;
-        sccb_dat[2] = 0xff;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // #112: AEC Settings
-        sccb_dat[0] = 0x35;
-        sccb_dat[1] = 0x0c;
-        sccb_dat[2] = 0x07;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x35;
-        sccb_dat[1] = 0x0d;
-        sccb_dat[2] = 0xd0;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x35;
-        sccb_dat[1] = 0x00;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x35;
-        sccb_dat[1] = 0x01;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x35;
-        sccb_dat[1] = 0x02;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // #117: AGC/AEC Settings
-        sccb_dat[0] = 0x35;
-        sccb_dat[1] = 0x0a;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x35;
-        sccb_dat[1] = 0x0b;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x35;
-        sccb_dat[1] = 0x03;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // #120: De-Noise Settings
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x8a;
-        sccb_dat[2] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x8b;
-        sccb_dat[2] = 0x04;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x8c;
-        sccb_dat[2] = 0x08;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x8d;
-        sccb_dat[2] = 0x08;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x8e;
-        sccb_dat[2] = 0x08;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x8f;
-        sccb_dat[2] = 0x10;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x90;
-        sccb_dat[2] = 0x10;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x92;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x93;
-        sccb_dat[2] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x94;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x95;
-        sccb_dat[2] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x96;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x97;
-        sccb_dat[2] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x98;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x99;
-        sccb_dat[2] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x9a;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x9b;
-        sccb_dat[2] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x9c;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x9d;
-        sccb_dat[2] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x9e;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x9f;
-        sccb_dat[2] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // #141: AEC Settings
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x0f;
-        sccb_dat[2] = 0x3c;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x10;
-        sccb_dat[2] = 0x30;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x1b;
-        sccb_dat[2] = 0x3c;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x1e;
-        sccb_dat[2] = 0x30;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x11;
-        sccb_dat[2] = 0x70;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x1f;
-        sccb_dat[2] = 0x10;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // #147: system settings
-        sccb_dat[0] = 0x30;
-        sccb_dat[1] = 0x30;
-        sccb_dat[2] = 0x0b;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // #148: AEC Settings
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x02;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x03;
-        sccb_dat[2] = 0x7d;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x04;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x14;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x15;
-        sccb_dat[2] = 0x7d;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x16;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x00;
-        sccb_dat[2] = 0x7c;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // #155: flicker-less settings
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x08;
-        sccb_dat[2] = 0x09;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x09;
-        sccb_dat[2] = 0x60;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x0a;
-        sccb_dat[2] = 0x07;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x0b;
-        sccb_dat[2] = 0xd0;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x0d;
-        sccb_dat[2] = 0x08;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x0e;
-        sccb_dat[2] = 0x06;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // #161: AWB settings
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x93;
-        sccb_dat[2] = 0x70;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // #162: analog settings
-        sccb_dat[0] = 0x36;
-        sccb_dat[1] = 0x20;
-        sccb_dat[2] = 0x57;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x37;
-        sccb_dat[1] = 0x03;
-        sccb_dat[2] = 0x98;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x37;
-        sccb_dat[1] = 0x04;
-        sccb_dat[2] = 0x1c;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // #165: unknown settings
-        sccb_dat[0] = 0x58;
-        sccb_dat[1] = 0x9b;
-        sccb_dat[2] = 0x04;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x58;
-        sccb_dat[1] = 0x9a;
-        sccb_dat[2] = 0xc5;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // #167: De-Noise Settings
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x8a;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x8b;
-        sccb_dat[2] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x8c;
-        sccb_dat[2] = 0x08;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x8d;
-        sccb_dat[2] = 0x10;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x8e;
-        sccb_dat[2] = 0x20;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x8f;
-        sccb_dat[2] = 0x28;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x90;
-        sccb_dat[2] = 0x30;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x92;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x93;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x94;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x95;
-        sccb_dat[2] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x96;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x97;
-        sccb_dat[2] = 0x08;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x98;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x99;
-        sccb_dat[2] = 0x10;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x9a;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x9b;
-        sccb_dat[2] = 0x20;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x9c;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x9d;
-        sccb_dat[2] = 0x28;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x9e;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x9f;
-        sccb_dat[2] = 0x30;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x52;
-        sccb_dat[1] = 0x82;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // #189: CIP
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x00;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x01;
-        sccb_dat[2] = 0x20;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x02;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x03;
-        sccb_dat[2] = 0x7c;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x0c;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x0d;
-        sccb_dat[2] = 0x0c;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x0e;
-        sccb_dat[2] = 0x20;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x0f;
-        sccb_dat[2] = 0x80;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x10;
-        sccb_dat[2] = 0x20;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x11;
-        sccb_dat[2] = 0x80;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x08;
-        sccb_dat[2] = 0x20;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x09;
-        sccb_dat[2] = 0x40;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x04;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x05;
-        sccb_dat[2] = 0x30;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x06;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x07;
-        sccb_dat[2] = 0x80;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x14;
-        sccb_dat[2] = 0x08;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x15;
-        sccb_dat[2] = 0x20;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x19;
-        sccb_dat[2] = 0x30;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x16;
-        sccb_dat[2] = 0x10;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x17;
-        sccb_dat[2] = 0x08;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x18;
-        sccb_dat[2] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // #211: Color Matrix Settings
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x80;
-        sccb_dat[2] = 0x01;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x81;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x82;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x83;
-        sccb_dat[2] = 0x4e;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x84;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x85;
-        sccb_dat[2] = 0x0f;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x86;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x87;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x88;
-        sccb_dat[2] = 0x01;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x89;
-        sccb_dat[2] = 0x15;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x8a;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x8b;
-        sccb_dat[2] = 0x31;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x8c;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x8d;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x8e;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x8f;
-        sccb_dat[2] = 0x0f;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x90;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x91;
-        sccb_dat[2] = 0xab;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x92;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x93;
-        sccb_dat[2] = 0xa2;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x53;
-        sccb_dat[1] = 0x94;
-        sccb_dat[2] = 0x08;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // #232: Gamma Setings
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x80;
-        sccb_dat[2] = 0x14;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x81;
-        sccb_dat[2] = 0x21;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x82;
-        sccb_dat[2] = 0x36;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x83;
-        sccb_dat[2] = 0x57;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x84;
-        sccb_dat[2] = 0x65;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x85;
-        sccb_dat[2] = 0x71;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x86;
-        sccb_dat[2] = 0x7d;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x87;
-        sccb_dat[2] = 0x87;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x88;
-        sccb_dat[2] = 0x91;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x89;
-        sccb_dat[2] = 0x9a;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x8a;
-        sccb_dat[2] = 0xaa;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x8b;
-        sccb_dat[2] = 0xb8;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x8c;
-        sccb_dat[2] = 0xcd;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x8d;
-        sccb_dat[2] = 0xdd;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x8e;
-        sccb_dat[2] = 0xea;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x8f;
-        sccb_dat[2] = 0x10;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x90;
-        sccb_dat[2] = 0x05;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x91;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x92;
-        sccb_dat[2] = 0x04;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x93;
-        sccb_dat[2] = 0x20;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x94;
-        sccb_dat[2] = 0x03;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x95;
-        sccb_dat[2] = 0x60;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x96;
-        sccb_dat[2] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x97;
-        sccb_dat[2] = 0xb8;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x98;
-        sccb_dat[2] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x99;
-        sccb_dat[2] = 0x86;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x9a;
-        sccb_dat[2] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x9b;
-        sccb_dat[2] = 0x5b;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x9c;
-        sccb_dat[2] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x9d;
-        sccb_dat[2] = 0x3b;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x9e;
-        sccb_dat[2] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0x9f;
-        sccb_dat[2] = 0x1c;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0xa0;
-        sccb_dat[2] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0xa1;
-        sccb_dat[2] = 0x04;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0xa2;
-        sccb_dat[2] = 0x01;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0xa3;
-        sccb_dat[2] = 0xed;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0xa4;
-        sccb_dat[2] = 0x01;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0xa5;
-        sccb_dat[2] = 0xc5;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0xa6;
-        sccb_dat[2] = 0x01;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0xa7;
-        sccb_dat[2] = 0xa5;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0xa8;
-        sccb_dat[2] = 0x01;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0xa9;
-        sccb_dat[2] = 0x6c;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0xaa;
-        sccb_dat[2] = 0x01;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0xab;
-        sccb_dat[2] = 0x41;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0xac;
-        sccb_dat[2] = 0x01;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0xad;
-        sccb_dat[2] = 0x20;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0xae;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x54;
-        sccb_dat[1] = 0xaf;
-        sccb_dat[2] = 0x16;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // #280: AWB Settings
-        sccb_dat[0] = 0x34;
-        sccb_dat[1] = 0x06;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x92;
-        sccb_dat[2] = 0x04;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x91;
-        sccb_dat[2] = 0xf8;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x93;
-        sccb_dat[2] = 0xf0; // R
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x94;
-        sccb_dat[2] = 0x40; // G
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x95;
-        sccb_dat[2] = 0xf0; // B
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x8d;
-        sccb_dat[2] = 0x3d;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x8f;
-        sccb_dat[2] = 0x54;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x8e;
-        sccb_dat[2] = 0x3d;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x90;
-        sccb_dat[2] = 0x54;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x8b;
-        sccb_dat[2] = 0xc0;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x8c;
-        sccb_dat[2] = 0xbd;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x87;
-        sccb_dat[2] = 0x18;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x88;
-        sccb_dat[2] = 0x18;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x89;
-        sccb_dat[2] = 0x6e;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x8a;
-        sccb_dat[2] = 0x68;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x86;
-        sccb_dat[2] = 0x1c;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x81;
-        sccb_dat[2] = 0x50;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // #298: AWB Settings
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x84;
-        sccb_dat[2] = 0x25;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x82;
-        sccb_dat[2] = 0x11;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x83;
-        sccb_dat[2] = 0x14;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x84;
-        sccb_dat[2] = 0x25;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x51;
-        sccb_dat[1] = 0x85;
-        sccb_dat[2] = 0x24;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // ISP Settings
-        sccb_dat[0] = 0x50;
-        sccb_dat[1] = 0x25;
-        sccb_dat[2] = 0x82;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // #304: AEC Settings
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x0f;
-        sccb_dat[2] = 0x7e;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x10;
-        sccb_dat[2] = 0x72;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x1b;
-        sccb_dat[2] = 0x80;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x1e;
-        sccb_dat[2] = 0x70;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x11;
-        sccb_dat[2] = 0xd0;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x1f;
-        sccb_dat[2] = 0x40;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // #310: Digital effect
-        sccb_dat[0] = 0x55;
-        sccb_dat[1] = 0x83;
-        sccb_dat[2] = 0x40;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x55;
-        sccb_dat[1] = 0x84;
-        sccb_dat[2] = 0x40;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x55;
-        sccb_dat[1] = 0x80;
-        sccb_dat[2] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // #313: Analog settings register
-        sccb_dat[0] = 0x36;
-        sccb_dat[1] = 0x33;
-        sccb_dat[2] = 0x07;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x37;
-        sccb_dat[1] = 0x02;
-        sccb_dat[2] = 0x10;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x37;
-        sccb_dat[1] = 0x03;
-        sccb_dat[2] = 0xb2;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x37;
-        sccb_dat[1] = 0x04;
-        sccb_dat[2] = 0x18;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x37;
-        sccb_dat[1] = 0x0b;
-        sccb_dat[2] = 0x40;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // array control
-        sccb_dat[0] = 0x37;
-        sccb_dat[1] = 0x0d;
-        sccb_dat[2] = 0x02;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        // #319: analog settings register
-        sccb_dat[0] = 0x36;
-        sccb_dat[1] = 0x20;
-        sccb_dat[2] = 0x52;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-#if 1 // pclk=6MHz
-        sccb_dat[0] = 0x30;
-        sccb_dat[1] = 0x11;
-        sccb_dat[2] = 0x08;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x30;
-        sccb_dat[1] = 0x12;
-        sccb_dat[2] = 0x00;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x30;
-        sccb_dat[1] = 0x10;
-        sccb_dat[2] = 0x70;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x46;
-        sccb_dat[1] = 0x0c;
-        sccb_dat[2] = 0x22;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x38;
-        sccb_dat[1] = 0x0c;
-        sccb_dat[2] = 0x0c;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x38;
-        sccb_dat[1] = 0x0d;
-        sccb_dat[2] = 0x80;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x00;
-        sccb_dat[2] = 0x78;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x08;
-        sccb_dat[2] = 0x09;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x09;
-        sccb_dat[2] = 0x60;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x0a;
-        sccb_dat[2] = 0x07;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x0b;
-        sccb_dat[2] = 0xd0;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x0d;
-        sccb_dat[2] = 0x08;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        sccb_dat[0] = 0x3a;
-        sccb_dat[1] = 0x0e;
-        sccb_dat[2] = 0x06;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-#endif
-        // VSYNC Active-Low & Gate PCLK under VSYNC & HREF
-        sccb_dat[0] = 0x47;
-        sccb_dat[1] = 0x40;
-        sccb_dat[2] = 0x2d;
-        reg_write(CAM_ADDR, sccb_dat, 3);
-        break;
-    default:
-        return;
-        // break;
+        if (reg_tbl[i].reg_high == 0xFF &&
+            reg_tbl[i].reg_low == 0xFF &&
+            reg_tbl[i].val == 0xFF)
+        {
+            // 終了マーカーに達したら抜ける
+            xprintf("cam init end\n");
+            break;
+        }
+        reg_write(CAM_ADDR, sccb_dat, 3);
+        i++;
     }
 }
