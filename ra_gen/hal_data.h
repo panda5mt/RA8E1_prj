@@ -20,8 +20,8 @@ extern const i2c_master_instance_t g_i2c_master1;
 extern iic_master_instance_ctrl_t g_i2c_master1_ctrl;
 extern const i2c_master_cfg_t g_i2c_master1_cfg;
 
-#ifndef NULL
-void NULL(i2c_master_callback_args_t * p_args);
+#ifndef g_i2c_callback
+void g_i2c_callback(i2c_master_callback_args_t * p_args);
 #endif
 /* CEU on CAPTURE instance */
             extern const capture_instance_t g_ceu0;

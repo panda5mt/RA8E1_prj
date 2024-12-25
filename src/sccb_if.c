@@ -6,7 +6,7 @@
 #define NEED_XPRINTF_MESSAGE (1)
 
 // Write n byte to the specified register
-int32_t reg_write(uint8_t *addr, // Camera's hw address
+int32_t reg_write(uint8_t addr, // Camera's hw address
                   uint8_t *buf,
                   const uint8_t nbytes)
 {
@@ -48,14 +48,14 @@ int32_t reg_write(uint8_t *addr, // Camera's hw address
     {
         xprintf("data sent error!\n");
 #endif
-        num_bytes_read = nbytes;
-        return num_bytes_read;
     }
+    num_bytes_read = nbytes;
+    return num_bytes_read;
 }
 
 void sccb_init(uint8_t device_is)
 {
-    uint8_t *CAM_ADDR;
+    uint8_t CAM_ADDR = 0x00;
 
     R_BSP_MODULE_START(FSP_IP_IIC, 1);
     if (FSP_SUCCESS == R_IIC_MASTER_Open(&g_i2c_master1_ctrl, &g_i2c_master1_cfg))
@@ -70,7 +70,7 @@ void sccb_init(uint8_t device_is)
     {
 
     case DEV_OV2640:
-        *CAM_ADDR = (0x60 >> 1);
+        CAM_ADDR = (0x60 >> 1);
 
         sccb_dat[0] = 0xff;
         sccb_dat[1] = 0x00;
@@ -787,13 +787,13 @@ void sccb_init(uint8_t device_is)
 
     case DEV_OV5642:
 
-        *CAM_ADDR = (0x78 >> 1);
+        CAM_ADDR = (0x78 >> 1);
         // PLL
         sccb_dat[0] = 0x31;
         sccb_dat[1] = 0x03;
         sccb_dat[2] = 0x93;
+        return;
         reg_write(CAM_ADDR, sccb_dat, 3);
-        xprintf("Lets GO?\n");
         // Reset system
         sccb_dat[0] = 0x30;
         sccb_dat[1] = 0x08;
@@ -2215,6 +2215,7 @@ void sccb_init(uint8_t device_is)
         reg_write(CAM_ADDR, sccb_dat, 3);
         break;
     default:
-        break;
+        return;
+        // break;
     }
 }

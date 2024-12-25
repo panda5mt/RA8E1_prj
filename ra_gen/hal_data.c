@@ -4,8 +4,8 @@
 iic_master_instance_ctrl_t g_i2c_master1_ctrl;
 const iic_master_extended_cfg_t g_i2c_master1_extend =
 {
-    .timeout_mode             = IIC_MASTER_TIMEOUT_MODE_SHORT,
-    .timeout_scl_low          = IIC_MASTER_TIMEOUT_SCL_LOW_ENABLED,
+    .timeout_mode             = IIC_MASTER_TIMEOUT_MODE_LONG,
+    .timeout_scl_low          = IIC_MASTER_TIMEOUT_SCL_LOW_DISABLED,
     .smbus_operation         = 0,
     /* Actual calculated bitrate: 98945. Actual calculated duty cycle: 51%. */ .clock_settings.brl_value = 15, .clock_settings.brh_value = 16, .clock_settings.cks_value = 4, .clock_settings.sddl_value = 0, .clock_settings.dlcs_value = 0,
 };
@@ -13,7 +13,7 @@ const i2c_master_cfg_t g_i2c_master1_cfg =
 {
     .channel             = 1,
     .rate                = I2C_MASTER_RATE_STANDARD,
-    .slave               = 0x00,
+    .slave               = 0x78,
     .addr_mode           = I2C_MASTER_ADDR_MODE_7BIT,
 #define RA_NOT_DEFINED (1)
 #if (RA_NOT_DEFINED == RA_NOT_DEFINED)
@@ -27,7 +27,7 @@ const i2c_master_cfg_t g_i2c_master1_cfg =
                 .p_transfer_rx       = &RA_NOT_DEFINED,
 #endif
 #undef RA_NOT_DEFINED
-    .p_callback          = NULL,
+    .p_callback          = g_i2c_callback,
     .p_context           = NULL,
 #if defined(VECTOR_NUMBER_IIC1_RXI)
     .rxi_irq             = VECTOR_NUMBER_IIC1_RXI,

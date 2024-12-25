@@ -636,17 +636,17 @@ FSP Configuration
       Rise Time (ns): 120
       Fall Time (ns): 120
       Duty Cycle (%): 50
-      Slave Address: 0x00
+      Slave Address: 0x78
       Address Mode: 7-Bit
-      Timeout Mode: Short Mode
-      Timeout during SCL Low: Enabled
-      Callback: NULL
+      Timeout Mode: Long Mode
+      Timeout during SCL Low: Disabled
+      Callback: g_i2c_callback
       Interrupt Priority Level: Priority 12
       
   Thread "Main Thread0"
     Symbol: main_thread0
     Name: Main Thread0
-    Stack size (bytes): 8192
+    Stack size (bytes): 4096
     Priority: 1
     Thread Context: NULL
     Memory Allocation: Static
