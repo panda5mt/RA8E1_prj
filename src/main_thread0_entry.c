@@ -2,7 +2,7 @@
 #include "hal_data.h"
 #include "r_ceu.h"
 #include "xprintf_helper.h"
-
+#include "sccb_if.h"
 void g_ceu0_user_callback(capture_callback_args_t *p_args)
 {
     if (CEU_EVENT_FRAME_END == p_args->event)
@@ -30,12 +30,12 @@ void main_thread0_entry(void *pvParameters)
     {
         xprintf("GPT Start OK!\n");
     }
+    timer_info_t p_info;
+    R_GPT_InfoGet(&g_timer3_ctrl, &p_info);
+    xprintf("PWM = %d[kHz]\n", (p_info.clock_frequency / p_info.period_counts) / 1000);
+
     // init I2C
-    R_BSP_MODULE_START(FSP_IP_IIC, 1);
-    if (FSP_SUCCESS == R_IIC_MASTER_Open(&g_i2c_master1_ctrl, &g_i2c_master1_cfg))
-    {
-        xprintf("I2C master Init OK\n");
-    }
+    sccb_init(DEV_OV5642);
 
     // init camera
     if (FSP_SUCCESS == R_CEU_Open(&g_ceu0_ctrl, &g_ceu0_cfg))

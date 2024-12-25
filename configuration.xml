@@ -267,12 +267,12 @@
       <property id="module.driver.timer.name" value="g_timer3"/>
       <property id="module.driver.timer.channel" value="3"/>
       <property id="module.driver.timer.mode" value="module.driver.timer.mode.mode_periodic"/>
-      <property id="module.driver.timer.period" value="2"/>
+      <property id="module.driver.timer.period" value="24000"/>
       <property id="module.driver.timer.compare_match.a.status" value="module.driver.timer.compare_match.a.status.disabled"/>
       <property id="module.driver.timer.compare_match.a.value" value="0"/>
       <property id="module.driver.timer.compare_match.b.status" value="module.driver.timer.compare_match.b.status.disabled"/>
       <property id="module.driver.timer.compare_match.b.value" value="0"/>
-      <property id="module.driver.timer.unit" value="module.driver.timer.unit.unit_frequency_hz"/>
+      <property id="module.driver.timer.unit" value="module.driver.timer.unit.unit_frequency_khz"/>
       <property id="module.driver.timer.gtior.gtioa.initial_output_level" value="module.driver.timer.gtior.gtioa.initial_output_level.low"/>
       <property id="module.driver.timer.gtior.gtioa.cycle_end_output_level" value="module.driver.timer.gtior.gtioa.cycle_end_output_level.retain"/>
       <property id="module.driver.timer.gtior.gtioa.compare_match_output_level" value="module.driver.timer.gtior.gtioa.compare_match_output_level.retain"/>
@@ -589,7 +589,7 @@
       <configSetting altId="ceu.vio_d7.p703" configurationId="ceu.vio_d7"/>
       <configSetting altId="ceu.vio_hd.p709" configurationId="ceu.vio_hd"/>
       <configSetting altId="ceu.vio_vd.p710" configurationId="ceu.vio_vd"/>
-      <configSetting altId="gpt3.gtioc3b.p404" configurationId="gpt3.gtioc3b"/>
+      <configSetting altId="gpt3.gtioc3a.p403" configurationId="gpt3.gtioc3a"/>
       <configSetting altId="gpt3.mode.gtiocaorgtiocb.free" configurationId="gpt3.mode"/>
       <configSetting altId="iic0.pairing.b" configurationId="iic0.pairing"/>
       <configSetting altId="iic1.mode.enabled.a" configurationId="iic1.mode"/>
@@ -675,8 +675,8 @@
       <configSetting altId="p400.gpio_mode.gpio_mode_peripheral" configurationId="p400.gpio_mode"/>
       <configSetting altId="p401.ceu.vio_d1" configurationId="p401"/>
       <configSetting altId="p401.gpio_mode.gpio_mode_peripheral" configurationId="p401.gpio_mode"/>
-      <configSetting altId="p404.gpt3.gtioc3b" configurationId="p404"/>
-      <configSetting altId="p404.gpio_mode.gpio_mode_peripheral" configurationId="p404.gpio_mode"/>
+      <configSetting altId="p403.gpt3.gtioc3a" configurationId="p403"/>
+      <configSetting altId="p403.gpio_mode.gpio_mode_peripheral" configurationId="p403.gpio_mode"/>
       <configSetting altId="p405.ceu.vio_d2" configurationId="p405"/>
       <configSetting altId="p405.gpio_mode.gpio_mode_peripheral" configurationId="p405.gpio_mode"/>
       <configSetting altId="p406.ceu.vio_d3" configurationId="p406"/>
@@ -732,6 +732,7 @@
       <configSetting altId="sci9.mode.asynchronousuart.free" configurationId="sci9.mode"/>
       <configSetting altId="sci9.rxd9.p101" configurationId="sci9.rxd9"/>
       <configSetting altId="sci9.txd9.p102" configurationId="sci9.txd9"/>
+      <lockSetting id="gpt3.gtioc3a" lock="true"/>
       <lockSetting id="iic1.scl1" lock="true"/>
       <lockSetting id="iic1.sda1" lock="true"/>
       <lockSetting id="sci9.cts9" lock="true"/>

@@ -91,7 +91,7 @@
       <configSetting altId="ceu.vio_d7.p703" configurationId="ceu.vio_d7" isUsedByDriver="true" peripheral="CEU"/>
       <configSetting altId="ceu.vio_hd.p709" configurationId="ceu.vio_hd" isUsedByDriver="true" peripheral="CEU"/>
       <configSetting altId="ceu.vio_vd.p710" configurationId="ceu.vio_vd" isUsedByDriver="true" peripheral="CEU"/>
-      <configSetting altId="gpt3.gtioc3b.p404" configurationId="gpt3.gtioc3b" isUsedByDriver="true" peripheral="GPT3"/>
+      <configSetting altId="gpt3.gtioc3a.p403" configurationId="gpt3.gtioc3a" isUsedByDriver="true" peripheral="GPT3"/>
       <configSetting altId="iic1.scl1.p512" configurationId="iic1.scl1" isUsedByDriver="true" peripheral="IIC1"/>
       <configSetting altId="iic1.sda1.p511" configurationId="iic1.sda1" isUsedByDriver="true" peripheral="IIC1"/>
       <configSetting altId="irq11.irq11_dash_ds.p006" configurationId="irq11.irq11_dash_ds" peripheral="IRQ11"/>

@@ -44,7 +44,7 @@
         <peripheral name="PORT4" group="PORT">
             <slot name="P400" secure="true"/>
             <slot name="P401" secure="true"/>
-            <slot name="P404" secure="true"/>
+            <slot name="P403" secure="true"/>
             <slot name="P405" secure="true"/>
             <slot name="P406" secure="true"/>
             <slot name="P408" secure="true"/>
