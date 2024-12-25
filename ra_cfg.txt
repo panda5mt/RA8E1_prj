@@ -195,8 +195,8 @@ FSP Configuration
       P413 30 - - - - Disabled - - "SPI1: SSLB0; ULPT1: ULPTEE1" - None - - 
       P414 29 - CAM_E19 - - Disabled - - "CANFD1: CRX1; GPT0: GTIOC0B; GPT_POEG: GTADSM1; IRQ9: IRQ9; SCI4: RXD4; SPI1: SSLB1" - None - - 
       P415 28 - CAM_User_Arduino_D3 - - Disabled - - "CANFD1: CTX1; GPT0: GTIOC0A; GPT_POEG: GTADSM0; IRQ8: IRQ8; SCI4: TXD4; SPI1: SSLB2" - None - - 
-      P511 144 - IIC_SYSTEM_SDA1 - - Disabled - - "CANFD1: CRX1; GPT0: GTIOC0B; IIC1: SDA1; IRQ15: IRQ15" - None - - 
-      P512 143 - IIC_SYSTEM_SCL1 - - Disabled - - "CANFD1: CTX1; GPT0: GTIOC0A; IIC1: SCL1; IRQ14: IRQ14" - None - - 
+      P511 144 IIC1_SDA1 IIC_SYSTEM_SDA1 M None "Peripheral mode" - - "CANFD1: CRX1; GPT0: GTIOC0B; IIC1: SDA1; IRQ15: IRQ15" - IO - - 
+      P512 143 IIC1_SCL1 IIC_SYSTEM_SCL1 M None "Peripheral mode" - - "CANFD1: CTX1; GPT0: GTIOC0A; IIC1: SCL1; IRQ14: IRQ14" - IO - - 
       P513 142 - - - - Disabled - - "ACMPHS1: IVCMP1_0; CEU: VIO_FLD" - None - - 
       P600 98 - - - - Disabled - - "CAC: CACREF; OSPI: OM_RSTO1; ULPT1: ULPTEVI1_A-DS" - None - - 
       P601 97 - - - - Disabled - - "OSPI: OM_WP1; RTC: RTCOUT; SCI0: DE0; SCI0: SCK0; ULPT0: ULPTEVI0" - None - - 
@@ -340,8 +340,8 @@ FSP Configuration
       P413 30 - - - - Disabled - - "SPI1: SSLB0; ULPT1: ULPTEE1" - None - - 
       P414 29 - CAM_E19 - - Disabled - - "CANFD1: CRX1; GPT0: GTIOC0B; GPT_POEG: GTADSM1; IRQ9: IRQ9; SCI4: RXD4; SPI1: SSLB1" - None - - 
       P415 28 - CAM_User_Arduino_D3 - - Disabled - - "CANFD1: CTX1; GPT0: GTIOC0A; GPT_POEG: GTADSM0; IRQ8: IRQ8; SCI4: TXD4; SPI1: SSLB2" - None - - 
-      P511 144 - IIC_SYSTEM_SDA1 - - Disabled - - "CANFD1: CRX1; GPT0: GTIOC0B; IIC1: SDA1; IRQ15: IRQ15" - None - - 
-      P512 143 - IIC_SYSTEM_SCL1 - - Disabled - - "CANFD1: CTX1; GPT0: GTIOC0A; IIC1: SCL1; IRQ14: IRQ14" - None - - 
+      P511 144 - IIC_SYSTEM_SDA1 L None Disabled - - "CANFD1: CRX1; GPT0: GTIOC0B; IIC1: SDA1; IRQ15: IRQ15" - IO - - 
+      P512 143 - IIC_SYSTEM_SCL1 L None Disabled - - "CANFD1: CTX1; GPT0: GTIOC0A; IIC1: SCL1; IRQ14: IRQ14" - IO - - 
       P513 142 - - - - Disabled - - "ACMPHS1: IVCMP1_0; CEU: VIO_FLD" - None - - 
       P600 98 - - - - Disabled - - "CAC: CACREF; OSPI: OM_RSTO1; ULPT1: ULPTEVI1_A-DS" - None - - 
       P601 97 - - - - Disabled - - "OSPI: OM_WP1; RTC: RTCOUT; SCI0: DE0; SCI0: SCK0; ULPT0: ULPTEVI0" - None - - 
@@ -438,6 +438,11 @@ FSP Configuration
   Module "Capture Engine Unit (r_ceu)"
     Parameter Checking: Default (BSP)
     
+  Module "I2C Master (r_iic_master)"
+    Parameter Checking: Default (BSP)
+    DTC on Transmission and Reception: Disabled
+    10-bit slave addressing: Disabled
+    
   FreeRTOS
     General: Custom FreeRTOSConfig.h: 
     General: Use Preemption: Enabled
@@ -520,12 +525,12 @@ FSP Configuration
       General: Name: g_timer3
       General: Channel: 3
       General: Mode: Periodic
-      General: Period: 1
+      General: Period: 2
       General: Compare Match: Compare Match A: Status: Disabled
       General: Compare Match: Compare Match A: Compare match value: 0
       General: Compare Match: Compare Match B: Status: Disabled
       General: Compare Match: Compare Match B: Compare match value: 0
-      General: Period Unit: Seconds
+      General: Period Unit: Hertz
       Output: Custom Waveform: GTIOA: Initial Output Level: Pin Level Low
       Output: Custom Waveform: GTIOA: Cycle End Output Level: Pin Level Retain
       Output: Custom Waveform: GTIOA: Compare Match Output Level: Pin Level Retain
@@ -622,6 +627,21 @@ FSP Configuration
       Input: Capture Specifications: Sample Points: H-Sync Sample Point: Rising edge of the camera clock
       Input: Capture Specifications: Sample Points: V-Sync Sample Point: Rising edge of the camera clock
       Output: Buffer: Data Enable Buffer Size: 0
+      
+    Instance "g_i2c_master1 I2C Master (r_iic_master)"
+      Name: g_i2c_master1
+      Channel: 1
+      Rate: Standard
+      Custom Rate (bps): 0
+      Rise Time (ns): 120
+      Fall Time (ns): 120
+      Duty Cycle (%): 50
+      Slave Address: 0x00
+      Address Mode: 7-Bit
+      Timeout Mode: Short Mode
+      Timeout during SCL Low: Enabled
+      Callback: NULL
+      Interrupt Priority Level: Priority 12
       
   Thread "Main Thread0"
     Symbol: main_thread0

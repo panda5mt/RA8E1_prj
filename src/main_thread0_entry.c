@@ -30,7 +30,18 @@ void main_thread0_entry(void *pvParameters)
     {
         xprintf("GPT Start OK!\n");
     }
-    R_CEU_Open(&g_ceu0_ctrl, &g_ceu0_cfg);
+    // init I2C
+    R_BSP_MODULE_START(FSP_IP_IIC, 1);
+    if (FSP_SUCCESS == R_IIC_MASTER_Open(&g_i2c_master1_ctrl, &g_i2c_master1_cfg))
+    {
+        xprintf("I2C master Init OK\n");
+    }
+
+    // init camera
+    if (FSP_SUCCESS == R_CEU_Open(&g_ceu0_ctrl, &g_ceu0_cfg))
+    {
+        xprintf("Camera CEU Init OK\n");
+    }
 
     /* TODO: add your own code here */
     while (1)
