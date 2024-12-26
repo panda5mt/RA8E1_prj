@@ -8,7 +8,7 @@ typedef struct
     uint8_t val;      // 書き込みたい値
 } cam_reg_value_t;
 
-extern void comms_i2c_callback(rm_comms_callback_args_t *p_args);
+extern void g_i2c_callback(i2c_master_callback_args_t *p_args);
 void sccb_init(void);
 
 int32_t reg_write(uint32_t addr,

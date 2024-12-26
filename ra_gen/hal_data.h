@@ -4,8 +4,8 @@
 #include <stdint.h>
 #include "bsp_api.h"
 #include "common_data.h"
-#include "rm_comms_i2c.h"
-#include "rm_comms_api.h"
+#include "r_iic_master.h"
+#include "r_i2c_master_api.h"
 #include "r_capture_api.h"
             #include "r_ceu.h"
 #include "r_sci_b_uart.h"
@@ -13,12 +13,15 @@
 #include "r_gpt.h"
 #include "r_timer_api.h"
 FSP_HEADER
-/* I2C Communication Device */
-extern const rm_comms_instance_t g_comms_i2c_device0;
-extern rm_comms_i2c_instance_ctrl_t g_comms_i2c_device0_ctrl;
-extern const rm_comms_cfg_t g_comms_i2c_device0_cfg;
-#ifndef comms_i2c_callback
-void comms_i2c_callback(rm_comms_callback_args_t * p_args);
+/* I2C Master on IIC Instance. */
+extern const i2c_master_instance_t g_i2c_master1;
+
+/** Access the I2C Master instance using these structures when calling API functions directly (::p_api is not used). */
+extern iic_master_instance_ctrl_t g_i2c_master1_ctrl;
+extern const i2c_master_cfg_t g_i2c_master1_cfg;
+
+#ifndef g_i2c_callback
+void g_i2c_callback(i2c_master_callback_args_t * p_args);
 #endif
 /* CEU on CAPTURE instance */
             extern const capture_instance_t g_ceu0;
