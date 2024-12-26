@@ -452,7 +452,7 @@ void sccb_init(void)
     const cam_reg_value_t *reg_tbl = ov5642_init_reg_tbl;
     uint32_t CAM_ADDR = 0x00;
     fsp_err_t err;
-    /////
+
     // init I2C HW
     err = R_IIC_MASTER_Open(&g_i2c_master1_ctrl, &g_i2c_master1_cfg);
     // Handle any errors. This function should be defined by the user.
