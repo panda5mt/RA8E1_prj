@@ -4,14 +4,14 @@ iic_master_instance_ctrl_t g_i2c_master0_ctrl;
 const iic_master_extended_cfg_t g_i2c_master0_extend =
 {
     .timeout_mode             = IIC_MASTER_TIMEOUT_MODE_SHORT,
-    .timeout_scl_low          = IIC_MASTER_TIMEOUT_SCL_LOW_ENABLED,
+    .timeout_scl_low          = IIC_MASTER_TIMEOUT_SCL_LOW_DISABLED,
     .smbus_operation         = 0,
-    /* Actual calculated bitrate: 98945. Actual calculated duty cycle: 51%. */ .clock_settings.brl_value = 15, .clock_settings.brh_value = 16, .clock_settings.cks_value = 4, .clock_settings.sddl_value = 0, .clock_settings.dlcs_value = 0,
+    /* Actual calculated bitrate: 398936. Actual calculated duty cycle: 50%. */ .clock_settings.brl_value = 31, .clock_settings.brh_value = 31, .clock_settings.cks_value = 1, .clock_settings.sddl_value = 0, .clock_settings.dlcs_value = 0,
 };
 const i2c_master_cfg_t g_i2c_master0_cfg =
 {
     .channel             = 1,
-    .rate                = I2C_MASTER_RATE_STANDARD,
+    .rate                = I2C_MASTER_RATE_FAST,
     .slave               = 0,
     .addr_mode           = I2C_MASTER_ADDR_MODE_7BIT,
 #define RA_NOT_DEFINED (1)

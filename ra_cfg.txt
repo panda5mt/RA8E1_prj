@@ -193,7 +193,7 @@ FSP Configuration
       P411 32 - - - - Disabled - - "AGT1: AGTOA1; IRQ4: IRQ4; SCI3: CTS_RTS3; SCI3: DE3; SPI1: MOSI1; USB FS: USB_ID" - None - - 
       P412 31 - - - - Disabled - - "AGT1: AGTEE1; SCI3: CTS3; SPI1: RSPCK1; USB FS: USB_EXICEN" - None - - 
       P413 30 - - - - Disabled - - "SPI1: SSLB0; ULPT1: ULPTEE1" - None - - 
-      P414 29 GPIO CAM_E19 L None "Output mode (Initial High)" - - "CANFD1: CRX1; GPT0: GTIOC0B; GPT_POEG: GTADSM1; IRQ9: IRQ9; SCI4: RXD4; SPI1: SSLB1" - IO - - 
+      P414 29 GPIO CAM_E19 H None "Output mode (Initial Low)" - - "CANFD1: CRX1; GPT0: GTIOC0B; GPT_POEG: GTADSM1; IRQ9: IRQ9; SCI4: RXD4; SPI1: SSLB1" - IO - - 
       P415 28 - CAM_User_Arduino_D3 - - Disabled - - "CANFD1: CTX1; GPT0: GTIOC0A; GPT_POEG: GTADSM0; IRQ8: IRQ8; SCI4: TXD4; SPI1: SSLB2" - None - - 
       P511 144 IIC1_SDA1 IIC_SYSTEM_SDA1 M None "Peripheral mode" - - "CANFD1: CRX1; GPT0: GTIOC0B; IIC1: SDA1; IRQ15: IRQ15" - IO - - 
       P512 143 IIC1_SCL1 IIC_SYSTEM_SCL1 M None "Peripheral mode" - - "CANFD1: CTX1; GPT0: GTIOC0A; IIC1: SCL1; IRQ14: IRQ14" - IO - - 
@@ -637,7 +637,7 @@ FSP Configuration
     Instance "g_comms_i2c_device0 I2C Communication Device (rm_comms_i2c)"
       Name: g_comms_i2c_device0
       Semaphore Timeout (RTOS only): 0xFFFFFFFF
-      Slave Address: 0x3c
+      Slave Address: 0x3C
       Address Mode: 7-Bit
       Callback: comms_i2c_callback
       
@@ -647,12 +647,12 @@ FSP Configuration
         Semaphore for Blocking (RTOS only): Use
         Recursive Mutex for Bus (RTOS only): Use
         Channel: 1
-        Rate: Standard
+        Rate: Fast-mode
         
         Instance "g_i2c_master0 I2C Master (r_iic_master)"
           Name: g_i2c_master0
           Channel: 1
-          Rate: Standard
+          Rate: Fast-mode
           Custom Rate (bps): 0
           Rise Time (ns): 120
           Fall Time (ns): 120
@@ -660,7 +660,7 @@ FSP Configuration
           Slave Address: 0
           Address Mode: 7-Bit
           Timeout Mode: Short Mode
-          Timeout during SCL Low: Enabled
+          Timeout during SCL Low: Disabled
           Callback: rm_comms_i2c_callback
           Interrupt Priority Level: Priority 12
           

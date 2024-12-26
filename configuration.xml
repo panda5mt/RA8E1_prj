@@ -377,7 +377,7 @@
     <module id="module.driver.comms_i2c_on_comms_i2c_device.283950001">
       <property id="module.driver.comms_i2c_device.name" value="g_comms_i2c_device0"/>
       <property id="module.driver.comms_i2c_device.semaphore_timeout" value="0xFFFFFFFF"/>
-      <property id="module.driver.comms_i2c_device.slave_address" value="0x3c"/>
+      <property id="module.driver.comms_i2c_device.slave_address" value="0x3C"/>
       <property id="module.driver.comms_i2c_device.address_mode" value="module.driver.comms_i2c_device.address_mode.address_mode_7bit"/>
       <property id="module.driver.comms_i2c_device.p_callback" value="comms_i2c_callback"/>
     </module>
@@ -387,7 +387,7 @@
       <property id="module.driver.comms_i2c_bus.blocking_semaphore" value="module.driver.comms_i2c_bus.blocking_semaphore.use"/>
       <property id="module.driver.comms_i2c_bus.bus_recursive_mutex" value="module.driver.comms_i2c_bus.bus_recursive_mutex.use"/>
       <property id="module.driver.comms_i2c_bus.channel" value="1"/>
-      <property id="module.driver.comms_i2c_bus.rate" value="module.driver.comms_i2c_bus.rate.rate_standard"/>
+      <property id="module.driver.comms_i2c_bus.rate" value="module.driver.comms_i2c_bus.rate.rate_fast"/>
     </module>
     <module id="module.driver.i2c_on_iic_master.417833663">
       <property id="module.driver.i2c_master.name" value="g_i2c_master0"/>
@@ -400,7 +400,7 @@
       <property id="module.driver.i2c_master.slave" value="0"/>
       <property id="module.driver.i2c_master.addr_mode" value="module.driver.i2c_master.addr_mode.addr_mode_7bit"/>
       <property id="module.driver.i2c_master.timeout_mode" value="module.driver.i2c_master.timeout_mode.short_mode"/>
-      <property id="module.driver.i2c_master.timeout_scl_low" value="module.driver.i2c_master.timeout_scl_low.enabled"/>
+      <property id="module.driver.i2c_master.timeout_scl_low" value="module.driver.i2c_master.timeout_scl_low.disabled"/>
       <property id="module.driver.i2c_master.p_callback" value="NULL"/>
       <property id="module.driver.i2c_master.ipl" value="board.icu.common.irq.priority12"/>
     </module>
@@ -709,8 +709,9 @@
       <configSetting altId="p406.gpio_mode.gpio_mode_peripheral" configurationId="p406.gpio_mode"/>
       <configSetting altId="p408.output.low" configurationId="p408"/>
       <configSetting altId="p408.gpio_mode.gpio_mode_out.low" configurationId="p408.gpio_mode"/>
-      <configSetting altId="p414.output.high" configurationId="p414"/>
-      <configSetting altId="p414.gpio_mode.gpio_mode_out.high" configurationId="p414.gpio_mode"/>
+      <configSetting altId="p414.output.low" configurationId="p414"/>
+      <configSetting altId="p414.gpio_speed.gpio_speed_h" configurationId="p414.gpio_drivecapacity"/>
+      <configSetting altId="p414.gpio_mode.gpio_mode_out.low" configurationId="p414.gpio_mode"/>
       <configSetting altId="p511.iic1.sda1" configurationId="p511"/>
       <configSetting altId="p511.gpio_speed.gpio_speed_m" configurationId="p511.gpio_drivecapacity"/>
       <configSetting altId="p511.gpio_mode.gpio_mode_peripheral" configurationId="p511.gpio_mode"/>

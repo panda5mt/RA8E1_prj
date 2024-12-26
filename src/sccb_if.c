@@ -373,6 +373,14 @@ static const cam_reg_value_t ov5642_init_reg_tbl[] = {
 
 void handle_error(fsp_err_t err)
 {
+    if (FSP_SUCCESS != err)
+    {
+        xprintf("API error.\n");
+    }
+    else
+    {
+        xprintf("API Ok\n");
+    }
     return;
 }
 
@@ -408,7 +416,7 @@ int32_t reg_write(uint32_t addr, // Camera's hw address
 
     xprintf("g_flag=%d\n", g_flag);
     g_flag = 0;
-
+    vTaskDelay(pdMS_TO_TICKS(100));
     num_bytes_read = nbytes;
     return num_bytes_read;
 }
