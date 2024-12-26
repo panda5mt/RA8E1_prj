@@ -435,6 +435,9 @@ void comms_i2c_callback(rm_comms_callback_args_t *p_args)
     case I2C_MASTER_EVENT_BYTE_ACK:
         g_flag = 5;
         break;
+    default:
+        g_flag = 0;
+        break;
     }
 }
 
