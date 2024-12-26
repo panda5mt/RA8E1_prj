@@ -8,7 +8,7 @@ rm_comms_i2c_instance_ctrl_t g_comms_i2c_device0_ctrl;
 /* Lower level driver configuration */
 const i2c_master_cfg_t g_comms_i2c_device0_lower_level_cfg =
 {
-    .slave = 0x78,
+    .slave = 0x3c,
     .addr_mode = I2C_MASTER_ADDR_MODE_7BIT,
     .p_callback = rm_comms_i2c_callback,
 };
@@ -191,7 +191,7 @@ const gpt_extended_pwm_cfg_t g_timer3_pwm_extend =
 #endif
 const gpt_extended_cfg_t g_timer3_extend =
 {
-    .gtioca = { .output_enabled = false,
+    .gtioca = { .output_enabled = true,
                 .stop_level     = GPT_PIN_LEVEL_LOW
               },
     .gtiocb = { .output_enabled = true,
@@ -228,7 +228,7 @@ const gpt_extended_cfg_t g_timer3_extend =
     .gtior_setting.gtior_b.gtioa  = (0U << 4U) | (0U << 2U) | (0U << 0U),
     .gtior_setting.gtior_b.oadflt = (uint32_t) GPT_PIN_LEVEL_LOW,
     .gtior_setting.gtior_b.oahld  = 0U,
-    .gtior_setting.gtior_b.oae    = (uint32_t) false,
+    .gtior_setting.gtior_b.oae    = (uint32_t) true,
     .gtior_setting.gtior_b.oadf   = (uint32_t) GPT_GTIOC_DISABLE_PROHIBITED,
     .gtior_setting.gtior_b.nfaen  = ((uint32_t) GPT_CAPTURE_FILTER_NONE & 1U),
     .gtior_setting.gtior_b.nfcsa  = ((uint32_t) GPT_CAPTURE_FILTER_NONE >> 1U),

@@ -122,6 +122,7 @@
       <configSetting altId="p310.input" configurationId="p310"/>
       <configSetting altId="p311.input" configurationId="p311"/>
       <configSetting altId="p408.output.low" configurationId="p408"/>
+      <configSetting altId="p414.output.high" configurationId="p414"/>
       <configSetting altId="p604.input" configurationId="p604"/>
       <configSetting altId="p605.input" configurationId="p605"/>
       <configSetting altId="p609.input" configurationId="p609"/>
