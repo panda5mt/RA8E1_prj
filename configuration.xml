@@ -377,15 +377,15 @@
     <module id="module.driver.comms_i2c_on_comms_i2c_device.283950001">
       <property id="module.driver.comms_i2c_device.name" value="g_comms_i2c_device0"/>
       <property id="module.driver.comms_i2c_device.semaphore_timeout" value="0xFFFFFFFF"/>
-      <property id="module.driver.comms_i2c_device.slave_address" value="0x00"/>
+      <property id="module.driver.comms_i2c_device.slave_address" value="0x78"/>
       <property id="module.driver.comms_i2c_device.address_mode" value="module.driver.comms_i2c_device.address_mode.address_mode_7bit"/>
       <property id="module.driver.comms_i2c_device.p_callback" value="comms_i2c_callback"/>
     </module>
     <module id="module.driver.comms_i2c_on_comms_i2c_bus.1629999445">
       <property id="module.driver.comms_i2c_bus.name" value="g_comms_i2c_bus0"/>
       <property id="module.driver.comms_i2c_bus.bus_timeout" value="0xFFFFFFFF"/>
-      <property id="module.driver.comms_i2c_bus.blocking_semaphore" value="module.driver.comms_i2c_bus.blocking_semaphore.unuse"/>
-      <property id="module.driver.comms_i2c_bus.bus_recursive_mutex" value="module.driver.comms_i2c_bus.bus_recursive_mutex.unuse"/>
+      <property id="module.driver.comms_i2c_bus.blocking_semaphore" value="module.driver.comms_i2c_bus.blocking_semaphore.use"/>
+      <property id="module.driver.comms_i2c_bus.bus_recursive_mutex" value="module.driver.comms_i2c_bus.bus_recursive_mutex.use"/>
       <property id="module.driver.comms_i2c_bus.channel" value="1"/>
       <property id="module.driver.comms_i2c_bus.rate" value="module.driver.comms_i2c_bus.rate.rate_standard"/>
     </module>

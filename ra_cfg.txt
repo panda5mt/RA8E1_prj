@@ -637,15 +637,15 @@ FSP Configuration
     Instance "g_comms_i2c_device0 I2C Communication Device (rm_comms_i2c)"
       Name: g_comms_i2c_device0
       Semaphore Timeout (RTOS only): 0xFFFFFFFF
-      Slave Address: 0x00
+      Slave Address: 0x78
       Address Mode: 7-Bit
       Callback: comms_i2c_callback
       
       Instance "g_comms_i2c_bus0 I2C Shared Bus (rm_comms_i2c)"
         Name: g_comms_i2c_bus0
         Bus Timeout: 0xFFFFFFFF
-        Semaphore for Blocking (RTOS only): Unuse
-        Recursive Mutex for Bus (RTOS only): Unuse
+        Semaphore for Blocking (RTOS only): Use
+        Recursive Mutex for Bus (RTOS only): Use
         Channel: 1
         Rate: Standard
         

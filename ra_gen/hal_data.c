@@ -8,7 +8,7 @@ rm_comms_i2c_instance_ctrl_t g_comms_i2c_device0_ctrl;
 /* Lower level driver configuration */
 const i2c_master_cfg_t g_comms_i2c_device0_lower_level_cfg =
 {
-    .slave = 0x00,
+    .slave = 0x78,
     .addr_mode = I2C_MASTER_ADDR_MODE_7BIT,
     .p_callback = rm_comms_i2c_callback,
 };

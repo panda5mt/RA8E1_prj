@@ -6,7 +6,8 @@
 #include "sccb_if.h"
 
 #define NEED_XPRINTF_MESSAGE (1)
-fsp_err_t err;
+
+uint32_t g_flag;
 static const cam_reg_value_t ov5642_init_reg_tbl[] = {
     // PLL
     {0x31, 0x03, 0x93}, // Reset system
@@ -370,11 +371,9 @@ static const cam_reg_value_t ov5642_init_reg_tbl[] = {
     {0xFF, 0xFF, 0xFF}, // END MARKER
 };
 
-i2c_master_event_t g_i2c_callback_event;
-
-void g_i2c_callback(i2c_master_callback_args_t *p_args)
+void handle_error(fsp_err_t err)
 {
-    g_i2c_callback_event = p_args->event;
+    return;
 }
 
 // Write n byte to the specified register
@@ -398,23 +397,45 @@ int32_t reg_write(uint32_t addr, // Camera's hw address
         msg[i] = buf[i];
     }
 
-    // Write device address over I2C
-    // R_IIC_MASTER_SlaveAddressSet(&g_i2c_master1_ctrl, addr, I2C_MASTER_ADDR_MODE_7BIT);
+    g_flag = 0;
+    /* Send data to an I2C device. */
+    RM_COMMS_I2C_Write(&g_comms_i2c_device0_ctrl, msg, nbytes);
+    while (0 == g_flag)
+    {
+        /* Wait callback */
+        // xprintf("..");
+    }
 
-    /* Send data to I2C slave */
-    g_i2c_callback_event = I2C_MASTER_EVENT_ABORTED;
-
-    // Write data to register(s) over I2C
-    err = R_IIC_MASTER_Write(&g_i2c_master1_ctrl, msg, nbytes, false);
-    /* Handle any errors. This function should be defined by the user. */
-    assert(FSP_SUCCESS == err);
-
-    // wait until complete;
-    while ((I2C_MASTER_EVENT_TX_COMPLETE != g_i2c_callback_event))
-        ;
+    xprintf("g_flag=%d\n", g_flag);
+    g_flag = 0;
 
     num_bytes_read = nbytes;
     return num_bytes_read;
+}
+
+i2c_master_event_t g_i2c_callback_event;
+
+void comms_i2c_callback(rm_comms_callback_args_t *p_args)
+{
+    g_i2c_callback_event = p_args->event;
+    switch (g_i2c_callback_event)
+    {
+    case I2C_MASTER_EVENT_ABORTED:
+        g_flag = 1;
+        break;
+    case I2C_MASTER_EVENT_RX_COMPLETE:
+        g_flag = 2;
+        break;
+    case I2C_MASTER_EVENT_TX_COMPLETE:
+        g_flag = 3;
+        break;
+    case I2C_MASTER_EVENT_START:
+        g_flag = 4;
+        break;
+    case I2C_MASTER_EVENT_BYTE_ACK:
+        g_flag = 5;
+        break;
+    }
 }
 
 void sccb_init(void)
@@ -423,10 +444,46 @@ void sccb_init(void)
     const cam_reg_value_t *reg_tbl = ov5642_init_reg_tbl;
     uint8_t CAM_ADDR = 0x00;
 
-    R_BSP_MODULE_START(FSP_IP_IIC, 1);
-    err = R_IIC_MASTER_Open(&g_i2c_master1_ctrl, &g_i2c_master1_cfg);
+    /////
+    // init I2C HW with RTOS
+    fsp_err_t err = FSP_SUCCESS;
+    /* Open the I2C bus if it is not already open. */
+    rm_comms_i2c_bus_extended_cfg_t *p_extend = (rm_comms_i2c_bus_extended_cfg_t *)g_comms_i2c_device0_cfg.p_extend;
+    i2c_master_instance_t *p_driver_instance = (i2c_master_instance_t *)p_extend->p_driver_instance;
+    p_driver_instance->p_api->open(p_driver_instance->p_ctrl, p_driver_instance->p_cfg);
+#if BSP_CFG_RTOS
+    /* Create a semaphore for blocking if a semaphore is not NULL */
+    if (NULL != p_extend->p_blocking_semaphore)
+    {
+#if BSP_CFG_RTOS == 1 // AzureOS
+        tx_semaphore_create(p_extend->p_blocking_semaphore->p_semaphore_handle,
+                            p_extend->p_blocking_semaphore->p_semaphore_name,
+                            (ULONG)0);
+#elif BSP_CFG_RTOS == 2 // FreeRTOS
+        *(p_extend->p_blocking_semaphore->p_semaphore_handle) =
+            xSemaphoreCreateCountingStatic((UBaseType_t)1,
+                                           (UBaseType_t)0,
+                                           p_extend->p_blocking_semaphore->p_semaphore_memory);
+#endif
+    }
+    /* Create a recursive mutex for bus lock if a recursive mutex is not NULL */
+    if (NULL != p_extend->p_bus_recursive_mutex)
+    {
+#if BSP_CFG_RTOS == 1 // AzureOS
+        tx_mutex_create(p_extend->p_bus_recursive_mutex->p_mutex_handle,
+                        p_extend->p_bus_recursive_mutex->p_mutex_name,
+                        TX_INHERIT);
+#elif BSP_CFG_RTOS == 2 // FreeRTOS
+        *(p_extend->p_bus_recursive_mutex->p_mutex_handle) =
+            xSemaphoreCreateRecursiveMutexStatic(p_extend->p_bus_recursive_mutex->p_mutex_memory);
+#endif
+    }
+#endif
+
+    err = RM_COMMS_I2C_Open(&g_comms_i2c_device0_ctrl, &g_comms_i2c_device0_cfg);
     /* Handle any errors. This function should be defined by the user. */
-    assert(FSP_SUCCESS == err);
+    handle_error(err);
+    /////
 
     CAM_ADDR = (0x78 >> 1U);
     uint16_t i = 0;
@@ -441,7 +498,7 @@ void sccb_init(void)
             reg_tbl[i].val == 0xFF)
         {
             // 終了マーカーに達したら抜ける
-            xprintf("cam init end\n");
+            xprintf("Camera init end\n");
             break;
         }
         reg_write(CAM_ADDR, sccb_dat, 3);
