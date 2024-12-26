@@ -373,6 +373,24 @@ static const cam_reg_value_t ov5642_init_reg_tbl[] = {
     {0xFF, 0xFF, 0xFF}, // END MARKER(0xff,0xff,0xff)
 };
 
+void cam_clk_init(void)
+{
+
+    //  init PWM(GPT)
+    R_BSP_MODULE_START(FSP_IP_GPT, 3);
+    if (FSP_SUCCESS == R_GPT_Open(&g_timer3_ctrl, &g_timer3_cfg))
+    {
+        xprintf("[PWM/GPT] Open Ok.\n");
+    }
+    if (FSP_SUCCESS == R_GPT_Start(&g_timer3_ctrl))
+    {
+        xprintf("[PWM/GPT] Start Ok.\n");
+    }
+    timer_info_t p_info;
+    R_GPT_InfoGet(&g_timer3_ctrl, &p_info);
+    xprintf("[PWM/GPT] %d[kHz]\n", (p_info.clock_frequency / p_info.period_counts) / 1000);
+}
+
 // Write n byte to the specified register
 int32_t reg_write(uint32_t addr, // Camera's hw address
                   uint8_t *buf,
@@ -446,12 +464,15 @@ void g_i2c_callback(i2c_master_callback_args_t *p_args)
     // }
 }
 
-void sccb_init(void)
+void sccb_and_clk_init(void)
 {
     uint8_t sccb_dat[3];
     const cam_reg_value_t *reg_tbl = ov5642_init_reg_tbl;
     uint32_t CAM_ADDR = 0x00;
     fsp_err_t err;
+
+    // Init XCLK of DVP(24MHz)
+    cam_clk_init();
 
     // init I2C HW
     err = R_IIC_MASTER_Open(&g_i2c_master1_ctrl, &g_i2c_master1_cfg);

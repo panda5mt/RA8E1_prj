@@ -21,23 +21,10 @@ void main_thread0_entry(void *pvParameters)
     //  init UART & printf
     xdev_out(put_char_ra8);
 
-    //  init PWM(GPT)
-    R_BSP_MODULE_START(FSP_IP_GPT, 3);
-    if (FSP_SUCCESS == R_GPT_Open(&g_timer3_ctrl, &g_timer3_cfg))
-    {
-        xprintf("GPT Open OK!\n");
-    }
-    if (FSP_SUCCESS == R_GPT_Start(&g_timer3_ctrl))
-    {
-        xprintf("GPT Start OK!\n");
-    }
-    timer_info_t p_info;
-    R_GPT_InfoGet(&g_timer3_ctrl, &p_info);
-    xprintf("PWM = %d[kHz]\n", (p_info.clock_frequency / p_info.period_counts) / 1000);
+    // init I2C and PWM
+    sccb_and_clk_init();
 
-    // init I2C
-    sccb_init();
-
+    R_CEU_Open(&g_ceu0_ctrl, &g_ceu0_cfg);
     /* TODO: add your own code here */
     while (1)
     {
