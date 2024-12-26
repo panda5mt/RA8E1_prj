@@ -395,8 +395,6 @@ int32_t reg_write(uint32_t addr, // Camera's hw address
         msg[i] = buf[i];
     }
 
-    g_flag = 0;
-
     // Send data to I2C slave
     g_i2c_callback_event = I2C_MASTER_EVENT_ABORTED;
     err = R_IIC_MASTER_Write(&g_i2c_master1_ctrl, msg, nbytes, false);
@@ -414,8 +412,8 @@ int32_t reg_write(uint32_t addr, // Camera's hw address
         __BKPT(0);
     }
 
-    xprintf("g_flag=%d\n", g_flag);
-    g_flag = 0;
+    // xprintf("g_flag=%d\n", g_flag);
+
     num_bytes_read = nbytes;
     return num_bytes_read;
 }
@@ -424,27 +422,27 @@ void g_i2c_callback(i2c_master_callback_args_t *p_args)
 {
     g_i2c_callback_event = p_args->event;
 
-    switch (g_i2c_callback_event)
-    {
-    case I2C_MASTER_EVENT_ABORTED:
-        g_flag = 1;
-        break;
-    case I2C_MASTER_EVENT_RX_COMPLETE:
-        g_flag = 2;
-        break;
-    case I2C_MASTER_EVENT_TX_COMPLETE:
-        g_flag = 3;
-        break;
-    case I2C_MASTER_EVENT_START:
-        g_flag = 4;
-        break;
-    case I2C_MASTER_EVENT_BYTE_ACK:
-        g_flag = 5;
-        break;
-    default:
-        g_flag = 0;
-        break;
-    }
+    // switch (g_i2c_callback_event)
+    // {
+    // case I2C_MASTER_EVENT_ABORTED:
+    //     g_flag = 1;
+    //     break;
+    // case I2C_MASTER_EVENT_RX_COMPLETE:
+    //     g_flag = 2;
+    //     break;
+    // case I2C_MASTER_EVENT_TX_COMPLETE:
+    //     g_flag = 3;
+    //     break;
+    // case I2C_MASTER_EVENT_START:
+    //     g_flag = 4;
+    //     break;
+    // case I2C_MASTER_EVENT_BYTE_ACK:
+    //     g_flag = 5;
+    //     break;
+    // default:
+    //     g_flag = 0;
+    //     break;
+    // }
 }
 
 void sccb_init(void)
@@ -459,8 +457,6 @@ void sccb_init(void)
     // Handle any errors. This function should be defined by the user.
     assert(FSP_SUCCESS == err);
 
-    /////
-
     CAM_ADDR = (0x78 >> 1U);
     uint16_t i = 0;
     while (1)
@@ -474,7 +470,7 @@ void sccb_init(void)
             reg_tbl[i].val == 0xFF)
         {
             // 終了マーカーに達したら抜ける
-            xprintf("Camera init end\n");
+            xprintf("[Camera] Init End.\n");
             break;
         }
         reg_write(CAM_ADDR, sccb_dat, 3);
