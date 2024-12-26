@@ -370,7 +370,7 @@ static const cam_reg_value_t ov5642_init_reg_tbl[] = {
 #endif
     // VSYNC Active-Low & Gate PCLK under VSYNC & HREF
     {0x47, 0x40, 0x2d},
-    {0xFF, 0xFF, 0xFF}, // END MARKER
+    {0xFF, 0xFF, 0xFF}, // END MARKER(0xff,0xff,0xff)
 };
 
 // Write n byte to the specified register
@@ -388,6 +388,7 @@ int32_t reg_write(uint32_t addr, // Camera's hw address
     {
         return 0;
     }
+    err = R_IIC_MASTER_SlaveAddressSet(&g_i2c_master1_ctrl, addr, I2C_MASTER_ADDR_MODE_7BIT);
 
     // Append register address to front of data packet
     for (int32_t i = 0; i < nbytes; i++)
@@ -449,7 +450,7 @@ void sccb_init(void)
 {
     uint8_t sccb_dat[3];
     const cam_reg_value_t *reg_tbl = ov5642_init_reg_tbl;
-    uint8_t CAM_ADDR = 0x00;
+    uint32_t CAM_ADDR = 0x00;
     fsp_err_t err;
     /////
     // init I2C HW
@@ -457,7 +458,7 @@ void sccb_init(void)
     // Handle any errors. This function should be defined by the user.
     assert(FSP_SUCCESS == err);
 
-    CAM_ADDR = (0x78 >> 1U);
+    CAM_ADDR = (0x78 >> 1U); // OV5642
     uint16_t i = 0;
     while (1)
     {
