@@ -13,7 +13,7 @@ uint8_t g_image_qvga_sram[VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL] /*BSP_ALIGN_V
 // callback function
 void g_ceu0_user_callback(capture_callback_args_t *p_args)
 {
-    g_flag1 = (uint32_t)p_args->event;
+    // g_flag1 = (uint32_t)p_args->event;
     /* Multiple event flags may be set simultaneously */
     if (p_args->event & (uint32_t) ~(CEU_EVENT_HD | CEU_EVENT_VD | CEU_EVENT_FRAME_END))
     {
@@ -46,15 +46,21 @@ void cam_init(void)
     sccb_init();
 
     ////////////////////// CAMERA START
-    fsp_err_t err = FSP_SUCCESS;
     g_flag1 = 0;
     R_CEU_Open(&g_ceu0_ctrl, &g_ceu0_cfg);
+}
+
+void cam_capture(void)
+{
+    fsp_err_t err = FSP_SUCCESS;
+
     g_ceu_capture_error = false;
     g_ceu_capture_complete = false;
 
     // R_BSP_MODULE_START(FSP_IP_CEC, 0);
     err = R_CEU_CaptureStart(&g_ceu0_ctrl, g_image_qvga_sram);
     assert(FSP_SUCCESS == err);
+
     xprintf("[Camera Capture] Start.\n");
 
     while (!g_ceu_capture_complete && !g_ceu_capture_error)
@@ -64,7 +70,13 @@ void cam_init(void)
 
     xprintf("[Camera Capture] end\n");
     /* Process image here if capture was successful. */
+
+    ////////////////////// CAMERA END
+}
+
+void cam_close(void)
+{
+    fsp_err_t err = FSP_SUCCESS;
     err = R_CEU_Close(&g_ceu0_ctrl);
     assert(FSP_SUCCESS == err);
-    ////////////////////// CAMERA END
 }

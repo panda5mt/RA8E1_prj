@@ -19,6 +19,16 @@ void main_thread0_entry(void *pvParameters)
 
     // init DVP camera
     cam_init();
+    cam_capture();
+    cam_close();
+    cam_init();
+    cam_capture();
+
+    for (int i = 0; i < VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL; i++)
+    {
+
+        xprintf("0x%x\n", g_image_qvga_sram[i]);
+    }
 
     /* TODO: add your own code here */
     while (1)
