@@ -346,7 +346,7 @@
       <property id="module.driver.ceu.name" value="g_ceu0"/>
       <property id="module.driver.ceu.capture_format" value="module.driver.ceu.capture_format.data_synchronous"/>
       <property id="module.driver.ceu.bus_size" value="module.driver.ceu.bus_size.8_bit"/>
-      <property id="module.driver.ceu.hsync_polarity" value="module.driver.ceu.hsync_polarity.low"/>
+      <property id="module.driver.ceu.hsync_polarity" value="module.driver.ceu.hsync_polarity.high"/>
       <property id="module.driver.ceu.vsync_polarity" value="module.driver.ceu.vsync_polarity.high"/>
       <property id="module.driver.ceu.byte_swapping" value=""/>
       <property id="module.driver.ceu.burst_mode" value="module.driver.ceu.burst_mode.x1"/>

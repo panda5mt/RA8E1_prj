@@ -67,7 +67,7 @@ ceu_instance_ctrl_t g_ceu0_ctrl;
                 .edge_info.dsel       = 1,
                 .edge_info.hdsel      = 1,
                 .edge_info.vdsel      = 1,
-                .hsync_polarity       = CEU_HSYNC_POLARITY_LOW,
+                .hsync_polarity       = CEU_HSYNC_POLARITY_HIGH,
                 .vsync_polarity       = CEU_VSYNC_POLARITY_HIGH,
                 .byte_swapping        = {
                                         .swap_8bit_units  = ( 0x0) >> 0x00 & 0x01,

@@ -604,7 +604,7 @@ FSP Configuration
       General: Name: g_ceu0
       Input: Capture Mode: Data Synchronous Fetch
       Input: Data Bus Specifications: Data Bus Size: 8-bit
-      Input: Data Bus Specifications: HSYNC Polarity: Low
+      Input: Data Bus Specifications: HSYNC Polarity: High
       Input: Data Bus Specifications: VSYNC Polarity: High
       Output: Byte Swapping: 
       Output: Burst Transfer Mode: Transfer in 32-byte units
