@@ -1,4 +1,5 @@
 #include "hal_data.h"
+#include "projdefs.h"
 #include "r_ceu.h"
 #include "xprintf_helper.h"
 #include "xprintf.h"
@@ -8,7 +9,7 @@ volatile bool g_ceu_capture_error;
 volatile bool g_ceu_capture_complete;
 uint32_t g_flag1;
 
-uint8_t g_image_qvga_sram[VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL] /*BSP_ALIGN_VARIABLE(8)*/;
+uint8_t g_image_qvga_sram[VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL] BSP_ALIGN_VARIABLE(8);
 
 // callback function
 void g_ceu0_user_callback(capture_callback_args_t *p_args)
@@ -44,8 +45,7 @@ void cam_init(void)
     cam_clk_init();
     // init I2C and PWM
     sccb_init();
-
-    ////////////////////// CAMERA START
+    R_BSP_SoftwareDelay(10U, BSP_DELAY_UNITS_MILLISECONDS);
     g_flag1 = 0;
     R_CEU_Open(&g_ceu0_ctrl, &g_ceu0_cfg);
 }
@@ -70,16 +70,7 @@ void cam_capture(void)
 
     xprintf("[Camera Capture] end\n");
     /* Process image here if capture was successful. */
-    xprintf("!srt\n");
-    for (int i = 0; i < VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL; i += 4)
-    {
 
-        xprintf("0x%02X%02X%02X%02X\n",
-                g_image_qvga_sram[i],
-                g_image_qvga_sram[i + 1],
-                g_image_qvga_sram[i + 2],
-                g_image_qvga_sram[i + 3]);
-    }
     ////////////////////// CAMERA END
 }
 

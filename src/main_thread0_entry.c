@@ -26,6 +26,17 @@ void main_thread0_entry(void *pvParameters)
     cam_capture();
     // cam_close();
 
+    xprintf("!srt\n");
+    for (int i = 0; i < VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL; i += 4)
+    {
+
+        xprintf("0x%02X%02X%02X%02X\n",
+                g_image_qvga_sram[i],
+                g_image_qvga_sram[i + 1],
+                g_image_qvga_sram[i + 2],
+                g_image_qvga_sram[i + 3]);
+    }
+
     /* TODO: add your own code here */
     while (1)
     {
