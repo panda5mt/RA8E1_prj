@@ -5,8 +5,8 @@
 #include "r_ceu.h"
 #include "sccb_if.h"
 
-#define VGA_WIDTH (256)
-#define VGA_HEIGHT (256)
+#define VGA_WIDTH (320)
+#define VGA_HEIGHT (240)
 #define BYTE_PER_PIXEL (2)
 
 extern uint8_t g_image_qvga_sram[VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL] BSP_ALIGN_VARIABLE(8);

@@ -67,15 +67,15 @@ ceu_instance_ctrl_t g_ceu0_ctrl;
                 .edge_info.dsel       = 0,
                 .edge_info.hdsel      = 0,
                 .edge_info.vdsel      = 0,
-                .hsync_polarity       = CEU_HSYNC_POLARITY_HIGH,
-                .vsync_polarity       = CEU_VSYNC_POLARITY_HIGH,
+                .hsync_polarity       = CEU_HSYNC_POLARITY_LOW,
+                .vsync_polarity       = CEU_VSYNC_POLARITY_LOW,
                 .byte_swapping        = {
                                         .swap_8bit_units  = ( 0x0) >> 0x00 & 0x01,
                                         .swap_16bit_units = ( 0x0) >> 0x01 & 0x01,
                                         .swap_32bit_units = ( 0x0) >> 0x02 & 0x01,
                                         },
                 .burst_mode           = CEU_BURST_TRANSFER_MODE_X1,
-                .image_area_size      = 256 * 256 * 2,
+                .image_area_size      = 320 * 240 * 2,
                 .interrupts_enabled   = 0 | \
                                         R_CEU_CEIER_CPEIE_Msk | \
                                         0 | \
@@ -92,9 +92,9 @@ ceu_instance_ctrl_t g_ceu0_ctrl;
 
             const capture_cfg_t g_ceu0_cfg =
             {
-                .x_capture_pixels      = 256,
-                .y_capture_pixels      = 256,
-                .x_capture_start_pixel = 0,
+                .x_capture_pixels      = 320,
+                .y_capture_pixels      = 240,
+                .x_capture_start_pixel = 4514,
                 .y_capture_start_pixel = 0,
                 .bytes_per_pixel       = 2,
                 .p_callback            = g_ceu0_user_callback,

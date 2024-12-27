@@ -4,9 +4,9 @@
 #include "xprintf_helper.h"
 #include "cam.h"
 
-#define VGA_WIDTH (256)
-#define VGA_HEIGHT (256)
-#define BYTE_PER_PIXEL (2)
+// #define VGA_WIDTH (256)
+// #define VGA_HEIGHT (256)
+// #define BYTE_PER_PIXEL (2)
 
 /* Main Thread entry function */
 /* pvParameters contains TaskHandle_t */
