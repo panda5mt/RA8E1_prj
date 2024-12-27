@@ -9,7 +9,7 @@
 #define VGA_HEIGHT (256)
 #define BYTE_PER_PIXEL (2)
 
-extern uint8_t g_image_qvga_sram[VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL] /*BSP_ALIGN_VARIABLE(8)*/;
+extern uint8_t g_image_qvga_sram[VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL] BSP_ALIGN_VARIABLE(8);
 
 extern void g_ceu0_user_callback(capture_callback_args_t *p_args);
 void cam_init(void);

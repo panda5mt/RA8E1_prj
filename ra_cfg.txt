@@ -623,9 +623,9 @@ FSP Configuration
       Input: Capture Specifications: Vertical capture resolution: 256
       Input: Capture Specifications: Horizontal pixel offset: 0
       Input: Capture Specifications: Vertical pixel offset: 0
-      Input: Capture Specifications: Sample Points: Data Sample Point: Falling edge of the camera clock
-      Input: Capture Specifications: Sample Points: H-Sync Sample Point: Falling edge of the camera clock
-      Input: Capture Specifications: Sample Points: V-Sync Sample Point: Falling edge of the camera clock
+      Input: Capture Specifications: Sample Points: Data Sample Point: Rising edge of the camera clock
+      Input: Capture Specifications: Sample Points: H-Sync Sample Point: Rising edge of the camera clock
+      Input: Capture Specifications: Sample Points: V-Sync Sample Point: Rising edge of the camera clock
       Output: Buffer: Data Enable Buffer Size: 0
       
     Instance "g_i2c_master1 I2C Master (r_iic_master)"
