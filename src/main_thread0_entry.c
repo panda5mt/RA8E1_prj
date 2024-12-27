@@ -18,9 +18,9 @@ void main_thread0_entry(void *pvParameters)
     xdev_out(put_char_ra8);
 
     // init DVP camera
-    // cam_init();
-    // cam_capture();
-    // cam_close();
+    cam_init();
+    cam_capture();
+    cam_close();
     cam_init();
     vTaskDelay(pdMS_TO_TICKS(200));
     cam_capture();
