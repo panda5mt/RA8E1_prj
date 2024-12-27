@@ -106,7 +106,7 @@ FSP Configuration
     SPICLK Src: HOCO
     CANFDCLK Disabled
     UCK Disabled
-    OCTASPICLK Disabled
+    OCTASPICLK Src: PLL1P
     CPUCLK Div /1
     ICLK Div /3
     PCLKA Div /3
@@ -120,8 +120,8 @@ FSP Configuration
     SCICLK Div /4
     SPICLK Div /4
     CANFDCLK Div /8
-    UCK Div /5
-    OCTASPICLK Div /4
+    UCK Div /1
+    OCTASPICLK Div /2
     
   Pin Configurations
     RA8E1 FPB -> g_bsp_pin_cfg
@@ -604,12 +604,12 @@ FSP Configuration
       General: Name: g_ceu0
       Input: Capture Mode: Data Synchronous Fetch
       Input: Data Bus Specifications: Data Bus Size: 8-bit
-      Input: Data Bus Specifications: HSYNC Polarity: High
+      Input: Data Bus Specifications: HSYNC Polarity: Low
       Input: Data Bus Specifications: VSYNC Polarity: High
       Output: Byte Swapping: 
-      Output: Burst Transfer Mode: Transfer in 256-byte units
+      Output: Burst Transfer Mode: Transfer in 32-byte units
       Interrupts: Callback: g_ceu0_user_callback
-      Interrupts: CEU Interrupt Priority: Priority 12
+      Interrupts: CEU Interrupt Priority: Priority 2
       Interrupts: Selectable CEU Events: One-Frame Capture End Event: Enabled
       Interrupts: Selectable CEU Events: Horizontal Sync Event: Disabled
       Interrupts: Selectable CEU Events: Vertical Sync Event: Enabled
@@ -619,8 +619,8 @@ FSP Configuration
       Interrupts: Selectable CEU Events: V-Sync Error: Enabled
       Interrupts: Selectable CEU Events: No H-Sync error: Enabled
       Interrupts: Selectable CEU Events: No V-Sync error: Enabled
-      Input: Capture Specifications: Horizontal capture resolution: 640
-      Input: Capture Specifications: Vertical capture resolution: 480
+      Input: Capture Specifications: Horizontal capture resolution: 256
+      Input: Capture Specifications: Vertical capture resolution: 256
       Input: Capture Specifications: Horizontal pixel offset: 0
       Input: Capture Specifications: Vertical pixel offset: 0
       Input: Capture Specifications: Sample Points: Data Sample Point: Rising edge of the camera clock

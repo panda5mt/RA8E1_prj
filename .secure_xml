@@ -46,7 +46,7 @@
     <node id="board.clock.spiclk.source" option="board.clock.spiclk.source.hoco"/>
     <node id="board.clock.canfdclk.source" option="board.clock.canfdclk.source.disabled"/>
     <node id="board.clock.uck.source" option="board.clock.uck.source.disabled"/>
-    <node id="board.clock.octaspiclk.source" option="board.clock.octaspiclk.source.disabled"/>
+    <node id="board.clock.octaspiclk.source" option="board.clock.octaspiclk.source.pll1p"/>
     <node id="board.clock.cpuclk.div" option="board.clock.cpuclk.div.1"/>
     <node id="board.clock.iclk.div" option="board.clock.iclk.div.3"/>
     <node id="board.clock.pclka.div" option="board.clock.pclka.div.3"/>
@@ -60,8 +60,8 @@
     <node id="board.clock.sciclk.div" option="board.clock.sciclk.div.4"/>
     <node id="board.clock.spiclk.div" option="board.clock.spiclk.div.4"/>
     <node id="board.clock.canfdclk.div" option="board.clock.canfdclk.div.8"/>
-    <node id="board.clock.uck.div" option="board.clock.uck.div.5"/>
-    <node id="board.clock.octaspiclk.div" option="board.clock.octaspiclk.div.4"/>
+    <node id="board.clock.uck.div" option="board.clock.uck.div.1"/>
+    <node id="board.clock.octaspiclk.div" option="board.clock.octaspiclk.div.2"/>
     <node id="board.clock.cpuclk.display" option="board.clock.cpuclk.display.value"/>
     <node id="board.clock.iclk.display" option="board.clock.iclk.display.value"/>
     <node id="board.clock.pclka.display" option="board.clock.pclka.display.value"/>

@@ -153,7 +153,7 @@
     <node id="board.clock.spiclk.source" option="board.clock.spiclk.source.hoco"/>
     <node id="board.clock.canfdclk.source" option="board.clock.canfdclk.source.disabled"/>
     <node id="board.clock.uck.source" option="board.clock.uck.source.disabled"/>
-    <node id="board.clock.octaspiclk.source" option="board.clock.octaspiclk.source.disabled"/>
+    <node id="board.clock.octaspiclk.source" option="board.clock.octaspiclk.source.pll1p"/>
     <node id="board.clock.cpuclk.div" option="board.clock.cpuclk.div.1"/>
     <node id="board.clock.iclk.div" option="board.clock.iclk.div.3"/>
     <node id="board.clock.pclka.div" option="board.clock.pclka.div.3"/>
@@ -167,8 +167,8 @@
     <node id="board.clock.sciclk.div" option="board.clock.sciclk.div.4"/>
     <node id="board.clock.spiclk.div" option="board.clock.spiclk.div.4"/>
     <node id="board.clock.canfdclk.div" option="board.clock.canfdclk.div.8"/>
-    <node id="board.clock.uck.div" option="board.clock.uck.div.5"/>
-    <node id="board.clock.octaspiclk.div" option="board.clock.octaspiclk.div.4"/>
+    <node id="board.clock.uck.div" option="board.clock.uck.div.1"/>
+    <node id="board.clock.octaspiclk.div" option="board.clock.octaspiclk.div.2"/>
     <node id="board.clock.cpuclk.display" option="board.clock.cpuclk.display.value"/>
     <node id="board.clock.iclk.display" option="board.clock.iclk.display.value"/>
     <node id="board.clock.pclka.display" option="board.clock.pclka.display.value"/>
@@ -346,12 +346,12 @@
       <property id="module.driver.ceu.name" value="g_ceu0"/>
       <property id="module.driver.ceu.capture_format" value="module.driver.ceu.capture_format.data_synchronous"/>
       <property id="module.driver.ceu.bus_size" value="module.driver.ceu.bus_size.8_bit"/>
-      <property id="module.driver.ceu.hsync_polarity" value="module.driver.ceu.hsync_polarity.high"/>
+      <property id="module.driver.ceu.hsync_polarity" value="module.driver.ceu.hsync_polarity.low"/>
       <property id="module.driver.ceu.vsync_polarity" value="module.driver.ceu.vsync_polarity.high"/>
       <property id="module.driver.ceu.byte_swapping" value=""/>
-      <property id="module.driver.ceu.burst_mode" value="module.driver.ceu.burst_mode.x8"/>
+      <property id="module.driver.ceu.burst_mode" value="module.driver.ceu.burst_mode.x1"/>
       <property id="module.driver.ceu.p_callback" value="g_ceu0_user_callback"/>
-      <property id="module.driver.ceu.ipl" value="board.icu.common.irq.priority12"/>
+      <property id="module.driver.ceu.ipl" value="board.icu.common.irq.priority2"/>
       <property id="module.driver.ceu.interrupts_enabled.cpeie" value="module.driver.ceu.interrupts_enabled.cpeie.enabled"/>
       <property id="module.driver.ceu.interrupts_enabled.hdie" value="module.driver.ceu.interrupts_enabled.hdie.disabled"/>
       <property id="module.driver.ceu.interrupts_enabled.vdie" value="module.driver.ceu.interrupts_enabled.vdie.enabled"/>
@@ -361,8 +361,8 @@
       <property id="module.driver.ceu.interrupts_enabled.vbpie" value="module.driver.ceu.interrupts_enabled.vbpie.enabled"/>
       <property id="module.driver.ceu.interrupts_enabled.nhdie" value="module.driver.ceu.interrupts_enabled.nhdie.enabled"/>
       <property id="module.driver.ceu.interrupts_enabled.nvdie" value="module.driver.ceu.interrupts_enabled.nvdie.enabled"/>
-      <property id="module.driver.ceu.x_pixels" value="640"/>
-      <property id="module.driver.ceu.y_pixels" value="480"/>
+      <property id="module.driver.ceu.x_pixels" value="256"/>
+      <property id="module.driver.ceu.y_pixels" value="256"/>
       <property id="module.driver.ceu.x_start_pixel" value="0"/>
       <property id="module.driver.ceu.y_start_pixel" value="0"/>
       <property id="module.driver.ceu.dsel" value="module.driver.ceu.dsel.rising"/>
@@ -737,6 +737,17 @@
       <configSetting altId="sci9.mode.asynchronousuart.free" configurationId="sci9.mode"/>
       <configSetting altId="sci9.rxd9.p101" configurationId="sci9.rxd9"/>
       <configSetting altId="sci9.txd9.p102" configurationId="sci9.txd9"/>
+      <lockSetting id="ceu.vio_clk" lock="true"/>
+      <lockSetting id="ceu.vio_d0" lock="true"/>
+      <lockSetting id="ceu.vio_d1" lock="true"/>
+      <lockSetting id="ceu.vio_d2" lock="true"/>
+      <lockSetting id="ceu.vio_d3" lock="true"/>
+      <lockSetting id="ceu.vio_d4" lock="true"/>
+      <lockSetting id="ceu.vio_d5" lock="true"/>
+      <lockSetting id="ceu.vio_d6" lock="true"/>
+      <lockSetting id="ceu.vio_d7" lock="true"/>
+      <lockSetting id="ceu.vio_hd" lock="true"/>
+      <lockSetting id="ceu.vio_vd" lock="true"/>
       <lockSetting id="gpt3.gtioc3a" lock="true"/>
       <lockSetting id="iic1.scl1" lock="true"/>
       <lockSetting id="iic1.sda1" lock="true"/>
