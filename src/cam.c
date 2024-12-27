@@ -70,7 +70,16 @@ void cam_capture(void)
 
     xprintf("[Camera Capture] end\n");
     /* Process image here if capture was successful. */
+    xprintf("!srt\n");
+    for (int i = 0; i < VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL; i += 4)
+    {
 
+        xprintf("0x%02X%02X%02X%02X\n",
+                g_image_qvga_sram[i],
+                g_image_qvga_sram[i + 1],
+                g_image_qvga_sram[i + 2],
+                g_image_qvga_sram[i + 3]);
+    }
     ////////////////////// CAMERA END
 }
 

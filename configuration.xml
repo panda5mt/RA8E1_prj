@@ -365,9 +365,9 @@
       <property id="module.driver.ceu.y_pixels" value="256"/>
       <property id="module.driver.ceu.x_start_pixel" value="0"/>
       <property id="module.driver.ceu.y_start_pixel" value="0"/>
-      <property id="module.driver.ceu.dsel" value="module.driver.ceu.dsel.rising"/>
-      <property id="module.driver.ceu.hdsel" value="module.driver.ceu.hdsel.rising"/>
-      <property id="module.driver.ceu.vdsel" value="module.driver.ceu.vdsel.rising"/>
+      <property id="module.driver.ceu.dsel" value="module.driver.ceu.dsel.falling"/>
+      <property id="module.driver.ceu.hdsel" value="module.driver.ceu.hdsel.falling"/>
+      <property id="module.driver.ceu.vdsel" value="module.driver.ceu.vdsel.falling"/>
       <property id="module.driver.ceu.image_buffer_size" value="0"/>
     </module>
     <module id="module.driver.i2c_on_iic_master.994544474">
@@ -397,7 +397,7 @@
     <context id="rtos.awsfreertos.thread.415524792">
       <property id="_symbol" value="main_thread0"/>
       <property id="rtos.awsfreertos.thread.name" value="Main Thread0"/>
-      <property id="rtos.awsfreertos.thread.stack" value="4096"/>
+      <property id="rtos.awsfreertos.thread.stack" value="65536"/>
       <property id="rtos.awsfreertos.thread.priority" value="1"/>
       <property id="rtos.awsfreertos.thread.context" value="NULL"/>
       <property id="rtos.awsfreertos.thread.allocation" value="rtos.awsfreertos.thread.allocation.static"/>

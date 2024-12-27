@@ -64,9 +64,9 @@ ceu_instance_ctrl_t g_ceu0_ctrl;
             {
                 .capture_format       = CEU_CAPTURE_FORMAT_DATA_SYNCHRONOUS,
                 .data_bus_width       = CEU_DATA_BUS_SIZE_8_BIT,
-                .edge_info.dsel       = 0,
-                .edge_info.hdsel      = 0,
-                .edge_info.vdsel      = 0,
+                .edge_info.dsel       = 1,
+                .edge_info.hdsel      = 1,
+                .edge_info.vdsel      = 1,
                 .hsync_polarity       = CEU_HSYNC_POLARITY_HIGH,
                 .vsync_polarity       = CEU_VSYNC_POLARITY_HIGH,
                 .byte_swapping        = {
