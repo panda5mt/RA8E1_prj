@@ -12,7 +12,7 @@ typedef struct
 } cam_reg_value_t;
 
 // init
-void sccb_and_clk_init(void);
+void sccb_init(void);
 
 // init CLK of camera (init before init SCCB)
 void cam_clk_init(void);

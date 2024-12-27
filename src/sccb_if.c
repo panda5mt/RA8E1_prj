@@ -462,15 +462,12 @@ void g_i2c_callback(i2c_master_callback_args_t *p_args)
     // }
 }
 
-void sccb_and_clk_init(void)
+void sccb_init(void)
 {
     uint8_t sccb_dat[3];
     const cam_reg_value_t *reg_tbl = ov5642_init_reg_tbl;
     uint32_t CAM_ADDR = 0x00;
     fsp_err_t err;
-
-    // Init XCLK of DVP(24MHz)
-    cam_clk_init();
 
     // init I2C HW
     err = R_IIC_MASTER_Open(&g_i2c_master1_ctrl, &g_i2c_master1_cfg);
