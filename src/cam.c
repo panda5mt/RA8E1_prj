@@ -59,8 +59,6 @@ void cam_init(void)
 
     while (!g_ceu_capture_complete && !g_ceu_capture_error)
     {
-        // if (g_flag1 != 0)
-        //     xprintf("g_flag = %d\n", g_flag1);
         /* Wait for capture to complete. */
     }
 
