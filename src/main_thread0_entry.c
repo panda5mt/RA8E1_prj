@@ -19,22 +19,25 @@ void main_thread0_entry(void *pvParameters)
 
     // init DVP camera
     cam_init();
+    vTaskDelay(pdMS_TO_TICKS(4000));
     cam_capture();
     cam_close();
-    cam_init();
-    cam_capture();
-
-    for (int i = 0; i < VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL; i++)
+    xprintf("!srt\n");
+    for (int i = 0; i < VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL; i += 4)
     {
 
-        xprintf("0x%x\n", g_image_qvga_sram[i]);
+        xprintf("0x%02X%02X%02X%02X\n",
+                g_image_qvga_sram[i],
+                g_image_qvga_sram[i + 1],
+                g_image_qvga_sram[i + 2],
+                g_image_qvga_sram[i + 3]);
     }
 
     /* TODO: add your own code here */
     while (1)
     {
         uint32_t uptime_ms = xTaskGetTickCount() * portTICK_PERIOD_MS;
-        xprintf("upset time = %d[msec]\n", uptime_ms);
+        // xprintf("upset time = %d[msec]\n", uptime_ms);
         vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
