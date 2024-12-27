@@ -24,7 +24,7 @@ void main_thread0_entry(void *pvParameters)
     cam_init();
     vTaskDelay(pdMS_TO_TICKS(200));
     cam_capture();
-    cam_close();
+    // cam_close();
 
     /* TODO: add your own code here */
     while (1)
