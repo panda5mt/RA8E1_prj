@@ -57,6 +57,7 @@ void main_thread0_entry(void *pvParameters)
     g_ceu_capture_error = false;
     g_ceu_capture_complete = false;
 
+    R_BSP_MODULE_START(FSP_IP_CEC, 0);
     err = R_CEU_CaptureStart(&g_ceu0_ctrl, g_image_qvga_sram);
     assert(FSP_SUCCESS == err);
     xprintf("[Camera Capture] Start.\n");
@@ -71,10 +72,11 @@ void main_thread0_entry(void *pvParameters)
             g_ceu_capture_error = false;
         }
     }
+
+    xprintf("[Camera Capture] end\n");
     /* Process image here if capture was successful. */
     err = R_CEU_Close(&g_ceu0_ctrl);
     assert(FSP_SUCCESS == err);
-    xprintf("[Camera Capture] end\n");
     ////////////////////// CAMERA END
 
     /* TODO: add your own code here */
