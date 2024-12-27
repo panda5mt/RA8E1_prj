@@ -1,3 +1,6 @@
+#ifndef SCCB_IF_H_
+#define SCCB_IF_H_
+
 #include "hal_data.h"
 #include "xprintf_helper.h"
 
@@ -24,3 +27,5 @@ int32_t reg_read(uint32_t addr,
 
 // CALLBACK
 extern void g_i2c_callback(i2c_master_callback_args_t *p_args);
+
+#endif // SCCB_IF_H_
