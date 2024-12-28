@@ -436,7 +436,7 @@ FSP Configuration
     Flow Control Support: Enable
     
   Module "Capture Engine Unit (r_ceu)"
-    Parameter Checking: Default (BSP)
+    Parameter Checking: Enabled
     
   Module "I2C Master (r_iic_master)"
     Parameter Checking: Default (BSP)
@@ -604,8 +604,8 @@ FSP Configuration
       General: Name: g_ceu0
       Input: Capture Mode: Data Synchronous Fetch
       Input: Data Bus Specifications: Data Bus Size: 8-bit
-      Input: Data Bus Specifications: HSYNC Polarity: Low
-      Input: Data Bus Specifications: VSYNC Polarity: Low
+      Input: Data Bus Specifications: HSYNC Polarity: High
+      Input: Data Bus Specifications: VSYNC Polarity: High
       Output: Byte Swapping: 
       Output: Burst Transfer Mode: Transfer in 32-byte units
       Interrupts: Callback: g_ceu0_user_callback
@@ -621,7 +621,7 @@ FSP Configuration
       Interrupts: Selectable CEU Events: No V-Sync error: Enabled
       Input: Capture Specifications: Horizontal capture resolution: 320
       Input: Capture Specifications: Vertical capture resolution: 240
-      Input: Capture Specifications: Horizontal pixel offset: 4514
+      Input: Capture Specifications: Horizontal pixel offset: 0
       Input: Capture Specifications: Vertical pixel offset: 0
       Input: Capture Specifications: Sample Points: Data Sample Point: Rising edge of the camera clock
       Input: Capture Specifications: Sample Points: H-Sync Sample Point: Rising edge of the camera clock
@@ -642,6 +642,34 @@ FSP Configuration
       Timeout during SCL Low: Enabled
       Callback: g_i2c_callback
       Interrupt Priority Level: Priority 2
+      
+    Instance "g_ceu1 Capture Engine Unit (r_ceu)"
+      General: Name: g_ceu1
+      Input: Capture Mode: Data Synchronous Fetch
+      Input: Data Bus Specifications: Data Bus Size: 8-bit
+      Input: Data Bus Specifications: HSYNC Polarity: High
+      Input: Data Bus Specifications: VSYNC Polarity: High
+      Output: Byte Swapping: 
+      Output: Burst Transfer Mode: Transfer in 256-byte units
+      Interrupts: Callback: g_ceu1_user_callback
+      Interrupts: CEU Interrupt Priority: Priority 12
+      Interrupts: Selectable CEU Events: One-Frame Capture End Event: Enabled
+      Interrupts: Selectable CEU Events: Horizontal Sync Event: Disabled
+      Interrupts: Selectable CEU Events: Vertical Sync Event: Enabled
+      Interrupts: Selectable CEU Events: CRAM Buffer Overflow Error: Enabled
+      Interrupts: Selectable CEU Events: H-Sync Validation Error: Disabled
+      Interrupts: Selectable CEU Events: V-Sync Validation Error: Disabled
+      Interrupts: Selectable CEU Events: V-Sync Error: Enabled
+      Interrupts: Selectable CEU Events: No H-Sync error: Enabled
+      Interrupts: Selectable CEU Events: No V-Sync error: Enabled
+      Input: Capture Specifications: Horizontal capture resolution: 640
+      Input: Capture Specifications: Vertical capture resolution: 480
+      Input: Capture Specifications: Horizontal pixel offset: 0
+      Input: Capture Specifications: Vertical pixel offset: 0
+      Input: Capture Specifications: Sample Points: Data Sample Point: Rising edge of the camera clock
+      Input: Capture Specifications: Sample Points: H-Sync Sample Point: Rising edge of the camera clock
+      Input: Capture Specifications: Sample Points: V-Sync Sample Point: Rising edge of the camera clock
+      Output: Buffer: Data Enable Buffer Size: 0
       
   Thread "Main Thread0"
     Symbol: main_thread0

@@ -373,7 +373,6 @@ static const cam_reg_value_t ov5642_init_reg_tbl[] = {
 
 void cam_clk_init(void)
 {
-
     //  init PWM(GPT)
     R_BSP_MODULE_START(FSP_IP_GPT, 3);
     if (FSP_SUCCESS == R_GPT_Open(&g_timer3_ctrl, &g_timer3_cfg))
@@ -417,7 +416,7 @@ int32_t reg_write(uint32_t addr, // Camera's hw address
     err = R_IIC_MASTER_Write(&g_i2c_master1_ctrl, msg, nbytes, false);
     assert(FSP_SUCCESS == err);
 
-    /* Since there is nothing else to do, block until Callback triggers*/
+    /* Since there is nothing else to do, block until Callback triggers */
     while ((I2C_MASTER_EVENT_TX_COMPLETE != g_i2c_callback_event) && timeout_ms)
     {
         R_BSP_SoftwareDelay(1U, BSP_DELAY_UNITS_MILLISECONDS);

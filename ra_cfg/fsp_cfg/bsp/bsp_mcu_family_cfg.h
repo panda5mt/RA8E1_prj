@@ -98,7 +98,7 @@
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 7) /* SSIE1 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 8) /* SSIE0 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 13) /* DOC */ | \
-            (((1 > 0) ? 0U : 1U) << 16) /* CEU */ | \
+            (((2 > 0) ? 0U : 1U) << 16) /* CEU */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 26) /* CANFD1 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 27) /* CANFD0 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 31) /* RSIP-E51A */)

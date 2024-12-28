@@ -79,8 +79,8 @@
             <slot name="P804" secure="true"/>
             <slot name="P809" secure="true"/>
         </peripheral>
-        <peripheral name="GPT3" group="GPT" security="s"/>
         <peripheral name="CEU" security="s"/>
+        <peripheral name="GPT3" group="GPT" security="s"/>
         <peripheral name="IIC1" group="IIC" security="s"/>
         <peripheral name="ICU">
             <slot name="IRQ0" secure="true"/>
