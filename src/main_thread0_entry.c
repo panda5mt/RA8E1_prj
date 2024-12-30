@@ -34,7 +34,7 @@ void main_thread0_entry(void *pvParameters)
     for (int i = 0; i < VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL; i += 4)
     {
 
-        xprintf("%02x%02x%02x%02x\n",
+        xprintf("0x%02x%02x%02x%02x\n",
                 g_image_qvga_sram[i],
                 g_image_qvga_sram[i + 1],
                 g_image_qvga_sram[i + 2],
