@@ -59,12 +59,12 @@ void cam_capture(void)
 
     memset(g_image_qvga_sram, 0, VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL);
     // R_BSP_MODULE_START(FSP_IP_CEC, 0);
-    err = R_CEU_CaptureStart(&g_ceu0_ctrl, &g_image_qvga_sram[0]);
+    err = R_CEU_CaptureStart(&g_ceu0_ctrl, g_image_qvga_sram);
     assert(FSP_SUCCESS == err);
 
     xprintf("[Camera Capture] Start.\n");
 
-    while (!g_ceu_capture_complete && !g_ceu_capture_error)
+    while (!g_ceu_capture_complete /* && !g_ceu_capture_error */)
     {
         /* Wait for capture to complete. */
     }

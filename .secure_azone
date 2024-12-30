@@ -48,7 +48,6 @@
             <slot name="P405" secure="true"/>
             <slot name="P406" secure="true"/>
             <slot name="P408" secure="true"/>
-            <slot name="P414" secure="true"/>
         </peripheral>
         <peripheral name="PORT5" group="PORT">
             <slot name="P511" secure="true"/>
@@ -79,8 +78,8 @@
             <slot name="P804" secure="true"/>
             <slot name="P809" secure="true"/>
         </peripheral>
-        <peripheral name="CEU" security="s"/>
         <peripheral name="GPT3" group="GPT" security="s"/>
+        <peripheral name="CEU" security="s"/>
         <peripheral name="IIC1" group="IIC" security="s"/>
         <peripheral name="ICU">
             <slot name="IRQ0" secure="true"/>

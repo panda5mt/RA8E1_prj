@@ -193,7 +193,7 @@ FSP Configuration
       P411 32 - - - - Disabled - - "AGT1: AGTOA1; IRQ4: IRQ4; SCI3: CTS_RTS3; SCI3: DE3; SPI1: MOSI1; USB FS: USB_ID" - None - - 
       P412 31 - - - - Disabled - - "AGT1: AGTEE1; SCI3: CTS3; SPI1: RSPCK1; USB FS: USB_EXICEN" - None - - 
       P413 30 - - - - Disabled - - "SPI1: SSLB0; ULPT1: ULPTEE1" - None - - 
-      P414 29 GPIO CAM_E19 H None "Output mode (Initial Low)" - - "CANFD1: CRX1; GPT0: GTIOC0B; GPT_POEG: GTADSM1; IRQ9: IRQ9; SCI4: RXD4; SPI1: SSLB1" - IO - - 
+      P414 29 - CAM_E19 - - Disabled - - "CANFD1: CRX1; GPT0: GTIOC0B; GPT_POEG: GTADSM1; IRQ9: IRQ9; SCI4: RXD4; SPI1: SSLB1" - None - - 
       P415 28 - CAM_User_Arduino_D3 - - Disabled - - "CANFD1: CTX1; GPT0: GTIOC0A; GPT_POEG: GTADSM0; IRQ8: IRQ8; SCI4: TXD4; SPI1: SSLB2" - None - - 
       P511 144 IIC1_SDA1 IIC_SYSTEM_SDA1 M None "Peripheral mode" - - "CANFD1: CRX1; GPT0: GTIOC0B; IIC1: SDA1; IRQ15: IRQ15" - IO - - 
       P512 143 IIC1_SCL1 IIC_SYSTEM_SCL1 M None "Peripheral mode" - - "CANFD1: CTX1; GPT0: GTIOC0A; IIC1: SCL1; IRQ14: IRQ14" - IO - - 
@@ -338,7 +338,7 @@ FSP Configuration
       P411 32 - - - - Disabled - - "AGT1: AGTOA1; IRQ4: IRQ4; SCI3: CTS_RTS3; SCI3: DE3; SPI1: MOSI1; USB FS: USB_ID" - None - - 
       P412 31 - - - - Disabled - - "AGT1: AGTEE1; SCI3: CTS3; SPI1: RSPCK1; USB FS: USB_EXICEN" - None - - 
       P413 30 - - - - Disabled - - "SPI1: SSLB0; ULPT1: ULPTEE1" - None - - 
-      P414 29 - CAM_E19 L None Disabled - - "CANFD1: CRX1; GPT0: GTIOC0B; GPT_POEG: GTADSM1; IRQ9: IRQ9; SCI4: RXD4; SPI1: SSLB1" - IO - - 
+      P414 29 - CAM_E19 - - Disabled - - "CANFD1: CRX1; GPT0: GTIOC0B; GPT_POEG: GTADSM1; IRQ9: IRQ9; SCI4: RXD4; SPI1: SSLB1" - None - - 
       P415 28 - CAM_User_Arduino_D3 - - Disabled - - "CANFD1: CTX1; GPT0: GTIOC0A; GPT_POEG: GTADSM0; IRQ8: IRQ8; SCI4: TXD4; SPI1: SSLB2" - None - - 
       P511 144 - IIC_SYSTEM_SDA1 L None Disabled - - "CANFD1: CRX1; GPT0: GTIOC0B; IIC1: SDA1; IRQ15: IRQ15" - IO - - 
       P512 143 - IIC_SYSTEM_SCL1 L None Disabled - - "CANFD1: CTX1; GPT0: GTIOC0A; IIC1: SCL1; IRQ14: IRQ14" - IO - - 
@@ -436,7 +436,7 @@ FSP Configuration
     Flow Control Support: Enable
     
   Module "Capture Engine Unit (r_ceu)"
-    Parameter Checking: Enabled
+    Parameter Checking: Default (BSP)
     
   Module "I2C Master (r_iic_master)"
     Parameter Checking: Default (BSP)
@@ -607,7 +607,7 @@ FSP Configuration
       Input: Data Bus Specifications: HSYNC Polarity: High
       Input: Data Bus Specifications: VSYNC Polarity: High
       Output: Byte Swapping: 
-      Output: Burst Transfer Mode: Transfer in 32-byte units
+      Output: Burst Transfer Mode: Transfer in 256-byte units
       Interrupts: Callback: g_ceu0_user_callback
       Interrupts: CEU Interrupt Priority: Priority 2
       Interrupts: Selectable CEU Events: One-Frame Capture End Event: Enabled
@@ -642,34 +642,6 @@ FSP Configuration
       Timeout during SCL Low: Enabled
       Callback: g_i2c_callback
       Interrupt Priority Level: Priority 2
-      
-    Instance "g_ceu1 Capture Engine Unit (r_ceu)"
-      General: Name: g_ceu1
-      Input: Capture Mode: Data Synchronous Fetch
-      Input: Data Bus Specifications: Data Bus Size: 8-bit
-      Input: Data Bus Specifications: HSYNC Polarity: High
-      Input: Data Bus Specifications: VSYNC Polarity: High
-      Output: Byte Swapping: 
-      Output: Burst Transfer Mode: Transfer in 256-byte units
-      Interrupts: Callback: g_ceu1_user_callback
-      Interrupts: CEU Interrupt Priority: Priority 12
-      Interrupts: Selectable CEU Events: One-Frame Capture End Event: Enabled
-      Interrupts: Selectable CEU Events: Horizontal Sync Event: Disabled
-      Interrupts: Selectable CEU Events: Vertical Sync Event: Enabled
-      Interrupts: Selectable CEU Events: CRAM Buffer Overflow Error: Enabled
-      Interrupts: Selectable CEU Events: H-Sync Validation Error: Disabled
-      Interrupts: Selectable CEU Events: V-Sync Validation Error: Disabled
-      Interrupts: Selectable CEU Events: V-Sync Error: Enabled
-      Interrupts: Selectable CEU Events: No H-Sync error: Enabled
-      Interrupts: Selectable CEU Events: No V-Sync error: Enabled
-      Input: Capture Specifications: Horizontal capture resolution: 640
-      Input: Capture Specifications: Vertical capture resolution: 480
-      Input: Capture Specifications: Horizontal pixel offset: 0
-      Input: Capture Specifications: Vertical pixel offset: 0
-      Input: Capture Specifications: Sample Points: Data Sample Point: Rising edge of the camera clock
-      Input: Capture Specifications: Sample Points: H-Sync Sample Point: Rising edge of the camera clock
-      Input: Capture Specifications: Sample Points: V-Sync Sample Point: Rising edge of the camera clock
-      Output: Buffer: Data Enable Buffer Size: 0
       
   Thread "Main Thread0"
     Symbol: main_thread0

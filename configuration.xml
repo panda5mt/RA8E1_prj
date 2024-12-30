@@ -349,7 +349,7 @@
       <property id="module.driver.ceu.hsync_polarity" value="module.driver.ceu.hsync_polarity.high"/>
       <property id="module.driver.ceu.vsync_polarity" value="module.driver.ceu.vsync_polarity.high"/>
       <property id="module.driver.ceu.byte_swapping" value=""/>
-      <property id="module.driver.ceu.burst_mode" value="module.driver.ceu.burst_mode.x1"/>
+      <property id="module.driver.ceu.burst_mode" value="module.driver.ceu.burst_mode.x8"/>
       <property id="module.driver.ceu.p_callback" value="g_ceu0_user_callback"/>
       <property id="module.driver.ceu.ipl" value="board.icu.common.irq.priority2"/>
       <property id="module.driver.ceu.interrupts_enabled.cpeie" value="module.driver.ceu.interrupts_enabled.cpeie.enabled"/>
@@ -385,34 +385,6 @@
       <property id="module.driver.i2c_master.p_callback" value="g_i2c_callback"/>
       <property id="module.driver.i2c_master.ipl" value="board.icu.common.irq.priority2"/>
     </module>
-    <module id="module.driver.ceu_on_capture.1831769717">
-      <property id="module.driver.ceu.name" value="g_ceu1"/>
-      <property id="module.driver.ceu.capture_format" value="module.driver.ceu.capture_format.data_synchronous"/>
-      <property id="module.driver.ceu.bus_size" value="module.driver.ceu.bus_size.8_bit"/>
-      <property id="module.driver.ceu.hsync_polarity" value="module.driver.ceu.hsync_polarity.high"/>
-      <property id="module.driver.ceu.vsync_polarity" value="module.driver.ceu.vsync_polarity.high"/>
-      <property id="module.driver.ceu.byte_swapping" value=""/>
-      <property id="module.driver.ceu.burst_mode" value="module.driver.ceu.burst_mode.x8"/>
-      <property id="module.driver.ceu.p_callback" value="g_ceu1_user_callback"/>
-      <property id="module.driver.ceu.ipl" value="board.icu.common.irq.priority12"/>
-      <property id="module.driver.ceu.interrupts_enabled.cpeie" value="module.driver.ceu.interrupts_enabled.cpeie.enabled"/>
-      <property id="module.driver.ceu.interrupts_enabled.hdie" value="module.driver.ceu.interrupts_enabled.hdie.disabled"/>
-      <property id="module.driver.ceu.interrupts_enabled.vdie" value="module.driver.ceu.interrupts_enabled.vdie.enabled"/>
-      <property id="module.driver.ceu.interrupts_enabled.cdtofie" value="module.driver.ceu.interrupts_enabled.cdtofie.enabled"/>
-      <property id="module.driver.ceu.interrupts_enabled.ighsie" value="module.driver.ceu.interrupts_enabled.ighsie.disabled"/>
-      <property id="module.driver.ceu.interrupts_enabled.igvsie" value="module.driver.ceu.interrupts_enabled.igvsie.disabled"/>
-      <property id="module.driver.ceu.interrupts_enabled.vbpie" value="module.driver.ceu.interrupts_enabled.vbpie.enabled"/>
-      <property id="module.driver.ceu.interrupts_enabled.nhdie" value="module.driver.ceu.interrupts_enabled.nhdie.enabled"/>
-      <property id="module.driver.ceu.interrupts_enabled.nvdie" value="module.driver.ceu.interrupts_enabled.nvdie.enabled"/>
-      <property id="module.driver.ceu.x_pixels" value="640"/>
-      <property id="module.driver.ceu.y_pixels" value="480"/>
-      <property id="module.driver.ceu.x_start_pixel" value="0"/>
-      <property id="module.driver.ceu.y_start_pixel" value="0"/>
-      <property id="module.driver.ceu.dsel" value="module.driver.ceu.dsel.rising"/>
-      <property id="module.driver.ceu.hdsel" value="module.driver.ceu.hdsel.rising"/>
-      <property id="module.driver.ceu.vdsel" value="module.driver.ceu.vdsel.rising"/>
-      <property id="module.driver.ceu.image_buffer_size" value="0"/>
-    </module>
     <context id="_hal.0">
       <stack module="module.driver.ioport_on_ioport.0"/>
       <stack module="module.middleware.rm_freertos_port.0"/>
@@ -421,7 +393,6 @@
       <stack module="module.driver.uart_on_sci_b_uart.796686102"/>
       <stack module="module.driver.ceu_on_capture.450115502"/>
       <stack module="module.driver.i2c_on_iic_master.994544474"/>
-      <stack module="module.driver.ceu_on_capture.1831769717"/>
     </context>
     <context id="rtos.awsfreertos.thread.415524792">
       <property id="_symbol" value="main_thread0"/>
@@ -529,7 +500,7 @@
       <property id="config.awsfreertos.thread.logging_level" value="config.awsfreertos.thread.logging_level.log_none"/>
     </config>
     <config id="config.driver.ceu">
-      <property id="config.driver.ceu.param_checking_enable" value="config.driver.ceu.param_checking_enable.enabled"/>
+      <property id="config.driver.ceu.param_checking_enable" value="config.driver.ceu.param_checking_enable.bsp"/>
     </config>
   </raModuleConfiguration>
   <raPinConfiguration>
@@ -712,9 +683,6 @@
       <configSetting altId="p406.gpio_mode.gpio_mode_peripheral" configurationId="p406.gpio_mode"/>
       <configSetting altId="p408.output.low" configurationId="p408"/>
       <configSetting altId="p408.gpio_mode.gpio_mode_out.low" configurationId="p408.gpio_mode"/>
-      <configSetting altId="p414.output.low" configurationId="p414"/>
-      <configSetting altId="p414.gpio_speed.gpio_speed_h" configurationId="p414.gpio_drivecapacity"/>
-      <configSetting altId="p414.gpio_mode.gpio_mode_out.low" configurationId="p414.gpio_mode"/>
       <configSetting altId="p511.iic1.sda1" configurationId="p511"/>
       <configSetting altId="p511.gpio_speed.gpio_speed_m" configurationId="p511.gpio_drivecapacity"/>
       <configSetting altId="p511.gpio_mode.gpio_mode_peripheral" configurationId="p511.gpio_mode"/>

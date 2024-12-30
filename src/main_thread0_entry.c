@@ -21,18 +21,20 @@ void main_thread0_entry(void *pvParameters)
     cam_init();
     vTaskDelay(pdMS_TO_TICKS(200));
     cam_capture();
-    cam_close();
+    vTaskDelay(pdMS_TO_TICKS(2000));
 
-    cam_init();
-    vTaskDelay(pdMS_TO_TICKS(200));
-    cam_capture();
+    // cam_close();
+
+    // cam_init();
+    // vTaskDelay(pdMS_TO_TICKS(200));
+    // cam_capture();
     // cam_close();
 
     xprintf("!srt\n");
     for (int i = 0; i < VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL; i += 4)
     {
 
-        xprintf("%2x%2x%2x%2x\n",
+        xprintf("%02x%02x%02x%02x\n",
                 g_image_qvga_sram[i],
                 g_image_qvga_sram[i + 1],
                 g_image_qvga_sram[i + 2],
