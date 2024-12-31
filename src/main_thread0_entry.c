@@ -24,11 +24,10 @@ void main_thread0_entry(void *pvParameters)
     vTaskDelay(pdMS_TO_TICKS(2000));
 
     // cam_close();
-
     // cam_init();
-    // vTaskDelay(pdMS_TO_TICKS(200));
-    // cam_capture();
-    // cam_close();
+    vTaskDelay(pdMS_TO_TICKS(200));
+    cam_capture();
+    cam_close();
 
     xprintf("!srt\n");
     for (int i = 0; i < VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL; i += 4)
