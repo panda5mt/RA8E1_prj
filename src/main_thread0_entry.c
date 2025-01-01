@@ -30,14 +30,14 @@ void main_thread0_entry(void *pvParameters)
     cam_close();
 
     xprintf("!srt\n");
-    for (int i = 0; i < VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL; i += 4)
+    // cast pointer
+    uint32_t *image_p32 = (uint32_t *)g_image_qvga_sram;
+
+    for (int i = 0; i < VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL / 4; i++)
     {
 
-        xprintf("0x%02x%02x%02x%02x\n",
-                g_image_qvga_sram[i],
-                g_image_qvga_sram[i + 1],
-                g_image_qvga_sram[i + 2],
-                g_image_qvga_sram[i + 3]);
+        xprintf("0x%08X\n",
+                image_p32[i]);
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 
