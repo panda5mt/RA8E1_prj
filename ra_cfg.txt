@@ -607,7 +607,7 @@ FSP Configuration
       Input: Data Bus Specifications: HSYNC Polarity: High
       Input: Data Bus Specifications: VSYNC Polarity: High
       Output: Byte Swapping: 
-      Output: Burst Transfer Mode: Transfer in 256-byte units
+      Output: Burst Transfer Mode: Transfer in 32-byte units
       Interrupts: Callback: g_ceu0_user_callback
       Interrupts: CEU Interrupt Priority: Priority 2
       Interrupts: Selectable CEU Events: One-Frame Capture End Event: Enabled
@@ -632,7 +632,7 @@ FSP Configuration
       Name: g_i2c_master1
       Channel: 1
       Rate: Standard
-      Custom Rate (bps): 0
+      Custom Rate (bps): 10000
       Rise Time (ns): 120
       Fall Time (ns): 120
       Duty Cycle (%): 50

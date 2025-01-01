@@ -7,7 +7,7 @@ const iic_master_extended_cfg_t g_i2c_master1_extend =
     .timeout_mode             = IIC_MASTER_TIMEOUT_MODE_SHORT,
     .timeout_scl_low          = IIC_MASTER_TIMEOUT_SCL_LOW_ENABLED,
     .smbus_operation         = 0,
-    /* Actual calculated bitrate: 98945. Actual calculated duty cycle: 51%. */ .clock_settings.brl_value = 15, .clock_settings.brh_value = 16, .clock_settings.cks_value = 4, .clock_settings.sddl_value = 0, .clock_settings.dlcs_value = 0,
+    /* Actual calculated bitrate: 9950. Actual calculated duty cycle: 49%. */ .clock_settings.brl_value = 21, .clock_settings.brh_value = 20, .clock_settings.cks_value = 7, .clock_settings.sddl_value = 0, .clock_settings.dlcs_value = 0,
 };
 const i2c_master_cfg_t g_i2c_master1_cfg =
 {
@@ -74,7 +74,7 @@ ceu_instance_ctrl_t g_ceu0_ctrl;
                                         .swap_16bit_units = ( 0x0) >> 0x01 & 0x01,
                                         .swap_32bit_units = ( 0x0) >> 0x02 & 0x01,
                                         },
-                .burst_mode           = CEU_BURST_TRANSFER_MODE_X8,
+                .burst_mode           = CEU_BURST_TRANSFER_MODE_X1,
                 .image_area_size      = 320 * 240 * 2,
                 .interrupts_enabled   = 0 | \
                                         R_CEU_CEIER_CPEIE_Msk | \

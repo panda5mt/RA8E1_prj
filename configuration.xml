@@ -349,7 +349,7 @@
       <property id="module.driver.ceu.hsync_polarity" value="module.driver.ceu.hsync_polarity.high"/>
       <property id="module.driver.ceu.vsync_polarity" value="module.driver.ceu.vsync_polarity.high"/>
       <property id="module.driver.ceu.byte_swapping" value=""/>
-      <property id="module.driver.ceu.burst_mode" value="module.driver.ceu.burst_mode.x8"/>
+      <property id="module.driver.ceu.burst_mode" value="module.driver.ceu.burst_mode.x1"/>
       <property id="module.driver.ceu.p_callback" value="g_ceu0_user_callback"/>
       <property id="module.driver.ceu.ipl" value="board.icu.common.irq.priority2"/>
       <property id="module.driver.ceu.interrupts_enabled.cpeie" value="module.driver.ceu.interrupts_enabled.cpeie.enabled"/>
@@ -374,7 +374,7 @@
       <property id="module.driver.i2c_master.name" value="g_i2c_master1"/>
       <property id="module.driver.i2c_master.channel" value="1"/>
       <property id="module.driver.i2c_master.rate" value="module.driver.i2c_master.rate.rate_standard"/>
-      <property id="module.driver.i2c_master.rate_value" value="0"/>
+      <property id="module.driver.i2c_master.rate_value" value="10000"/>
       <property id="module.driver.i2c_master.rise_time_ns" value="120"/>
       <property id="module.driver.i2c_master.fall_time_ns" value="120"/>
       <property id="module.driver.i2c_master.duty" value="50"/>
