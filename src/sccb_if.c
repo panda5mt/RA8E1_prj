@@ -625,7 +625,7 @@ static const cam_reg_value_t ov5642_init_reg_tbl[] = {
     {0x3a, 0x0e, 0x06},
 #endif
     // VSYNC Active-Low & Gate PCLK under VSYNC & HREF
-    //{0x47, 0x1b, 0x01}, // HSYNC enable
+    //{0x47, 0x1b, 0x03}, // HSYNC enable
     {0x47, 0x40, 0x20}, // 0x2d -> 0x23 ルネサスCEUはHSYNC/VSYNCにかかわりなくPCLKが出力されていないと動かない模様
     {0xFF, 0xFF, 0xFF}, // TERMINATE MARKER(0xff,0xff,0xff)
 };
