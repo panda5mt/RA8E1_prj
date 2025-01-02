@@ -10,7 +10,6 @@ Configure: ```cmake -DARM_TOOLCHAIN_PATH="/your/toolchain/path" -DCMAKE_TOOLCHAI
 
 Build: ```cmake --build build/Debug```
 
-
 ### Configure via Visual Studio Code
 - Set ARM_LLVM_TOOLCHAIN_PATH as an environment variable before starting VS code or alternatively set ARM_TOOLCHAIN_PATH in .vscode/cmake-kits.json
 - Select "ARM LLVM kit with toolchainFile" kit in VS Code status bar
