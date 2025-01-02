@@ -66,3 +66,4 @@ add_git.sh
 */FreeRTOS-Kernel/.git
 */FreeRTOS-Kernel/*
 /.cache/
+compile_commands.json
