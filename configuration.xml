@@ -374,7 +374,7 @@
       <property id="module.driver.i2c_master.name" value="g_i2c_master1"/>
       <property id="module.driver.i2c_master.channel" value="1"/>
       <property id="module.driver.i2c_master.rate" value="module.driver.i2c_master.rate.rate_standard"/>
-      <property id="module.driver.i2c_master.rate_value" value="10000"/>
+      <property id="module.driver.i2c_master.rate_value" value="0"/>
       <property id="module.driver.i2c_master.rise_time_ns" value="120"/>
       <property id="module.driver.i2c_master.fall_time_ns" value="120"/>
       <property id="module.driver.i2c_master.duty" value="50"/>

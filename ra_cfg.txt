@@ -632,7 +632,7 @@ FSP Configuration
       Name: g_i2c_master1
       Channel: 1
       Rate: Standard
-      Custom Rate (bps): 10000
+      Custom Rate (bps): 0
       Rise Time (ns): 120
       Fall Time (ns): 120
       Duty Cycle (%): 50
