@@ -158,7 +158,7 @@ function viewQVGAfromYUV(filename)
     figure;
     imshow(imgRGB);
     size(imgRGB)
-    title('QVGA from TeraTermLog (YUV422 -> RGB)');
+    title('QVGA (YUV422 -> RGB)');
 end
 
 close all;
