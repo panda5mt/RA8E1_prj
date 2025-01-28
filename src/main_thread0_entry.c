@@ -23,7 +23,7 @@ void main_thread0_entry(void *pvParameters)
     vTaskDelay(pdMS_TO_TICKS(200));
     cam_capture();
 
-    vTaskDelay(pdMS_TO_TICKS(2000));
+    vTaskDelay(pdMS_TO_TICKS(200));
     cam_capture();
     cam_close();
 
