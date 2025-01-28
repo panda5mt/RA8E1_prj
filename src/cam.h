@@ -12,7 +12,7 @@
 extern uint8_t g_image_qvga_sram[VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL] /* BSP_ALIGN_VARIABLE(8)*/;
 
 extern void g_ceu0_user_callback(capture_callback_args_t *p_args);
-void cam_init(void);
+void cam_init(camera_dev_t cam);
 void cam_capture(void);
 void cam_close(void);
 

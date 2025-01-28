@@ -38,13 +38,13 @@ void g_ceu0_user_callback(capture_callback_args_t *p_args)
     }
 }
 
-void cam_init(void)
+void cam_init(camera_dev_t cam)
 {
 
     // Init XCLK of DVP(24MHz)
     cam_clk_init();
     // init I2C and PWM
-    sccb_init(DEV_OV3640);
+    sccb_init(cam);
     R_BSP_SoftwareDelay(10U, BSP_DELAY_UNITS_MILLISECONDS);
     g_flag1 = 0;
     R_CEU_Open(&g_ceu0_ctrl, &g_ceu0_cfg);
