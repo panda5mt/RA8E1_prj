@@ -44,7 +44,7 @@ void cam_init(void)
     // Init XCLK of DVP(24MHz)
     cam_clk_init();
     // init I2C and PWM
-    sccb_init();
+    sccb_init(DEV_OV3640);
     R_BSP_SoftwareDelay(10U, BSP_DELAY_UNITS_MILLISECONDS);
     g_flag1 = 0;
     R_CEU_Open(&g_ceu0_ctrl, &g_ceu0_cfg);

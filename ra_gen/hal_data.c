@@ -1,6 +1,234 @@
 /* generated HAL source file - do not edit */
 #include "hal_data.h"
 
+
+ether_phy_instance_ctrl_t g_ether_phy0_ctrl;
+
+const ether_phy_extended_cfg_t g_ether_phy0_extended_cfg =
+{
+    .p_target_init                     = NULL,
+    .p_target_link_partner_ability_get = NULL
+
+};
+
+const ether_phy_cfg_t g_ether_phy0_cfg =
+{
+
+    .channel                   = 0,
+    .phy_lsi_address           = 0,
+    .phy_reset_wait_time       = 0x00020000,
+    .mii_bit_access_wait_time  = 8,
+    .phy_lsi_type              = ETHER_PHY_LSI_TYPE_KIT_COMPONENT,
+    .flow_control              = ETHER_PHY_FLOW_CONTROL_DISABLE,
+    .mii_type                  = ETHER_PHY_MII_TYPE_RMII,
+    .p_context                 = NULL,
+    .p_extend                  = &g_ether_phy0_extended_cfg,
+
+};
+/* Instance structure to use this module. */
+const ether_phy_instance_t g_ether_phy0 =
+{
+    .p_ctrl        = &g_ether_phy0_ctrl,
+    .p_cfg         = &g_ether_phy0_cfg,
+    .p_api         = &g_ether_phy_on_ether_phy
+};
+ether_instance_ctrl_t g_ether0_ctrl;
+
+            uint8_t g_ether0_mac_address[6] = { 0x00,0x11,0x22,0x33,0x44,0x55 };
+
+            __attribute__((__aligned__(16))) ether_instance_descriptor_t g_ether0_tx_descriptors[1] ETHER_BUFFER_PLACE_IN_SECTION;
+            __attribute__((__aligned__(16))) ether_instance_descriptor_t g_ether0_rx_descriptors[1] ETHER_BUFFER_PLACE_IN_SECTION;
+
+            __attribute__((__aligned__(32)))uint8_t g_ether0_ether_buffer0[1536]ETHER_BUFFER_PLACE_IN_SECTION;
+__attribute__((__aligned__(32)))uint8_t g_ether0_ether_buffer1[1536]ETHER_BUFFER_PLACE_IN_SECTION;
+
+
+            uint8_t *pp_g_ether0_ether_buffers[2] = {
+(uint8_t *) &g_ether0_ether_buffer0[0],
+(uint8_t *) &g_ether0_ether_buffer1[0],
+};
+
+            const ether_extended_cfg_t g_ether0_extended_cfg_t =
+            {
+                .p_rx_descriptors   = g_ether0_rx_descriptors,
+                .p_tx_descriptors   = g_ether0_tx_descriptors,
+                .eesr_event_filter     = (ETHER_EESR_EVENT_MASK_RFOF | ETHER_EESR_EVENT_MASK_RDE | ETHER_EESR_EVENT_MASK_FR | ETHER_EESR_EVENT_MASK_TFUF | ETHER_EESR_EVENT_MASK_TDE | ETHER_EESR_EVENT_MASK_TC |  0U),
+                .ecsr_event_filter     = ( 0U),
+            };
+
+            const ether_cfg_t g_ether0_cfg =
+            {
+                .channel            = 0,
+                .zerocopy           = ETHER_ZEROCOPY_DISABLE,
+                .multicast          = ETHER_MULTICAST_ENABLE,
+                .promiscuous        = ETHER_PROMISCUOUS_DISABLE,
+                .flow_control       = ETHER_FLOW_CONTROL_DISABLE,
+                .padding            = ETHER_PADDING_DISABLE,
+                .padding_offset     = 0,
+                .broadcast_filter   = 0,
+                .p_mac_address      = g_ether0_mac_address,
+
+                .num_tx_descriptors = 1,
+                .num_rx_descriptors = 1,
+
+                .pp_ether_buffers   = pp_g_ether0_ether_buffers,
+
+                .ether_buffer_size  = 1536,
+
+#if defined(VECTOR_NUMBER_EDMAC0_EINT)
+                .irq                = VECTOR_NUMBER_EDMAC0_EINT,
+#else
+                .irq                = FSP_INVALID_VECTOR,
+#endif
+
+                .interrupt_priority = (12),
+
+                .p_callback         = NULL,
+                .p_ether_phy_instance = &g_ether_phy0,
+                .p_context          = NULL,
+                .p_extend           = &g_ether0_extended_cfg_t,
+            };
+
+/* Instance structure to use this module. */
+const ether_instance_t g_ether0 =
+{
+    .p_ctrl        = &g_ether0_ctrl,
+    .p_cfg         = &g_ether0_cfg,
+    .p_api         = &g_ether_on_ether
+};
+ospi_b_instance_ctrl_t g_ospi0_ctrl;
+
+            static const spi_flash_erase_command_t g_ospi0_erase_command_list[] =
+            {
+            #if ((0x2121 > 0) && (4096 > 0))
+                {.command = 0x2121,     .size = 4096 },
+            #endif
+            #if ((0xDCDC > 0) && (262144 > 0))
+                {.command = 0xDCDC,      .size = 262144  },
+            #endif
+            #if (0x6060 > 0)
+                {.command = 0x6060,       .size  = SPI_FLASH_ERASE_SIZE_CHIP_ERASE        },
+            #endif
+            };
+
+            static ospi_b_timing_setting_t g_ospi0_timing_settings =
+            {
+                .command_to_command_interval = OSPI_B_COMMAND_INTERVAL_CLOCKS_2,
+                .cs_pullup_lag               = OSPI_B_COMMAND_CS_PULLUP_CLOCKS_NO_EXTENSION,
+                .cs_pulldown_lead            = OSPI_B_COMMAND_CS_PULLDOWN_CLOCKS_NO_EXTENSION
+            };
+
+            #if !(0)
+
+             #if (0)
+            static const spi_flash_erase_command_t g_ospi0_high_speed_erase_command_list[] =
+            {
+              #if ((0 > 0) && (4096 > 0))
+                {.command = 0,     .size = 4096 },
+              #endif
+              #if ((0 > 0) && (4096 > 0))
+                {.command = 0,      .size = 262144  },
+              #endif
+              #if (0 > 0)
+                {.command = 0,       .size  = SPI_FLASH_ERASE_SIZE_CHIP_ERASE        },
+              #endif
+            };
+             #endif
+
+            const ospi_b_xspi_command_set_t g_ospi0_high_speed_command_set =
+            {
+                .protocol             = SPI_FLASH_PROTOCOL_8D_8D_8D,
+                .command_bytes        = OSPI_B_COMMAND_BYTES_2,
+                .read_command         = 0xEEEE,
+                .page_program_command = 0x1212,
+                .write_enable_command = 0x0606,
+                .status_command       = 0x0505,
+                .read_dummy_cycles    = 20,
+                .program_dummy_cycles = 0, /* Unused by OSPI Flash */
+                .status_dummy_cycles  = 3,
+            #if (0)
+                .p_erase_command_list      = g_ospi0_high_speed_erase_command_list,
+                .erase_command_list_length = sizeof(g_ospi0_high_speed_erase_command_list)/sizeof(g_ospi0_high_speed_erase_command_list[0]),
+            #else
+                .p_erase_command_list = NULL, /* Use the erase commands specified in spi_flash_cfg_t */
+            #endif
+            };
+            #endif
+
+            #if OSPI_B_CFG_DOTF_SUPPORT_ENABLE
+            extern uint8_t g_ospi_dotf_iv[];
+            extern uint8_t g_ospi_dotf_key[];
+
+            static ospi_b_dotf_cfg_t g_ospi_dotf_cfg=
+            {
+                .key_type       = ,
+                .format        = ,
+                .p_start_addr   = (uint32_t *)0x90000000,
+                .p_end_addr     = (uint32_t *)0x90001FFF,
+                .p_key          = (uint32_t *)g_ospi_dotf_key,
+                .p_iv           = (uint32_t *)g_ospi_dotf_iv,
+            };
+            #endif
+
+            static const ospi_b_extended_cfg_t g_ospi0_extended_cfg =
+            {
+                .channel                                 = (ospi_b_device_number_t) 0,
+                .data_latch_delay_clocks                 = 0x08,
+                .p_timing_settings                       = &g_ospi0_timing_settings,
+            #if (0)
+                .p_xspi_command_set_list                 = ,
+                .xspi_command_set_list_length            = 0,
+            #else
+                .p_xspi_command_set_list                 = &g_ospi0_high_speed_command_set,
+                .xspi_command_set_list_length            = 1U,
+            #endif
+                .p_autocalibration_preamble_pattern_addr = (uint8_t *) 0x00,
+            #if OSPI_B_CFG_DMAC_SUPPORT_ENABLE
+                .p_lower_lvl_transfer                    = &RA_NOT_DEFINED,
+            #endif
+            #if OSPI_B_CFG_DOTF_SUPPORT_ENABLE
+                .p_dotf_cfg                              = &g_ospi_dotf_cfg,
+            #endif
+                .read_dummy_cycles                       = 0,
+                .program_dummy_cycles                    = 0, /* Unused by OSPI Flash */
+                .status_dummy_cycles                     = 0,
+            };
+            const spi_flash_cfg_t g_ospi0_cfg =
+            {
+                .spi_protocol                = SPI_FLASH_PROTOCOL_8D_8D_8D,
+                .read_mode                   = SPI_FLASH_READ_MODE_STANDARD, /* Unused by OSPI Flash */
+                .address_bytes               = SPI_FLASH_ADDRESS_BYTES_4,
+                .dummy_clocks                = SPI_FLASH_DUMMY_CLOCKS_DEFAULT, /* Unused by OSPI Flash */
+                .page_program_address_lines  = (spi_flash_data_lines_t) 0U, /* Unused by OSPI Flash */
+                .page_size_bytes             = 64,
+                .write_status_bit            = 0,
+                .write_enable_bit            = 1,
+                .page_program_command        = 0x12,
+                .write_enable_command        = 0x06,
+                .status_command              = 0x05,
+                .read_command                = 0x13,
+            #if OSPI_B_CFG_XIP_SUPPORT_ENABLE
+                .xip_enter_command           = 0,
+                .xip_exit_command            = 0,
+            #else
+                .xip_enter_command           = 0U,
+                .xip_exit_command            = 0U,
+            #endif
+                .erase_command_list_length   = sizeof(g_ospi0_erase_command_list) / sizeof(g_ospi0_erase_command_list[0]),
+                .p_erase_command_list        = &g_ospi0_erase_command_list[0],
+                .p_extend                    = &g_ospi0_extended_cfg,
+            };
+            /** This structure encompasses everything that is needed to use an instance of this interface. */
+            const spi_flash_instance_t g_ospi0 =
+            {
+                .p_ctrl = &g_ospi0_ctrl,
+                .p_cfg =  &g_ospi0_cfg,
+                .p_api =  &g_ospi_b_on_spi_flash,
+            };
+
+            #if defined OSPI_B_CFG_DOTF_PROTECTED_MODE_SUPPORT_ENABLE
+            rsip_instance_t const * const gp_rsip_instance = &RA_NOT_DEFINED;
+            #endif
 iic_master_instance_ctrl_t g_i2c_master1_ctrl;
 const iic_master_extended_cfg_t g_i2c_master1_extend =
 {

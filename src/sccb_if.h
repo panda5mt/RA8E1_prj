@@ -11,8 +11,15 @@ typedef struct
     uint8_t val;      // 書き込みたい値
 } cam_reg_value_t;
 
+typedef enum
+{
+    DEV_NONE = 0,
+    DEV_OV5642,
+    DEV_OV3640,
+} camera_dev_t;
+
 // init
-void sccb_init(void);
+void sccb_init(camera_dev_t cam);
 
 // init CLK of camera (init before init SCCB)
 void cam_clk_init(void);

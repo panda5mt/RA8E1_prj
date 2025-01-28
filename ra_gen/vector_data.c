@@ -13,6 +13,7 @@
             [6] = iic_master_txi_isr, /* IIC1 TXI (Transmit data empty) */
             [7] = iic_master_tei_isr, /* IIC1 TEI (Transmit end) */
             [8] = iic_master_eri_isr, /* IIC1 ERI (Transfer error) */
+            [9] = ether_eint_isr, /* EDMAC0 EINT (EDMAC 0 interrupt) */
         };
         #if BSP_FEATURE_ICU_HAS_IELSR
         const bsp_interrupt_event_t g_interrupt_event_link_select[BSP_ICU_VECTOR_MAX_ENTRIES] =
@@ -26,6 +27,7 @@
             [6] = BSP_PRV_VECT_ENUM(EVENT_IIC1_TXI,GROUP6), /* IIC1 TXI (Transmit data empty) */
             [7] = BSP_PRV_VECT_ENUM(EVENT_IIC1_TEI,GROUP7), /* IIC1 TEI (Transmit end) */
             [8] = BSP_PRV_VECT_ENUM(EVENT_IIC1_ERI,GROUP0), /* IIC1 ERI (Transfer error) */
+            [9] = BSP_PRV_VECT_ENUM(EVENT_EDMAC0_EINT,GROUP1), /* EDMAC0 EINT (EDMAC 0 interrupt) */
         };
         #endif
         #endif

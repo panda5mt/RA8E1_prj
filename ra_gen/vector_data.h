@@ -6,7 +6,7 @@
         #endif
                 /* Number of interrupts allocated */
         #ifndef VECTOR_DATA_IRQ_COUNT
-        #define VECTOR_DATA_IRQ_COUNT    (9)
+        #define VECTOR_DATA_IRQ_COUNT    (10)
         #endif
         /* ISR prototypes */
         void sci_b_uart_rxi_isr(void);
@@ -18,6 +18,7 @@
         void iic_master_txi_isr(void);
         void iic_master_tei_isr(void);
         void iic_master_eri_isr(void);
+        void ether_eint_isr(void);
 
         /* Vector table allocations */
         #define VECTOR_NUMBER_SCI9_RXI ((IRQn_Type) 0) /* SCI9 RXI (Receive data full) */
@@ -38,6 +39,8 @@
         #define IIC1_TEI_IRQn          ((IRQn_Type) 7) /* IIC1 TEI (Transmit end) */
         #define VECTOR_NUMBER_IIC1_ERI ((IRQn_Type) 8) /* IIC1 ERI (Transfer error) */
         #define IIC1_ERI_IRQn          ((IRQn_Type) 8) /* IIC1 ERI (Transfer error) */
+        #define VECTOR_NUMBER_EDMAC0_EINT ((IRQn_Type) 9) /* EDMAC0 EINT (EDMAC 0 interrupt) */
+        #define EDMAC0_EINT_IRQn          ((IRQn_Type) 9) /* EDMAC0 EINT (EDMAC 0 interrupt) */
         #ifdef __cplusplus
         }
         #endif
