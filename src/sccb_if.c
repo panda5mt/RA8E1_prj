@@ -884,7 +884,7 @@ void sccb_init(camera_dev_t cam)
         cam_addr = (0x78 >> 1U); // OV3640
         break;
     default:
-        return;
+        // return;
         break;
     }
 
