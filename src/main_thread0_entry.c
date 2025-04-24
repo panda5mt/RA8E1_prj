@@ -23,7 +23,6 @@ void main_thread0_entry(void *pvParameters)
     vTaskDelay(pdMS_TO_TICKS(200));
     cam_capture();
     cam_close();
-    xprintf("Hello!!\n");
     xprintf("!srt\n");
     // cast pointer
     uint32_t *image_p32 = (uint32_t *)g_image_qvga_sram;
