@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020 - 2024 Renesas Electronics Corporation and/or its affiliates
+* Copyright (c) 2020 - 2025 Renesas Electronics Corporation and/or its affiliates
 *
 * SPDX-License-Identifier: BSD-3-Clause
 */
@@ -44,6 +44,8 @@ extern "C" {
 
  #if BSP_MCU_GROUP_RA0E1
   #include "R7FA0E107.h"
+ #elif BSP_MCU_GROUP_RA0E2
+  #include "R7FA0E209.h"
  #elif BSP_MCU_GROUP_RA2A1
   #include "R7FA2A1AB.h"
  #elif BSP_MCU_GROUP_RA2A2
@@ -56,6 +58,8 @@ extern "C" {
   #include "R7FA2E307.h"
  #elif BSP_MCU_GROUP_RA2L1
   #include "R7FA2L1AB.h"
+ #elif BSP_MCU_GROUP_RA2L2
+  #include "R7FA2L209.h"
  #elif BSP_MCU_GROUP_RA4E1
   #include "R7FA4E10D.h"
  #elif BSP_MCU_GROUP_RA4E2
@@ -70,6 +74,8 @@ extern "C" {
   #include "R7FA4T1BB.h"
  #elif BSP_MCU_GROUP_RA4W1
   #include "R7FA4W1AD.h"
+ #elif BSP_MCU_GROUP_RA4L1
+  #include "R7FA4L1BD.h"
  #elif BSP_MCU_GROUP_RA6E1
   #include "R7FA6E10F.h"
  #elif BSP_MCU_GROUP_RA6E2
@@ -98,6 +104,8 @@ extern "C" {
   #include "R7FA8T1AH.h"
  #elif BSP_MCU_GROUP_RA8E1
   #include "R7FA8E1AF.h"
+ #elif BSP_MCU_GROUP_RA8E2
+  #include "R7FA8E2AF.h"
  #else
   #if __has_include("renesas_internal.h")
    #include "renesas_internal.h"

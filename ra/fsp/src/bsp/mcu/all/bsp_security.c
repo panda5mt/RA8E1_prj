@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020 - 2024 Renesas Electronics Corporation and/or its affiliates
+* Copyright (c) 2020 - 2025 Renesas Electronics Corporation and/or its affiliates
 *
 * SPDX-License-Identifier: BSD-3-Clause
 */
@@ -56,7 +56,6 @@ void R_BSP_ElcCfgSecurityInit(void);
 /***********************************************************************************************************************
  * External symbols
  **********************************************************************************************************************/
-extern const fsp_vector_t g_vector_table[BSP_ICU_VECTOR_MAX_ENTRIES];
 
  #if defined(__ARMCC_VERSION) || defined(__ICCARM__)
 typedef void (BSP_CMSE_NONSECURE_CALL * bsp_nonsecure_func_t)(void);
@@ -520,7 +519,9 @@ void R_BSP_SecurityInit (void)
     R_SYSTEM->LVDSAR = BSP_TZ_CFG_LVDSAR;                                 /* LVD Security Attribution. */
     R_SYSTEM->CGFSAR = BSP_TZ_CFG_CGFSAR;                                 /* CGC Security Attribution. */
     R_SYSTEM->LPMSAR = BSP_TZ_CFG_LPMSAR;                                 /* LPM Security Attribution. */
+  #ifdef BSP_TZ_CFG_DPFSAR
     R_SYSTEM->DPFSAR = BSP_TZ_CFG_DPFSAR;                                 /* Deep Standby Interrupt Factor Security Attribution. */
+  #endif
   #ifdef BSP_TZ_CFG_RSCSAR
     R_SYSTEM->RSCSAR = BSP_TZ_CFG_RSCSAR;                                 /* RAM Standby Control Security Attribution. */
   #endif

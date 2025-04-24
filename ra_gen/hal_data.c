@@ -133,6 +133,11 @@ ospi_b_instance_ctrl_t g_ospi0_ctrl;
                 {.command = 0,       .size  = SPI_FLASH_ERASE_SIZE_CHIP_ERASE        },
               #endif
             };
+
+            static const ospi_b_table_t g_ospi0_high_speed_erase_command_table = {
+                .p_table = (void *)g_ospi0_high_speed_erase_command_list,
+                .length = (uint8_t)(sizeof(g_ospi0_high_speed_erase_command_list) / sizeof(g_ospi0_high_speed_erase_command_list[0])),
+            };
              #endif
 
             const ospi_b_xspi_command_set_t g_ospi0_high_speed_command_set =
@@ -146,14 +151,25 @@ ospi_b_instance_ctrl_t g_ospi0_ctrl;
                 .read_dummy_cycles    = 20,
                 .program_dummy_cycles = 0, /* Unused by OSPI Flash */
                 .status_dummy_cycles  = 3,
-            #if (0)
-                .p_erase_command_list      = g_ospi0_high_speed_erase_command_list,
-                .erase_command_list_length = sizeof(g_ospi0_high_speed_erase_command_list)/sizeof(g_ospi0_high_speed_erase_command_list[0]),
+             #if (0)
+                .p_erase_commands     = &g_ospi0_high_speed_erase_command_table,
+             #else
+                .p_erase_commands = NULL, /* Use the erase commands specified in spi_flash_cfg_t */
+             #endif
+            };
             #else
-                .p_erase_command_list = NULL, /* Use the erase commands specified in spi_flash_cfg_t */
+            extern ospi_b_xspi_command_set_t [];
+            #endif
+
+            const ospi_b_table_t g_ospi0_command_set = {
+            #if (0)
+                .p_table = (void *),
+                .length = 0,
+            #else
+                .p_table = (void *)&g_ospi0_high_speed_command_set,
+                .length = 1,
             #endif
             };
-            #endif
 
             #if OSPI_B_CFG_DOTF_SUPPORT_ENABLE
             extern uint8_t g_ospi_dotf_iv[];
@@ -161,8 +177,8 @@ ospi_b_instance_ctrl_t g_ospi0_ctrl;
 
             static ospi_b_dotf_cfg_t g_ospi_dotf_cfg=
             {
-                .key_type       = ,
-                .format        = ,
+                .key_type       = OSPI_B_DOTF_AES_KEY_TYPE_128,
+                .format         = OSPI_B_DOTF_KEY_FORMAT_PLAINTEXT,
                 .p_start_addr   = (uint32_t *)0x90000000,
                 .p_end_addr     = (uint32_t *)0x90001FFF,
                 .p_key          = (uint32_t *)g_ospi_dotf_key,
@@ -172,16 +188,11 @@ ospi_b_instance_ctrl_t g_ospi0_ctrl;
 
             static const ospi_b_extended_cfg_t g_ospi0_extended_cfg =
             {
+                .ospi_b_unit                             = 0,
                 .channel                                 = (ospi_b_device_number_t) 0,
                 .data_latch_delay_clocks                 = 0x08,
                 .p_timing_settings                       = &g_ospi0_timing_settings,
-            #if (0)
-                .p_xspi_command_set_list                 = ,
-                .xspi_command_set_list_length            = 0,
-            #else
-                .p_xspi_command_set_list                 = &g_ospi0_high_speed_command_set,
-                .xspi_command_set_list_length            = 1U,
-            #endif
+                .p_xspi_command_set                      = &g_ospi0_command_set,
                 .p_autocalibration_preamble_pattern_addr = (uint8_t *) 0x00,
             #if OSPI_B_CFG_DMAC_SUPPORT_ENABLE
                 .p_lower_lvl_transfer                    = &RA_NOT_DEFINED,
@@ -471,7 +482,7 @@ const gpt_extended_cfg_t g_timer3_extend =
 #else
     .capture_b_irq       = FSP_INVALID_VECTOR,
 #endif
-     .compare_match_value = { /* CMP_A */ 0x0, /* CMP_B */ 0x0}, .compare_match_status = (0U << 1U) | 0U,
+     .compare_match_value = { /* CMP_A */ (uint32_t)0x0, /* CMP_B */ (uint32_t)0x0}, .compare_match_status = (0U << 1U) | 0U,
     .capture_filter_gtioca       = GPT_CAPTURE_FILTER_NONE,
     .capture_filter_gtiocb       = GPT_CAPTURE_FILTER_NONE,
 #if 0

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020 - 2024 Renesas Electronics Corporation and/or its affiliates
+* Copyright (c) 2020 - 2025 Renesas Electronics Corporation and/or its affiliates
 *
 * SPDX-License-Identifier: BSD-3-Clause
 */
@@ -24,7 +24,7 @@ FSP_HEADER
 /***********************************************************************************************************************
  * Exported global variables
  **********************************************************************************************************************/
-extern void * gp_renesas_isr_context[BSP_ICU_VECTOR_MAX_ENTRIES];
+extern void * gp_renesas_isr_context[BSP_ICU_VECTOR_NUM_ENTRIES];
 
 /***********************************************************************************************************************
  * Exported global functions (to be accessed by other files)

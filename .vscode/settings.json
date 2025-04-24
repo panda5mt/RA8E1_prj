@@ -34,6 +34,7 @@
     "main_thread0.h": "c",
     "xprintf_helper.h": "c",
     "r_gpt.h": "c",
-    "sccb_if.h": "c"
+    "sccb_if.h": "c",
+    "picotls.h": "c"
   },
 }

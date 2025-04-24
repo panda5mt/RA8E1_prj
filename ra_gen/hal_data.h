@@ -63,10 +63,6 @@ void NULL(ether_callback_args_t * p_args);
             extern const spi_flash_instance_t g_ospi0;
             extern ospi_b_instance_ctrl_t g_ospi0_ctrl;
             extern const spi_flash_cfg_t g_ospi0_cfg;
-
-            #if (0)
-            extern ospi_b_xspi_command_set_t [];
-            #endif
 /* I2C Master on IIC Instance. */
 extern const i2c_master_instance_t g_i2c_master1;
 

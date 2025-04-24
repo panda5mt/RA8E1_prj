@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020 - 2024 Renesas Electronics Corporation and/or its affiliates
+* Copyright (c) 2020 - 2025 Renesas Electronics Corporation and/or its affiliates
 *
 * SPDX-License-Identifier: BSD-3-Clause
 */
@@ -413,6 +413,9 @@ typedef enum e_ioport_peripheral
 
     /** Pin will function as a GPT peripheral pin */
     IOPORT_PERIPHERAL_GPT4 = (0x16UL << IOPORT_PRV_PFS_PSEL_OFFSET),
+
+    /** Pin will function as a GPT peripheral pin */
+    IOPORT_PERIPHERAL_GPT5 = (0x1BUL << IOPORT_PRV_PFS_PSEL_OFFSET),
 
     /** Pin will function as an Ethernet RMMI peripheral pin */
     IOPORT_PERIPHERAL_ETHER_RMII = (0x17UL << IOPORT_PRV_PFS_PSEL_OFFSET),

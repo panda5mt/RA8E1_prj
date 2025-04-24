@@ -74,7 +74,6 @@ FSP Configuration
     MCU Vcc (mV): 3300
     Parameter checking: Disabled
     Assert Failures: Return FSP_ERR_ASSERTION
-    Error Log: No Error Log
     Clock Registers not Reset Values during Startup: Disabled
     Main Oscillator Populated: Not Populated
     PFS Protect: Enabled
@@ -670,7 +669,8 @@ FSP Configuration
       
     Instance "g_ospi0 OSPI Flash (r_ospi_b)"
       General: Name: g_ospi0
-      General: Channel: 0
+      General: Unit: OSPI_B0
+      General: Channel: CS0
       General: Initial Protocol Mode: Dual data rate OPI (8D-8D-8D)
       General: Initial Address Bytes: 4
       General: Write Status Bit: 0
@@ -709,8 +709,8 @@ FSP Configuration
       DOTF: Name: g_ospi_dotf
       DOTF: AES Key: g_ospi_dotf_key
       DOTF: AES IV: g_ospi_dotf_iv
-      DOTF: AES Key Length: 
-      DOTF: Key Format: 
+      DOTF: AES Key Length: 128
+      DOTF: Key Format: Plaintext
       DOTF: Decryption start address: 0x90000000
       DOTF: Decryption end address: 0x90001FFF
       

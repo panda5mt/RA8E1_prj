@@ -41,6 +41,9 @@
         #define IIC1_ERI_IRQn          ((IRQn_Type) 8) /* IIC1 ERI (Transfer error) */
         #define VECTOR_NUMBER_EDMAC0_EINT ((IRQn_Type) 9) /* EDMAC0 EINT (EDMAC 0 interrupt) */
         #define EDMAC0_EINT_IRQn          ((IRQn_Type) 9) /* EDMAC0 EINT (EDMAC 0 interrupt) */
+        /* The number of entries required for the ICU vector table. */
+        #define BSP_ICU_VECTOR_NUM_ENTRIES (10)
+
         #ifdef __cplusplus
         }
         #endif
