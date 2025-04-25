@@ -22,6 +22,8 @@ void main_thread0_entry(void *pvParameters)
     // capture from camera
     vTaskDelay(pdMS_TO_TICKS(200));
     cam_capture();
+    vTaskDelay(pdMS_TO_TICKS(200));
+    cam_capture();
     cam_close();
     xprintf("!srt\n");
     // cast pointer
