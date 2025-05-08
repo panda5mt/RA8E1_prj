@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include "bsp_api.h"
 #include "common_data.h"
+#include "r_gpt.h"
+#include "r_timer_api.h"
 #include "r_ether_phy.h"
 #include "r_ether_phy_api.h"
 #include "r_ether.h"
@@ -16,9 +18,17 @@
             #include "r_ceu.h"
 #include "r_sci_b_uart.h"
             #include "r_uart_api.h"
-#include "r_gpt.h"
-#include "r_timer_api.h"
 FSP_HEADER
+/** Timer on GPT Instance. */
+extern const timer_instance_t g_timer5;
+
+/** Access the GPT instance using these structures when calling API functions directly (::p_api is not used). */
+extern gpt_instance_ctrl_t g_timer5_ctrl;
+extern const timer_cfg_t g_timer5_cfg;
+
+#ifndef NULL
+void NULL(timer_callback_args_t * p_args);
+#endif
 #ifndef ETHER_PHY_LSI_TYPE_KIT_COMPONENT
   #define ETHER_PHY_LSI_TYPE_KIT_COMPONENT ETHER_PHY_LSI_TYPE_DEFAULT
 #endif

@@ -129,7 +129,7 @@
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 19) /* GPT12 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 20) /* GPT11 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 21) /* GPT10 */ | \
-            (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 26) /* GPT5 */ | \
+            (((1 > 0) ? 0U : 1U) << 26) /* GPT5 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 27) /* GPT4 */ | \
             (((1 > 0) ? 0U : 1U) << 28) /* GPT3 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 29) /* GPT2 */ | \

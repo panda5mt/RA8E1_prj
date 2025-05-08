@@ -817,6 +817,19 @@ void cam_clk_init(void)
     timer_info_t p_info;
     R_GPT_InfoGet(&g_timer3_ctrl, &p_info);
     xprintf("[PWM/GPT] %d[kHz]\n", (p_info.clock_frequency / p_info.period_counts) / 1000);
+
+    R_BSP_MODULE_START(FSP_IP_GPT, 5);
+    if (FSP_SUCCESS == R_GPT_Open(&g_timer5_ctrl, &g_timer5_cfg))
+    {
+        xprintf("[PWM/GPT] Open Ok.\n");
+    }
+    if (FSP_SUCCESS == R_GPT_Start(&g_timer5_ctrl))
+    {
+        xprintf("[PWM/GPT] Start Ok.\n");
+    }
+    timer_info_t p_info5;
+    R_GPT_InfoGet(&g_timer5_ctrl, &p_info5);
+    xprintf("[PWM/GPT] %d[Hz]\n", (p_info5.clock_frequency / p_info5.period_counts));
 }
 
 // Write n byte to the specified register
