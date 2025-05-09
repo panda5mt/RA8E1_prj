@@ -11,8 +11,7 @@ from intelhex import IntelHex
 # BAUD = 9600
 # HEX_FILE = './build/Debug/RA8E1_prj.ihex'
 # CHUNK_SIZE = 128
-
-
+# usage :./ra8prog.py --port /dev/ttyACM0 --file ./build/Debug/RA8E1_prj.ihex --baud 9600
 # ==== 共通関数 ====
 def checksum(data):
     return (256 - sum(data)) & 0xFF
