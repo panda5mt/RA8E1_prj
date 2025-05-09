@@ -2,6 +2,7 @@ import serial
 import time
 from intelhex import IntelHex
 
+# FYI: dmesg | grep -i tty
 # ==== 設定値 ====
 PORT = '/dev/ttyACM0'
 BAUD = 9600
