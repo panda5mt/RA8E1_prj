@@ -750,7 +750,7 @@ FSP Configuration
       General: Name: g_timer5
       General: Channel: 5
       General: Mode: Periodic
-      General: Period: 2
+      General: Period: 4
       General: Compare Match: Compare Match A: Status: Disabled
       General: Compare Match: Compare Match A: Compare match value: 0
       General: Compare Match: Compare Match B: Status: Disabled
