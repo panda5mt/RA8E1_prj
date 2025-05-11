@@ -101,7 +101,7 @@ def main():
 
         print(f"[→] イレースコマンド発行中")
         status = send_command(ser, 0x12, FLASH_START, FLASH_END)
-        time.sleep(0.5)
+        time.sleep(1.5)
         resp = ser.read_all()
         print(f"[←] 応答:{resp.hex()}")
         time.sleep(5)
