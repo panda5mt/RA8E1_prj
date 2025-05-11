@@ -84,7 +84,7 @@ def main():
     all_addrs = sorted(ih.addresses())
 
     # Flash領域に限定
-    valid_addrs = [addr for addr in all_addrs if FLASH_START <= addr <= FLASH_END]
+    valid_addrs = all_addrs #[addr for addr in all_addrs if FLASH_START <= addr <= FLASH_END]
     blocks = split_continuous_blocks(valid_addrs)
 
     with serial.Serial(args.port, args.baud, timeout=1) as ser:
