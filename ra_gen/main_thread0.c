@@ -1,7 +1,7 @@
 /* generated thread source file - do not edit */
 #include "main_thread0.h"
 
-#if 1
+#if 0
                 static StaticTask_t main_thread0_memory;
                 #if defined(__ARMCC_VERSION)           /* AC6 compiler */
                 static uint8_t main_thread0_stack[65536] BSP_PLACE_IN_SECTION(BSP_UNINIT_SECTION_PREFIX ".stack.thread") BSP_ALIGN_VARIABLE(BSP_STACK_ALIGNMENT);
@@ -14,6 +14,200 @@
                 static void main_thread0_func(void * pvParameters);
                 void rtos_startup_err_callback(void * p_instance, void * p_data);
                 void rtos_startup_common_init(void);
+usb_instance_ctrl_t g_basic0_ctrl;
+
+#if !defined(g_usb_descriptor)
+extern usb_descriptor_t g_usb_descriptor;
+#endif
+#define RA_NOT_DEFINED (1)
+            const usb_cfg_t g_basic0_cfg =
+            {
+                .usb_mode  = USB_MODE_PERI,
+                .usb_speed = USB_SPEED_FS,
+                .module_number = 0,
+                .type = USB_CLASS_PCDC,
+#if defined(g_usb_descriptor)
+                .p_usb_reg = g_usb_descriptor,
+#else
+                .p_usb_reg = &g_usb_descriptor,
+#endif
+                .usb_complience_cb = NULL,
+#if defined(VECTOR_NUMBER_USBFS_INT)
+                .irq       = VECTOR_NUMBER_USBFS_INT,
+#else
+                .irq       = FSP_INVALID_VECTOR,
+#endif
+#if defined(VECTOR_NUMBER_USBFS_RESUME)
+                .irq_r     = VECTOR_NUMBER_USBFS_RESUME,
+#else
+                .irq_r     = FSP_INVALID_VECTOR,
+#endif
+#if defined(VECTOR_NUMBER_USBFS_FIFO_0)
+                .irq_d0    = VECTOR_NUMBER_USBFS_FIFO_0,
+#else
+                .irq_d0    = FSP_INVALID_VECTOR,
+#endif
+#if defined(VECTOR_NUMBER_USBFS_FIFO_1)
+                .irq_d1    = VECTOR_NUMBER_USBFS_FIFO_1,
+#else
+                .irq_d1    = FSP_INVALID_VECTOR,
+#endif
+#if defined(VECTOR_NUMBER_USBHS_USB_INT_RESUME)
+                .hsirq     = VECTOR_NUMBER_USBHS_USB_INT_RESUME,
+#else
+                .hsirq     = FSP_INVALID_VECTOR,
+#endif
+#if defined(VECTOR_NUMBER_USBHS_FIFO_0)
+                .hsirq_d0  = VECTOR_NUMBER_USBHS_FIFO_0,
+#else
+                .hsirq_d0  = FSP_INVALID_VECTOR,
+#endif
+#if defined(VECTOR_NUMBER_USBHS_FIFO_1)
+                .hsirq_d1  = VECTOR_NUMBER_USBHS_FIFO_1,
+#else
+                .hsirq_d1  = FSP_INVALID_VECTOR,
+#endif
+                .ipl       = (12),
+                .ipl_r     = (12),
+                .ipl_d0    = (12),
+                .ipl_d1    = (12),
+                .hsipl     = (BSP_IRQ_DISABLED),
+                .hsipl_d0  = (BSP_IRQ_DISABLED),
+                .hsipl_d1  = (BSP_IRQ_DISABLED),
+#if (BSP_CFG_RTOS == 0) && defined(USB_CFG_HMSC_USE)
+                .p_usb_apl_callback = NULL,
+#else
+                .p_usb_apl_callback = NULL,
+#endif
+#if defined(NULL)
+                .p_context = NULL,
+#else
+                .p_context = &NULL,
+#endif
+#if (RA_NOT_DEFINED == RA_NOT_DEFINED)
+#else
+                .p_transfer_tx = &RA_NOT_DEFINED,
+#endif
+#if (RA_NOT_DEFINED == RA_NOT_DEFINED)
+#else
+                .p_transfer_rx = &RA_NOT_DEFINED,
+#endif
+            };
+#undef RA_NOT_DEFINED
+
+/* Instance structure to use this module. */
+const usb_instance_t g_basic0 =
+{
+    .p_ctrl        = &g_basic0_ctrl,
+    .p_cfg         = &g_basic0_cfg,
+    .p_api         = &g_usb_on_usb,
+};
+/* USB PCDC Communication Device */
+
+rm_comms_usb_pcdc_instance_ctrl_t g_comms_usb_pcdc0_ctrl;
+
+#if BSP_CFG_RTOS == 1 // ThreadX
+
+ #if !defined(g_comms_usb_pcdc0_tx_mutex)
+ rm_comms_mutex_t g_comms_usb_pcdc0_tx_mutex =
+ {
+     .p_name = "g_comms_usb_pcdc0 tx mutex",
+ };
+ #endif
+
+ #if !defined(g_comms_usb_pcdc0_rx_mutex)
+ rm_comms_mutex_t g_comms_usb_pcdc0_rx_mutex =
+ {
+     .p_name = "g_comms_usb_pcdc0 rx mutex",
+ };
+ #endif
+
+ #if !defined(g_comms_usb_pcdc0_tx_semaphore)
+ rm_comms_semaphore_t g_comms_usb_pcdc0_tx_semaphore =
+ {
+     .p_name = "g_comms_usb_pcdc0 tx semaphore",
+ };
+ #endif
+
+  #if !defined(g_comms_usb_pcdc0_rx_semaphore)
+ rm_comms_semaphore_t g_comms_usb_pcdc0_rx_semaphore =
+ {
+     .p_name = "g_comms_usb_pcdc0 rx semaphore",
+ };
+ #endif
+
+#elif BSP_CFG_RTOS == 2 // FreeRTOS
+
+#if !defined(g_comms_usb_pcdc0_tx_mutex)
+rm_comms_mutex_t g_comms_usb_pcdc0_tx_mutex;
+#endif
+
+#if !defined(g_comms_usb_pcdc0_rx_mutex)
+rm_comms_mutex_t g_comms_usb_pcdc0_rx_mutex;
+#endif
+#if !defined(g_comms_usb_pcdc0_tx_semaphore)
+rm_comms_semaphore_t g_comms_usb_pcdc0_tx_semaphore;
+#endif
+
+#if !defined(g_comms_usb_pcdc0_rx_semaphore)
+rm_comms_semaphore_t g_comms_usb_pcdc0_rx_semaphore;
+#endif
+
+#else
+
+#endif
+
+rm_comms_usb_pcdc_extended_cfg_t g_comms_usb_pcdc0_extended_cfg =
+{
+#if BSP_CFG_RTOS
+
+#if !defined(g_comms_usb_pcdc0_tx_mutex)
+    .p_tx_mutex = &g_comms_usb_pcdc0_tx_mutex,
+#else
+    .p_tx_mutex = NULL,
+#endif
+
+#if !defined(g_comms_usb_pcdc0_rx_mutex)
+    .p_rx_mutex = &g_comms_usb_pcdc0_rx_mutex,
+#else
+    .p_rx_mutex = NULL,
+#endif
+
+#if !defined(g_comms_usb_pcdc0_tx_semaphore)
+    .p_tx_semaphore = &g_comms_usb_pcdc0_tx_semaphore,
+#else
+    .p_tx_semaphore = NULL,
+#endif
+
+#if !defined(g_comms_usb_pcdc0_rx_semaphore)
+    .p_rx_semaphore = &g_comms_usb_pcdc0_rx_semaphore,
+#else
+    .p_rx_semaphore = NULL,
+#endif
+    .mutex_timeout  = 0xFFFFFFFF,
+#endif
+#if BSP_CFG_RTOS == 0
+    .p_gpt = &RA_NOT_DEFINED,
+#endif
+    .p_usb = &g_basic0,
+    .connect_detection_en = 0,
+};
+
+const rm_comms_cfg_t g_comms_usb_pcdc0_cfg =
+{
+    .semaphore_timeout  = 0xFFFFFFFF,
+    .p_lower_level_cfg  = NULL,
+    .p_extend           = (void*)&g_comms_usb_pcdc0_extended_cfg,
+    .p_callback         = NULL,
+};
+
+const rm_comms_instance_t g_comms_usb_pcdc0 =
+{
+    .p_ctrl = &g_comms_usb_pcdc0_ctrl,
+    .p_cfg  = &g_comms_usb_pcdc0_cfg,
+    .p_api  = &g_comms_on_comms_usb_pcdc,
+};
+
 extern uint32_t g_fsp_common_thread_count;
 
                 const rm_freertos_port_parameters_t main_thread0_parameters =
@@ -29,7 +223,7 @@ extern uint32_t g_fsp_common_thread_count;
                     /* Initialize each kernel object. */
                     
 
-                    #if 1
+                    #if 0
                     main_thread0 = xTaskCreateStatic(
                     #else
                     BaseType_t main_thread0_create_err = xTaskCreate(
@@ -39,7 +233,7 @@ extern uint32_t g_fsp_common_thread_count;
                         65536/4, // In words, not bytes
                         (void *) &main_thread0_parameters, //pvParameters
                         1,
-                        #if 1
+                        #if 0
                         (StackType_t *)&main_thread0_stack,
                         (StaticTask_t *)&main_thread0_memory
                         #else
@@ -47,7 +241,7 @@ extern uint32_t g_fsp_common_thread_count;
                         #endif
                     );
 
-                    #if 1
+                    #if 0
                     if (NULL == main_thread0)
                     {
                         rtos_startup_err_callback(main_thread0, 0);

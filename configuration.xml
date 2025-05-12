@@ -264,6 +264,18 @@
       <description>Board support package for RA8E1 - Events</description>
       <originalPack>Renesas.RA_mcu_ra8e1.5.9.0.pack</originalPack>
     </component>
+    <component apiversion="" class="Heaps" condition="" group="FreeRTOS" subgroup="heap_1" variant="" vendor="AWS" version="11.1.0+fsp.5.9.0">
+      <description>FreeRTOS - Memory Management - Heap 1</description>
+      <originalPack>Amazon.FreeRTOS-Kernel.11.1.0+fsp.5.9.0.pack</originalPack>
+    </component>
+    <component apiversion="" class="HAL Drivers" condition="" group="all" subgroup="r_usb_basic" variant="" vendor="Renesas" version="5.9.0">
+      <description>USB Basic</description>
+      <originalPack>Renesas.RA.5.9.0.pack</originalPack>
+    </component>
+    <component apiversion="" class="Middleware" condition="" group="all" subgroup="rm_comms_usb_pcdc" variant="" vendor="Renesas" version="5.9.0">
+      <description>USB PCDC Communications Implementation</description>
+      <originalPack>Renesas.RA.5.9.0.pack</originalPack>
+    </component>
   </raComponentSelection>
   <raElcConfiguration/>
   <raIcuConfiguration/>
@@ -530,6 +542,36 @@
       <property id="module.driver.timer.gtioca_disable_setting" value="module.driver.timer.gtioca_disable_setting.gtioc_disable_prohibited"/>
       <property id="module.driver.timer.gtiocb_disable_setting" value="module.driver.timer.gtiocb_disable_setting.gtioc_disable_prohibited"/>
     </module>
+    <module id="module.driver.rm_comms_on_usb_pcdc.2048602253">
+      <property id="module.driver.rm_comms.name" value="g_comms_usb_pcdc0"/>
+      <property id="module.driver.comms_usb_pcdc.tx_mutex" value="module.driver.comms_usb_pcdc.tx_mutex.use"/>
+      <property id="module.driver.comms_usb_pcdc.rx_mutex" value="module.driver.comms_usb_pcdc.rx_mutex.use"/>
+      <property id="module.driver.comms_usb_pcdc.mutex_timeout" value="0xFFFFFFFF"/>
+      <property id="module.driver.comms_usb_pcdc.tx_semaphore" value="module.driver.comms_usb_pcdc.tx_semaphore.use"/>
+      <property id="module.driver.comms_usb_pcdc.rx_semaphore" value="module.driver.comms_usb_pcdc.rx_semaphore.use"/>
+      <property id="module.driver.comms_usb_pcdc.semaphore_timeout" value="0xFFFFFFFF"/>
+      <property id="module.driver.comms_usb_pcdc.connect_detection" value="module.driver.comms_usb_pcdc.connect_detection.disable"/>
+      <property id="module.driver.comms_usb_pcdc.p_callback" value="NULL"/>
+    </module>
+    <module id="module.driver.basic_on_usb.1286058678">
+      <property id="module.driver.basic.name" value="g_basic0"/>
+      <property id="module.driver.usb_basic.usb_mode" value="module.driver.usb_basic.usb_mode.host"/>
+      <property id="module.driver.usb_basic.usb_speed" value="module.driver.usb_basic.usb_speed.fs"/>
+      <property id="module.driver.usb_basic.usb_modulenumber" value="module.driver.usb_basic.usb_modulenumber.0"/>
+      <property id="module.driver.usb_basic.usb_classtype" value="module.driver.usb_basic.usb_classtype.pcdc"/>
+      <property id="module.driver.usb_basic.p_usb_reg" value="g_usb_descriptor"/>
+      <property id="module.driver.usb_basic.complience_cb" value="NULL"/>
+      <property id="module.driver.usb_basic.ipl" value="board.icu.common.irq.priority12"/>
+      <property id="module.driver.usb_basic.ipl_r" value="board.icu.common.irq.priority12"/>
+      <property id="module.driver.usb_basic.ipl_d0" value="board.icu.common.irq.priority12"/>
+      <property id="module.driver.usb_basic.ipl_d1" value="board.icu.common.irq.priority12"/>
+      <property id="module.driver.usb_basic.hsipl" value="_disabled"/>
+      <property id="module.driver.usb_basic.hsipl_d0" value="_disabled"/>
+      <property id="module.driver.usb_basic.hsipl_d1" value="_disabled"/>
+      <property id="module.driver.usb_basic.rtos_callback" value="NULL"/>
+      <property id="module.driver.usb_basic.other_context" value="NULL"/>
+    </module>
+    <module id="module.freertos.heap.1.700109423"/>
     <context id="_hal.0">
       <stack module="module.driver.ioport_on_ioport.0"/>
       <stack module="module.middleware.rm_freertos_port.0"/>
@@ -550,8 +592,12 @@
       <property id="rtos.awsfreertos.thread.stack" value="65536"/>
       <property id="rtos.awsfreertos.thread.priority" value="1"/>
       <property id="rtos.awsfreertos.thread.context" value="NULL"/>
-      <property id="rtos.awsfreertos.thread.allocation" value="rtos.awsfreertos.thread.allocation.static"/>
+      <property id="rtos.awsfreertos.thread.allocation" value="rtos.awsfreertos.thread.allocation.dynamic"/>
       <property id="rtos.awsfreertos.thread.secure_context" value="rtos.awsfreertos.thread.secure_context.enable"/>
+      <stack module="module.driver.rm_comms_on_usb_pcdc.2048602253">
+        <stack module="module.driver.basic_on_usb.1286058678" requires="module.driver.basic_on_usb.requires.basic"/>
+      </stack>
+      <stack module="module.freertos.heap.1.700109423"/>
     </context>
     <context id="rtos.awsfreertos.thread.1789809945">
       <property id="_symbol" value="main_thread1"/>
@@ -576,6 +622,23 @@
       <property id="config.driver.sci_b_uart.fifo_support" value="config.driver.sci_b_uart.fifo_support.enabled"/>
       <property id="config.driver.sci_b_uart.dtc_support" value="config.driver.sci_b_uart.dtc_support.enabled"/>
       <property id="config.driver.sci_b_uart.flow_control" value="config.driver.sci_b_uart.flow_control.enabled"/>
+    </config>
+    <config id="config.driver.usb_basic">
+      <property id="config.driver.usb_basic.param_checking_enable" value="config.driver.usb_basic.param_checking_enable.bsp"/>
+      <property id="config.driver.usb_basic.pll_clock_frequency" value="config.driver.usb_basic.pll_clock_frequency.20mhz"/>
+      <property id="config.driver.usb_basic.buswait" value="config.driver.usb_basic.buswait.7"/>
+      <property id="config.driver.usb_basic.bc_function" value="config.driver.usb_basic.bc_function.enable"/>
+      <property id="config.driver.usb_basic.power_source" value="config.driver.usb_basic.power_source.high"/>
+      <property id="config.driver.usb_basic.dcp_function" value="config.driver.usb_basic.dcp_function.disable"/>
+      <property id="config.driver.usb_basic.request" value="config.driver.usb_basic.request.enable"/>
+      <property id="config.driver.usb_basic.dblb" value="config.driver.usb_basic.dblb.enable"/>
+      <property id="config.driver.usb_basic.cntmd" value="config.driver.usb_basic.cntmd.disable"/>
+      <property id="config.driver.usb_basic.ldo_regulator" value="config.driver.usb_basic.ldo_regulator.disable"/>
+      <property id="config.driver.usb_basic.dma" value="config.driver.usb_basic.dma.disable"/>
+      <property id="config.driver.usb_basic.source_address" value="config.driver.usb_basic.source_address.none"/>
+      <property id="config.driver.usb_basic.dest_address" value="config.driver.usb_basic.dest_address.none"/>
+      <property id="config.driver.usb_basic.compliance_mode" value="config.driver.usb_basic.compliance_mode.disable"/>
+      <property id="config.driver.usb_basic.tpl_table" value="NULL"/>
     </config>
     <config id="config.driver.ether">
       <property id="config.driver.ether.param_checking_enable" value="config.driver.ether.param_checking_enable.bsp"/>
@@ -606,6 +669,13 @@
     <config id="config.driver.ioport">
       <property id="config.driver.ioport.checking" value="config.driver.ioport.checking.system"/>
     </config>
+    <config id="config.driver.comms_usb_pcdc">
+      <property id="config.driver.comms_usb_pcdc.param_checking_enable" value="config.driver.comms_usb_pcdc.param_checking_enable.disabled"/>
+      <property id="config.driver.comms_usb_pcdc.bulk_in" value="config.driver.comms_usb_pcdc.bulk_in.pipe4"/>
+      <property id="config.driver.comms_usb_pcdc.bulk_out" value="config.driver.comms_usb_pcdc.bulk_out.pipe5"/>
+      <property id="config.driver.comms_usb_pcdc.int_in" value="config.driver.comms_usb_pcdc.int_in.pipe6"/>
+    </config>
+    <config id="config.driver.comms_usb_pcdc_class"/>
     <config id="config.awsfreertos.thread">
       <property id="config.awsfreertos.custom_freertosconfig" value=""/>
       <property id="config.awsfreertos.thread.configuse_preemption" value="config.awsfreertos.thread.configuse_preemption.enabled"/>
@@ -640,7 +710,7 @@
       <property id="config.awsfreertos.thread.configmessage_buffer_length_type" value="size_t"/>
       <property id="config.awsfreertos.thread.configheap_clear_memory_on_free" value="config.awsfreertos.thread.configheap_clear_memory_on_free.disabled"/>
       <property id="config.awsfreertos.thread.configsupport_static_allocation" value="config.awsfreertos.thread.configsupport_static_allocation.enabled"/>
-      <property id="config.awsfreertos.thread.configsupport_dynamic_allocation" value="config.awsfreertos.thread.configsupport_dynamic_allocation.disabled"/>
+      <property id="config.awsfreertos.thread.configsupport_dynamic_allocation" value="config.awsfreertos.thread.configsupport_dynamic_allocation.enabled"/>
       <property id="config.awsfreertos.thread.configtotal_heap_size" value="1024"/>
       <property id="config.awsfreertos.thread.configapplication_allocated_heap" value="config.awsfreertos.thread.configapplication_allocated_heap.disabled"/>
       <property id="config.awsfreertos.thread.configgenerate_run_time_stats" value="config.awsfreertos.thread.configgenerate_run_time_stats.disabled"/>
