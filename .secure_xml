@@ -137,8 +137,8 @@
       <configSetting altId="sci0.txd0.p603" configurationId="sci0.txd0" peripheral="SCI0"/>
       <configSetting altId="sci9.rxd9.p101" configurationId="sci9.rxd9" isUsedByDriver="true" peripheral="SCI9"/>
       <configSetting altId="sci9.txd9.p102" configurationId="sci9.txd9" isUsedByDriver="true" peripheral="SCI9"/>
-      <configSetting altId="usbfs.usb_dm.p815" configurationId="usbfs.usb_dm" peripheral="USB FS"/>
-      <configSetting altId="usbfs.usb_dp.p814" configurationId="usbfs.usb_dp" peripheral="USB FS"/>
+      <configSetting altId="usbfs.usb_dm.p815" configurationId="usbfs.usb_dm" isUsedByDriver="true" peripheral="USB FS"/>
+      <configSetting altId="usbfs.usb_dp.p814" configurationId="usbfs.usb_dp" isUsedByDriver="true" peripheral="USB FS"/>
     </pincfg>
   </raPinConfiguration>
 </raConfiguration>
