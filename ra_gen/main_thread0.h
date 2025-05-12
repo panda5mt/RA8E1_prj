@@ -2,15 +2,15 @@
 #ifndef MAIN_THREAD0_H_
 #define MAIN_THREAD0_H_
 #include "bsp_api.h"
-#include "FreeRTOS.h"
-#include "task.h"
-#include "semphr.h"
-#include "hal_data.h"
-#ifdef __cplusplus
-extern "C" void main_thread0_entry(void *pvParameters);
-#else
-extern void main_thread0_entry(void *pvParameters);
-#endif
+                #include "FreeRTOS.h"
+                #include "task.h"
+                #include "semphr.h"
+                #include "hal_data.h"
+                #ifdef __cplusplus
+                extern "C" void main_thread0_entry(void * pvParameters);
+                #else
+                extern void main_thread0_entry(void * pvParameters);
+                #endif
 #include "r_usb_basic.h"
 #include "r_usb_basic_api.h"
 #include "../ra/fsp/src/rm_comms_lock/rm_comms_lock.h"
@@ -45,7 +45,7 @@ extern rm_comms_usb_pcdc_instance_ctrl_t g_comms_usb_pcdc0_ctrl;
 extern const rm_comms_cfg_t g_comms_usb_pcdc0_cfg;
 
 #ifndef NULL
-void NULL(rm_comms_callback_args_t *p_args);
+void NULL(rm_comms_callback_args_t * p_args);
 #endif
 FSP_FOOTER
 #endif /* MAIN_THREAD0_H_ */

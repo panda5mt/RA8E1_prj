@@ -592,7 +592,7 @@
       <property id="rtos.awsfreertos.thread.stack" value="65536"/>
       <property id="rtos.awsfreertos.thread.priority" value="1"/>
       <property id="rtos.awsfreertos.thread.context" value="NULL"/>
-      <property id="rtos.awsfreertos.thread.allocation" value="rtos.awsfreertos.thread.allocation.dynamic"/>
+      <property id="rtos.awsfreertos.thread.allocation" value="rtos.awsfreertos.thread.allocation.static"/>
       <property id="rtos.awsfreertos.thread.secure_context" value="rtos.awsfreertos.thread.secure_context.enable"/>
       <stack module="module.freertos.heap.1.409177707"/>
       <stack module="module.driver.rm_comms_on_usb_pcdc.1508025323">
@@ -618,7 +618,7 @@
       <property id="config.driver.ospi_b.dotf_support" value="config.driver.ospi_b.dotf_support.disabled"/>
     </config>
     <config id="config.driver.sci_b_uart">
-      <property id="config.driver.sci_b_uart.param_checking_enable" value="config.driver.sci_b_uart.param_checking_enable.bsp"/>
+      <property id="config.driver.sci_b_uart.param_checking_enable" value="config.driver.sci_b_uart.param_checking_enable.disabled"/>
       <property id="config.driver.sci_b_uart.fifo_support" value="config.driver.sci_b_uart.fifo_support.enabled"/>
       <property id="config.driver.sci_b_uart.dtc_support" value="config.driver.sci_b_uart.dtc_support.enabled"/>
       <property id="config.driver.sci_b_uart.flow_control" value="config.driver.sci_b_uart.flow_control.enabled"/>
@@ -670,7 +670,7 @@
       <property id="config.driver.ioport.checking" value="config.driver.ioport.checking.system"/>
     </config>
     <config id="config.driver.comms_usb_pcdc">
-      <property id="config.driver.comms_usb_pcdc.param_checking_enable" value="config.driver.comms_usb_pcdc.param_checking_enable.bsp"/>
+      <property id="config.driver.comms_usb_pcdc.param_checking_enable" value="config.driver.comms_usb_pcdc.param_checking_enable.disabled"/>
       <property id="config.driver.comms_usb_pcdc.bulk_in" value="config.driver.comms_usb_pcdc.bulk_in.pipe4"/>
       <property id="config.driver.comms_usb_pcdc.bulk_out" value="config.driver.comms_usb_pcdc.bulk_out.pipe5"/>
       <property id="config.driver.comms_usb_pcdc.int_in" value="config.driver.comms_usb_pcdc.int_in.pipe6"/>

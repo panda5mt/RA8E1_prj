@@ -424,7 +424,7 @@ FSP Configuration
   Module "FreeRTOS Port (rm_freertos_port)"
   Module "Arm CMSIS DSP Library Source"
   Module "UART (r_sci_b_uart)"
-    Parameter Checking: Default (BSP)
+    Parameter Checking: Disabled
     FIFO Support: Enable
     DTC Support: Enable
     Flow Control Support: Enable
@@ -469,7 +469,7 @@ FSP Configuration
     
   Module "FreeRTOS Heap 1"
   Module "USB PCDC Communication Device (rm_comms_usb_pcdc)"
-    Parameter Checking: Default (BSP)
+    Parameter Checking: Disabled
     Bulk In Pipe: USB PIPE4
     Bulk Out Pipe: USB PIPE5
     Interrupt In Pipe: USB PIPE6
@@ -828,7 +828,7 @@ FSP Configuration
     Stack size (bytes): 65536
     Priority: 1
     Thread Context: NULL
-    Memory Allocation: Dynamic
+    Memory Allocation: Static
     Allocate Secure Context: Enable
     
     Instance "FreeRTOS Heap 1"
