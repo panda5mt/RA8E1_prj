@@ -468,7 +468,7 @@ FSP Configuration
     Write Protect Enable: Disabled
     
   Module "USB PCDC Communication Device (rm_comms_usb_pcdc)"
-    Parameter Checking: Disabled
+    Parameter Checking: Default (BSP)
     Bulk In Pipe: USB PIPE4
     Bulk Out Pipe: USB PIPE5
     Interrupt In Pipe: USB PIPE6
