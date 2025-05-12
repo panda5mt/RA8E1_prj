@@ -828,7 +828,7 @@ FSP Configuration
     Stack size (bytes): 65536
     Priority: 1
     Thread Context: NULL
-    Memory Allocation: Dynamic
+    Memory Allocation: Static
     Allocate Secure Context: Enable
     
     Instance "g_comms_usb_pcdc0 USB PCDC Communication Device (rm_comms_usb_pcdc)"
@@ -867,6 +867,6 @@ FSP Configuration
     Stack size (bytes): 1024
     Priority: 1
     Thread Context: NULL
-    Memory Allocation: Dynamic
+    Memory Allocation: Static
     Allocate Secure Context: Enable
     
