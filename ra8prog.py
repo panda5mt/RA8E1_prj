@@ -45,7 +45,7 @@ def send_data_packet(ser, data):
     packet.append(0x03)
     print(f"[→] DATA: len={len(data)}")
     ser.write(packet)
-    time.sleep(0.15)
+    time.sleep(0.3)
     resp = ser.read_all()
     if len(resp) >= 4 and resp[3] == 0x13:
         return True
