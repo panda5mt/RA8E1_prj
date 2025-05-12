@@ -1,0 +1,5 @@
+/home/radxa/RA8E1_prj/CMakeFiles/rasc.dir
+/home/radxa/RA8E1_prj/CMakeFiles/RA8E1_prj.elf.dir
+/home/radxa/RA8E1_prj/CMakeFiles/obj_copy.dir
+/home/radxa/RA8E1_prj/CMakeFiles/edit_cache.dir
+/home/radxa/RA8E1_prj/CMakeFiles/rebuild_cache.dir

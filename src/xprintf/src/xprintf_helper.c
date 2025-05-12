@@ -17,7 +17,7 @@ void put_char_ra8(uint8_t ch)
     if (first_call == true)
     {
         R_BSP_MODULE_START(FSP_IP_SCI, 9);
-        // init UART &printf
+        // init UART & printf
         R_SCI_B_UART_Open(&g_uart9_ctrl, &g_uart9_cfg);
         first_call = false;
     }
