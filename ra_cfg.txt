@@ -467,30 +467,6 @@ FSP Configuration
     Pin Output Support: Enabled
     Write Protect Enable: Disabled
     
-  Module "FreeRTOS Heap 1"
-  Module "USB PCDC Communication Device (rm_comms_usb_pcdc)"
-    Parameter Checking: Disabled
-    Bulk In Pipe: USB PIPE4
-    Bulk Out Pipe: USB PIPE5
-    Interrupt In Pipe: USB PIPE6
-    
-  Module "USB (r_usb_basic)"
-    Parameter Checking: Default (BSP)
-    PLL Frequency: 20MHz
-    CPU Bus Access Wait Cycles: 9 cycles
-    Battery Charging: Enabled
-    Power IC Shutdown Polarity: Active High
-    Dedicated Charging Port (DCP) Mode: Disabled
-    Notifications for SET_INTERFACE/SET_FEATURE/CLEAR_FEATURE: Enabled
-    Double Buffering: Enabled
-    Continuous Transfer Mode: Disabled
-    LDO Regulator: Not Supported
-    DMA/DTC Support: DMA Disabled
-    DMA/DTC Source Address: DMA Disabled
-    DMA/DTC Destination Address: DMA Disabled
-    USB Compliance Test mode: Disabled
-    USB TPL table name: NULL
-    
   FreeRTOS
     General: Custom FreeRTOSConfig.h: 
     General: Use Preemption: Enabled
@@ -525,7 +501,7 @@ FSP Configuration
     General: Message Buffer Length Type: size_t
     Memory Allocation: Clear Memory on Free: Disabled
     Memory Allocation: Support Static Allocation: Enabled
-    Memory Allocation: Support Dynamic Allocation: Enabled
+    Memory Allocation: Support Dynamic Allocation: Disabled
     Memory Allocation: Total Heap Size: 1024
     Memory Allocation: Application Allocated Heap: Disabled
     Stats: Generate Run Time Stats: Disabled
@@ -831,36 +807,6 @@ FSP Configuration
     Memory Allocation: Static
     Allocate Secure Context: Enable
     
-    Instance "FreeRTOS Heap 1"
-    Instance "g_comms_usb_pcdc0 USB PCDC Communication Device (rm_comms_usb_pcdc)"
-      Name: g_comms_usb_pcdc0
-      RTOS: Recursive Write Mutex: Use
-      RTOS: Recursive Read Mutex: Use
-      RTOS: Mutex Timeout: 0xFFFFFFFF
-      RTOS: Write Semaphore: Use
-      RTOS: Read Semaphore: Use
-      RTOS: Semaphore Timeout: 0xFFFFFFFF
-      USB Connection Detection: Disabled
-      Callback: NULL
-      
-      Instance "g_basic0 USB (r_usb_basic)"
-        Name: g_basic0
-        USB Mode: Peri mode
-        USB Speed: Full Speed
-        USB Module Number: USB_IP0 Port
-        USB Device Class: Peripheral Communications Device Class
-        USB Descriptor: g_usb_descriptor
-        USB Compliance Callback: NULL
-        USBFS Interrupt Priority: Priority 12
-        USBFS Resume Priority: Priority 12
-        USBFS D0FIFO Interrupt Priority: Priority 12
-        USBFS D1FIFO Interrupt Priority: Priority 12
-        USBHS Interrupt Priority: Not Supported
-        USBHS D0FIFO Interrupt Priority: Not Supported
-        USBHS D1FIFO Interrupt Priority: Not Supported
-        USB Callback: NULL
-        USB Callback Context: NULL
-        
   Thread "Main Thread1"
     Symbol: main_thread1
     Name: Main Thread1

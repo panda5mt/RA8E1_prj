@@ -84,7 +84,6 @@
         <peripheral name="ETHERC0.CM85" group="ETHERC" security="s"/>
         <peripheral name="GPT5.CM85" group="GPT" security="s"/>
         <peripheral name="GPT3.CM85" group="GPT" security="s"/>
-        <peripheral name="USB_FS.CM85" security="s"/>
         <peripheral name="ICU.CM85">
             <slot name="IRQ0.CM85" secure="true"/>
             <slot name="IRQ1.CM85" secure="true"/>
@@ -96,10 +95,6 @@
             <slot name="IRQ7.CM85" secure="true"/>
             <slot name="IRQ8.CM85" secure="true"/>
             <slot name="IRQ9.CM85" secure="true"/>
-            <slot name="IRQ10.CM85" secure="true"/>
-            <slot name="IRQ11.CM85" secure="true"/>
-            <slot name="IRQ12.CM85" secure="true"/>
-            <slot name="IRQ13.CM85" secure="true"/>
         </peripheral>
     </partition>
 </azone>
