@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-	#define RM_COMMS_USB_PCDC_CFG_PARAM_CHECKING_ENABLE          (1)
+	#define RM_COMMS_USB_PCDC_CFG_PARAM_CHECKING_ENABLE          (BSP_CFG_PARAM_CHECKING_ENABLE)
 
 	#if (RA_NOT_DEFINED != RA_NOT_DEFINED)
 		#include "r_usb_pcdc_2ch_cfg.h"

@@ -469,7 +469,7 @@ FSP Configuration
     
   Module "FreeRTOS Heap 4"
   Module "USB PCDC Communication Device (rm_comms_usb_pcdc)"
-    Parameter Checking: Enabled
+    Parameter Checking: Default (BSP)
     Bulk In Pipe: USB PIPE4
     Bulk Out Pipe: USB PIPE5
     Interrupt In Pipe: USB PIPE6
@@ -858,7 +858,7 @@ FSP Configuration
       RTOS: Write Semaphore: Use
       RTOS: Read Semaphore: Use
       RTOS: Semaphore Timeout: 0xFFFFFFFF
-      USB Connection Detection: Baudrate Configuration
+      USB Connection Detection: Control Line State
       Callback: rm_comms_usb_pcdc_callback
       
       Instance "g_basic0 USB (r_usb_basic)"

@@ -551,7 +551,7 @@
       <property id="module.driver.comms_usb_pcdc.tx_semaphore" value="module.driver.comms_usb_pcdc.tx_semaphore.use"/>
       <property id="module.driver.comms_usb_pcdc.rx_semaphore" value="module.driver.comms_usb_pcdc.rx_semaphore.use"/>
       <property id="module.driver.comms_usb_pcdc.semaphore_timeout" value="0xFFFFFFFF"/>
-      <property id="module.driver.comms_usb_pcdc.connect_detection" value="module.driver.comms_usb_pcdc.connect_detection.baudrate_config"/>
+      <property id="module.driver.comms_usb_pcdc.connect_detection" value="module.driver.comms_usb_pcdc.connect_detection.ctrl_line_state"/>
       <property id="module.driver.comms_usb_pcdc.p_callback" value="rm_comms_usb_pcdc_callback"/>
     </module>
     <module id="module.driver.basic_on_usb.1931599871">
@@ -679,7 +679,7 @@
       <property id="config.driver.ioport.checking" value="config.driver.ioport.checking.system"/>
     </config>
     <config id="config.driver.comms_usb_pcdc">
-      <property id="config.driver.comms_usb_pcdc.param_checking_enable" value="config.driver.comms_usb_pcdc.param_checking_enable.enabled"/>
+      <property id="config.driver.comms_usb_pcdc.param_checking_enable" value="config.driver.comms_usb_pcdc.param_checking_enable.bsp"/>
       <property id="config.driver.comms_usb_pcdc.bulk_in" value="config.driver.comms_usb_pcdc.bulk_in.pipe4"/>
       <property id="config.driver.comms_usb_pcdc.bulk_out" value="config.driver.comms_usb_pcdc.bulk_out.pipe5"/>
       <property id="config.driver.comms_usb_pcdc.int_in" value="config.driver.comms_usb_pcdc.int_in.pipe6"/>
