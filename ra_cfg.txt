@@ -858,7 +858,7 @@ FSP Configuration
       RTOS: Write Semaphore: Use
       RTOS: Read Semaphore: Use
       RTOS: Semaphore Timeout: 0xFFFFFFFF
-      USB Connection Detection: Disabled
+      USB Connection Detection: Baudrate Configuration
       Callback: rm_comms_usb_pcdc_callback
       
       Instance "g_basic0 USB (r_usb_basic)"

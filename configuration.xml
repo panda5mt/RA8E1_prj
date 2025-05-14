@@ -551,7 +551,7 @@
       <property id="module.driver.comms_usb_pcdc.tx_semaphore" value="module.driver.comms_usb_pcdc.tx_semaphore.use"/>
       <property id="module.driver.comms_usb_pcdc.rx_semaphore" value="module.driver.comms_usb_pcdc.rx_semaphore.use"/>
       <property id="module.driver.comms_usb_pcdc.semaphore_timeout" value="0xFFFFFFFF"/>
-      <property id="module.driver.comms_usb_pcdc.connect_detection" value="module.driver.comms_usb_pcdc.connect_detection.disable"/>
+      <property id="module.driver.comms_usb_pcdc.connect_detection" value="module.driver.comms_usb_pcdc.connect_detection.baudrate_config"/>
       <property id="module.driver.comms_usb_pcdc.p_callback" value="rm_comms_usb_pcdc_callback"/>
     </module>
     <module id="module.driver.basic_on_usb.1931599871">
