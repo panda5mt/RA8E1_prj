@@ -14,10 +14,6 @@
             [7] = iic_master_tei_isr, /* IIC1 TEI (Transmit end) */
             [8] = iic_master_eri_isr, /* IIC1 ERI (Transfer error) */
             [9] = ether_eint_isr, /* EDMAC0 EINT (EDMAC 0 interrupt) */
-            [10] = usbfs_interrupt_handler, /* USBFS INT (USBFS interrupt) */
-            [11] = usbfs_resume_handler, /* USBFS RESUME (USBFS resume interrupt) */
-            [12] = usbfs_d0fifo_handler, /* USBFS FIFO 0 (DMA/DTC transfer request 0) */
-            [13] = usbfs_d1fifo_handler, /* USBFS FIFO 1 (DMA/DTC transfer request 1) */
         };
         #if BSP_FEATURE_ICU_HAS_IELSR
         const bsp_interrupt_event_t g_interrupt_event_link_select[BSP_ICU_VECTOR_NUM_ENTRIES] =
@@ -32,10 +28,6 @@
             [7] = BSP_PRV_VECT_ENUM(EVENT_IIC1_TEI,GROUP7), /* IIC1 TEI (Transmit end) */
             [8] = BSP_PRV_VECT_ENUM(EVENT_IIC1_ERI,GROUP0), /* IIC1 ERI (Transfer error) */
             [9] = BSP_PRV_VECT_ENUM(EVENT_EDMAC0_EINT,GROUP1), /* EDMAC0 EINT (EDMAC 0 interrupt) */
-            [10] = BSP_PRV_VECT_ENUM(EVENT_USBFS_INT,GROUP2), /* USBFS INT (USBFS interrupt) */
-            [11] = BSP_PRV_VECT_ENUM(EVENT_USBFS_RESUME,GROUP3), /* USBFS RESUME (USBFS resume interrupt) */
-            [12] = BSP_PRV_VECT_ENUM(EVENT_USBFS_FIFO_0,GROUP4), /* USBFS FIFO 0 (DMA/DTC transfer request 0) */
-            [13] = BSP_PRV_VECT_ENUM(EVENT_USBFS_FIFO_1,GROUP5), /* USBFS FIFO 1 (DMA/DTC transfer request 1) */
         };
         #endif
         #endif
