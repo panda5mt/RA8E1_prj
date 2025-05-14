@@ -2,7 +2,7 @@
 /* Main Thread2 entry function */
 uint8_t ucHeap[configTOTAL_HEAP_SIZE];
 /* pvParameters contains TaskHandle_t */
-int g_err_flag, g_tx_flag;
+int g_err_flag, g_tx_flag, g_rx_flag;
 usb_descriptor_t g_usb_descriptor;
 
 void main_thread2_entry(void *pvParameters)
@@ -12,12 +12,12 @@ void main_thread2_entry(void *pvParameters)
     g_tx_buf[0] = 'A';
     g_tx_buf[1] = '\0';
 
-    fsp_err_t err = FSP_SUCCESS;
-    err = RM_COMMS_USB_PCDC_Open(&g_comms_usb_pcdc0_ctrl, &g_comms_usb_pcdc0_cfg);
-    if (FSP_SUCCESS != err)
+    fsp_err_t err = -1;
+    while (FSP_SUCCESS != err)
     {
-        /* Handle any errors. */
+        err = RM_COMMS_USB_PCDC_Open(&g_comms_usb_pcdc0_ctrl, &g_comms_usb_pcdc0_cfg);
     }
+
     while (true)
     {
         /* Send data. */
@@ -53,10 +53,10 @@ void rm_comms_usb_pcdc_callback(rm_comms_callback_args_t *p_args)
     {
         g_tx_flag = 1;
     }
-    // else if (p_args->event == RM_COMMS_EVENT_RX_OPERATION_COMPLETE)
-    // {
-    //     g_rx_flag = 1;
-    // }
+    else if (p_args->event == RM_COMMS_EVENT_RX_OPERATION_COMPLETE)
+    {
+        g_rx_flag = 1;
+    }
     else
     {
         g_err_flag = 1;
