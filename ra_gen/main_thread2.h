@@ -44,8 +44,8 @@ extern const rm_comms_instance_t g_comms_usb_pcdc0;
 extern rm_comms_usb_pcdc_instance_ctrl_t g_comms_usb_pcdc0_ctrl;
 extern const rm_comms_cfg_t g_comms_usb_pcdc0_cfg;
 
-#ifndef NULL
-void NULL(rm_comms_callback_args_t * p_args);
+#ifndef rm_comms_usb_pcdc_callback
+void rm_comms_usb_pcdc_callback(rm_comms_callback_args_t * p_args);
 #endif
 FSP_FOOTER
 #endif /* MAIN_THREAD2_H_ */

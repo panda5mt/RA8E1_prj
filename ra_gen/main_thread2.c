@@ -198,7 +198,7 @@ const rm_comms_cfg_t g_comms_usb_pcdc0_cfg =
     .semaphore_timeout  = 0xFFFFFFFF,
     .p_lower_level_cfg  = NULL,
     .p_extend           = (void*)&g_comms_usb_pcdc0_extended_cfg,
-    .p_callback         = NULL,
+    .p_callback         = rm_comms_usb_pcdc_callback,
 };
 
 const rm_comms_instance_t g_comms_usb_pcdc0 =

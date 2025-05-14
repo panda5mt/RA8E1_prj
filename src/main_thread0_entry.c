@@ -9,7 +9,6 @@
 // #define BYTE_PER_PIXEL (2)
 
 bool first_call = true;
-int g_err_flag = 0, g_tx_flag = 0, g_rx_flag = 0;
 
 // void put_char_ra8_usb(uint8_t ch);
 /* Main Thread entry function */
