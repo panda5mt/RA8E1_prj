@@ -1,7 +1,7 @@
 /* generated thread source file - do not edit */
 #include "main_thread0.h"
 
-#if 1
+#if 0
                 static StaticTask_t main_thread0_memory;
                 #if defined(__ARMCC_VERSION)           /* AC6 compiler */
                 static uint8_t main_thread0_stack[65536] BSP_PLACE_IN_SECTION(BSP_UNINIT_SECTION_PREFIX ".stack.thread") BSP_ALIGN_VARIABLE(BSP_STACK_ALIGNMENT);
@@ -29,7 +29,7 @@ extern uint32_t g_fsp_common_thread_count;
                     /* Initialize each kernel object. */
                     
 
-                    #if 1
+                    #if 0
                     main_thread0 = xTaskCreateStatic(
                     #else
                     BaseType_t main_thread0_create_err = xTaskCreate(
@@ -39,7 +39,7 @@ extern uint32_t g_fsp_common_thread_count;
                         65536/4, // In words, not bytes
                         (void *) &main_thread0_parameters, //pvParameters
                         1,
-                        #if 1
+                        #if 0
                         (StackType_t *)&main_thread0_stack,
                         (StaticTask_t *)&main_thread0_memory
                         #else
@@ -47,7 +47,7 @@ extern uint32_t g_fsp_common_thread_count;
                         #endif
                     );
 
-                    #if 1
+                    #if 0
                     if (NULL == main_thread0)
                     {
                         rtos_startup_err_callback(main_thread0, 0);
