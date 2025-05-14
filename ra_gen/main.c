@@ -7,6 +7,8 @@
                 extern TaskHandle_t main_thread0;
 extern void main_thread1_create(void);
                 extern TaskHandle_t main_thread1;
+extern void main_thread2_create(void);
+                extern TaskHandle_t main_thread2;
                 uint32_t g_fsp_common_thread_count;
                 bool g_fsp_common_initialized;
                 SemaphoreHandle_t g_fsp_common_initialized_semaphore;
@@ -104,6 +106,7 @@ extern void main_thread1_create(void);
                     /* Init RTOS tasks. */
                     main_thread0_create();
 main_thread1_create();
+main_thread2_create();
 
                     /* Start the scheduler. */
                     vTaskStartScheduler();
