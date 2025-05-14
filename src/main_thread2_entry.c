@@ -32,7 +32,7 @@ uint8_t g_apl_usb_event_rp = 0;
 uint8_t ucHeap[configTOTAL_HEAP_SIZE];
 /* pvParameters contains TaskHandle_t */
 int g_err_flag, g_tx_flag, g_rx_flag;
-usb_descriptor_t g_usb_descriptor;
+// usb_descriptor_t g_usb_descriptor;
 
 /******************************************************************************
  * Exported global functions (to be accessed by other files)
