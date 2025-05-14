@@ -467,6 +467,7 @@ FSP Configuration
     Pin Output Support: Enabled
     Write Protect Enable: Disabled
     
+  Module "FreeRTOS Heap 4"
   FreeRTOS
     General: Custom FreeRTOSConfig.h: 
     General: Use Preemption: Enabled
@@ -501,9 +502,9 @@ FSP Configuration
     General: Message Buffer Length Type: size_t
     Memory Allocation: Clear Memory on Free: Disabled
     Memory Allocation: Support Static Allocation: Enabled
-    Memory Allocation: Support Dynamic Allocation: Disabled
-    Memory Allocation: Total Heap Size: 4096
-    Memory Allocation: Application Allocated Heap: Disabled
+    Memory Allocation: Support Dynamic Allocation: Enabled
+    Memory Allocation: Total Heap Size: 65536
+    Memory Allocation: Application Allocated Heap: Enabled
     Stats: Generate Run Time Stats: Disabled
     Timers: Use Timers: Enabled
     Timers: Timer Task Priority: 3
@@ -822,6 +823,7 @@ FSP Configuration
     Stack size (bytes): 1024
     Priority: 1
     Thread Context: NULL
-    Memory Allocation: Static
+    Memory Allocation: Dynamic
     Allocate Secure Context: Enable
     
+    Instance "FreeRTOS Heap 4"

@@ -1,13 +1,14 @@
 #include "main_thread2.h"
-                /* Main Thread2 entry function */
-                /* pvParameters contains TaskHandle_t */
-                void main_thread2_entry(void * pvParameters)
-                {
-                    FSP_PARAMETER_NOT_USED(pvParameters);
+/* Main Thread2 entry function */
+uint8_t ucHeap[configTOTAL_HEAP_SIZE];
+/* pvParameters contains TaskHandle_t */
+void main_thread2_entry(void *pvParameters)
+{
+    FSP_PARAMETER_NOT_USED(pvParameters);
 
-                    /* TODO: add your own code here */
-                    while(1)
-                    {
-                        vTaskDelay(1);
-                    }
-                }
+    /* TODO: add your own code here */
+    while (1)
+    {
+        vTaskDelay(1);
+    }
+}
