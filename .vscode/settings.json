@@ -35,6 +35,7 @@
     "xprintf_helper.h": "c",
     "r_gpt.h": "c",
     "sccb_if.h": "c",
-    "picotls.h": "c"
+    "picotls.h": "c",
+    "r_usb_basic_api.h": "c"
   },
 }

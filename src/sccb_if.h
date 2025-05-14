@@ -2,7 +2,7 @@
 #define SCCB_IF_H_
 
 #include "hal_data.h"
-#include "xprintf_helper.h"
+#include "xprintf.h"
 
 typedef struct
 {

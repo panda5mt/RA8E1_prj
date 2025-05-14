@@ -1,6 +1,4 @@
 #include "hal_data.h"
-#include "xprintf.h"
-#include "xprintf_helper.h"
 
 FSP_CPP_HEADER
 void R_BSP_WarmStart(bsp_warm_start_event_t event);

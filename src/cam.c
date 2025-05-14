@@ -1,7 +1,6 @@
 #include "hal_data.h"
 #include "projdefs.h"
 #include "r_ceu.h"
-#include "xprintf_helper.h"
 #include "xprintf.h"
 #include "sccb_if.h"
 #include "cam.h"
@@ -16,7 +15,7 @@ void g_ceu0_user_callback(capture_callback_args_t *p_args)
 {
     // g_flag1 = (uint32_t)p_args->event;
     /* Multiple event flags may be set simultaneously */
-    if (p_args->event & (uint32_t) ~(CEU_EVENT_HD | CEU_EVENT_VD | CEU_EVENT_FRAME_END))
+    if (p_args->event & (uint32_t)~(CEU_EVENT_HD | CEU_EVENT_VD | CEU_EVENT_FRAME_END))
     {
         /* Error processing should occur first. Application should not process complete event if error occurred. */
         g_ceu_capture_error = true;

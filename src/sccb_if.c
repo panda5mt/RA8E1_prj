@@ -1,8 +1,5 @@
 
 #include "hal_data.h"
-#include "xprintf_helper.h"
-#include "xprintf.h"
-
 #include "sccb_if.h"
 
 #define NEED_XPRINTF_MESSAGE (1)
