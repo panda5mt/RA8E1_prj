@@ -547,7 +547,7 @@
     <context id="rtos.awsfreertos.thread.415524792">
       <property id="_symbol" value="main_thread0"/>
       <property id="rtos.awsfreertos.thread.name" value="Main Thread0"/>
-      <property id="rtos.awsfreertos.thread.stack" value="65536"/>
+      <property id="rtos.awsfreertos.thread.stack" value="4096"/>
       <property id="rtos.awsfreertos.thread.priority" value="1"/>
       <property id="rtos.awsfreertos.thread.context" value="NULL"/>
       <property id="rtos.awsfreertos.thread.allocation" value="rtos.awsfreertos.thread.allocation.static"/>
