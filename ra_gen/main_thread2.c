@@ -190,7 +190,7 @@ rm_comms_usb_pcdc_extended_cfg_t g_comms_usb_pcdc0_extended_cfg =
     .p_gpt = &RA_NOT_DEFINED,
 #endif
     .p_usb = &g_basic0,
-    .connect_detection_en = 2,
+    .connect_detection_en = 0,
 };
 
 const rm_comms_cfg_t g_comms_usb_pcdc0_cfg =
