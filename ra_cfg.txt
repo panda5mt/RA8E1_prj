@@ -467,7 +467,7 @@ FSP Configuration
     Pin Output Support: Enabled
     Write Protect Enable: Disabled
     
-  Module "FreeRTOS Heap 5"
+  Module "FreeRTOS Heap 4"
   FreeRTOS
     General: Custom FreeRTOSConfig.h: 
     General: Use Preemption: Enabled
@@ -808,7 +808,7 @@ FSP Configuration
     Memory Allocation: Dynamic
     Allocate Secure Context: Enable
     
-    Instance "FreeRTOS Heap 5"
+    Instance "FreeRTOS Heap 4"
   Thread "Main Thread1"
     Symbol: main_thread1
     Name: Main Thread1

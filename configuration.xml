@@ -264,8 +264,8 @@
       <description>Board support package for RA8E1 - Events</description>
       <originalPack>Renesas.RA_mcu_ra8e1.5.9.0.pack</originalPack>
     </component>
-    <component apiversion="" class="Heaps" condition="" group="FreeRTOS" subgroup="heap_5" variant="" vendor="AWS" version="11.1.0+fsp.5.9.0">
-      <description>FreeRTOS - Memory Management - Heap 5</description>
+    <component apiversion="" class="Heaps" condition="" group="FreeRTOS" subgroup="heap_4" variant="" vendor="AWS" version="11.1.0+fsp.5.9.0">
+      <description>FreeRTOS - Memory Management - Heap 4</description>
       <originalPack>Amazon.FreeRTOS-Kernel.11.1.0+fsp.5.9.0.pack</originalPack>
     </component>
   </raComponentSelection>
@@ -534,7 +534,7 @@
       <property id="module.driver.timer.gtioca_disable_setting" value="module.driver.timer.gtioca_disable_setting.gtioc_disable_prohibited"/>
       <property id="module.driver.timer.gtiocb_disable_setting" value="module.driver.timer.gtiocb_disable_setting.gtioc_disable_prohibited"/>
     </module>
-    <module id="module.freertos.heap.5.373766864"/>
+    <module id="module.freertos.heap.4.1615270169"/>
     <context id="_hal.0">
       <stack module="module.driver.ioport_on_ioport.0"/>
       <stack module="module.middleware.rm_freertos_port.0"/>
@@ -557,7 +557,7 @@
       <property id="rtos.awsfreertos.thread.context" value="NULL"/>
       <property id="rtos.awsfreertos.thread.allocation" value="rtos.awsfreertos.thread.allocation.dynamic"/>
       <property id="rtos.awsfreertos.thread.secure_context" value="rtos.awsfreertos.thread.secure_context.enable"/>
-      <stack module="module.freertos.heap.5.373766864"/>
+      <stack module="module.freertos.heap.4.1615270169"/>
     </context>
     <context id="rtos.awsfreertos.thread.1789809945">
       <property id="_symbol" value="main_thread1"/>
