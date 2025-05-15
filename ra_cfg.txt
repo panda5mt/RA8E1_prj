@@ -721,7 +721,7 @@ FSP Configuration
       General: Name: g_timer5
       General: Channel: 5
       General: Mode: Periodic
-      General: Period: 1
+      General: Period: 2
       General: Compare Match: Compare Match A: Status: Disabled
       General: Compare Match: Compare Match A: Compare match value: 0
       General: Compare Match: Compare Match B: Status: Disabled
@@ -825,7 +825,7 @@ FSP Configuration
     Symbol: main_thread0
     Name: Main Thread0
     Stack size (bytes): 4096
-    Priority: 0
+    Priority: 1
     Thread Context: NULL
     Memory Allocation: Static
     Allocate Secure Context: Enable
@@ -871,5 +871,11 @@ FSP Configuration
     Symbol: g_usb_read_queue
     Item Size (Bytes): 4
     Queue Length (Items): 20
+    Memory Allocation: Static
+    
+  Object "xQueueMes Queue"
+    Symbol: xQueueMes
+    Item Size (Bytes): 64
+    Queue Length (Items): 1
     Memory Allocation: Static
     

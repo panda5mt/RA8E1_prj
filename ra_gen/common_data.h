@@ -22,6 +22,7 @@ extern const ioport_instance_t g_ioport;
 extern ioport_instance_ctrl_t g_ioport_ctrl;
 extern SemaphoreHandle_t g_usb_write_complete_binary_semaphore;
 extern QueueHandle_t g_usb_read_queue;
+extern QueueHandle_t xQueueMes;
 void g_common_init(void);
 FSP_FOOTER
 #endif /* COMMON_DATA_H_ */

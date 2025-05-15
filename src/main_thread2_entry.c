@@ -95,19 +95,6 @@ void main_thread2_entry(void *pvParameters)
             ;
     }
 
-    R_BSP_MODULE_START(FSP_IP_GPT, 5);
-    if (FSP_SUCCESS == R_GPT_Open(&g_timer5_ctrl, &g_timer5_cfg))
-    {
-        // xprintf("[PWM/GPT] Open Ok.\n");
-    }
-    if (FSP_SUCCESS == R_GPT_Start(&g_timer5_ctrl))
-    {
-        // xprintf("[PWM/GPT] Start Ok.\n");
-    }
-    timer_info_t p_info5;
-    R_GPT_InfoGet(&g_timer5_ctrl, &p_info5);
-    // xprintf("[PWM/GPT] %d[Hz]\n", (p_info5.clock_frequency / p_info5.period_counts));
-
     /* Wait for the application to open the COM port */
     while (0 == g_control_line_state.bdtr)
     {
@@ -115,23 +102,27 @@ void main_thread2_entry(void *pvParameters)
     }
 
     vTaskDelay(150 / portTICK_PERIOD_MS); // Delay before first write over USB CDC
-    /* TODO: add your own code here */
+                                          /* TODO: add your own code here */
 
+    char recvMsg[256];
     while (1)
     {
-
-        err = g_usb_on_usb.write(&g_basic0_ctrl, (uint8_t *)"Test String1\r\n", strlen("Test String1\r\n"), USB_CLASS_PCDC);
-        if (FSP_SUCCESS != err)
+        if (xQueueReceive(xQueueMes, recvMsg, portMAX_DELAY))
         {
-            __BKPT(0);
+
+            err = g_usb_on_usb.write(&g_basic0_ctrl, (uint8_t *)recvMsg, strlen(recvMsg), USB_CLASS_PCDC);
+            if (FSP_SUCCESS != err)
+            {
+                __BKPT(0);
+            }
+
+            /* Wait for the USB Write to complete */
+            if (xSemaphoreTake(g_usb_write_complete_binary_semaphore, portMAX_DELAY) == pdTRUE)
+            {
+                __NOP(); // The write has completed
+            }
         }
 
-        /* Wait for the USB Write to complete */
-        if (xSemaphoreTake(g_usb_write_complete_binary_semaphore, portMAX_DELAY) == pdTRUE)
-        {
-            __NOP(); // The write has completed
-        }
-
-        vTaskDelay(1000 / portTICK_PERIOD_MS); // Delay
+        // vTaskDelay(1000 / portTICK_PERIOD_MS); // Delay
     }
 }

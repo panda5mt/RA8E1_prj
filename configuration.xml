@@ -442,7 +442,7 @@
       <property id="module.driver.timer.name" value="g_timer5"/>
       <property id="module.driver.timer.channel" value="5"/>
       <property id="module.driver.timer.mode" value="module.driver.timer.mode.mode_periodic"/>
-      <property id="module.driver.timer.period" value="1"/>
+      <property id="module.driver.timer.period" value="2"/>
       <property id="module.driver.timer.compare_match.a.status" value="module.driver.timer.compare_match.a.status.disabled"/>
       <property id="module.driver.timer.compare_match.a.value" value="0"/>
       <property id="module.driver.timer.compare_match.b.status" value="module.driver.timer.compare_match.b.status.disabled"/>
@@ -576,6 +576,12 @@
       <property id="rtos.awsfreertos.object.queue.queue_length" value="20"/>
       <property id="rtos.awsfreertos.object.queue.allocation" value="rtos.awsfreertos.object.queue.allocation.static"/>
     </object>
+    <object id="rtos.awsfreertos.object.queue.2062160637">
+      <property id="rtos.awsfreertos.object.queue.symbol" value="xQueueMes"/>
+      <property id="rtos.awsfreertos.object.queue.item_size" value="64"/>
+      <property id="rtos.awsfreertos.object.queue.queue_length" value="1"/>
+      <property id="rtos.awsfreertos.object.queue.allocation" value="rtos.awsfreertos.object.queue.allocation.static"/>
+    </object>
     <context id="_hal.0">
       <stack module="module.driver.ioport_on_ioport.0"/>
       <stack module="module.middleware.rm_freertos_port.0"/>
@@ -594,7 +600,7 @@
       <property id="_symbol" value="main_thread0"/>
       <property id="rtos.awsfreertos.thread.name" value="Main Thread0"/>
       <property id="rtos.awsfreertos.thread.stack" value="4096"/>
-      <property id="rtos.awsfreertos.thread.priority" value="0"/>
+      <property id="rtos.awsfreertos.thread.priority" value="1"/>
       <property id="rtos.awsfreertos.thread.context" value="NULL"/>
       <property id="rtos.awsfreertos.thread.allocation" value="rtos.awsfreertos.thread.allocation.static"/>
       <property id="rtos.awsfreertos.thread.secure_context" value="rtos.awsfreertos.thread.secure_context.enable"/>
