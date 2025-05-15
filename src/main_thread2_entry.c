@@ -120,7 +120,7 @@ void main_thread2_entry(void *pvParameters)
     while (1)
     {
 
-        err = g_usb_on_usb.write(&g_basic0_ctrl, (uint8_t *)"Test String\r\n", strlen("Test String\r\n"), USB_CLASS_PCDC);
+        err = g_usb_on_usb.write(&g_basic0_ctrl, (uint8_t *)"Test String1\r\n", strlen("Test String1\r\n"), USB_CLASS_PCDC);
         if (FSP_SUCCESS != err)
         {
             __BKPT(0);
