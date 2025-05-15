@@ -122,7 +122,7 @@ void main_thread2_entry(void *pvParameters)
 
         g_err_flag = 0;
         g_tx_flag = 0;
-        err = RM_COMMS_USB_PCDC_Write(&g_comms_usb_pcdc0_ctrl, g_tx_buf, TX_BUF_LEN);
+        err = RM_COMMS_USB_PCDC_Write(&g_comms_usb_pcdc0_ctrl, g_tx_buf, 3 /*TX_BUF_LEN*/);
         if (FSP_SUCCESS != err)
         {
             /* Handle any errors. */
