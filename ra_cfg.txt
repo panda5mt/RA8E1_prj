@@ -468,10 +468,9 @@ FSP Configuration
     Write Protect Enable: Disabled
     
   Module "FreeRTOS Heap 4"
-  Module "USB PCDC Communication Device (rm_comms_usb_pcdc)"
-    Parameter Checking: Default (BSP)
-    Bulk In Pipe: USB PIPE4
-    Bulk Out Pipe: USB PIPE5
+  Module "USB PCDC (r_usb_pcdc)"
+    Bulk In Pipe: USB PIPE1
+    Bulk Out Pipe: USB PIPE2
     Interrupt In Pipe: USB PIPE6
     
   Module "USB (r_usb_basic)"
@@ -841,16 +840,8 @@ FSP Configuration
     Allocate Secure Context: Enable
     
     Instance "FreeRTOS Heap 4"
-    Instance "g_comms_usb_pcdc0 USB PCDC Communication Device (rm_comms_usb_pcdc)"
-      Name: g_comms_usb_pcdc0
-      RTOS: Recursive Write Mutex: Use
-      RTOS: Recursive Read Mutex: Use
-      RTOS: Mutex Timeout: 0xFFFFFFFF
-      RTOS: Write Semaphore: Use
-      RTOS: Read Semaphore: Use
-      RTOS: Semaphore Timeout: 0xFFFFFFFF
-      USB Connection Detection: Disabled
-      Callback: rm_comms_usb_pcdc_callback
+    Instance "g_pcdc0 USB PCDC (r_usb_pcdc)"
+      Name: g_pcdc0
       
       Instance "g_basic0 USB (r_usb_basic)"
         Name: g_basic0
@@ -867,6 +858,18 @@ FSP Configuration
         USBHS Interrupt Priority: Not Supported
         USBHS D0FIFO Interrupt Priority: Not Supported
         USBHS D1FIFO Interrupt Priority: Not Supported
-        USB Callback: NULL
+        USB Callback: usb_cdc_rtos_callback
         USB Callback Context: NULL
         
+  Object "g_usb_write_complete_binary_semaphore Counting Semaphore"
+    Symbol: g_usb_write_complete_binary_semaphore
+    Initial count: 0
+    Maximum count: 256
+    Memory Allocation: Static
+    
+  Object "g_usb_read_queue Queue"
+    Symbol: g_usb_read_queue
+    Item Size (Bytes): 4
+    Queue Length (Items): 20
+    Memory Allocation: Static
+    
