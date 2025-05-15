@@ -830,15 +830,6 @@ FSP Configuration
     Memory Allocation: Static
     Allocate Secure Context: Enable
     
-  Thread "Main Thread1"
-    Symbol: main_thread1
-    Name: Main Thread1
-    Stack size (bytes): 1024
-    Priority: 1
-    Thread Context: NULL
-    Memory Allocation: Static
-    Allocate Secure Context: Enable
-    
   Thread "Main Thread2"
     Symbol: main_thread2
     Name: Main Thread2

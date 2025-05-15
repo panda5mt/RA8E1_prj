@@ -85,6 +85,19 @@ void main_thread2_entry(void *pvParameters)
 {
     FSP_PARAMETER_NOT_USED(pvParameters);
 
+    R_BSP_MODULE_START(FSP_IP_GPT, 5);
+    if (FSP_SUCCESS == R_GPT_Open(&g_timer5_ctrl, &g_timer5_cfg))
+    {
+        // xprintf("[PWM/GPT] Open Ok.\n");
+    }
+    if (FSP_SUCCESS == R_GPT_Start(&g_timer5_ctrl))
+    {
+        // xprintf("[PWM/GPT] Start Ok.\n");
+    }
+    timer_info_t p_info5;
+    R_GPT_InfoGet(&g_timer5_ctrl, &p_info5);
+    // xprintf("[PWM/GPT] %d[Hz]\n", (p_info5.clock_frequency / p_info5.period_counts));
+
     fsp_err_t err;
 
     err = R_USB_Open(&g_basic0_ctrl, &g_basic0_cfg);
