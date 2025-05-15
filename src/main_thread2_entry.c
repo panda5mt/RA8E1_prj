@@ -80,8 +80,8 @@
 //         break;
 //     }
 // }
-#define TX_BUF_LEN (128)
-#define RX_BUF_LEN (128)
+#define TX_BUF_LEN (64)
+#define RX_BUF_LEN (64)
 
 int g_err_flag, g_tx_flag, g_rx_flag;
 uint8_t g_tx_buf[TX_BUF_LEN];
@@ -105,6 +105,11 @@ void main_thread2_entry(void *pvParameters)
     R_GPT_InfoGet(&g_timer5_ctrl, &p_info5);
     // xprintf("[PWM/GPT] %d[Hz]\n", (p_info5.clock_frequency / p_info5.period_counts));
 
+    // PWM周期の把握
+    timer_info_t p_info05;
+    R_GPT_InfoGet(&g_timer5_ctrl, &p_info05);
+    int per = p_info05.period_counts;
+
     fsp_err_t err = FSP_SUCCESS;
     err = RM_COMMS_USB_PCDC_Open(&g_comms_usb_pcdc0_ctrl, &g_comms_usb_pcdc0_cfg);
     if (FSP_SUCCESS != err)
@@ -113,33 +118,41 @@ void main_thread2_entry(void *pvParameters)
     }
     while (true)
     {
-        vTaskDelay(pdMS_TO_TICKS(500));
+        vTaskDelay(pdMS_TO_TICKS(50));
         /* Send data. */
 
         g_err_flag = 0;
         g_tx_flag = 0;
-        strcpy(g_tx_buf, "LED on\n\r");
-        err = RM_COMMS_USB_PCDC_Write(&g_comms_usb_pcdc0_ctrl, g_tx_buf, strlen(g_tx_buf));
+        g_tx_buf[0] = 'A';
+
+        vTaskDelay(pdMS_TO_TICKS(500));
+
+        err = RM_COMMS_USB_PCDC_Write(&g_comms_usb_pcdc0_ctrl, g_tx_buf, TX_BUF_LEN);
         if (FSP_SUCCESS != err)
         {
             /* Handle any errors. */
+            R_GPT_PeriodSet(&g_timer5_ctrl, per / 4);
+            R_GPT_DutyCycleSet(&g_timer5_ctrl, per / 8, GPT_IO_PIN_GTIOCA);
         }
-        while ((0 == g_tx_flag) /* && (0 == g_err_flag)*/)
+        while ((0 == g_tx_flag) && (0 == g_err_flag))
         {
             /* Wait callback */
+            R_GPT_PeriodSet(&g_timer5_ctrl, per / 8);
+            R_GPT_DutyCycleSet(&g_timer5_ctrl, per / 16, GPT_IO_PIN_GTIOCA);
         }
-        /* Receive data. */
-        g_err_flag = 0;
-        g_rx_flag = 0;
-        err = RM_COMMS_USB_PCDC_Read(&g_comms_usb_pcdc0_ctrl, g_rx_buf, RX_BUF_LEN);
-        if (FSP_SUCCESS != err)
-        {
-            /* Handle any errors.*/
-        }
-        while ((0 == g_rx_flag) && (0 == g_err_flag))
-        {
-            /* Wait callback */
-        }
+
+        // /* Receive data. */
+        // g_err_flag = 0;
+        // g_rx_flag = 0;
+        // err = RM_COMMS_USB_PCDC_Read(&g_comms_usb_pcdc0_ctrl, g_rx_buf, RX_BUF_LEN);
+        // if (FSP_SUCCESS != err)
+        // {
+        //     /* Handle any errors.*/
+        // }
+        // while ((0 == g_rx_flag) && (0 == g_err_flag))
+        // {
+        //     /* Wait callback */
+        // }
     }
 }
 
