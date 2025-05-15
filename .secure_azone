@@ -49,6 +49,7 @@
             <slot name="P403.CM85" secure="true"/>
             <slot name="P405.CM85" secure="true"/>
             <slot name="P406.CM85" secure="true"/>
+            <slot name="P407.CM85" secure="true"/>
             <slot name="P408.CM85" secure="true"/>
         </peripheral>
         <peripheral name="PORT5.CM85" group="PORT">

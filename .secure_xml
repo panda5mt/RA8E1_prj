@@ -139,6 +139,7 @@
       <configSetting altId="sci9.txd9.p102" configurationId="sci9.txd9" isUsedByDriver="true" peripheral="SCI9"/>
       <configSetting altId="usbfs.usb_dm.p815" configurationId="usbfs.usb_dm" isUsedByDriver="true" peripheral="USB FS"/>
       <configSetting altId="usbfs.usb_dp.p814" configurationId="usbfs.usb_dp" isUsedByDriver="true" peripheral="USB FS"/>
+      <configSetting altId="usbfs.usb_vbus.p407" configurationId="usbfs.usb_vbus" isUsedByDriver="true" peripheral="USB FS"/>
     </pincfg>
   </raPinConfiguration>
 </raConfiguration>

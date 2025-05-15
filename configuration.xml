@@ -272,8 +272,8 @@
       <description>FreeRTOS - Memory Management - Heap 4</description>
       <originalPack>Amazon.FreeRTOS-Kernel.11.1.0+fsp.5.9.0.pack</originalPack>
     </component>
-    <component apiversion="" class="Middleware" condition="" group="all" subgroup="rm_comms_usb_pcdc" variant="" vendor="Renesas" version="5.9.0">
-      <description>USB PCDC Communications Implementation</description>
+    <component apiversion="" class="HAL Drivers" condition="" group="all" subgroup="r_usb_pcdc" variant="" vendor="Renesas" version="5.9.0">
+      <description>USB Peripheral Communications Device Class</description>
       <originalPack>Renesas.RA.5.9.0.pack</originalPack>
     </component>
   </raComponentSelection>
@@ -543,18 +543,10 @@
       <property id="module.driver.timer.gtiocb_disable_setting" value="module.driver.timer.gtiocb_disable_setting.gtioc_disable_prohibited"/>
     </module>
     <module id="module.freertos.heap.4.1660972003"/>
-    <module id="module.driver.rm_comms_on_usb_pcdc.1614491934">
-      <property id="module.driver.rm_comms.name" value="g_comms_usb_pcdc0"/>
-      <property id="module.driver.comms_usb_pcdc.tx_mutex" value="module.driver.comms_usb_pcdc.tx_mutex.use"/>
-      <property id="module.driver.comms_usb_pcdc.rx_mutex" value="module.driver.comms_usb_pcdc.rx_mutex.use"/>
-      <property id="module.driver.comms_usb_pcdc.mutex_timeout" value="0xFFFFFFFF"/>
-      <property id="module.driver.comms_usb_pcdc.tx_semaphore" value="module.driver.comms_usb_pcdc.tx_semaphore.use"/>
-      <property id="module.driver.comms_usb_pcdc.rx_semaphore" value="module.driver.comms_usb_pcdc.rx_semaphore.use"/>
-      <property id="module.driver.comms_usb_pcdc.semaphore_timeout" value="0xFFFFFFFF"/>
-      <property id="module.driver.comms_usb_pcdc.connect_detection" value="module.driver.comms_usb_pcdc.connect_detection.disable"/>
-      <property id="module.driver.comms_usb_pcdc.p_callback" value="rm_comms_usb_pcdc_callback"/>
+    <module id="module.driver.pcdc_on_usb.1632009866">
+      <property id="module.driver.pcdc.name" value="g_pcdc0"/>
     </module>
-    <module id="module.driver.basic_on_usb.1642521215">
+    <module id="module.driver.basic_on_usb.1113695201">
       <property id="module.driver.basic.name" value="g_basic0"/>
       <property id="module.driver.usb_basic.usb_mode" value="module.driver.usb_basic.usb_mode.host"/>
       <property id="module.driver.usb_basic.usb_speed" value="module.driver.usb_basic.usb_speed.fs"/>
@@ -572,6 +564,16 @@
       <property id="module.driver.usb_basic.rtos_callback" value="NULL"/>
       <property id="module.driver.usb_basic.other_context" value="NULL"/>
     </module>
+    <object id="rtos.awsfreertos.object.binary_semaphore.700564623">
+      <property id="rtos.awsfreertos.object.binary_semaphore.symbol" value="g_usb_write_complete_binary_semaphore"/>
+      <property id="rtos.awsfreertos.object.binary_semaphore.allocation" value="rtos.awsfreertos.object.binary_semaphore.allocation.static"/>
+    </object>
+    <object id="rtos.awsfreertos.object.queue.1504700944">
+      <property id="rtos.awsfreertos.object.queue.symbol" value="g_usb_read_queue"/>
+      <property id="rtos.awsfreertos.object.queue.item_size" value="4"/>
+      <property id="rtos.awsfreertos.object.queue.queue_length" value="20"/>
+      <property id="rtos.awsfreertos.object.queue.allocation" value="rtos.awsfreertos.object.queue.allocation.static"/>
+    </object>
     <context id="_hal.0">
       <stack module="module.driver.ioport_on_ioport.0"/>
       <stack module="module.middleware.rm_freertos_port.0"/>
@@ -613,8 +615,8 @@
       <property id="rtos.awsfreertos.thread.allocation" value="rtos.awsfreertos.thread.allocation.dynamic"/>
       <property id="rtos.awsfreertos.thread.secure_context" value="rtos.awsfreertos.thread.secure_context.enable"/>
       <stack module="module.freertos.heap.4.1660972003"/>
-      <stack module="module.driver.rm_comms_on_usb_pcdc.1614491934">
-        <stack module="module.driver.basic_on_usb.1642521215" requires="module.driver.basic_on_usb.requires.basic"/>
+      <stack module="module.driver.pcdc_on_usb.1632009866">
+        <stack module="module.driver.basic_on_usb.1113695201" requires="module.driver.basic_on_usb.requires.basic"/>
       </stack>
     </context>
     <config id="config.driver.ospi_b">
@@ -675,16 +677,15 @@
       <property id="config.driver.gpt.output_support_enable" value="config.driver.gpt.output_support_enable.enabled"/>
       <property id="config.driver.gpt.write_protect_enable" value="config.driver.gpt.write_protect_enable.disabled"/>
     </config>
+    <config id="config.driver.usb_pcdc">
+      <property id="config.driver.usb_pcdc.bulk_in" value="config.driver.usb_pcdc.bulk_in.pipe1"/>
+      <property id="config.driver.usb_pcdc.bulk_out" value="config.driver.usb_pcdc.bulk_out.pipe2"/>
+      <property id="config.driver.usb_pcdc.int_in" value="config.driver.usb_pcdc.int_in.pipe6"/>
+    </config>
+    <config id="config.driver.usb_pcdc_class"/>
     <config id="config.driver.ioport">
       <property id="config.driver.ioport.checking" value="config.driver.ioport.checking.system"/>
     </config>
-    <config id="config.driver.comms_usb_pcdc">
-      <property id="config.driver.comms_usb_pcdc.param_checking_enable" value="config.driver.comms_usb_pcdc.param_checking_enable.bsp"/>
-      <property id="config.driver.comms_usb_pcdc.bulk_in" value="config.driver.comms_usb_pcdc.bulk_in.pipe4"/>
-      <property id="config.driver.comms_usb_pcdc.bulk_out" value="config.driver.comms_usb_pcdc.bulk_out.pipe5"/>
-      <property id="config.driver.comms_usb_pcdc.int_in" value="config.driver.comms_usb_pcdc.int_in.pipe6"/>
-    </config>
-    <config id="config.driver.comms_usb_pcdc_class"/>
     <config id="config.awsfreertos.thread">
       <property id="config.awsfreertos.custom_freertosconfig" value=""/>
       <property id="config.awsfreertos.thread.configuse_preemption" value="config.awsfreertos.thread.configuse_preemption.enabled"/>
@@ -966,6 +967,8 @@
       <configSetting altId="p405.gpio_mode.gpio_mode_peripheral" configurationId="p405.gpio_mode"/>
       <configSetting altId="p406.ceu.vio_d3" configurationId="p406"/>
       <configSetting altId="p406.gpio_mode.gpio_mode_peripheral" configurationId="p406.gpio_mode"/>
+      <configSetting altId="p407.usbfs.usb_vbus" configurationId="p407"/>
+      <configSetting altId="p407.gpio_mode.gpio_mode_peripheral" configurationId="p407.gpio_mode"/>
       <configSetting altId="p408.output.low" configurationId="p408"/>
       <configSetting altId="p408.gpio_mode.gpio_mode_out.low" configurationId="p408.gpio_mode"/>
       <configSetting altId="p511.iic1.sda1" configurationId="p511"/>
@@ -1021,6 +1024,7 @@
       <configSetting altId="usbfs.mode.custom.free" configurationId="usbfs.mode"/>
       <configSetting altId="usbfs.usb_dm.p815" configurationId="usbfs.usb_dm"/>
       <configSetting altId="usbfs.usb_dp.p814" configurationId="usbfs.usb_dp"/>
+      <configSetting altId="usbfs.usb_vbus.p407" configurationId="usbfs.usb_vbus"/>
       <lockSetting id="ceu.vio_clk" lock="true"/>
       <lockSetting id="ceu.vio_d0" lock="true"/>
       <lockSetting id="ceu.vio_d1" lock="true"/>
