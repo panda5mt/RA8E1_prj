@@ -141,18 +141,18 @@ void main_thread2_entry(void *pvParameters)
             R_GPT_DutyCycleSet(&g_timer5_ctrl, per / 16, GPT_IO_PIN_GTIOCA);
         }
 
-        // /* Receive data. */
-        // g_err_flag = 0;
-        // g_rx_flag = 0;
-        // err = RM_COMMS_USB_PCDC_Read(&g_comms_usb_pcdc0_ctrl, g_rx_buf, RX_BUF_LEN);
-        // if (FSP_SUCCESS != err)
-        // {
-        //     /* Handle any errors.*/
-        // }
-        // while ((0 == g_rx_flag) && (0 == g_err_flag))
-        // {
-        //     /* Wait callback */
-        // }
+        /* Receive data. */
+        g_err_flag = 0;
+        g_rx_flag = 0;
+        err = RM_COMMS_USB_PCDC_Read(&g_comms_usb_pcdc0_ctrl, g_rx_buf, RX_BUF_LEN);
+        if (FSP_SUCCESS != err)
+        {
+            /* Handle any errors.*/
+        }
+        while ((0 == g_rx_flag) && (0 == g_err_flag))
+        {
+            /* Wait callback */
+        }
     }
 }
 

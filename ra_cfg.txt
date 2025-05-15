@@ -470,8 +470,8 @@ FSP Configuration
   Module "FreeRTOS Heap 4"
   Module "USB PCDC Communication Device (rm_comms_usb_pcdc)"
     Parameter Checking: Default (BSP)
-    Bulk In Pipe: USB PIPE1
-    Bulk Out Pipe: USB PIPE2
+    Bulk In Pipe: USB PIPE4
+    Bulk Out Pipe: USB PIPE5
     Interrupt In Pipe: USB PIPE6
     
   Module "USB (r_usb_basic)"

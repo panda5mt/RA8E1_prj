@@ -15,8 +15,8 @@ extern "C" {
         #define USB_CFG_PCDC_INT_IN2 (USB_NULL)
     #endif
 
-    #define USB_CFG_PCDC_BULK_IN (USB_PIPE1)
-    #define USB_CFG_PCDC_BULK_OUT (USB_PIPE2)
+    #define USB_CFG_PCDC_BULK_IN (USB_PIPE4)
+    #define USB_CFG_PCDC_BULK_OUT (USB_PIPE5)
     #define USB_CFG_PCDC_INT_IN (USB_PIPE6)
 
 #ifdef __cplusplus
