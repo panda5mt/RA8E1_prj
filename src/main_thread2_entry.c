@@ -125,7 +125,7 @@ void main_thread2_entry(void *pvParameters)
         g_tx_flag = 0;
         g_tx_buf[0] = 'A';
 
-        vTaskDelay(pdMS_TO_TICKS(500));
+        // vTaskDelay(pdMS_TO_TICKS(500));
 
         err = RM_COMMS_USB_PCDC_Write(&g_comms_usb_pcdc0_ctrl, g_tx_buf, TX_BUF_LEN);
         if (FSP_SUCCESS != err)
