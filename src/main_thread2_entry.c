@@ -1,4 +1,5 @@
 #include "main_thread2.h"
+#include "projdefs.h"
 
 /* New Thread entry function */
 // uint8_t ucHeap[configTOTAL_HEAP_SIZE];
@@ -80,8 +81,11 @@
 //     }
 // }
 #define TX_BUF_LEN (128)
+#define RX_BUF_LEN (128)
+
 int g_err_flag, g_tx_flag, g_rx_flag;
 uint8_t g_tx_buf[TX_BUF_LEN];
+uint8_t g_rx_buf[RX_BUF_LEN];
 
 /* pvParameters contains TaskHandle_t */
 void main_thread2_entry(void *pvParameters)
@@ -109,6 +113,7 @@ void main_thread2_entry(void *pvParameters)
     }
     while (true)
     {
+        vTaskDelay(pdMS_TO_TICKS(500));
         /* Send data. */
         g_tx_buf[0] = 'A';
         g_tx_buf[1] = 'B';
@@ -126,18 +131,18 @@ void main_thread2_entry(void *pvParameters)
         {
             /* Wait callback */
         }
-        // /* Receive data. */
-        // g_err_flag = 0;
-        // g_rx_flag = 0;
-        // err = RM_COMMS_USB_PCDC_Read(&g_comms_usb_pcdc_ctrl, g_rx_buf, RX_BUF_LEN);
-        // if (FSP_SUCCESS != err)
-        // {
-        //     /* Handle any errors.*/
-        // }
-        // while ((0 == g_rx_flag) && (0 == g_err_flag))
-        // {
-        //     /* Wait callback */
-        // }
+        /* Receive data. */
+        g_err_flag = 0;
+        g_rx_flag = 0;
+        err = RM_COMMS_USB_PCDC_Read(&g_comms_usb_pcdc0_ctrl, g_rx_buf, RX_BUF_LEN);
+        if (FSP_SUCCESS != err)
+        {
+            /* Handle any errors.*/
+        }
+        while ((0 == g_rx_flag) && (0 == g_err_flag))
+        {
+            /* Wait callback */
+        }
     }
 }
 
