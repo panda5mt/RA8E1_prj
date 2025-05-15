@@ -84,7 +84,7 @@
 #define RX_BUF_LEN (128)
 
 int g_err_flag, g_tx_flag, g_rx_flag;
-char g_tx_buf[TX_BUF_LEN];
+uint8_t g_tx_buf[TX_BUF_LEN];
 uint8_t g_rx_buf[RX_BUF_LEN];
 
 /* pvParameters contains TaskHandle_t */
@@ -119,7 +119,7 @@ void main_thread2_entry(void *pvParameters)
         g_err_flag = 0;
         g_tx_flag = 0;
         strcpy(g_tx_buf, "LED on\n\r");
-        err = RM_COMMS_USB_PCDC_Write(&g_comms_usb_pcdc0_ctrl, (uint8_t *)g_tx_buf, strlen(g_tx_buf));
+        err = RM_COMMS_USB_PCDC_Write(&g_comms_usb_pcdc0_ctrl, g_tx_buf, strlen(g_tx_buf));
         if (FSP_SUCCESS != err)
         {
             /* Handle any errors. */
