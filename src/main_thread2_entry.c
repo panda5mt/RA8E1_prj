@@ -44,18 +44,19 @@ void usb_cdc_rtos_callback(usb_event_info_t *event, usb_hdl_t handle, usb_onoff_
 
         break;
     case USB_STATUS_REQUEST: /* Receive Class Request */
-        R_USB_SetupGet(event, &setup);
+        g_usb_on_usb.setupGet(event, &setup);
+
         if (USB_PCDC_SET_LINE_CODING == (setup.request_type & USB_BREQUEST))
         {
-            R_USB_PeriControlDataGet(event, (uint8_t *)&g_line_coding, LINE_CODING_LENGTH);
+            g_usb_on_usb.periControlDataGet(event, (uint8_t *)&g_line_coding, LINE_CODING_LENGTH);
         }
         else if (USB_PCDC_GET_LINE_CODING == (setup.request_type & USB_BREQUEST))
         {
-            R_USB_PeriControlDataSet(event, (uint8_t *)&g_line_coding, LINE_CODING_LENGTH);
+            g_usb_on_usb.periControlDataSet(event, (uint8_t *)&g_line_coding, LINE_CODING_LENGTH);
         }
         else if (USB_PCDC_SET_CONTROL_LINE_STATE == (event->setup.request_type & USB_BREQUEST))
         {
-            fsp_err_t err = R_USB_PeriControlDataGet(event, (uint8_t *)&g_control_line_state, sizeof(g_control_line_state));
+            fsp_err_t err = g_usb_on_usb.periControlDataGet(event, (uint8_t *)&g_control_line_state, sizeof(g_control_line_state));
             if (FSP_SUCCESS == err)
             {
                 g_control_line_state.bdtr = (unsigned char)((event->setup.request_value >> 0) & 0x01);
@@ -85,8 +86,14 @@ void usb_cdc_rtos_callback(usb_event_info_t *event, usb_hdl_t handle, usb_onoff_
 void main_thread2_entry(void *pvParameters)
 {
     FSP_PARAMETER_NOT_USED(pvParameters);
+    fsp_err_t err;
 
-    ////
+    err = g_usb_on_usb.open(&g_basic0_ctrl, &g_basic0_cfg);
+    if (FSP_SUCCESS != err)
+    {
+        while (1)
+            ;
+    }
 
     R_BSP_MODULE_START(FSP_IP_GPT, 5);
     if (FSP_SUCCESS == R_GPT_Open(&g_timer5_ctrl, &g_timer5_cfg))
@@ -100,16 +107,6 @@ void main_thread2_entry(void *pvParameters)
     timer_info_t p_info5;
     R_GPT_InfoGet(&g_timer5_ctrl, &p_info5);
     // xprintf("[PWM/GPT] %d[Hz]\n", (p_info5.clock_frequency / p_info5.period_counts));
-
-    ////
-    fsp_err_t err;
-
-    err = R_USB_Open(&g_basic0_ctrl, &g_basic0_cfg);
-    if (FSP_SUCCESS != err)
-    {
-        while (1)
-            ;
-    }
 
     /* Wait for the application to open the COM port */
     while (0 == g_control_line_state.bdtr)
