@@ -122,7 +122,7 @@ void main_thread2_entry(void *pvParameters)
         {
             /* Handle any errors. */
         }
-        while ((0 == g_tx_flag) && (0 == g_err_flag))
+        while ((0 == g_tx_flag) /* && (0 == g_err_flag)*/)
         {
             /* Wait callback */
         }
