@@ -1,7 +1,7 @@
 #include "main_thread2.h"
 #include "usb_cdc.h"
 /* New Thread entry function */
-uint8_t ucHeap[configTOTAL_HEAP_SIZE];
+// uint8_t ucHeap[configTOTAL_HEAP_SIZE];
 
 uint32_t g_usb_read_data;
 

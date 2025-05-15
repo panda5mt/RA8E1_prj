@@ -525,8 +525,8 @@ FSP Configuration
     Memory Allocation: Clear Memory on Free: Disabled
     Memory Allocation: Support Static Allocation: Enabled
     Memory Allocation: Support Dynamic Allocation: Enabled
-    Memory Allocation: Total Heap Size: 65536
-    Memory Allocation: Application Allocated Heap: Enabled
+    Memory Allocation: Total Heap Size: 8192
+    Memory Allocation: Application Allocated Heap: Disabled
     Stats: Generate Run Time Stats: Disabled
     Timers: Use Timers: Enabled
     Timers: Timer Task Priority: 3
@@ -842,10 +842,10 @@ FSP Configuration
   Thread "Main Thread2"
     Symbol: main_thread2
     Name: Main Thread2
-    Stack size (bytes): 4096
+    Stack size (bytes): 1024
     Priority: 1
     Thread Context: NULL
-    Memory Allocation: Dynamic
+    Memory Allocation: Static
     Allocate Secure Context: Enable
     
     Instance "FreeRTOS Heap 4"

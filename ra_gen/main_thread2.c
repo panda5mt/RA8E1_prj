@@ -1,12 +1,12 @@
 /* generated thread source file - do not edit */
 #include "main_thread2.h"
 
-#if 0
+#if 1
                 static StaticTask_t main_thread2_memory;
                 #if defined(__ARMCC_VERSION)           /* AC6 compiler */
-                static uint8_t main_thread2_stack[4096] BSP_PLACE_IN_SECTION(BSP_UNINIT_SECTION_PREFIX ".stack.thread") BSP_ALIGN_VARIABLE(BSP_STACK_ALIGNMENT);
+                static uint8_t main_thread2_stack[1024] BSP_PLACE_IN_SECTION(BSP_UNINIT_SECTION_PREFIX ".stack.thread") BSP_ALIGN_VARIABLE(BSP_STACK_ALIGNMENT);
                 #else
-                static uint8_t main_thread2_stack[4096] BSP_PLACE_IN_SECTION(BSP_UNINIT_SECTION_PREFIX ".stack.main_thread2") BSP_ALIGN_VARIABLE(BSP_STACK_ALIGNMENT);
+                static uint8_t main_thread2_stack[1024] BSP_PLACE_IN_SECTION(BSP_UNINIT_SECTION_PREFIX ".stack.main_thread2") BSP_ALIGN_VARIABLE(BSP_STACK_ALIGNMENT);
                 #endif
                 #endif
                 TaskHandle_t main_thread2;
@@ -119,17 +119,17 @@ extern uint32_t g_fsp_common_thread_count;
                     /* Initialize each kernel object. */
                     
 
-                    #if 0
+                    #if 1
                     main_thread2 = xTaskCreateStatic(
                     #else
                     BaseType_t main_thread2_create_err = xTaskCreate(
                     #endif
                         main_thread2_func,
                         (const char *)"Main Thread2",
-                        4096/4, // In words, not bytes
+                        1024/4, // In words, not bytes
                         (void *) &main_thread2_parameters, //pvParameters
                         1,
-                        #if 0
+                        #if 1
                         (StackType_t *)&main_thread2_stack,
                         (StaticTask_t *)&main_thread2_memory
                         #else
@@ -137,7 +137,7 @@ extern uint32_t g_fsp_common_thread_count;
                         #endif
                     );
 
-                    #if 0
+                    #if 1
                     if (NULL == main_thread2)
                     {
                         rtos_startup_err_callback(main_thread2, 0);

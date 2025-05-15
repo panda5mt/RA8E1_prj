@@ -128,10 +128,10 @@
             #define configSUPPORT_DYNAMIC_ALLOCATION (1)
             #endif
             #ifndef configTOTAL_HEAP_SIZE
-            #define configTOTAL_HEAP_SIZE (65536)
+            #define configTOTAL_HEAP_SIZE (8192)
             #endif
             #ifndef configAPPLICATION_ALLOCATED_HEAP
-            #define configAPPLICATION_ALLOCATED_HEAP (1)
+            #define configAPPLICATION_ALLOCATED_HEAP (0)
             #endif
             #ifndef configGENERATE_RUN_TIME_STATS
             #define configGENERATE_RUN_TIME_STATS (0)
