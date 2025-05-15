@@ -1,5 +1,6 @@
 #include "main_thread0.h"
 #include "hal_data.h"
+#include "projdefs.h"
 #include "r_ceu.h"
 #include "xprintf.h"
 #include "cam.h"
@@ -49,10 +50,18 @@ void main_thread0_entry(void *pvParameters)
 
 void putchar_ra8usb(uint8_t c)
 {
+
+    static bool skip = false;
+    if (skip == true)
+        return;
     uint8_t p[2];
     p[0] = c;
     p[1] = '\0';
 
-    xQueueSend(xQueueMes, p, portMAX_DELAY);
+    // skip if usb is not active
+    if (xQueueSend(xQueueMes, p, pdMS_TO_TICKS(1000)) != pdPASS)
+    {
+        skip = true;
+    }
     return;
 }

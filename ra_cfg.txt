@@ -876,6 +876,6 @@ FSP Configuration
   Object "xQueueMes Queue"
     Symbol: xQueueMes
     Item Size (Bytes): 64
-    Queue Length (Items): 1
+    Queue Length (Items): 3
     Memory Allocation: Static
     
