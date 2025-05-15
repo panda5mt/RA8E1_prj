@@ -825,7 +825,7 @@ FSP Configuration
     Symbol: main_thread0
     Name: Main Thread0
     Stack size (bytes): 4096
-    Priority: 1
+    Priority: 0
     Thread Context: NULL
     Memory Allocation: Static
     Allocate Secure Context: Enable
