@@ -870,13 +870,3 @@ FSP Configuration
         USB Callback: NULL
         USB Callback Context: NULL
         
-  Object "g_usb_write_complete_binary_semaphore Binary Semaphore"
-    Symbol: g_usb_write_complete_binary_semaphore
-    Memory Allocation: Static
-    
-  Object "g_usb_read_queue Queue"
-    Symbol: g_usb_read_queue
-    Item Size (Bytes): 4
-    Queue Length (Items): 20
-    Memory Allocation: Static
-    
