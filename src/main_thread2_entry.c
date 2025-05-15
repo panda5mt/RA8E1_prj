@@ -84,7 +84,7 @@
 #define RX_BUF_LEN (128)
 
 int g_err_flag, g_tx_flag, g_rx_flag;
-uint8_t g_tx_buf[TX_BUF_LEN];
+char g_tx_buf[TX_BUF_LEN];
 uint8_t g_rx_buf[RX_BUF_LEN];
 
 /* pvParameters contains TaskHandle_t */
@@ -115,14 +115,11 @@ void main_thread2_entry(void *pvParameters)
     {
         vTaskDelay(pdMS_TO_TICKS(500));
         /* Send data. */
-        g_tx_buf[0] = 'A';
-        g_tx_buf[1] = 'B';
-        g_tx_buf[2] = 'C';
-        g_tx_buf[3] = '\n';
 
         g_err_flag = 0;
         g_tx_flag = 0;
-        err = RM_COMMS_USB_PCDC_Write(&g_comms_usb_pcdc0_ctrl, g_tx_buf, 3 /*TX_BUF_LEN*/);
+        strcpy(g_tx_buf, "LED on\n\r");
+        err = RM_COMMS_USB_PCDC_Write(&g_comms_usb_pcdc0_ctrl, (uint8_t *)g_tx_buf, strlen(g_tx_buf));
         if (FSP_SUCCESS != err)
         {
             /* Handle any errors. */
