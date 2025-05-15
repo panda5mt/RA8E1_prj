@@ -113,7 +113,7 @@ void main_thread2_entry(void *pvParameters)
         g_tx_buf[0] = 'A';
         g_tx_buf[1] = 'B';
         g_tx_buf[2] = 'C';
-        g_tx_buf[3] = '\0';
+        g_tx_buf[3] = '\n';
 
         g_err_flag = 0;
         g_tx_flag = 0;
