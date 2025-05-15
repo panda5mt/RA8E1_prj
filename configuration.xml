@@ -561,7 +561,7 @@
       <property id="module.driver.usb_basic.hsipl" value="_disabled"/>
       <property id="module.driver.usb_basic.hsipl_d0" value="_disabled"/>
       <property id="module.driver.usb_basic.hsipl_d1" value="_disabled"/>
-      <property id="module.driver.usb_basic.rtos_callback" value="NULL"/>
+      <property id="module.driver.usb_basic.rtos_callback" value="usb_cdc_rtos_callback"/>
       <property id="module.driver.usb_basic.other_context" value="NULL"/>
     </module>
     <object id="rtos.awsfreertos.object.binary_semaphore.700564623">

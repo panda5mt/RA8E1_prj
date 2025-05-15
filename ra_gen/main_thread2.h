@@ -27,14 +27,14 @@ void NULL(void *);
 #endif
 
 #if 0 == BSP_CFG_RTOS
-#ifndef NULL
-void NULL(usb_callback_args_t *);
+#ifndef usb_cdc_rtos_callback
+void usb_cdc_rtos_callback(usb_callback_args_t *);
 #endif
 #endif
 
 #if 2 == BSP_CFG_RTOS
-#ifndef NULL
-void NULL(usb_event_info_t *, usb_hdl_t, usb_onoff_t);
+#ifndef usb_cdc_rtos_callback
+void usb_cdc_rtos_callback(usb_event_info_t *, usb_hdl_t, usb_onoff_t);
 #endif
 #endif
 /** CDC Driver on USB Instance. */

@@ -867,7 +867,7 @@ FSP Configuration
         USBHS Interrupt Priority: Not Supported
         USBHS D0FIFO Interrupt Priority: Not Supported
         USBHS D1FIFO Interrupt Priority: Not Supported
-        USB Callback: NULL
+        USB Callback: usb_cdc_rtos_callback
         USB Callback Context: NULL
         
   Object "g_usb_write_complete_binary_semaphore Binary Semaphore"

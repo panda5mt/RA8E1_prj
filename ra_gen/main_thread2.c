@@ -77,7 +77,7 @@ extern usb_descriptor_t g_usb_descriptor;
 #if (BSP_CFG_RTOS == 0) && defined(USB_CFG_HMSC_USE)
                 .p_usb_apl_callback = NULL,
 #else
-                .p_usb_apl_callback = NULL,
+                .p_usb_apl_callback = usb_cdc_rtos_callback,
 #endif
 #if defined(NULL)
                 .p_context = NULL,
