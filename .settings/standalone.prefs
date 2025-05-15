@@ -1,4 +1,4 @@
-#Thu May 15 11:41:16 JST 2025
+#Thu May 15 12:13:14 JST 2025
 com.renesas.cdt.ddsc.content/com.renesas.cdt.ddsc.content.defaultlinkerscript=script/fsp.lld
 com.renesas.cdt.ddsc.contentgen.options/options/suppresswarningspaths=ra/arm,ra/aws
 com.renesas.cdt.ddsc.packs.componentfiles/AWS\#\#Heaps\#\#FreeRTOS\#\#heap_4\#\#\#\#11.1.0+fsp.5.9.0/all=271572837,ra/aws/FreeRTOS/FreeRTOS/Source/portable/MemMang/heap_4.c
@@ -39,10 +39,10 @@ com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#HAL\ Drivers\#\#all\#\#r_sc
 com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#HAL\ Drivers\#\#all\#\#r_sci_b_uart\#\#\#\#5.9.0/libraries=
 com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#HAL\ Drivers\#\#all\#\#r_usb_basic\#\#\#\#5.9.0/all=2458545632,ra/fsp/inc/api/r_transfer_api.h|2099777152,ra/fsp/inc/api/r_usb_basic_api.h|2889075037,ra/fsp/inc/instances/r_usb_basic.h|2054301341,ra/fsp/src/r_usb_basic/r_usb_basic.c|683284215,ra/fsp/src/r_usb_basic/src/driver/r_usb_cdataio.c|3897603885,ra/fsp/src/r_usb_basic/src/driver/r_usb_clibusbip.c|3445107372,ra/fsp/src/r_usb_basic/src/driver/r_usb_cstd_rtos.c|1888430752,ra/fsp/src/r_usb_basic/src/driver/r_usb_hbc.c|1662975403,ra/fsp/src/r_usb_basic/src/driver/r_usb_hcontrolrw.c|2347210134,ra/fsp/src/r_usb_basic/src/driver/r_usb_hdriver.c|3234878815,ra/fsp/src/r_usb_basic/src/driver/r_usb_hhubsys.c|562468148,ra/fsp/src/r_usb_basic/src/driver/r_usb_hintfifo.c|3331701124,ra/fsp/src/r_usb_basic/src/driver/r_usb_hinthandler_usbip0.c|1814754954,ra/fsp/src/r_usb_basic/src/driver/r_usb_hinthandler_usbip1.c|2903152362,ra/fsp/src/r_usb_basic/src/driver/r_usb_hlibusbip.c|1191000759,ra/fsp/src/r_usb_basic/src/driver/r_usb_hmanager.c|1538575862,ra/fsp/src/r_usb_basic/src/driver/r_usb_hscheduler.c|3931084608,ra/fsp/src/r_usb_basic/src/driver/r_usb_hsignal.c|1774320722,ra/fsp/src/r_usb_basic/src/driver/r_usb_hstdfunction.c|1162808016,ra/fsp/src/r_usb_basic/src/driver/r_usb_pbc.c|2578145170,ra/fsp/src/r_usb_basic/src/driver/r_usb_pcontrolrw.c|3547845788,ra/fsp/src/r_usb_basic/src/driver/r_usb_pdriver.c|3223811657,ra/fsp/src/r_usb_basic/src/driver/r_usb_pintfifo.c|2632209538,ra/fsp/src/r_usb_basic/src/driver/r_usb_pinthandler_usbip0.c|1540786964,ra/fsp/src/r_usb_basic/src/driver/r_usb_plibusbip.c|1918347843,ra/fsp/src/r_usb_basic/src/driver/r_usb_psignal.c|140912686,ra/fsp/src/r_usb_basic/src/driver/r_usb_pstdfunction.c|2438390516,ra/fsp/src/r_usb_basic/src/driver/r_usb_pstdrequest.c|2621189443,ra/fsp/src/r_usb_basic/src/driver/inc/r_usb_basic_define.h|662496791,ra/fsp/src/r_usb_basic/src/driver/inc/r_usb_cstd_rtos.h|1999263353,ra/fsp/src/r_usb_basic/src/driver/inc/r_usb_extern.h|1182215912,ra/fsp/src/r_usb_basic/src/driver/inc/r_usb_typedef.h|3606795572,ra/fsp/src/r_usb_basic/src/hw/r_usb_creg_abs.c|728364827,ra/fsp/src/r_usb_basic/src/hw/r_usb_creg_access.c|2120941068,ra/fsp/src/r_usb_basic/src/hw/r_usb_dma.c|1815014714,ra/fsp/src/r_usb_basic/src/hw/r_usb_hostelectrical.c|3304863657,ra/fsp/src/r_usb_basic/src/hw/r_usb_hreg_abs.c|2772159701,ra/fsp/src/r_usb_basic/src/hw/r_usb_hreg_access.c|3203441968,ra/fsp/src/r_usb_basic/src/hw/r_usb_mcu.c|1154933994,ra/fsp/src/r_usb_basic/src/hw/r_usb_preg_abs.c|2470160620,ra/fsp/src/r_usb_basic/src/hw/r_usb_preg_access.c|3390424197,ra/fsp/src/r_usb_basic/src/hw/inc/r_usb_bitdefine.h|995191325,ra/fsp/src/r_usb_basic/src/hw/inc/r_usb_dmac.h|1693588335,ra/fsp/src/r_usb_basic/src/hw/inc/r_usb_reg_access.h
 com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#HAL\ Drivers\#\#all\#\#r_usb_basic\#\#\#\#5.9.0/libraries=
-com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#HAL\ Drivers\#\#all\#\#r_usb_pcdc\#\#\#\#5.9.0/all=1650189555,ra/fsp/inc/api/r_usb_pcdc_api.h|906325334,ra/fsp/src/r_usb_pcdc/r_usb_pcdc_descriptor.c.template|1146790878,ra/fsp/src/r_usb_pcdc/src/r_usb_pcdc_driver.c|17615527,ra/fsp/src/r_usb_pcdc/src/inc/r_usb_pcdc.h
-com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#HAL\ Drivers\#\#all\#\#r_usb_pcdc\#\#\#\#5.9.0/libraries=
 com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#Middleware\#\#all\#\#rm_cmsis_dsp\#\#\#\#5.9.0/all=1964591997,ra/fsp/src/rm_cmsis_dsp/rm_cmsis_dsp.c
 com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#Middleware\#\#all\#\#rm_cmsis_dsp\#\#\#\#5.9.0/libraries=
+com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#Middleware\#\#all\#\#rm_comms_usb_pcdc\#\#\#\#5.9.0/all=1650189555,ra/fsp/inc/api/r_usb_pcdc_api.h|1205716729,ra/fsp/inc/api/rm_comms_api.h|377144597,ra/fsp/inc/instances/rm_comms_usb_pcdc.h|1146790878,ra/fsp/src/r_usb_pcdc/src/r_usb_pcdc_driver.c|17615527,ra/fsp/src/r_usb_pcdc/src/inc/r_usb_pcdc.h|3632934195,ra/fsp/src/rm_comms_lock/rm_comms_lock.c|3641419802,ra/fsp/src/rm_comms_lock/rm_comms_lock.h|3921040529,ra/fsp/src/rm_comms_usb_pcdc/rm_comms_usb_pcdc.c
+com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#Middleware\#\#all\#\#rm_comms_usb_pcdc\#\#\#\#5.9.0/libraries=
 com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#Middleware\#\#all\#\#rm_freertos_port\#\#\#\#5.9.0/all=1041992296,ra/fsp/src/rm_freertos_port/port.c|4290761558,ra/fsp/src/rm_freertos_port/portmacro.h
 com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#Middleware\#\#all\#\#rm_freertos_port\#\#\#\#5.9.0/libraries=
 com.renesas.cdt.ddsc.project.standalone.projectgenerationoptions/isCpp=false
@@ -56,6 +56,7 @@ com.renesas.cdt.ddsc.threads.configurator/collapse/module.driver.basic_on_usb.16
 com.renesas.cdt.ddsc.threads.configurator/collapse/module.driver.basic_on_usb.188155404=false
 com.renesas.cdt.ddsc.threads.configurator/collapse/module.driver.basic_on_usb.192395311=false
 com.renesas.cdt.ddsc.threads.configurator/collapse/module.driver.basic_on_usb.1931599871=false
+com.renesas.cdt.ddsc.threads.configurator/collapse/module.driver.basic_on_usb.2039681400=false
 com.renesas.cdt.ddsc.threads.configurator/collapse/module.driver.basic_on_usb.693994042=false
 com.renesas.cdt.ddsc.threads.configurator/collapse/module.driver.basic_on_usb.762046850=false
 com.renesas.cdt.ddsc.threads.configurator/collapse/module.driver.basic_on_usb.972479016=false
@@ -72,6 +73,7 @@ com.renesas.cdt.ddsc.threads.configurator/collapse/module.driver.pcdc_on_usb.163
 com.renesas.cdt.ddsc.threads.configurator/collapse/module.driver.pcdc_on_usb.475933896=false
 com.renesas.cdt.ddsc.threads.configurator/collapse/module.driver.phid_on_usb.2032708034=false
 com.renesas.cdt.ddsc.threads.configurator/collapse/module.driver.rm_comms_on_usb_pcdc.1247302807=false
+com.renesas.cdt.ddsc.threads.configurator/collapse/module.driver.rm_comms_on_usb_pcdc.1503671263=false
 com.renesas.cdt.ddsc.threads.configurator/collapse/module.driver.rm_comms_on_usb_pcdc.1508025323=false
 com.renesas.cdt.ddsc.threads.configurator/collapse/module.driver.rm_comms_on_usb_pcdc.1614491934=false
 com.renesas.cdt.ddsc.threads.configurator/collapse/module.driver.rm_comms_on_usb_pcdc.1688860494=false

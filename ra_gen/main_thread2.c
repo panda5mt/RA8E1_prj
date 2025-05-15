@@ -77,7 +77,7 @@ extern usb_descriptor_t g_usb_descriptor;
 #if (BSP_CFG_RTOS == 0) && defined(USB_CFG_HMSC_USE)
                 .p_usb_apl_callback = NULL,
 #else
-                .p_usb_apl_callback = usb_cdc_rtos_callback,
+                .p_usb_apl_callback = NULL,
 #endif
 #if defined(NULL)
                 .p_context = NULL,
@@ -102,7 +102,111 @@ const usb_instance_t g_basic0 =
     .p_cfg         = &g_basic0_cfg,
     .p_api         = &g_usb_on_usb,
 };
+/* USB PCDC Communication Device */
 
+rm_comms_usb_pcdc_instance_ctrl_t g_comms_usb_pcdc0_ctrl;
+
+#if BSP_CFG_RTOS == 1 // ThreadX
+
+ #if !defined(g_comms_usb_pcdc0_tx_mutex)
+ rm_comms_mutex_t g_comms_usb_pcdc0_tx_mutex =
+ {
+     .p_name = "g_comms_usb_pcdc0 tx mutex",
+ };
+ #endif
+
+ #if !defined(g_comms_usb_pcdc0_rx_mutex)
+ rm_comms_mutex_t g_comms_usb_pcdc0_rx_mutex =
+ {
+     .p_name = "g_comms_usb_pcdc0 rx mutex",
+ };
+ #endif
+
+ #if !defined(g_comms_usb_pcdc0_tx_semaphore)
+ rm_comms_semaphore_t g_comms_usb_pcdc0_tx_semaphore =
+ {
+     .p_name = "g_comms_usb_pcdc0 tx semaphore",
+ };
+ #endif
+
+  #if !defined(g_comms_usb_pcdc0_rx_semaphore)
+ rm_comms_semaphore_t g_comms_usb_pcdc0_rx_semaphore =
+ {
+     .p_name = "g_comms_usb_pcdc0 rx semaphore",
+ };
+ #endif
+
+#elif BSP_CFG_RTOS == 2 // FreeRTOS
+
+#if !defined(g_comms_usb_pcdc0_tx_mutex)
+rm_comms_mutex_t g_comms_usb_pcdc0_tx_mutex;
+#endif
+
+#if !defined(g_comms_usb_pcdc0_rx_mutex)
+rm_comms_mutex_t g_comms_usb_pcdc0_rx_mutex;
+#endif
+#if !defined(g_comms_usb_pcdc0_tx_semaphore)
+rm_comms_semaphore_t g_comms_usb_pcdc0_tx_semaphore;
+#endif
+
+#if !defined(g_comms_usb_pcdc0_rx_semaphore)
+rm_comms_semaphore_t g_comms_usb_pcdc0_rx_semaphore;
+#endif
+
+#else
+
+#endif
+
+rm_comms_usb_pcdc_extended_cfg_t g_comms_usb_pcdc0_extended_cfg =
+{
+#if BSP_CFG_RTOS
+
+#if !defined(g_comms_usb_pcdc0_tx_mutex)
+    .p_tx_mutex = &g_comms_usb_pcdc0_tx_mutex,
+#else
+    .p_tx_mutex = NULL,
+#endif
+
+#if !defined(g_comms_usb_pcdc0_rx_mutex)
+    .p_rx_mutex = &g_comms_usb_pcdc0_rx_mutex,
+#else
+    .p_rx_mutex = NULL,
+#endif
+
+#if !defined(g_comms_usb_pcdc0_tx_semaphore)
+    .p_tx_semaphore = &g_comms_usb_pcdc0_tx_semaphore,
+#else
+    .p_tx_semaphore = NULL,
+#endif
+
+#if !defined(g_comms_usb_pcdc0_rx_semaphore)
+    .p_rx_semaphore = &g_comms_usb_pcdc0_rx_semaphore,
+#else
+    .p_rx_semaphore = NULL,
+#endif
+    .mutex_timeout  = 0xFFFFFFFF,
+#endif
+#if BSP_CFG_RTOS == 0
+    .p_gpt = &RA_NOT_DEFINED,
+#endif
+    .p_usb = &g_basic0,
+    .connect_detection_en = 0,
+};
+
+const rm_comms_cfg_t g_comms_usb_pcdc0_cfg =
+{
+    .semaphore_timeout  = 0xFFFFFFFF,
+    .p_lower_level_cfg  = NULL,
+    .p_extend           = (void*)&g_comms_usb_pcdc0_extended_cfg,
+    .p_callback         = rm_comms_usb_pcdc_callback,
+};
+
+const rm_comms_instance_t g_comms_usb_pcdc0 =
+{
+    .p_ctrl = &g_comms_usb_pcdc0_ctrl,
+    .p_cfg  = &g_comms_usb_pcdc0_cfg,
+    .p_api  = &g_comms_on_comms_usb_pcdc,
+};
 
 extern uint32_t g_fsp_common_thread_count;
 
