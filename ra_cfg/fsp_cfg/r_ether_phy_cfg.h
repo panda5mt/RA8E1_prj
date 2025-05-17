@@ -19,7 +19,7 @@
             #define ETHER_PHY_CFG_TARGET_ICS1894_ENABLE             (0)
 #endif
 #ifndef ETHER_PHY_CFG_USE_CUSTOM_PHY_LSI_ENABLE
-            #define ETHER_PHY_CFG_USE_CUSTOM_PHY_LSI_ENABLE         (0)
+            #define ETHER_PHY_CFG_USE_CUSTOM_PHY_LSI_ENABLE         (1)
 #endif
             #define ETHER_PHY_CFG_USE_REF_CLK                       (BOARD_PHY_REF_CLK)
             #define ETHER_PHY_CFG_INIT_PHY_LSI_AUTOMATIC            (1)

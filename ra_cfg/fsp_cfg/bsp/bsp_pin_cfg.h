@@ -39,7 +39,7 @@ FSP_HEADER
 #define Arduino_D2 (BSP_IO_PORT_03_PIN_00)
 #define Arduino_D7 (BSP_IO_PORT_03_PIN_02)
 #define Arduino_D8 (BSP_IO_PORT_03_PIN_03)
-#define Arduino_D0 (BSP_IO_PORT_03_PIN_09)
+#define LAN8720_nRST (BSP_IO_PORT_03_PIN_09)
 #define Arduino_D1 (BSP_IO_PORT_03_PIN_10)
 #define Arduino_D12 (BSP_IO_PORT_03_PIN_13)
 #define CAM_D0 (BSP_IO_PORT_04_PIN_00)

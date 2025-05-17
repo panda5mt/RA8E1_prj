@@ -173,7 +173,7 @@ FSP Configuration
       P306 64 ETHER_RMII_RMII0_TXD_EN - H - "Peripheral mode" - - "ETHER_MII: ET0_TX_EN; ETHER_RMII: RMII0_TXD_EN; TRACE: TDATA1; ULPT1: ULPTEVI1" - IO - - 
       P307 63 ETHER_RMII_ET0_MDIO - M - "Peripheral mode" - - "ETHER_MII: ET0_MDIO; ETHER_RMII: ET0_MDIO; TRACE: TDATA0; ULPT1: ULPTOA1" - IO - - 
       P308 62 ETHER_RMII_ET0_MDC - M - "Peripheral mode" - - "ETHER_MII: ET0_MDC; ETHER_RMII: ET0_MDC; SCI9: CTS9; TRACE: TCLK; ULPT1: ULPTOB1" - IO - - 
-      P309 61 GPIO Arduino_D0 - - "Input mode" - - "ETHER_MII: ET0_ETXD3; SCI3: RXD3" - IO - - 
+      P309 61 GPIO LAN8720_nRST L - "Output mode (Initial Low)" - - "ETHER_MII: ET0_ETXD3; SCI3: RXD3" - IO - - 
       P310 60 GPIO Arduino_D1 - - "Input mode" - - "AGT1: AGTEE1; ETHER_MII: ET0_ETXD2; SCI3: TXD3" - IO - - 
       P311 59 GPIO - - - "Input mode" - - "AGT1: AGTOB1; CANFD0: CRX0; ETHER_MII: ET0_TX_ER; GPT_POEG: GTADSM1; SCI3: DE3; SCI3: SCK3" - IO - - 
       P312 58 - - - - Disabled - - "AGT1: AGTOA1; CANFD0: CTX0; ETHER_MII: ET0_TX_CLK; GPT_POEG: GTADSM0; SCI3: CTS_RTS3; SCI3: DE3" - None - - 
@@ -318,7 +318,7 @@ FSP Configuration
       P306 64 - - L - Disabled - - "ETHER_MII: ET0_TX_EN; ETHER_RMII: RMII0_TXD_EN; TRACE: TDATA1; ULPT1: ULPTEVI1" - IO - - 
       P307 63 - - L - Disabled - - "ETHER_MII: ET0_MDIO; ETHER_RMII: ET0_MDIO; TRACE: TDATA0; ULPT1: ULPTOA1" - IO - - 
       P308 62 - - L - Disabled - - "ETHER_MII: ET0_MDC; ETHER_RMII: ET0_MDC; SCI9: CTS9; TRACE: TCLK; ULPT1: ULPTOB1" - IO - - 
-      P309 61 - Arduino_D0 - - Disabled - - "ETHER_MII: ET0_ETXD3; SCI3: RXD3" - IO - - 
+      P309 61 - LAN8720_nRST L - Disabled - - "ETHER_MII: ET0_ETXD3; SCI3: RXD3" - IO - - 
       P310 60 - Arduino_D1 - - Disabled - - "AGT1: AGTEE1; ETHER_MII: ET0_ETXD2; SCI3: TXD3" - IO - - 
       P311 59 - - - - Disabled - - "AGT1: AGTOB1; CANFD0: CRX0; ETHER_MII: ET0_TX_ER; GPT_POEG: GTADSM1; SCI3: DE3; SCI3: SCK3" - IO - - 
       P312 58 - - - - Disabled - - "AGT1: AGTOA1; CANFD0: CTX0; ETHER_MII: ET0_TX_CLK; GPT_POEG: GTADSM0; SCI3: CTS_RTS3; SCI3: DE3" - None - - 
@@ -447,7 +447,7 @@ FSP Configuration
     DOTF Support: Disable
     
   Module "Ethernet (r_ether)"
-    Parameter Checking: Default (BSP)
+    Parameter Checking: Enabled
     ET0_LINKSTA Pin Status Flag: Fall -> Rise
     Link Signal Change Flag: Unused
     Interrupt event backward compatibility: Keep compatibility
@@ -458,7 +458,7 @@ FSP Configuration
     KSZ8041 Target: Disabled
     DP83620 Target: Disabled
     ICS1894 Target: Disabled
-    User Own Target: Disabled
+    User Own Target: Enabled
     Reference Clock: Default
     Automatic Phy LSI Initialization: Enabled
     
@@ -711,7 +711,7 @@ FSP Configuration
         PHY-LSI Address: 0
         PHY-LSI Reset Completion Timeout: 0x00020000
         Select MII type: RMII
-        Phy LSI type: Kit Component
+        Phy LSI type: User own PHY
         Port Custom Init Function: NULL
         Port Custom Link Partner Ability Get Function: NULL
         MII/RMII Register Access Wait-time: 8
@@ -861,6 +861,15 @@ FSP Configuration
         USB Callback: usb_cdc_rtos_callback
         USB Callback Context: NULL
         
+  Thread "Main Thread1"
+    Symbol: main_thread1
+    Name: Main Thread1
+    Stack size (bytes): 1024
+    Priority: 1
+    Thread Context: NULL
+    Memory Allocation: Static
+    Allocate Secure Context: Enable
+    
   Object "g_usb_write_complete_binary_semaphore Counting Semaphore"
     Symbol: g_usb_write_complete_binary_semaphore
     Initial count: 0

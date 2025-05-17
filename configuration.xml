@@ -432,7 +432,7 @@
       <property id="module.driver.ether_phy.phy_lsi_address" value="0"/>
       <property id="module.driver.ether_phy.phy_reset_wait_time" value="0x00020000"/>
       <property id="module.driver.ether_phy.mii_type" value="module.driver.mii_type.rmii"/>
-      <property id="module.driver.ether_phy.phy_lsi_type" value="module.driver.ether_phy.phy_lsi_type.kit_component"/>
+      <property id="module.driver.ether_phy.phy_lsi_type" value="module.driver.ether_phy.phy_lsi_type.custom"/>
       <property id="module.driver.ether_phy.target_init" value="NULL"/>
       <property id="module.driver.ether_phy.target_link_partner_ability_get" value="NULL"/>
       <property id="module.driver.ether_phy.mii_bit_access_wait_time" value="8"/>
@@ -618,6 +618,15 @@
         <stack module="module.driver.basic_on_usb.297669707" requires="module.driver.basic_on_usb.requires.basic"/>
       </stack>
     </context>
+    <context id="rtos.awsfreertos.thread.1377019431">
+      <property id="_symbol" value="main_thread1"/>
+      <property id="rtos.awsfreertos.thread.name" value="Main Thread1"/>
+      <property id="rtos.awsfreertos.thread.stack" value="1024"/>
+      <property id="rtos.awsfreertos.thread.priority" value="1"/>
+      <property id="rtos.awsfreertos.thread.context" value="NULL"/>
+      <property id="rtos.awsfreertos.thread.allocation" value="rtos.awsfreertos.thread.allocation.static"/>
+      <property id="rtos.awsfreertos.thread.secure_context" value="rtos.awsfreertos.thread.secure_context.enable"/>
+    </context>
     <config id="config.driver.ospi_b">
       <property id="config.driver.ospi_b.param_checking_enable" value="config.driver.ospi_b.param_checking_enable.disabled"/>
       <property id="config.driver.ospi_b.dmac_support" value="config.driver.ospi_b.dmac_support.disabled"/>
@@ -651,7 +660,7 @@
       <property id="config.driver.usb_basic.tpl_table" value="NULL"/>
     </config>
     <config id="config.driver.ether">
-      <property id="config.driver.ether.param_checking_enable" value="config.driver.ether.param_checking_enable.bsp"/>
+      <property id="config.driver.ether.param_checking_enable" value="config.driver.ether.param_checking_enable.enabled"/>
       <property id="config.driver.ether.link_present" value="config.driver.ether.link_present.0"/>
       <property id="config.driver.ether.use_linksta" value="config.driver.ether.use_linksta.0"/>
       <property id="config.driver.ether.interrupt_event_backword_compatibility" value="config.driver.ether.interrupt_event_backword_compatibility.enabled"/>
@@ -662,7 +671,7 @@
       <property id="config.driver.ether_phy.target_ksz8041" value="config.driver.ether_phy.target_ksz8041.disabled"/>
       <property id="config.driver.ether_phy.target_dp83620" value="config.driver.ether_phy.target_dp83620.disabled"/>
       <property id="config.driver.ether_phy.target_ics1894" value="config.driver.ether_phy.target_ics1894.disabled"/>
-      <property id="config.driver.ether_phy.use_custom_phy_lsi" value="config.driver.ether_phy.use_custom_phy_lsi.disabled"/>
+      <property id="config.driver.ether_phy.use_custom_phy_lsi" value="config.driver.ether_phy.use_custom_phy_lsi.enabled"/>
       <property id="config.driver.ether_phy.use_reference_clock" value="config.driver.ether_phy.use_reference_clock.default"/>
       <property id="config.driver.ether_phy.init_phy_lsi_automatic" value="config.driver.ether_phy.init_phy_lsi_automatic.enabled"/>
     </config>
@@ -791,7 +800,7 @@
     <symbolicName propertyId="p300.symbolic_name" value="Arduino_D2"/>
     <symbolicName propertyId="p302.symbolic_name" value="Arduino_D7"/>
     <symbolicName propertyId="p303.symbolic_name" value="Arduino_D8"/>
-    <symbolicName propertyId="p309.symbolic_name" value="Arduino_D0"/>
+    <symbolicName propertyId="p309.symbolic_name" value="LAN8720_nRST"/>
     <symbolicName propertyId="p310.symbolic_name" value="Arduino_D1"/>
     <symbolicName propertyId="p313.symbolic_name" value="Arduino_D12"/>
     <symbolicName propertyId="p400.symbolic_name" value="CAM_D0"/>
@@ -950,8 +959,8 @@
       <configSetting altId="p308.ether_rmii.et0_mdc" configurationId="p308"/>
       <configSetting altId="p308.gpio_speed.gpio_speed_m" configurationId="p308.gpio_drivecapacity"/>
       <configSetting altId="p308.gpio_mode.gpio_mode_peripheral" configurationId="p308.gpio_mode"/>
-      <configSetting altId="p309.input" configurationId="p309"/>
-      <configSetting altId="p309.gpio_mode.gpio_mode_in" configurationId="p309.gpio_mode"/>
+      <configSetting altId="p309.output.low" configurationId="p309"/>
+      <configSetting altId="p309.gpio_mode.gpio_mode_out.low" configurationId="p309.gpio_mode"/>
       <configSetting altId="p310.input" configurationId="p310"/>
       <configSetting altId="p310.gpio_mode.gpio_mode_in" configurationId="p310.gpio_mode"/>
       <configSetting altId="p311.input" configurationId="p311"/>
