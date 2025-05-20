@@ -252,12 +252,10 @@ ether_instance_ctrl_t g_ether0_ctrl;
             __attribute__((__aligned__(16))) ether_instance_descriptor_t g_ether0_rx_descriptors[1] ETHER_BUFFER_PLACE_IN_SECTION;
 
             __attribute__((__aligned__(32)))uint8_t g_ether0_ether_buffer0[1536]ETHER_BUFFER_PLACE_IN_SECTION;
-__attribute__((__aligned__(32)))uint8_t g_ether0_ether_buffer1[1536]ETHER_BUFFER_PLACE_IN_SECTION;
 
 
-            uint8_t *pp_g_ether0_ether_buffers[2] = {
+            uint8_t *pp_g_ether0_ether_buffers[1] = {
 (uint8_t *) &g_ether0_ether_buffer0[0],
-(uint8_t *) &g_ether0_ether_buffer1[0],
 };
 
             const ether_extended_cfg_t g_ether0_extended_cfg_t =
@@ -271,7 +269,7 @@ __attribute__((__aligned__(32)))uint8_t g_ether0_ether_buffer1[1536]ETHER_BUFFER
             const ether_cfg_t g_ether0_cfg =
             {
                 .channel            = 0,
-                .zerocopy           = ETHER_ZEROCOPY_DISABLE,
+                .zerocopy           = ETHER_ZEROCOPY_ENABLE,
                 .multicast          = ETHER_MULTICAST_ENABLE,
                 .promiscuous        = ETHER_PROMISCUOUS_DISABLE,
                 .flow_control       = ETHER_FLOW_CONTROL_DISABLE,
@@ -295,7 +293,7 @@ __attribute__((__aligned__(32)))uint8_t g_ether0_ether_buffer1[1536]ETHER_BUFFER
 
                 .interrupt_priority = (12),
 
-                .p_callback         = NULL,
+                .p_callback         = ether_example_callback,
                 .p_ether_phy_instance = &g_ether_phy0,
                 .p_context          = NULL,
                 .p_extend           = &g_ether0_extended_cfg_t,

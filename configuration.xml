@@ -410,7 +410,7 @@
       <property id="module.driver.ether.name" value="g_ether0"/>
       <property id="module.driver.ether.channel" value="module.driver.ether.channel.0"/>
       <property id="module.driver.ether.mac_address" value="00:11:22:33:44:55"/>
-      <property id="module.driver.ether.zerocopy" value="module.driver.ether.zerocopy.0"/>
+      <property id="module.driver.ether.zerocopy" value="module.driver.ether.zerocopy.1"/>
       <property id="module.driver.ether.flow_control" value="module.driver.ether.flow_control.0"/>
       <property id="module.driver.ether.multicast" value="module.driver.ether.multicast.1"/>
       <property id="module.driver.ether.promiscuous" value="module.driver.ether.promiscuous.0"/>
@@ -424,7 +424,7 @@
       <property id="module.driver.ether.eesr_event_mask" value="module.driver.ether.eesr_event_mask.rfof,module.driver.ether.eesr_event_mask.rde,module.driver.ether.eesr_event_mask.fr,module.driver.ether.eesr_event_mask.tfuf,module.driver.ether.eesr_event_mask.tde,module.driver.ether.eesr_event_mask.tc"/>
       <property id="module.driver.ether.ecsr_event_mask" value=""/>
       <property id="module.driver.ether.interrupt_priority" value="board.icu.common.irq.priority12"/>
-      <property id="module.driver.ether.p_callback" value="NULL"/>
+      <property id="module.driver.ether.p_callback" value="ether_example_callback"/>
     </module>
     <module id="module.driver.ether_phy_on_ether_phy.374025461">
       <property id="module.driver.ether_phy.name" value="g_ether_phy0"/>
@@ -609,7 +609,7 @@
       <property id="_symbol" value="main_thread2"/>
       <property id="rtos.awsfreertos.thread.name" value="Main Thread2"/>
       <property id="rtos.awsfreertos.thread.stack" value="1024"/>
-      <property id="rtos.awsfreertos.thread.priority" value="1"/>
+      <property id="rtos.awsfreertos.thread.priority" value="2"/>
       <property id="rtos.awsfreertos.thread.context" value="NULL"/>
       <property id="rtos.awsfreertos.thread.allocation" value="rtos.awsfreertos.thread.allocation.static"/>
       <property id="rtos.awsfreertos.thread.secure_context" value="rtos.awsfreertos.thread.secure_context.enable"/>
@@ -621,7 +621,7 @@
     <context id="rtos.awsfreertos.thread.1377019431">
       <property id="_symbol" value="main_thread1"/>
       <property id="rtos.awsfreertos.thread.name" value="Main Thread1"/>
-      <property id="rtos.awsfreertos.thread.stack" value="1024"/>
+      <property id="rtos.awsfreertos.thread.stack" value="4096"/>
       <property id="rtos.awsfreertos.thread.priority" value="1"/>
       <property id="rtos.awsfreertos.thread.context" value="NULL"/>
       <property id="rtos.awsfreertos.thread.allocation" value="rtos.awsfreertos.thread.allocation.static"/>

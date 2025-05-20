@@ -128,7 +128,7 @@ extern uint32_t g_fsp_common_thread_count;
                         (const char *)"Main Thread2",
                         1024/4, // In words, not bytes
                         (void *) &main_thread2_parameters, //pvParameters
-                        1,
+                        2,
                         #if 1
                         (StackType_t *)&main_thread2_stack,
                         (StaticTask_t *)&main_thread2_memory

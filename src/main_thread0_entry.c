@@ -2,14 +2,14 @@
 #include "hal_data.h"
 #include "projdefs.h"
 #include "r_ceu.h"
-#include "xprintf.h"
+#include "putchar_ra8usb.h"
 #include "cam.h"
 
 // #define VGA_WIDTH (256)
 // #define VGA_HEIGHT (256)
 // #define BYTE_PER_PIXEL (2)
 
-void putchar_ra8usb(uint8_t c);
+// void putchar_ra8usb(uint8_t c);
 /* Main Thread entry function */
 /* pvParameters contains TaskHandle_t */
 
@@ -19,6 +19,7 @@ void main_thread0_entry(void *pvParameters)
 
     //  init UART & printf
     xdev_out(putchar_ra8usb);
+    xprintf("START\n");
     // init DVP camera
     cam_init(DEV_OV3640);
     // capture from camera
@@ -46,22 +47,4 @@ void main_thread0_entry(void *pvParameters)
         xprintf("upset time = %d[msec]\n", uptime_ms);
         vTaskDelay(pdMS_TO_TICKS(500));
     }
-}
-
-void putchar_ra8usb(uint8_t c)
-{
-
-    static bool skip = false;
-    if (skip == true)
-        return;
-    uint8_t p[2];
-    p[0] = c;
-    p[1] = '\0';
-
-    // skip if usb is not active
-    if (xQueueSend(xQueueMes, p, pdMS_TO_TICKS(1000)) != pdPASS)
-    {
-        skip = true;
-    }
-    return;
 }

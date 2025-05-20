@@ -689,7 +689,7 @@ FSP Configuration
       General: Name: g_ether0
       General: Channel: 0
       General: MAC address: 00:11:22:33:44:55
-      General: Zero-copy Mode: Disable
+      General: Zero-copy Mode: Enable
       General: Flow control functionality: Disable
       Filters: Multicast Mode: Enable
       Filters: Promiscuous Mode: Disable
@@ -703,7 +703,7 @@ FSP Configuration
       Interrupts: EESR event: RFOF, RDE, FR, TFUF, TDE, TC
       Interrupts: ECSR event: 
       Interrupts: Interrupt priority: Priority 12
-      Interrupts: Callback: NULL
+      Interrupts: Callback: ether_example_callback
       
       Instance "g_ether_phy0 Ethernet (r_ether_phy)"
         Name: g_ether_phy0
@@ -834,7 +834,7 @@ FSP Configuration
     Symbol: main_thread2
     Name: Main Thread2
     Stack size (bytes): 1024
-    Priority: 1
+    Priority: 2
     Thread Context: NULL
     Memory Allocation: Static
     Allocate Secure Context: Enable
@@ -864,7 +864,7 @@ FSP Configuration
   Thread "Main Thread1"
     Symbol: main_thread1
     Name: Main Thread1
-    Stack size (bytes): 1024
+    Stack size (bytes): 4096
     Priority: 1
     Thread Context: NULL
     Memory Allocation: Static
