@@ -449,7 +449,7 @@ FSP Configuration
   Module "Ethernet (r_ether)"
     Parameter Checking: Default (BSP)
     ET0_LINKSTA Pin Status Flag: Fall -> Rise
-    Link Signal Change Flag: Used
+    Link Signal Change Flag: Unused
     Interrupt event backward compatibility: Keep compatibility
     
   Module "Ethernet (r_ether_phy)"
@@ -708,7 +708,7 @@ FSP Configuration
       Instance "g_ether_phy0 Ethernet (r_ether_phy)"
         Name: g_ether_phy0
         Channel: 0
-        PHY-LSI Address: 0
+        PHY-LSI Address: 0x00
         PHY-LSI Reset Completion Timeout: 0x00020000
         Select MII type: RMII
         Phy LSI type: User own PHY

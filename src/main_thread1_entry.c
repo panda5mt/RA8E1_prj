@@ -2,10 +2,11 @@
 #include "hal_data.h"
 
 #include "putchar_ra8usb.h"
+#include "r_ether_phy.h"
 
 #define ETHER_EXAMPLE_MAXIMUM_ETHERNET_FRAME_SIZE (1514)
 #define ETHER_EXAMPLE_TRANSMIT_ETHERNET_FRAME_SIZE (60)
-#define ETHER_EXAMPLE_SOURCE_MAC_ADDRESS 0x00, 0x11, 0x22, 0x33, 0x44, 0x55
+#define ETHER_EXAMPLE_SOURCE_MAC_ADDRESS 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF
 #define ETHER_EXAMPLE_DESTINATION_MAC_ADDRESS 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
 #define ETHER_EXAMPLE_FRAME_TYPE 0x00, 0x2E
 #define ETHER_EXAMPLE_PAYLOAD 0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
@@ -41,27 +42,32 @@ static uint8_t gp_send_data_internal[ETHER_EXAMPLE_TRANSMIT_ETHERNET_FRAME_SIZE]
 
 void ether_example_callback(ether_callback_args_t *p_args)
 {
-    xprintf("[ETH]CALLBACK.\n");
+
     switch (p_args->event)
     {
     case ETHER_EVENT_INTERRUPT:
     {
         if (ETHER_EXAMPLE_ETHER_ISR_EC_MPD_MASK == (p_args->status_ecsr & ETHER_EXAMPLE_ETHER_ISR_EC_MPD_MASK))
         {
+            xprintf("[ETH]MAGIC.\n");
             g_example_magic_packet_done = ETHER_EXAMPLE_FLAG_ON;
         }
         if (ETHER_EXAMPLE_ETHER_ISR_EE_TC_MASK == (p_args->status_eesr & ETHER_EXAMPLE_ETHER_ISR_EE_TC_MASK))
         {
+            xprintf("[ETH]TRANSFER.\n");
             g_example_transfer_complete = ETHER_EXAMPLE_FLAG_ON;
         }
         if (ETHER_EXAMPLE_ETHER_ISR_EE_FR_MASK == (p_args->status_eesr & ETHER_EXAMPLE_ETHER_ISR_EE_FR_MASK))
         {
+            xprintf("[ETH]RECEIVE.\n");
             g_example_receive_complete = ETHER_EXAMPLE_FLAG_ON;
         }
+
         break;
     }
     default:
     {
+        xprintf("[ETH]ANOTHER CALLBACK.\n");
     }
     }
 }
@@ -72,14 +78,12 @@ void main_thread1_entry(void *pvParameters)
     FSP_PARAMETER_NOT_USED(pvParameters);
     R_BSP_PinAccessEnable();
     R_BSP_PinWrite(LAN8720_nRST, BSP_IO_LEVEL_LOW); // Reset LAN8720
-    vTaskDelay(pdMS_TO_TICKS(1000));
-
     xprintf("GPIO = L\n");
+    vTaskDelay(pdMS_TO_TICKS(1000));
 
     R_BSP_PinWrite(LAN8720_nRST, BSP_IO_LEVEL_HIGH); // Start LAN8720
-    vTaskDelay(pdMS_TO_TICKS(1000));
     xprintf("GPIO = H\n");
-
+    vTaskDelay(pdMS_TO_TICKS(1000));
     /* TODO: add your own code here */
     while (1)
     {
@@ -106,17 +110,26 @@ void main_thread1_entry(void *pvParameters)
 
         xprintf("[ETH] OPEN.\n");
         // lan8720a_initialize(0); // PHYアドレス0と仮定
+        uint32_t reg_val = 0;
+
         do
         {
             err = R_ETHER_LinkProcess(&g_ether0_ctrl);
-            xprintf("[ETH] LinkProcess result: %d\n", err); // ← エラーコード確認
+            // xprintf("[ETH] LinkProcess result: %d\n", err); // ← エラーコード確認
         } while (FSP_SUCCESS != err);
 
         xprintf("[ETH]LINK OK.\n");
 
         uint32_t bsr;
-        R_ETHER_PHY_Read(&g_ether0_ctrl, 0, &bsr);
-        xprintf("BSR: 0x%04X\n", bsr);
+        R_ETHER_PHY_Read(&g_ether0_ctrl, 0x02, &reg_val);
+        if (reg_val == 0x0007)
+        {
+            xprintf("PHY ID1 OK\n");
+        }
+        else
+        {
+            xprintf("PHY ID1 = 0x%X\n", reg_val);
+        }
         g_example_transfer_complete = 0;
         err = 0;
         /* Set user buffer to TX descriptor and enable transmission. */

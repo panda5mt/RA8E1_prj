@@ -227,7 +227,7 @@ const ether_phy_cfg_t g_ether_phy0_cfg =
 {
 
     .channel                   = 0,
-    .phy_lsi_address           = 0,
+    .phy_lsi_address           = 0x00,
     .phy_reset_wait_time       = 0x00020000,
     .mii_bit_access_wait_time  = 8,
     .phy_lsi_type              = ETHER_PHY_LSI_TYPE_CUSTOM,

@@ -429,7 +429,7 @@
     <module id="module.driver.ether_phy_on_ether_phy.374025461">
       <property id="module.driver.ether_phy.name" value="g_ether_phy0"/>
       <property id="module.driver.ether_phy.channel" value="module.driver.ether_phy.channel.0"/>
-      <property id="module.driver.ether_phy.phy_lsi_address" value="0"/>
+      <property id="module.driver.ether_phy.phy_lsi_address" value="0x00"/>
       <property id="module.driver.ether_phy.phy_reset_wait_time" value="0x00020000"/>
       <property id="module.driver.ether_phy.mii_type" value="module.driver.mii_type.rmii"/>
       <property id="module.driver.ether_phy.phy_lsi_type" value="module.driver.ether_phy.phy_lsi_type.custom"/>
@@ -662,7 +662,7 @@
     <config id="config.driver.ether">
       <property id="config.driver.ether.param_checking_enable" value="config.driver.ether.param_checking_enable.bsp"/>
       <property id="config.driver.ether.link_present" value="config.driver.ether.link_present.0"/>
-      <property id="config.driver.ether.use_linksta" value="config.driver.ether.use_linksta.1"/>
+      <property id="config.driver.ether.use_linksta" value="config.driver.ether.use_linksta.0"/>
       <property id="config.driver.ether.interrupt_event_backword_compatibility" value="config.driver.ether.interrupt_event_backword_compatibility.enabled"/>
     </config>
     <config id="config.driver.ether_phy">
@@ -1048,6 +1048,17 @@
       <lockSetting id="ceu.vio_d7" lock="true"/>
       <lockSetting id="ceu.vio_hd" lock="true"/>
       <lockSetting id="ceu.vio_vd" lock="true"/>
+      <lockSetting id="ether_rmii.et0_linksta" lock="true"/>
+      <lockSetting id="ether_rmii.et0_mdc" lock="true"/>
+      <lockSetting id="ether_rmii.et0_mdio" lock="true"/>
+      <lockSetting id="ether_rmii.ref50ck0" lock="true"/>
+      <lockSetting id="ether_rmii.rmii0_crs_dv" lock="true"/>
+      <lockSetting id="ether_rmii.rmii0_rx_er" lock="true"/>
+      <lockSetting id="ether_rmii.rmii0_rxd0" lock="true"/>
+      <lockSetting id="ether_rmii.rmii0_rxd1" lock="true"/>
+      <lockSetting id="ether_rmii.rmii0_txd0" lock="true"/>
+      <lockSetting id="ether_rmii.rmii0_txd1" lock="true"/>
+      <lockSetting id="ether_rmii.rmii0_txd_en" lock="true"/>
       <lockSetting id="gpt5.gtioc5a" lock="true"/>
       <lockSetting id="iic1.scl1" lock="true"/>
       <lockSetting id="iic1.sda1" lock="true"/>
