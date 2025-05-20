@@ -111,7 +111,6 @@ void main_thread1_entry(void *pvParameters)
         xprintf("[ETH] OPEN.\n");
         // lan8720a_initialize(0); // PHYアドレス0と仮定
         uint32_t reg_val = 0;
-
         do
         {
             err = R_ETHER_LinkProcess(&g_ether0_ctrl);
@@ -120,15 +119,13 @@ void main_thread1_entry(void *pvParameters)
 
         xprintf("[ETH]LINK OK.\n");
 
-        uint32_t bsr;
-        R_ETHER_PHY_Read(&g_ether0_ctrl, 0x02, &reg_val);
-        if (reg_val == 0x0007)
+        for (int ii = 0; ii < 32; ii++)
         {
-            xprintf("PHY ID1 OK\n");
-        }
-        else
-        {
-            xprintf("PHY ID1 = 0x%X\n", reg_val);
+            R_ETHER_PHY_Read(&g_ether0_ctrl, 0x02, &reg_val);
+
+            {
+                xprintf("PHY REG[%d] = 0x%X\n", ii, reg_val);
+            }
         }
         g_example_transfer_complete = 0;
         err = 0;
