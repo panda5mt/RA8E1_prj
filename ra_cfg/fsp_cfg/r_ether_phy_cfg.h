@@ -21,7 +21,7 @@
 #ifndef ETHER_PHY_CFG_USE_CUSTOM_PHY_LSI_ENABLE
             #define ETHER_PHY_CFG_USE_CUSTOM_PHY_LSI_ENABLE         (1)
 #endif
-            #define ETHER_PHY_CFG_USE_REF_CLK                       (BOARD_PHY_REF_CLK)
+            #define ETHER_PHY_CFG_USE_REF_CLK                       (1)
             #define ETHER_PHY_CFG_INIT_PHY_LSI_AUTOMATIC            (1)
 
             #ifdef __cplusplus

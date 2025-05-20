@@ -1,5 +1,8 @@
 #include "main_thread1.h"
 #include "hal_data.h"
+
+#include "putchar_ra8usb.h"
+
 #define ETHER_EXAMPLE_MAXIMUM_ETHERNET_FRAME_SIZE (1514)
 #define ETHER_EXAMPLE_TRANSMIT_ETHERNET_FRAME_SIZE (60)
 #define ETHER_EXAMPLE_SOURCE_MAC_ADDRESS 0x00, 0x11, 0x22, 0x33, 0x44, 0x55
@@ -19,6 +22,14 @@
 static volatile uint32_t g_example_receive_complete = 0;
 static volatile uint32_t g_example_transfer_complete = 0;
 static volatile uint32_t g_example_magic_packet_done = 0;
+#define PHY_REG_BCR 0x00 // Basic Control Register
+#define PHY_REG_BSR 0x01 // Basic Status Register
+#define PHY_REG_PHYID1 0x02
+#define PHY_REG_PHYID2 0x03
+
+#define PHY_BCR_RESET (1 << 15)
+#define PHY_BCR_AUTONEGO_EN (1 << 12)
+#define PHY_BCR_RESTART_AUTONEGO (1 << 9)
 
 static uint8_t gp_send_data_internal[ETHER_EXAMPLE_TRANSMIT_ETHERNET_FRAME_SIZE] =
     {
@@ -30,6 +41,7 @@ static uint8_t gp_send_data_internal[ETHER_EXAMPLE_TRANSMIT_ETHERNET_FRAME_SIZE]
 
 void ether_example_callback(ether_callback_args_t *p_args)
 {
+    // xprintf("[ETH]CALLBACK.\n");
     switch (p_args->event)
     {
     case ETHER_EVENT_INTERRUPT:
@@ -58,9 +70,19 @@ void ether_example_callback(ether_callback_args_t *p_args)
 void main_thread1_entry(void *pvParameters)
 {
     FSP_PARAMETER_NOT_USED(pvParameters);
-    R_IOPORT_PinWrite(&g_ioport_ctrl, LAN8720_nRST, BSP_IO_LEVEL_LOW); // Reset LAN8720
-    vTaskDelay(pdMS_TO_TICKS(100));
-    R_IOPORT_PinWrite(&g_ioport_ctrl, LAN8720_nRST, BSP_IO_LEVEL_HIGH); // Start LAN8720
+    R_BSP_PinAccessEnable();
+    R_BSP_PinWrite(LAN8720_nRST, BSP_IO_LEVEL_HIGH); // set LAN8720
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    xprintf("GPIO = H\n");
+
+    R_BSP_PinWrite(LAN8720_nRST, BSP_IO_LEVEL_LOW); // Reset LAN8720
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    xprintf("GPIO = L\n");
+
+    R_BSP_PinWrite(LAN8720_nRST, BSP_IO_LEVEL_HIGH); // Start LAN8720
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    xprintf("GPIO = H\n");
 
     /* TODO: add your own code here */
     while (1)
@@ -78,12 +100,22 @@ void main_thread1_entry(void *pvParameters)
         err = R_ETHER_Open(&g_ether0_ctrl, &g_ether0_cfg);
         /* Handle any errors. This function should be defined by the user. */
         assert(FSP_SUCCESS == err);
+        xprintf("[ETH] MAC");
+        for (int i = 0; i < 6; i++)
+        {
+            xprintf(":%02x", g_ether0_cfg.p_mac_address[i]);
+        }
+        xprintf("\n");
+
+        xprintf("[ETH] OPEN.\n");
+        // lan8720a_initialize(0); // PHYアドレス0と仮定
         do
         {
-            /* When the Ethernet link status read from the PHY-LSI Basic Status register is link-up,
-             * Initializes the module and make auto negotiation. */
             err = R_ETHER_LinkProcess(&g_ether0_ctrl);
+            xprintf("[ETH] LinkProcess result: %d\n", err); // ← エラーコード確認
         } while (FSP_SUCCESS != err);
+
+        xprintf("[ETH]LINK OK.\n");
         /* Set user buffer to TX descriptor and enable transmission. */
         err = R_ETHER_Write(&g_ether0_ctrl, (void *)gp_send_data_internal, sizeof(gp_send_data_internal));
         if (FSP_SUCCESS == err)

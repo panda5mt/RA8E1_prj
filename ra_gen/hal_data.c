@@ -246,7 +246,7 @@ const ether_phy_instance_t g_ether_phy0 =
 };
 ether_instance_ctrl_t g_ether0_ctrl;
 
-            uint8_t g_ether0_mac_address[6] = { 0x00,0x11,0x22,0x33,0x44,0x55 };
+            uint8_t g_ether0_mac_address[6] = { 0xAA,0xBB,0xCC,0xDD,0xEE,0xFF };
 
             __attribute__((__aligned__(16))) ether_instance_descriptor_t g_ether0_tx_descriptors[1] ETHER_BUFFER_PLACE_IN_SECTION;
             __attribute__((__aligned__(16))) ether_instance_descriptor_t g_ether0_rx_descriptors[1] ETHER_BUFFER_PLACE_IN_SECTION;
@@ -272,7 +272,7 @@ ether_instance_ctrl_t g_ether0_ctrl;
                 .zerocopy           = ETHER_ZEROCOPY_ENABLE,
                 .multicast          = ETHER_MULTICAST_ENABLE,
                 .promiscuous        = ETHER_PROMISCUOUS_DISABLE,
-                .flow_control       = ETHER_FLOW_CONTROL_DISABLE,
+                .flow_control       = ETHER_FLOW_CONTROL_ENABLE,
                 .padding            = ETHER_PADDING_DISABLE,
                 .padding_offset     = 0,
                 .broadcast_filter   = 0,

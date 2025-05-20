@@ -149,7 +149,7 @@ FSP Configuration
       P107 99 - PMOD2_P9 - - Disabled - - "AGT0: AGTOA0; OSPI: OM_CS0" - None - - 
       P112 73 ETHER_RMII_RMII0_CRS_DV Ardiuno_D9 H - "Peripheral mode" - - "ETHER_MII: ET0_CRS; ETHER_RMII: RMII0_CRS_DV; GPT3: GTIOC3B; SCI0: TXD0; SPI0: SSLA2; SSIE0: SSISCK0; ULPT0: ULPTOB0_A-DS" - IO - - 
       P113 74 GPIO Ardiuno_D6 - - "Input mode" - - "ETHER_MII: ET0_EXOUT; ETHER_RMII: ET0_EXOUT; GPT2: GTIOC2A; SCI0: RXD0; SPI0: SSLA1; SSIE0: SSIWS0; ULPT0: ULPTOA0_A-DS" - IO - - 
-      P114 75 - Ardiuno_D5 - - Disabled - - "ETHER_MII: ET0_LINKSTA; ETHER_RMII: ET0_LINKSTA; GPT2: GTIOC2B; SCI0: CTS_RTS0; SCI0: DE0; SPI0: SSLA0; SSIE0: SSIRXD0" - None - - 
+      P114 75 ETHER_RMII_ET0_LINKSTA Ardiuno_D5 H - "Peripheral mode" - - "ETHER_MII: ET0_LINKSTA; ETHER_RMII: ET0_LINKSTA; GPT2: GTIOC2B; SCI0: CTS_RTS0; SCI0: DE0; SPI0: SSLA0; SSIE0: SSIRXD0" - IO - - 
       P115 76 GPT5_GTIOC5A - L - "Peripheral mode" - - "ETHER_MII: ET0_WOL; ETHER_RMII: ET0_WOL; GPT5: GTIOC5A; SCI0: CTS0; SPI0: MOSI0; SSIE0: SSITXD0" - IO - - 
       P200 56 - NMI - - Disabled - - "IRQ: NMI" - None - - 
       P201 55 - MD - - Disabled - - "SYSTEM: MD" - None - - 
@@ -173,7 +173,7 @@ FSP Configuration
       P306 64 ETHER_RMII_RMII0_TXD_EN - H - "Peripheral mode" - - "ETHER_MII: ET0_TX_EN; ETHER_RMII: RMII0_TXD_EN; TRACE: TDATA1; ULPT1: ULPTEVI1" - IO - - 
       P307 63 ETHER_RMII_ET0_MDIO - M - "Peripheral mode" - - "ETHER_MII: ET0_MDIO; ETHER_RMII: ET0_MDIO; TRACE: TDATA0; ULPT1: ULPTOA1" - IO - - 
       P308 62 ETHER_RMII_ET0_MDC - M - "Peripheral mode" - - "ETHER_MII: ET0_MDC; ETHER_RMII: ET0_MDC; SCI9: CTS9; TRACE: TCLK; ULPT1: ULPTOB1" - IO - - 
-      P309 61 GPIO LAN8720_nRST L - "Output mode (Initial Low)" - - "ETHER_MII: ET0_ETXD3; SCI3: RXD3" - IO - - 
+      P309 61 GPIO LAN8720_nRST L - "Output mode (Initial High)" - - "ETHER_MII: ET0_ETXD3; SCI3: RXD3" - IO - - 
       P310 60 GPIO Arduino_D1 - - "Input mode" - - "AGT1: AGTEE1; ETHER_MII: ET0_ETXD2; SCI3: TXD3" - IO - - 
       P311 59 GPIO - - - "Input mode" - - "AGT1: AGTOB1; CANFD0: CRX0; ETHER_MII: ET0_TX_ER; GPT_POEG: GTADSM1; SCI3: DE3; SCI3: SCK3" - IO - - 
       P312 58 - - - - Disabled - - "AGT1: AGTOA1; CANFD0: CTX0; ETHER_MII: ET0_TX_CLK; GPT_POEG: GTADSM0; SCI3: CTS_RTS3; SCI3: DE3" - None - - 
@@ -294,7 +294,7 @@ FSP Configuration
       P107 99 - PMOD2_P9 - - Disabled - - "AGT0: AGTOA0; OSPI: OM_CS0" - None - - 
       P112 73 - Ardiuno_D9 L - Disabled - - "ETHER_MII: ET0_CRS; ETHER_RMII: RMII0_CRS_DV; GPT3: GTIOC3B; SCI0: TXD0; SPI0: SSLA2; SSIE0: SSISCK0; ULPT0: ULPTOB0_A-DS" - IO - - 
       P113 74 - Ardiuno_D6 - - Disabled - - "ETHER_MII: ET0_EXOUT; ETHER_RMII: ET0_EXOUT; GPT2: GTIOC2A; SCI0: RXD0; SPI0: SSLA1; SSIE0: SSIWS0; ULPT0: ULPTOA0_A-DS" - IO - - 
-      P114 75 - Ardiuno_D5 - - Disabled - - "ETHER_MII: ET0_LINKSTA; ETHER_RMII: ET0_LINKSTA; GPT2: GTIOC2B; SCI0: CTS_RTS0; SCI0: DE0; SPI0: SSLA0; SSIE0: SSIRXD0" - None - - 
+      P114 75 - Ardiuno_D5 L - Disabled - - "ETHER_MII: ET0_LINKSTA; ETHER_RMII: ET0_LINKSTA; GPT2: GTIOC2B; SCI0: CTS_RTS0; SCI0: DE0; SPI0: SSLA0; SSIE0: SSIRXD0" - IO - - 
       P115 76 - - L - Disabled - - "ETHER_MII: ET0_WOL; ETHER_RMII: ET0_WOL; GPT5: GTIOC5A; SCI0: CTS0; SPI0: MOSI0; SSIE0: SSITXD0" - IO - - 
       P200 56 - NMI - - Disabled - - "IRQ: NMI" - None - - 
       P201 55 - MD - - Disabled - - "SYSTEM: MD" - None - - 
@@ -447,9 +447,9 @@ FSP Configuration
     DOTF Support: Disable
     
   Module "Ethernet (r_ether)"
-    Parameter Checking: Enabled
-    ET0_LINKSTA Pin Status Flag: Fall -> Rise
-    Link Signal Change Flag: Unused
+    Parameter Checking: Default (BSP)
+    ET0_LINKSTA Pin Status Flag: Rise -> Fall
+    Link Signal Change Flag: Used
     Interrupt event backward compatibility: Keep compatibility
     
   Module "Ethernet (r_ether_phy)"
@@ -459,7 +459,7 @@ FSP Configuration
     DP83620 Target: Disabled
     ICS1894 Target: Disabled
     User Own Target: Enabled
-    Reference Clock: Default
+    Reference Clock: Enabled
     Automatic Phy LSI Initialization: Enabled
     
   Module "Timer, General PWM (r_gpt)"
@@ -688,9 +688,9 @@ FSP Configuration
     Instance "g_ether0 Ethernet (r_ether)"
       General: Name: g_ether0
       General: Channel: 0
-      General: MAC address: 00:11:22:33:44:55
+      General: MAC address: AA:BB:CC:DD:EE:FF
       General: Zero-copy Mode: Enable
-      General: Flow control functionality: Disable
+      General: Flow control functionality: Enable
       Filters: Multicast Mode: Enable
       Filters: Promiscuous Mode: Disable
       Filters: Broadcast filter: 0
@@ -864,7 +864,7 @@ FSP Configuration
   Thread "Main Thread1"
     Symbol: main_thread1
     Name: Main Thread1
-    Stack size (bytes): 4096
+    Stack size (bytes): 8192
     Priority: 1
     Thread Context: NULL
     Memory Allocation: Static

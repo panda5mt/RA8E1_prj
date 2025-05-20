@@ -91,6 +91,7 @@
       <configSetting altId="ceu.vio_d7.p703" configurationId="ceu.vio_d7" isUsedByDriver="true" peripheral="CEU"/>
       <configSetting altId="ceu.vio_hd.p709" configurationId="ceu.vio_hd" isUsedByDriver="true" peripheral="CEU"/>
       <configSetting altId="ceu.vio_vd.p710" configurationId="ceu.vio_vd" isUsedByDriver="true" peripheral="CEU"/>
+      <configSetting altId="ether_rmii.et0_linksta.p114" configurationId="ether_rmii.et0_linksta" isUsedByDriver="true" peripheral="ETHER_RMII"/>
       <configSetting altId="ether_rmii.et0_mdc.p308" configurationId="ether_rmii.et0_mdc" isUsedByDriver="true" peripheral="ETHER_RMII"/>
       <configSetting altId="ether_rmii.et0_mdio.p307" configurationId="ether_rmii.et0_mdio" isUsedByDriver="true" peripheral="ETHER_RMII"/>
       <configSetting altId="ether_rmii.ref50ck0.p303" configurationId="ether_rmii.ref50ck0" isUsedByDriver="true" peripheral="ETHER_RMII"/>
@@ -122,7 +123,7 @@
       <configSetting altId="p113.input" configurationId="p113"/>
       <configSetting altId="p203.input" configurationId="p203"/>
       <configSetting altId="p204.input" configurationId="p204"/>
-      <configSetting altId="p309.output.low" configurationId="p309"/>
+      <configSetting altId="p309.output.high" configurationId="p309"/>
       <configSetting altId="p310.input" configurationId="p310"/>
       <configSetting altId="p311.input" configurationId="p311"/>
       <configSetting altId="p408.output.low" configurationId="p408"/>
