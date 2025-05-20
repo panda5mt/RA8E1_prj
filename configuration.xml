@@ -661,7 +661,7 @@
     </config>
     <config id="config.driver.ether">
       <property id="config.driver.ether.param_checking_enable" value="config.driver.ether.param_checking_enable.bsp"/>
-      <property id="config.driver.ether.link_present" value="config.driver.ether.link_present.1"/>
+      <property id="config.driver.ether.link_present" value="config.driver.ether.link_present.0"/>
       <property id="config.driver.ether.use_linksta" value="config.driver.ether.use_linksta.1"/>
       <property id="config.driver.ether.interrupt_event_backword_compatibility" value="config.driver.ether.interrupt_event_backword_compatibility.enabled"/>
     </config>

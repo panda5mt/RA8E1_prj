@@ -71,10 +71,6 @@ void main_thread1_entry(void *pvParameters)
 {
     FSP_PARAMETER_NOT_USED(pvParameters);
     R_BSP_PinAccessEnable();
-    R_BSP_PinWrite(LAN8720_nRST, BSP_IO_LEVEL_HIGH); // set LAN8720
-    vTaskDelay(pdMS_TO_TICKS(1000));
-    xprintf("GPIO = H\n");
-
     R_BSP_PinWrite(LAN8720_nRST, BSP_IO_LEVEL_LOW); // Reset LAN8720
     vTaskDelay(pdMS_TO_TICKS(1000));
 
@@ -116,8 +112,15 @@ void main_thread1_entry(void *pvParameters)
         } while (FSP_SUCCESS != err);
 
         xprintf("[ETH]LINK OK.\n");
+
+        uint32_t bsr;
+        R_ETHER_PHY_Read(&g_ether0_ctrl, 0, &bsr);
+        xprintf("BSR: 0x%04X\n", bsr);
+        g_example_transfer_complete = 0;
+        err = 0;
         /* Set user buffer to TX descriptor and enable transmission. */
         err = R_ETHER_Write(&g_ether0_ctrl, (void *)gp_send_data_internal, sizeof(gp_send_data_internal));
+        xprintf("[ETH]Write result: %d\n", err); // ← エラーコード確認
         if (FSP_SUCCESS == err)
         {
             /* Wait for the transmission to complete. */

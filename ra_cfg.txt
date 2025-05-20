@@ -448,7 +448,7 @@ FSP Configuration
     
   Module "Ethernet (r_ether)"
     Parameter Checking: Default (BSP)
-    ET0_LINKSTA Pin Status Flag: Rise -> Fall
+    ET0_LINKSTA Pin Status Flag: Fall -> Rise
     Link Signal Change Flag: Used
     Interrupt event backward compatibility: Keep compatibility
     
