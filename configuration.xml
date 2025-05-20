@@ -411,8 +411,8 @@
       <property id="module.driver.ether.channel" value="module.driver.ether.channel.0"/>
       <property id="module.driver.ether.mac_address" value="AA:BB:CC:DD:EE:FF"/>
       <property id="module.driver.ether.zerocopy" value="module.driver.ether.zerocopy.1"/>
-      <property id="module.driver.ether.flow_control" value="module.driver.ether.flow_control.1"/>
-      <property id="module.driver.ether.multicast" value="module.driver.ether.multicast.1"/>
+      <property id="module.driver.ether.flow_control" value="module.driver.ether.flow_control.0"/>
+      <property id="module.driver.ether.multicast" value="module.driver.ether.multicast.0"/>
       <property id="module.driver.ether.promiscuous" value="module.driver.ether.promiscuous.0"/>
       <property id="module.driver.ether.broadcast_filter" value="0"/>
       <property id="module.driver.ether.num_tx_descriptors" value="1"/>

@@ -41,7 +41,7 @@ static uint8_t gp_send_data_internal[ETHER_EXAMPLE_TRANSMIT_ETHERNET_FRAME_SIZE]
 
 void ether_example_callback(ether_callback_args_t *p_args)
 {
-    // xprintf("[ETH]CALLBACK.\n");
+    xprintf("[ETH]CALLBACK.\n");
     switch (p_args->event)
     {
     case ETHER_EVENT_INTERRUPT:
@@ -90,7 +90,8 @@ void main_thread1_entry(void *pvParameters)
         uint32_t read_data_size = 0;
         // g_ether0_cfg.p_mac_address = mac_address_source;
         // g_ether0_cfg.zerocopy = ETHER_ZEROCOPY_ENABLE;
-        // g_ether0_cfg.p_callback = (void (*)(ether_callback_args_t *))ether_example_callback;
+        if (g_ether0_cfg.p_callback == (void (*)(ether_callback_args_t *))ether_example_callback)
+            xprintf("[ETH]Callback OK\n");
         /* Open the ether instance with initial configuration. */
 
         err = R_ETHER_Open(&g_ether0_ctrl, &g_ether0_cfg);

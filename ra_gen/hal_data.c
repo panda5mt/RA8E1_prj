@@ -270,9 +270,9 @@ ether_instance_ctrl_t g_ether0_ctrl;
             {
                 .channel            = 0,
                 .zerocopy           = ETHER_ZEROCOPY_ENABLE,
-                .multicast          = ETHER_MULTICAST_ENABLE,
+                .multicast          = ETHER_MULTICAST_DISABLE,
                 .promiscuous        = ETHER_PROMISCUOUS_DISABLE,
-                .flow_control       = ETHER_FLOW_CONTROL_ENABLE,
+                .flow_control       = ETHER_FLOW_CONTROL_DISABLE,
                 .padding            = ETHER_PADDING_DISABLE,
                 .padding_offset     = 0,
                 .broadcast_filter   = 0,

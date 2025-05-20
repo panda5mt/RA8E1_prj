@@ -690,8 +690,8 @@ FSP Configuration
       General: Channel: 0
       General: MAC address: AA:BB:CC:DD:EE:FF
       General: Zero-copy Mode: Enable
-      General: Flow control functionality: Enable
-      Filters: Multicast Mode: Enable
+      General: Flow control functionality: Disable
+      Filters: Multicast Mode: Disable
       Filters: Promiscuous Mode: Disable
       Filters: Broadcast filter: 0
       Buffers: Number of TX buffer: 1
