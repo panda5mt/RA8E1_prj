@@ -97,7 +97,7 @@ void main_thread1_entry(void *pvParameters)
         if (g_ether0_cfg.p_callback == (void (*)(ether_callback_args_t *))ether_example_callback)
             xprintf("[ETH]Callback OK\n");
         /* Open the ether instance with initial configuration. */
-
+        vTaskDelay(pdMS_TO_TICKS(1000));
         err = R_ETHER_Open(&g_ether0_ctrl, &g_ether0_cfg);
         /* Handle any errors. This function should be defined by the user. */
         assert(FSP_SUCCESS == err);
@@ -109,8 +109,8 @@ void main_thread1_entry(void *pvParameters)
         xprintf("\n");
 
         xprintf("[ETH] OPEN.\n");
-        // lan8720a_initialize(0); // PHYアドレス0と仮定
-        uint32_t reg_val = 0;
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
         do
         {
             err = R_ETHER_LinkProcess(&g_ether0_ctrl);
@@ -119,14 +119,19 @@ void main_thread1_entry(void *pvParameters)
 
         xprintf("[ETH]LINK OK.\n");
 
-        for (int ii = 0; ii < 32; ii++)
-        {
-            R_ETHER_PHY_Read(&g_ether0_ctrl, 0x02, &reg_val);
+        uint32_t id1 = 0, id2 = 0;
 
-            {
-                xprintf("PHY REG[%d] = 0x%X\n", ii, reg_val);
-            }
+        if (R_ETHER_PHY_Read(&g_ether_phy0_ctrl, 0x02, &id1) != FSP_SUCCESS ||
+            R_ETHER_PHY_Read(&g_ether_phy0_ctrl, 0x03, &id2) != FSP_SUCCESS)
+        {
+            xprintf("PHY init fail"); // 読み出し失敗
         }
+        xprintf("ID1=%X,ID2=%X\n", id1, id2);
+        // if (id1 == 0x0007 && (id2 & 0xFFF0) == 0xC0F0)
+        // {
+        //     return true; // LAN8720Aと判定
+        // }
+
         g_example_transfer_complete = 0;
         err = 0;
         /* Set user buffer to TX descriptor and enable transmission. */
