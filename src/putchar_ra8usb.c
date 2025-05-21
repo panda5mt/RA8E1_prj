@@ -2,7 +2,7 @@
 #include "portmacro.h"
 
 #define USB_BUFFER_SIZE 128
-#define USB_SEND_TIMEOUT pdMS_TO_TICKS(2000)
+#define USB_SEND_TIMEOUT pdMS_TO_TICKS(5000)
 
 void putchar_ra8usb(uint8_t c)
 {

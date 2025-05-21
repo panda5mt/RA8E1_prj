@@ -32,7 +32,8 @@ static volatile uint32_t g_example_magic_packet_done = 0;
 #define PHY_BCR_AUTONEGO_EN (1 << 12)
 #define PHY_BCR_RESTART_AUTONEGO (1 << 9)
 
-static uint8_t gp_send_data_internal[ETHER_EXAMPLE_TRANSMIT_ETHERNET_FRAME_SIZE] =
+// static uint8_t gp_send_data_internal[ETHER_EXAMPLE_TRANSMIT_ETHERNET_FRAME_SIZE] =
+__attribute__((aligned(4))) uint8_t gp_send_data_internal[ETHER_EXAMPLE_TRANSMIT_ETHERNET_FRAME_SIZE] =
     {
         ETHER_EXAMPLE_DESTINATION_MAC_ADDRESS, /* Destination MAC address */
         ETHER_EXAMPLE_SOURCE_MAC_ADDRESS,      /* Source MAC address */
@@ -90,6 +91,7 @@ void main_thread1_entry(void *pvParameters)
     /* Source MAC Address */
     // static uint8_t mac_address_source[6] = {ETHER_EXAMPLE_SOURCE_MAC_ADDRESS};
     static uint8_t *p_read_buffer_nocopy;
+
     uint32_t read_data_size = 0;
     // g_ether0_cfg.p_mac_address = mac_address_source;
     // g_ether0_cfg.zerocopy = ETHER_ZEROCOPY_ENABLE;
@@ -126,13 +128,15 @@ void main_thread1_entry(void *pvParameters)
         xprintf("PHY init fail"); // 読み出し失敗
     }
     xprintf("ID1=%X,ID2=%X\n", id1, id2);
-    // if (id1 == 0x0007 && (id2 & 0xFFF0) == 0xC0F0)
-    // {
-    //     return true; // LAN8720Aと判定
-    // }
 
-    g_example_transfer_complete = 0;
-    err = 0;
+    uint32_t bsr = 0;
+    R_ETHER_PHY_Read(&g_ether_phy0_ctrl, 0x01, &bsr);
+    // if (!(bsr & (1 << 2)))
+    {
+        xprintf("LINK ERROR:%X\n", bsr);
+        return;
+    }
+
     /* Set user buffer to TX descriptor and enable transmission. */
     err = R_ETHER_Write(&g_ether0_ctrl, (void *)gp_send_data_internal, sizeof(gp_send_data_internal));
     xprintf("[ETH]Write result: %d\n", err); // ← エラーコード確認
@@ -156,6 +160,6 @@ void main_thread1_entry(void *pvParameters)
     R_ETHER_Close(&g_ether0_ctrl);
     while (1)
     {
-        vTaskDelay(1);
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }

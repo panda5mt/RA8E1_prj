@@ -411,7 +411,7 @@
       <property id="module.driver.ether.channel" value="module.driver.ether.channel.0"/>
       <property id="module.driver.ether.mac_address" value="AA:BB:CC:DD:EE:FF"/>
       <property id="module.driver.ether.zerocopy" value="module.driver.ether.zerocopy.1"/>
-      <property id="module.driver.ether.flow_control" value="module.driver.ether.flow_control.0"/>
+      <property id="module.driver.ether.flow_control" value="module.driver.ether.flow_control.1"/>
       <property id="module.driver.ether.multicast" value="module.driver.ether.multicast.0"/>
       <property id="module.driver.ether.promiscuous" value="module.driver.ether.promiscuous.0"/>
       <property id="module.driver.ether.broadcast_filter" value="0"/>
@@ -599,7 +599,7 @@
     <context id="rtos.awsfreertos.thread.415524792">
       <property id="_symbol" value="main_thread0"/>
       <property id="rtos.awsfreertos.thread.name" value="Main Thread0"/>
-      <property id="rtos.awsfreertos.thread.stack" value="4096"/>
+      <property id="rtos.awsfreertos.thread.stack" value="1024"/>
       <property id="rtos.awsfreertos.thread.priority" value="1"/>
       <property id="rtos.awsfreertos.thread.context" value="NULL"/>
       <property id="rtos.awsfreertos.thread.allocation" value="rtos.awsfreertos.thread.allocation.static"/>

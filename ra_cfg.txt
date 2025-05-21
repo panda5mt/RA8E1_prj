@@ -690,7 +690,7 @@ FSP Configuration
       General: Channel: 0
       General: MAC address: AA:BB:CC:DD:EE:FF
       General: Zero-copy Mode: Enable
-      General: Flow control functionality: Disable
+      General: Flow control functionality: Enable
       Filters: Multicast Mode: Disable
       Filters: Promiscuous Mode: Disable
       Filters: Broadcast filter: 0
@@ -824,7 +824,7 @@ FSP Configuration
   Thread "Main Thread0"
     Symbol: main_thread0
     Name: Main Thread0
-    Stack size (bytes): 4096
+    Stack size (bytes): 1024
     Priority: 1
     Thread Context: NULL
     Memory Allocation: Static
