@@ -454,8 +454,8 @@ FSP Configuration
     
   Module "Ethernet (r_ether_phy)"
     Parameter Checking: Default (BSP)
-    KSZ8091RNB Target: Enabled
-    KSZ8041 Target: Disabled
+    KSZ8091RNB Target: Disabled
+    KSZ8041 Target: Enabled
     DP83620 Target: Disabled
     ICS1894 Target: Disabled
     User Own Target: Enabled
@@ -711,7 +711,7 @@ FSP Configuration
         PHY-LSI Address: 0x00
         PHY-LSI Reset Completion Timeout: 0x00020000
         Select MII type: RMII
-        Phy LSI type: KSZ8091RNB
+        Phy LSI type: KSZ8041
         Port Custom Init Function: NULL
         Port Custom Link Partner Ability Get Function: NULL
         MII/RMII Register Access Wait-time: 8

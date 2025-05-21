@@ -432,7 +432,7 @@
       <property id="module.driver.ether_phy.phy_lsi_address" value="0x00"/>
       <property id="module.driver.ether_phy.phy_reset_wait_time" value="0x00020000"/>
       <property id="module.driver.ether_phy.mii_type" value="module.driver.mii_type.rmii"/>
-      <property id="module.driver.ether_phy.phy_lsi_type" value="module.driver.ether_phy.phy_lsi_type.ksz8091rnb"/>
+      <property id="module.driver.ether_phy.phy_lsi_type" value="module.driver.ether_phy.phy_lsi_type.ksz8041"/>
       <property id="module.driver.ether_phy.target_init" value="NULL"/>
       <property id="module.driver.ether_phy.target_link_partner_ability_get" value="NULL"/>
       <property id="module.driver.ether_phy.mii_bit_access_wait_time" value="8"/>
@@ -667,8 +667,8 @@
     </config>
     <config id="config.driver.ether_phy">
       <property id="config.driver.ether_phy.param_checking_enable" value="config.driver.ether_phy.param_checking_enable.bsp"/>
-      <property id="config.driver.ether_phy.target_ksz8091rnb" value="config.driver.ether_phy.target_ksz8091rnb.enabled"/>
-      <property id="config.driver.ether_phy.target_ksz8041" value="config.driver.ether_phy.target_ksz8041.disabled"/>
+      <property id="config.driver.ether_phy.target_ksz8091rnb" value="config.driver.ether_phy.target_ksz8091rnb.disabled"/>
+      <property id="config.driver.ether_phy.target_ksz8041" value="config.driver.ether_phy.target_ksz8041.enabled"/>
       <property id="config.driver.ether_phy.target_dp83620" value="config.driver.ether_phy.target_dp83620.disabled"/>
       <property id="config.driver.ether_phy.target_ics1894" value="config.driver.ether_phy.target_ics1894.disabled"/>
       <property id="config.driver.ether_phy.use_custom_phy_lsi" value="config.driver.ether_phy.use_custom_phy_lsi.enabled"/>

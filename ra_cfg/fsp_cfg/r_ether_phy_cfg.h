@@ -7,10 +7,10 @@
 
             #define ETHER_PHY_CFG_PARAM_CHECKING_ENABLE             (BSP_CFG_PARAM_CHECKING_ENABLE)
 #ifndef ETHER_PHY_CFG_TARGET_KSZ8091RNB_ENABLE
-            #define ETHER_PHY_CFG_TARGET_KSZ8091RNB_ENABLE          (1)
+            #define ETHER_PHY_CFG_TARGET_KSZ8091RNB_ENABLE          (0)
 #endif
 #ifndef ETHER_PHY_CFG_TARGET_KSZ8041_ENABLE
-            #define ETHER_PHY_CFG_TARGET_KSZ8041_ENABLE             (0)
+            #define ETHER_PHY_CFG_TARGET_KSZ8041_ENABLE             (1)
 #endif
 #ifndef ETHER_PHY_CFG_TARGET_DP83620_ENABLE
             #define ETHER_PHY_CFG_TARGET_DP83620_ENABLE             (0)
