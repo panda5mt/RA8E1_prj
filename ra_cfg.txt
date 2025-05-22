@@ -455,7 +455,7 @@ FSP Configuration
   Module "Ethernet (r_ether_phy)"
     Parameter Checking: Default (BSP)
     KSZ8091RNB Target: Disabled
-    KSZ8041 Target: Enabled
+    KSZ8041 Target: Disabled
     DP83620 Target: Disabled
     ICS1894 Target: Disabled
     User Own Target: Enabled
@@ -691,7 +691,7 @@ FSP Configuration
       General: MAC address: AA:BB:CC:DD:EE:FF
       General: Zero-copy Mode: Enable
       General: Flow control functionality: Enable
-      Filters: Multicast Mode: Disable
+      Filters: Multicast Mode: Enable
       Filters: Promiscuous Mode: Disable
       Filters: Broadcast filter: 0
       Buffers: Number of TX buffer: 1
@@ -711,9 +711,9 @@ FSP Configuration
         PHY-LSI Address: 0x00
         PHY-LSI Reset Completion Timeout: 0x00020000
         Select MII type: RMII
-        Phy LSI type: KSZ8041
-        Port Custom Init Function: NULL
-        Port Custom Link Partner Ability Get Function: NULL
+        Phy LSI type: User own PHY
+        Port Custom Init Function: ether_phy_target_lan8720a_initialize
+        Port Custom Link Partner Ability Get Function: ether_phy_target_lan8720_is_support_link_partner_ability
         MII/RMII Register Access Wait-time: 8
         Flow Control: Disable
         
@@ -864,7 +864,7 @@ FSP Configuration
   Thread "Main Thread1"
     Symbol: main_thread1
     Name: Main Thread1
-    Stack size (bytes): 8192
+    Stack size (bytes): 65536
     Priority: 1
     Thread Context: NULL
     Memory Allocation: Static

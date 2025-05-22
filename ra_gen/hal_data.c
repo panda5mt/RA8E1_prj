@@ -218,8 +218,8 @@ ether_phy_instance_ctrl_t g_ether_phy0_ctrl;
 
 const ether_phy_extended_cfg_t g_ether_phy0_extended_cfg =
 {
-    .p_target_init                     = NULL,
-    .p_target_link_partner_ability_get = NULL
+    .p_target_init                     = ether_phy_target_lan8720a_initialize,
+    .p_target_link_partner_ability_get = ether_phy_target_lan8720_is_support_link_partner_ability
 
 };
 
@@ -230,7 +230,7 @@ const ether_phy_cfg_t g_ether_phy0_cfg =
     .phy_lsi_address           = 0x00,
     .phy_reset_wait_time       = 0x00020000,
     .mii_bit_access_wait_time  = 8,
-    .phy_lsi_type              = ETHER_PHY_LSI_TYPE_KSZ8041,
+    .phy_lsi_type              = ETHER_PHY_LSI_TYPE_CUSTOM,
     .flow_control              = ETHER_PHY_FLOW_CONTROL_DISABLE,
     .mii_type                  = ETHER_PHY_MII_TYPE_RMII,
     .p_context                 = NULL,
@@ -270,7 +270,7 @@ ether_instance_ctrl_t g_ether0_ctrl;
             {
                 .channel            = 0,
                 .zerocopy           = ETHER_ZEROCOPY_ENABLE,
-                .multicast          = ETHER_MULTICAST_DISABLE,
+                .multicast          = ETHER_MULTICAST_ENABLE,
                 .promiscuous        = ETHER_PROMISCUOUS_DISABLE,
                 .flow_control       = ETHER_FLOW_CONTROL_ENABLE,
                 .padding            = ETHER_PADDING_DISABLE,

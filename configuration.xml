@@ -412,7 +412,7 @@
       <property id="module.driver.ether.mac_address" value="AA:BB:CC:DD:EE:FF"/>
       <property id="module.driver.ether.zerocopy" value="module.driver.ether.zerocopy.1"/>
       <property id="module.driver.ether.flow_control" value="module.driver.ether.flow_control.1"/>
-      <property id="module.driver.ether.multicast" value="module.driver.ether.multicast.0"/>
+      <property id="module.driver.ether.multicast" value="module.driver.ether.multicast.1"/>
       <property id="module.driver.ether.promiscuous" value="module.driver.ether.promiscuous.0"/>
       <property id="module.driver.ether.broadcast_filter" value="0"/>
       <property id="module.driver.ether.num_tx_descriptors" value="1"/>
@@ -432,9 +432,9 @@
       <property id="module.driver.ether_phy.phy_lsi_address" value="0x00"/>
       <property id="module.driver.ether_phy.phy_reset_wait_time" value="0x00020000"/>
       <property id="module.driver.ether_phy.mii_type" value="module.driver.mii_type.rmii"/>
-      <property id="module.driver.ether_phy.phy_lsi_type" value="module.driver.ether_phy.phy_lsi_type.ksz8041"/>
-      <property id="module.driver.ether_phy.target_init" value="NULL"/>
-      <property id="module.driver.ether_phy.target_link_partner_ability_get" value="NULL"/>
+      <property id="module.driver.ether_phy.phy_lsi_type" value="module.driver.ether_phy.phy_lsi_type.custom"/>
+      <property id="module.driver.ether_phy.target_init" value="ether_phy_target_lan8720a_initialize"/>
+      <property id="module.driver.ether_phy.target_link_partner_ability_get" value="ether_phy_target_lan8720_is_support_link_partner_ability"/>
       <property id="module.driver.ether_phy.mii_bit_access_wait_time" value="8"/>
       <property id="module.driver.ether_phy.flow_control" value="module.driver.ether_phy.flow_control.0"/>
     </module>
@@ -621,7 +621,7 @@
     <context id="rtos.awsfreertos.thread.1377019431">
       <property id="_symbol" value="main_thread1"/>
       <property id="rtos.awsfreertos.thread.name" value="Main Thread1"/>
-      <property id="rtos.awsfreertos.thread.stack" value="8192"/>
+      <property id="rtos.awsfreertos.thread.stack" value="65536"/>
       <property id="rtos.awsfreertos.thread.priority" value="1"/>
       <property id="rtos.awsfreertos.thread.context" value="NULL"/>
       <property id="rtos.awsfreertos.thread.allocation" value="rtos.awsfreertos.thread.allocation.static"/>
@@ -668,7 +668,7 @@
     <config id="config.driver.ether_phy">
       <property id="config.driver.ether_phy.param_checking_enable" value="config.driver.ether_phy.param_checking_enable.bsp"/>
       <property id="config.driver.ether_phy.target_ksz8091rnb" value="config.driver.ether_phy.target_ksz8091rnb.disabled"/>
-      <property id="config.driver.ether_phy.target_ksz8041" value="config.driver.ether_phy.target_ksz8041.enabled"/>
+      <property id="config.driver.ether_phy.target_ksz8041" value="config.driver.ether_phy.target_ksz8041.disabled"/>
       <property id="config.driver.ether_phy.target_dp83620" value="config.driver.ether_phy.target_dp83620.disabled"/>
       <property id="config.driver.ether_phy.target_ics1894" value="config.driver.ether_phy.target_ics1894.disabled"/>
       <property id="config.driver.ether_phy.use_custom_phy_lsi" value="config.driver.ether_phy.use_custom_phy_lsi.enabled"/>

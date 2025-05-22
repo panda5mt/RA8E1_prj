@@ -43,12 +43,12 @@ void NULL(timer_callback_args_t * p_args);
   #define ETHER_PHY_LSI_TYPE_KIT_COMPONENT ETHER_PHY_LSI_TYPE_DEFAULT
 #endif
 
-#ifndef NULL
-void NULL(ether_phy_instance_ctrl_t * p_instance_ctrl);
+#ifndef ether_phy_target_lan8720a_initialize
+void ether_phy_target_lan8720a_initialize(ether_phy_instance_ctrl_t * p_instance_ctrl);
 #endif
 
-#ifndef NULL
-bool NULL(ether_phy_instance_ctrl_t * p_instance_ctrl, uint32_t line_speed_duplex);
+#ifndef ether_phy_target_lan8720_is_support_link_partner_ability
+bool ether_phy_target_lan8720_is_support_link_partner_ability(ether_phy_instance_ctrl_t * p_instance_ctrl, uint32_t line_speed_duplex);
 #endif
 
 /** ether_phy on ether_phy Instance. */

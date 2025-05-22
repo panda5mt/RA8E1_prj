@@ -10,7 +10,7 @@
             #define ETHER_PHY_CFG_TARGET_KSZ8091RNB_ENABLE          (0)
 #endif
 #ifndef ETHER_PHY_CFG_TARGET_KSZ8041_ENABLE
-            #define ETHER_PHY_CFG_TARGET_KSZ8041_ENABLE             (1)
+            #define ETHER_PHY_CFG_TARGET_KSZ8041_ENABLE             (0)
 #endif
 #ifndef ETHER_PHY_CFG_TARGET_DP83620_ENABLE
             #define ETHER_PHY_CFG_TARGET_DP83620_ENABLE             (0)

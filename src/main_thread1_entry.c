@@ -3,6 +3,7 @@
 
 #include "putchar_ra8usb.h"
 #include "r_ether_phy.h"
+#include "r_ether_phy_target_lan8720a.h"
 
 #define ETHER_EXAMPLE_MAXIMUM_ETHERNET_FRAME_SIZE (1514)
 #define ETHER_EXAMPLE_TRANSMIT_ETHERNET_FRAME_SIZE (60)
@@ -130,16 +131,15 @@ void main_thread1_entry(void *pvParameters)
     xprintf("ID1=%X,ID2=%X\n", id1, id2);
 
     uint32_t bsr = 0;
-    R_ETHER_PHY_Read(&g_ether_phy0_ctrl, 0x01, &bsr);
-    // if (!(bsr & (1 << 2)))
+    do
     {
-        xprintf("LINK ERROR:%X\n", bsr);
-        return;
-    }
+        R_ETHER_PHY_Read(&g_ether_phy0_ctrl, 0x01, &bsr);
+        xprintf("LINK STATUS:%X\n", bsr);
+    } while (bsr != 0x782d);
 
     /* Set user buffer to TX descriptor and enable transmission. */
     err = R_ETHER_Write(&g_ether0_ctrl, (void *)gp_send_data_internal, sizeof(gp_send_data_internal));
-    xprintf("[ETH]Write result: %d\n", err); // ← エラーコード確認
+    xprintf("[ETH]result:%d\n", err); //
     if (FSP_SUCCESS == err)
     {
         /* Wait for the transmission to complete. */
