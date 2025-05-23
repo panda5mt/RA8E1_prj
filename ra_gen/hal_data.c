@@ -248,14 +248,20 @@ ether_instance_ctrl_t g_ether0_ctrl;
 
             uint8_t g_ether0_mac_address[6] = { 0xAA,0xBB,0xCC,0xDD,0xEE,0xFF };
 
-            __attribute__((__aligned__(16))) ether_instance_descriptor_t g_ether0_tx_descriptors[1] ETHER_BUFFER_PLACE_IN_SECTION;
-            __attribute__((__aligned__(16))) ether_instance_descriptor_t g_ether0_rx_descriptors[1] ETHER_BUFFER_PLACE_IN_SECTION;
+            __attribute__((__aligned__(16))) ether_instance_descriptor_t g_ether0_tx_descriptors[4] ETHER_BUFFER_PLACE_IN_SECTION;
+            __attribute__((__aligned__(16))) ether_instance_descriptor_t g_ether0_rx_descriptors[4] ETHER_BUFFER_PLACE_IN_SECTION;
 
             __attribute__((__aligned__(32)))uint8_t g_ether0_ether_buffer0[1536]ETHER_BUFFER_PLACE_IN_SECTION;
+__attribute__((__aligned__(32)))uint8_t g_ether0_ether_buffer1[1536]ETHER_BUFFER_PLACE_IN_SECTION;
+__attribute__((__aligned__(32)))uint8_t g_ether0_ether_buffer2[1536]ETHER_BUFFER_PLACE_IN_SECTION;
+__attribute__((__aligned__(32)))uint8_t g_ether0_ether_buffer3[1536]ETHER_BUFFER_PLACE_IN_SECTION;
 
 
-            uint8_t *pp_g_ether0_ether_buffers[1] = {
+            uint8_t *pp_g_ether0_ether_buffers[4] = {
 (uint8_t *) &g_ether0_ether_buffer0[0],
+(uint8_t *) &g_ether0_ether_buffer1[0],
+(uint8_t *) &g_ether0_ether_buffer2[0],
+(uint8_t *) &g_ether0_ether_buffer3[0],
 };
 
             const ether_extended_cfg_t g_ether0_extended_cfg_t =
@@ -278,8 +284,8 @@ ether_instance_ctrl_t g_ether0_ctrl;
                 .broadcast_filter   = 0,
                 .p_mac_address      = g_ether0_mac_address,
 
-                .num_tx_descriptors = 1,
-                .num_rx_descriptors = 1,
+                .num_tx_descriptors = 4,
+                .num_rx_descriptors = 4,
 
                 .pp_ether_buffers   = pp_g_ether0_ether_buffers,
 
@@ -291,9 +297,9 @@ ether_instance_ctrl_t g_ether0_ctrl;
                 .irq                = FSP_INVALID_VECTOR,
 #endif
 
-                .interrupt_priority = (12),
+                .interrupt_priority = (4),
 
-                .p_callback         = ether_example_callback,
+                .p_callback         = NULL,
                 .p_ether_phy_instance = &g_ether_phy0,
                 .p_context          = NULL,
                 .p_extend           = &g_ether0_extended_cfg_t,

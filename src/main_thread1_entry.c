@@ -10,10 +10,10 @@
 #define ETHER_EXAMPLE_SOURCE_MAC_ADDRESS 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF
 #define ETHER_EXAMPLE_DESTINATION_MAC_ADDRESS 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
 #define ETHER_EXAMPLE_FRAME_TYPE 0x00, 0x2E
-#define ETHER_EXAMPLE_PAYLOAD 0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
-                              0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
-                              0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
-                              0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+#define ETHER_EXAMPLE_PAYLOAD 'I', '\'', 'm', ' ', 'R', 'A', '8', 'E', '1', '.', \
+                              'U', 'N', 'K', 'O', '!', 'U', 'N', 'K', 'O', '!',  \
+                              'U', 'N', 'K', 'O', '!', 'U', 'N', 'K', 'O', '!',  \
+                              'U', 'N', 'K', 'O', '!', 'U', 'N', 'K', 'O', '!'
 
 #define ETHER_EXAMPLE_FLAG_ON (1U)
 #define ETHER_EXAMPLE_FLAG_OFF (0U)
@@ -33,7 +33,6 @@ static volatile uint32_t g_example_magic_packet_done = 0;
 #define PHY_BCR_AUTONEGO_EN (1 << 12)
 #define PHY_BCR_RESTART_AUTONEGO (1 << 9)
 
-// static uint8_t gp_send_data_internal[ETHER_EXAMPLE_TRANSMIT_ETHERNET_FRAME_SIZE] =
 __attribute__((aligned(4))) uint8_t gp_send_data_internal[ETHER_EXAMPLE_TRANSMIT_ETHERNET_FRAME_SIZE] =
     {
         ETHER_EXAMPLE_DESTINATION_MAC_ADDRESS, /* Destination MAC address */
@@ -44,6 +43,7 @@ __attribute__((aligned(4))) uint8_t gp_send_data_internal[ETHER_EXAMPLE_TRANSMIT
 
 void ether_example_callback(ether_callback_args_t *p_args)
 {
+    xprintf("[ETH] IRQ event: %d\n", p_args->event);
 
     switch (p_args->event)
     {
@@ -86,33 +86,16 @@ void main_thread1_entry(void *pvParameters)
     R_BSP_PinWrite(LAN8720_nRST, BSP_IO_LEVEL_HIGH); // Start LAN8720
     xprintf("GPIO = H\n");
     vTaskDelay(pdMS_TO_TICKS(1000));
-    /* TODO: add your own code here */
 
     fsp_err_t err = FSP_SUCCESS;
-    /* Source MAC Address */
-    // static uint8_t mac_address_source[6] = {ETHER_EXAMPLE_SOURCE_MAC_ADDRESS};
     static uint8_t *p_read_buffer_nocopy;
-
     uint32_t read_data_size = 0;
-    // g_ether0_cfg.p_mac_address = mac_address_source;
-    // g_ether0_cfg.zerocopy = ETHER_ZEROCOPY_ENABLE;
-    if (g_ether0_cfg.p_callback == (void (*)(ether_callback_args_t *))ether_example_callback)
-        xprintf("[ETH]Callback OK\n");
-    /* Open the ether instance with initial configuration. */
-    vTaskDelay(pdMS_TO_TICKS(1000));
-    err = R_ETHER_Open(&g_ether0_ctrl, &g_ether0_cfg);
-    /* Handle any errors. This function should be defined by the user. */
-    assert(FSP_SUCCESS == err);
-    xprintf("[ETH] MAC");
-    for (int i = 0; i < 6; i++)
-    {
-        xprintf(":%02x", g_ether0_cfg.p_mac_address[i]);
-    }
-    xprintf("\n");
 
+    NVIC_EnableIRQ(EDMAC0_EINT_IRQn);
+    err = R_ETHER_Open(&g_ether0_ctrl, &g_ether0_cfg);
+    assert(FSP_SUCCESS == err);
     xprintf("[ETH] OPEN.\n");
 
-    vTaskDelay(pdMS_TO_TICKS(1000));
     do
     {
         err = R_ETHER_LinkProcess(&g_ether0_ctrl);

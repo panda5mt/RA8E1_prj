@@ -71,8 +71,8 @@ extern const ether_instance_t g_ether0;
 extern ether_instance_ctrl_t g_ether0_ctrl;
 extern const ether_cfg_t g_ether0_cfg;
 
-#ifndef ether_example_callback
-void ether_example_callback(ether_callback_args_t * p_args);
+#ifndef NULL
+void NULL(ether_callback_args_t * p_args);
 #endif
 #if OSPI_B_CFG_DMAC_SUPPORT_ENABLE
               #include "r_dmac.h"

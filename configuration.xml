@@ -415,16 +415,16 @@
       <property id="module.driver.ether.multicast" value="module.driver.ether.multicast.1"/>
       <property id="module.driver.ether.promiscuous" value="module.driver.ether.promiscuous.0"/>
       <property id="module.driver.ether.broadcast_filter" value="0"/>
-      <property id="module.driver.ether.num_tx_descriptors" value="1"/>
-      <property id="module.driver.ether.num_rx_descriptors" value="1"/>
+      <property id="module.driver.ether.num_tx_descriptors" value="4"/>
+      <property id="module.driver.ether.num_rx_descriptors" value="4"/>
       <property id="module.driver.ether.allocate_rx_buffer" value="module.driver.ether.allocate_rx_buffer.1"/>
       <property id="module.driver.ether.ether_buffer_size" value="1514"/>
       <property id="module.driver.ether.padding" value="module.driver.ether.padding.0"/>
       <property id="module.driver.ether.padding_offset" value="0"/>
       <property id="module.driver.ether.eesr_event_mask" value="module.driver.ether.eesr_event_mask.rfof,module.driver.ether.eesr_event_mask.rde,module.driver.ether.eesr_event_mask.fr,module.driver.ether.eesr_event_mask.tfuf,module.driver.ether.eesr_event_mask.tde,module.driver.ether.eesr_event_mask.tc"/>
       <property id="module.driver.ether.ecsr_event_mask" value=""/>
-      <property id="module.driver.ether.interrupt_priority" value="board.icu.common.irq.priority12"/>
-      <property id="module.driver.ether.p_callback" value="ether_example_callback"/>
+      <property id="module.driver.ether.interrupt_priority" value="board.icu.common.irq.priority4"/>
+      <property id="module.driver.ether.p_callback" value="NULL"/>
     </module>
     <module id="module.driver.ether_phy_on_ether_phy.374025461">
       <property id="module.driver.ether_phy.name" value="g_ether_phy0"/>
