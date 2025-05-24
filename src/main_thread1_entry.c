@@ -82,8 +82,6 @@ void main_thread1_entry(void *pvParameters)
     vTaskDelay(pdMS_TO_TICKS(300));
 
     fsp_err_t err = FSP_SUCCESS;
-    static uint8_t *p_read_buffer_nocopy;
-    uint32_t read_data_size = 0;
 
     err = R_ETHER_Open(&g_ether0_ctrl, &g_ether0_cfg);
     assert(FSP_SUCCESS == err);
@@ -112,13 +110,15 @@ void main_thread1_entry(void *pvParameters)
     }
 
     /* Get receive buffer from RX descriptor. */
-    // err = R_ETHER_Read(&g_ether0_ctrl, (void *)&p_read_buffer_nocopy, &read_data_size);
-    // assert(FSP_SUCCESS == err);
-    // /* Process received data here */
-    // /* Release receive buffer to RX descriptor. */
-    // err = R_ETHER_BufferRelease(&g_ether0_ctrl);
-    // assert(FSP_SUCCESS == err);
-    // xprintf("[ETH]RCV OK!\n");
+    static uint8_t *p_read_buffer_nocopy;
+    uint32_t read_data_size = 0;
+    err = R_ETHER_Read(&g_ether0_ctrl, (void *)&p_read_buffer_nocopy, &read_data_size);
+    assert(FSP_SUCCESS == err);
+    /* Process received data here */
+    /* Release receive buffer to RX descriptor. */
+    err = R_ETHER_BufferRelease(&g_ether0_ctrl);
+    assert(FSP_SUCCESS == err);
+    xprintf("[ETH]RCV OK!\n");
     // /* Disable transmission and receive function and close the ether instance. */
     R_ETHER_Close(&g_ether0_ctrl);
 
