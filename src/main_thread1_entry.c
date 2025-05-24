@@ -7,7 +7,7 @@
 #include "ra/fsp/src/bsp/cmsis/Device/RENESAS/Include/R7FA8E1AF.h"
 
 #define ETHER_EXAMPLE_MAXIMUM_ETHERNET_FRAME_SIZE (1514)
-#define ETHER_EXAMPLE_TRANSMIT_ETHERNET_FRAME_SIZE (1514 * 2)
+#define ETHER_EXAMPLE_TRANSMIT_ETHERNET_FRAME_SIZE (1514)
 #define ETHER_EXAMPLE_SOURCE_MAC_ADDRESS 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF
 #define ETHER_EXAMPLE_DESTINATION_MAC_ADDRESS 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
 #define ETHER_EXAMPLE_FRAME_TYPE 0x00, 0x2E
@@ -47,21 +47,21 @@ void ether_example_callback(ether_callback_args_t *p_args)
     switch (p_args->event)
     {
     case ETHER_EVENT_TX_COMPLETE:
-        xprintf("[ETH] TX COMPLETE.\n");
+        // xprintf("[ETH] TX COMPLETE.\n");
         g_example_transfer_complete = 1;
         break;
 
     case ETHER_EVENT_RX_COMPLETE:
-        xprintf("[ETH] RX COMPLETE.\n");
+        // xprintf("[ETH] RX COMPLETE.\n");
         g_example_receive_complete = 1;
         break;
 
     case ETHER_EVENT_LINK_ON:
-        xprintf("[ETH] LINK ON.\n");
+        // xprintf("[ETH] LINK ON.\n");
         break;
 
     default:
-        xprintf("[ETH] Event: %d\n", p_args->event);
+        // xprintf("[ETH] Event: %d\n", p_args->event);
         break;
     }
 }
