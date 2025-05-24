@@ -74,11 +74,11 @@ void main_thread1_entry(void *pvParameters)
     R_BSP_PinAccessEnable();
     R_BSP_PinWrite(LAN8720_nRST, BSP_IO_LEVEL_LOW); // Reset LAN8720
     xprintf("GPIO = L\n");
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(300));
 
     R_BSP_PinWrite(LAN8720_nRST, BSP_IO_LEVEL_HIGH); // Start LAN8720
     xprintf("GPIO = H\n");
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(300));
 
     fsp_err_t err = FSP_SUCCESS;
     static uint8_t *p_read_buffer_nocopy;
