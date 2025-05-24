@@ -410,7 +410,7 @@
       <property id="module.driver.ether.name" value="g_ether0"/>
       <property id="module.driver.ether.channel" value="module.driver.ether.channel.0"/>
       <property id="module.driver.ether.mac_address" value="AA:BB:CC:DD:EE:FF"/>
-      <property id="module.driver.ether.zerocopy" value="module.driver.ether.zerocopy.1"/>
+      <property id="module.driver.ether.zerocopy" value="module.driver.ether.zerocopy.0"/>
       <property id="module.driver.ether.flow_control" value="module.driver.ether.flow_control.1"/>
       <property id="module.driver.ether.multicast" value="module.driver.ether.multicast.1"/>
       <property id="module.driver.ether.promiscuous" value="module.driver.ether.promiscuous.0"/>
@@ -421,10 +421,10 @@
       <property id="module.driver.ether.ether_buffer_size" value="1514"/>
       <property id="module.driver.ether.padding" value="module.driver.ether.padding.0"/>
       <property id="module.driver.ether.padding_offset" value="0"/>
-      <property id="module.driver.ether.eesr_event_mask" value="module.driver.ether.eesr_event_mask.rfof,module.driver.ether.eesr_event_mask.rde,module.driver.ether.eesr_event_mask.fr,module.driver.ether.eesr_event_mask.tfuf,module.driver.ether.eesr_event_mask.tde,module.driver.ether.eesr_event_mask.tc"/>
+      <property id="module.driver.ether.eesr_event_mask" value="module.driver.ether.eesr_event_mask.tc,module.driver.ether.eesr_event_mask.twb"/>
       <property id="module.driver.ether.ecsr_event_mask" value=""/>
-      <property id="module.driver.ether.interrupt_priority" value="board.icu.common.irq.priority4"/>
-      <property id="module.driver.ether.p_callback" value="NULL"/>
+      <property id="module.driver.ether.interrupt_priority" value="board.icu.common.irq.priority8"/>
+      <property id="module.driver.ether.p_callback" value="ether_example_callback"/>
     </module>
     <module id="module.driver.ether_phy_on_ether_phy.374025461">
       <property id="module.driver.ether_phy.name" value="g_ether_phy0"/>
@@ -663,7 +663,7 @@
       <property id="config.driver.ether.param_checking_enable" value="config.driver.ether.param_checking_enable.bsp"/>
       <property id="config.driver.ether.link_present" value="config.driver.ether.link_present.0"/>
       <property id="config.driver.ether.use_linksta" value="config.driver.ether.use_linksta.0"/>
-      <property id="config.driver.ether.interrupt_event_backword_compatibility" value="config.driver.ether.interrupt_event_backword_compatibility.enabled"/>
+      <property id="config.driver.ether.interrupt_event_backword_compatibility" value="config.driver.ether.interrupt_event_backword_compatibility.disabled"/>
     </config>
     <config id="config.driver.ether_phy">
       <property id="config.driver.ether_phy.param_checking_enable" value="config.driver.ether_phy.param_checking_enable.bsp"/>

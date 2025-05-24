@@ -4,16 +4,18 @@
 #include "putchar_ra8usb.h"
 #include "r_ether_phy.h"
 #include "r_ether_phy_target_lan8720a.h"
+#include "ra/fsp/src/bsp/cmsis/Device/RENESAS/Include/R7FA8E1AF.h"
 
 #define ETHER_EXAMPLE_MAXIMUM_ETHERNET_FRAME_SIZE (1514)
-#define ETHER_EXAMPLE_TRANSMIT_ETHERNET_FRAME_SIZE (60)
+#define ETHER_EXAMPLE_TRANSMIT_ETHERNET_FRAME_SIZE (1514 * 2)
 #define ETHER_EXAMPLE_SOURCE_MAC_ADDRESS 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF
 #define ETHER_EXAMPLE_DESTINATION_MAC_ADDRESS 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
 #define ETHER_EXAMPLE_FRAME_TYPE 0x00, 0x2E
 #define ETHER_EXAMPLE_PAYLOAD 'I', '\'', 'm', ' ', 'R', 'A', '8', 'E', '1', '.', \
                               'U', 'N', 'K', 'O', '!', 'U', 'N', 'K', 'O', '!',  \
                               'U', 'N', 'K', 'O', '!', 'U', 'N', 'K', 'O', '!',  \
-                              'U', 'N', 'K', 'O', '!', 'U', 'N', 'K', 'O', '!'
+                              'U', 'N', 'K', 'O', '!', 'U', 'N', 'K', 'O', '!',  \
+                              'U', 'N', 'K', 'O', '!'
 
 #define ETHER_EXAMPLE_FLAG_ON (1U)
 #define ETHER_EXAMPLE_FLAG_OFF (0U)
@@ -33,46 +35,37 @@ static volatile uint32_t g_example_magic_packet_done = 0;
 #define PHY_BCR_AUTONEGO_EN (1 << 12)
 #define PHY_BCR_RESTART_AUTONEGO (1 << 9)
 
-__attribute__((aligned(4))) uint8_t gp_send_data_internal[ETHER_EXAMPLE_TRANSMIT_ETHERNET_FRAME_SIZE] =
-    {
-        ETHER_EXAMPLE_DESTINATION_MAC_ADDRESS, /* Destination MAC address */
-        ETHER_EXAMPLE_SOURCE_MAC_ADDRESS,      /* Source MAC address */
-        ETHER_EXAMPLE_FRAME_TYPE,              /* Type field */
-        ETHER_EXAMPLE_PAYLOAD                  /* Payload value (46byte) */
+__attribute__((aligned(32))) uint8_t gp_send_data_internal[ETHER_EXAMPLE_TRANSMIT_ETHERNET_FRAME_SIZE] = {
+    ETHER_EXAMPLE_DESTINATION_MAC_ADDRESS, /* Destination MAC address */
+    ETHER_EXAMPLE_SOURCE_MAC_ADDRESS,      /* Source MAC address */
+    ETHER_EXAMPLE_FRAME_TYPE,              /* Type field */
+    ETHER_EXAMPLE_PAYLOAD                  /* Payload value (46byte) */
 };
 
 void ether_example_callback(ether_callback_args_t *p_args)
 {
-    xprintf("[ETH] IRQ event: %d\n", p_args->event);
-
     switch (p_args->event)
     {
-    case ETHER_EVENT_INTERRUPT:
-    {
-        if (ETHER_EXAMPLE_ETHER_ISR_EC_MPD_MASK == (p_args->status_ecsr & ETHER_EXAMPLE_ETHER_ISR_EC_MPD_MASK))
-        {
-            xprintf("[ETH]MAGIC.\n");
-            g_example_magic_packet_done = ETHER_EXAMPLE_FLAG_ON;
-        }
-        if (ETHER_EXAMPLE_ETHER_ISR_EE_TC_MASK == (p_args->status_eesr & ETHER_EXAMPLE_ETHER_ISR_EE_TC_MASK))
-        {
-            xprintf("[ETH]TRANSFER.\n");
-            g_example_transfer_complete = ETHER_EXAMPLE_FLAG_ON;
-        }
-        if (ETHER_EXAMPLE_ETHER_ISR_EE_FR_MASK == (p_args->status_eesr & ETHER_EXAMPLE_ETHER_ISR_EE_FR_MASK))
-        {
-            xprintf("[ETH]RECEIVE.\n");
-            g_example_receive_complete = ETHER_EXAMPLE_FLAG_ON;
-        }
+    case ETHER_EVENT_TX_COMPLETE:
+        xprintf("[ETH] TX COMPLETE.\n");
+        g_example_transfer_complete = 1;
+        break;
 
+    case ETHER_EVENT_RX_COMPLETE:
+        xprintf("[ETH] RX COMPLETE.\n");
+        g_example_receive_complete = 1;
+        break;
+
+    case ETHER_EVENT_LINK_ON:
+        xprintf("[ETH] LINK ON.\n");
+        break;
+
+    default:
+        xprintf("[ETH] Event: %d\n", p_args->event);
         break;
     }
-    default:
-    {
-        xprintf("[ETH]ANOTHER CALLBACK.\n");
-    }
-    }
 }
+
 /* Main Thread1 entry function */
 /* pvParameters contains TaskHandle_t */
 void main_thread1_entry(void *pvParameters)
@@ -91,7 +84,7 @@ void main_thread1_entry(void *pvParameters)
     static uint8_t *p_read_buffer_nocopy;
     uint32_t read_data_size = 0;
 
-    NVIC_EnableIRQ(EDMAC0_EINT_IRQn);
+    // NVIC_EnableIRQ(EDMAC0_EINT_IRQn);
     err = R_ETHER_Open(&g_ether0_ctrl, &g_ether0_cfg);
     assert(FSP_SUCCESS == err);
     xprintf("[ETH] OPEN.\n");
@@ -120,6 +113,7 @@ void main_thread1_entry(void *pvParameters)
         xprintf("LINK STATUS:%X\n", bsr);
     } while (bsr != 0x782d);
 
+    g_example_transfer_complete = 0;
     /* Set user buffer to TX descriptor and enable transmission. */
     err = R_ETHER_Write(&g_ether0_ctrl, (void *)gp_send_data_internal, sizeof(gp_send_data_internal));
     xprintf("[ETH]result:%d\n", err); //
@@ -132,6 +126,7 @@ void main_thread1_entry(void *pvParameters)
             ;
         }
     }
+    xprintf("[ETH]OK!\n");
     /* Get receive buffer from RX descriptor. */
     err = R_ETHER_Read(&g_ether0_ctrl, (void *)&p_read_buffer_nocopy, &read_data_size);
     assert(FSP_SUCCESS == err);

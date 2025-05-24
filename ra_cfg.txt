@@ -450,7 +450,7 @@ FSP Configuration
     Parameter Checking: Default (BSP)
     ET0_LINKSTA Pin Status Flag: Fall -> Rise
     Link Signal Change Flag: Unused
-    Interrupt event backward compatibility: Keep compatibility
+    Interrupt event backward compatibility: Do not keep compatibility
     
   Module "Ethernet (r_ether_phy)"
     Parameter Checking: Default (BSP)
@@ -689,7 +689,7 @@ FSP Configuration
       General: Name: g_ether0
       General: Channel: 0
       General: MAC address: AA:BB:CC:DD:EE:FF
-      General: Zero-copy Mode: Enable
+      General: Zero-copy Mode: Disable
       General: Flow control functionality: Enable
       Filters: Multicast Mode: Enable
       Filters: Promiscuous Mode: Disable
@@ -700,10 +700,10 @@ FSP Configuration
       Buffers: Buffer size: 1514
       Buffers: Padding size: Disable
       Buffers: Padding offset: 0
-      Interrupts: EESR event: RFOF, RDE, FR, TFUF, TDE, TC
+      Interrupts: EESR event: TC, TWB
       Interrupts: ECSR event: 
-      Interrupts: Interrupt priority: Priority 4
-      Interrupts: Callback: NULL
+      Interrupts: Interrupt priority: Priority 8
+      Interrupts: Callback: ether_example_callback
       
       Instance "g_ether_phy0 Ethernet (r_ether_phy)"
         Name: g_ether_phy0

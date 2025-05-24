@@ -255,27 +255,35 @@ ether_instance_ctrl_t g_ether0_ctrl;
 __attribute__((__aligned__(32)))uint8_t g_ether0_ether_buffer1[1536]ETHER_BUFFER_PLACE_IN_SECTION;
 __attribute__((__aligned__(32)))uint8_t g_ether0_ether_buffer2[1536]ETHER_BUFFER_PLACE_IN_SECTION;
 __attribute__((__aligned__(32)))uint8_t g_ether0_ether_buffer3[1536]ETHER_BUFFER_PLACE_IN_SECTION;
+__attribute__((__aligned__(32)))uint8_t g_ether0_ether_buffer4[1536]ETHER_BUFFER_PLACE_IN_SECTION;
+__attribute__((__aligned__(32)))uint8_t g_ether0_ether_buffer5[1536]ETHER_BUFFER_PLACE_IN_SECTION;
+__attribute__((__aligned__(32)))uint8_t g_ether0_ether_buffer6[1536]ETHER_BUFFER_PLACE_IN_SECTION;
+__attribute__((__aligned__(32)))uint8_t g_ether0_ether_buffer7[1536]ETHER_BUFFER_PLACE_IN_SECTION;
 
 
-            uint8_t *pp_g_ether0_ether_buffers[4] = {
+            uint8_t *pp_g_ether0_ether_buffers[8] = {
 (uint8_t *) &g_ether0_ether_buffer0[0],
 (uint8_t *) &g_ether0_ether_buffer1[0],
 (uint8_t *) &g_ether0_ether_buffer2[0],
 (uint8_t *) &g_ether0_ether_buffer3[0],
+(uint8_t *) &g_ether0_ether_buffer4[0],
+(uint8_t *) &g_ether0_ether_buffer5[0],
+(uint8_t *) &g_ether0_ether_buffer6[0],
+(uint8_t *) &g_ether0_ether_buffer7[0],
 };
 
             const ether_extended_cfg_t g_ether0_extended_cfg_t =
             {
                 .p_rx_descriptors   = g_ether0_rx_descriptors,
                 .p_tx_descriptors   = g_ether0_tx_descriptors,
-                .eesr_event_filter     = (ETHER_EESR_EVENT_MASK_RFOF | ETHER_EESR_EVENT_MASK_RDE | ETHER_EESR_EVENT_MASK_FR | ETHER_EESR_EVENT_MASK_TFUF | ETHER_EESR_EVENT_MASK_TDE | ETHER_EESR_EVENT_MASK_TC |  0U),
+                .eesr_event_filter     = (ETHER_EESR_EVENT_MASK_TC | ETHER_EESR_EVENT_MASK_TWB |  0U),
                 .ecsr_event_filter     = ( 0U),
             };
 
             const ether_cfg_t g_ether0_cfg =
             {
                 .channel            = 0,
-                .zerocopy           = ETHER_ZEROCOPY_ENABLE,
+                .zerocopy           = ETHER_ZEROCOPY_DISABLE,
                 .multicast          = ETHER_MULTICAST_ENABLE,
                 .promiscuous        = ETHER_PROMISCUOUS_DISABLE,
                 .flow_control       = ETHER_FLOW_CONTROL_ENABLE,
@@ -297,9 +305,9 @@ __attribute__((__aligned__(32)))uint8_t g_ether0_ether_buffer3[1536]ETHER_BUFFER
                 .irq                = FSP_INVALID_VECTOR,
 #endif
 
-                .interrupt_priority = (4),
+                .interrupt_priority = (8),
 
-                .p_callback         = NULL,
+                .p_callback         = ether_example_callback,
                 .p_ether_phy_instance = &g_ether_phy0,
                 .p_context          = NULL,
                 .p_extend           = &g_ether0_extended_cfg_t,
