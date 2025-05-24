@@ -276,7 +276,7 @@ __attribute__((__aligned__(32)))uint8_t g_ether0_ether_buffer7[1536]ETHER_BUFFER
             {
                 .p_rx_descriptors   = g_ether0_rx_descriptors,
                 .p_tx_descriptors   = g_ether0_tx_descriptors,
-                .eesr_event_filter     = (ETHER_EESR_EVENT_MASK_TC | ETHER_EESR_EVENT_MASK_TWB |  0U),
+                .eesr_event_filter     = (ETHER_EESR_EVENT_MASK_FR | ETHER_EESR_EVENT_MASK_TC | ETHER_EESR_EVENT_MASK_TWB |  0U),
                 .ecsr_event_filter     = ( 0U),
             };
 

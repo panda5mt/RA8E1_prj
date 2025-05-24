@@ -19,17 +19,11 @@
 
 #define ETHER_EXAMPLE_FLAG_ON (1U)
 #define ETHER_EXAMPLE_FLAG_OFF (0U)
-#define ETHER_EXAMPLE_ETHER_ISR_EE_FR_MASK (1UL << 18)
-#define ETHER_EXAMPLE_ETHER_ISR_EE_TC_MASK (1UL << 21)
-#define ETHER_EXAMPLE_ETHER_ISR_EC_MPD_MASK (1UL << 1)
+
 #define ETHER_EXAMPLE_ALIGNMENT_32_BYTE (32)
 static volatile uint32_t g_example_receive_complete = 0;
 static volatile uint32_t g_example_transfer_complete = 0;
 static volatile uint32_t g_example_link_on = 0;
-#define PHY_REG_BCR 0x00 // Basic Control Register
-#define PHY_REG_BSR 0x01 // Basic Status Register
-#define PHY_REG_PHYID1 0x02
-#define PHY_REG_PHYID2 0x03
 
 #define PHY_BCR_RESET (1 << 15)
 #define PHY_BCR_AUTONEGO_EN (1 << 12)
@@ -112,9 +106,19 @@ void main_thread1_entry(void *pvParameters)
     /* Get receive buffer from RX descriptor. */
     static uint8_t *p_read_buffer_nocopy;
     uint32_t read_data_size = 0;
+    g_example_receive_complete = 0;
     err = R_ETHER_Read(&g_ether0_ctrl, (void *)&p_read_buffer_nocopy, &read_data_size);
     assert(FSP_SUCCESS == err);
     /* Process received data here */
+    if (FSP_SUCCESS == err)
+    {
+        /* Wait for the transmission to complete. */
+        /* Data array should not change in zero copy mode until transfer complete. */
+        while (ETHER_EXAMPLE_FLAG_ON != g_example_receive_complete)
+        {
+            ;
+        }
+    }
     /* Release receive buffer to RX descriptor. */
     err = R_ETHER_BufferRelease(&g_ether0_ctrl);
     assert(FSP_SUCCESS == err);

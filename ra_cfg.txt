@@ -700,7 +700,7 @@ FSP Configuration
       Buffers: Buffer size: 1514
       Buffers: Padding size: Disable
       Buffers: Padding offset: 0
-      Interrupts: EESR event: TC, TWB
+      Interrupts: EESR event: FR, TC, TWB
       Interrupts: ECSR event: 
       Interrupts: Interrupt priority: Priority 8
       Interrupts: Callback: ether_example_callback
