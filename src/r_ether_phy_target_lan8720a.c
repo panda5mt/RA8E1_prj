@@ -64,9 +64,7 @@ bool ether_phy_target_lan8720_is_support_link_partner_ability(ether_phy_instance
 void ether_phy_target_lan8720a_initialize(ether_phy_instance_ctrl_t *p_instance_ctrl)
 {
     uint32_t reg = 0x00;
-    R_ETHER_PHY_Read(p_instance_ctrl, ETHER_PHY_REG_BASIC_CONTROL, &reg); // read basic control reg
-    reg |= 0x20;
-    // R_ETHER_PHY_Write(p_instance_ctrl, ETHER_PHY_REG_BASIC_CONTROL, &reg); // restart Auto-Negotiation
+    R_ETHER_PHY_Read(p_instance_ctrl, ETHER_PHY_REG_BASIC_CONTROL, &reg);  // read basic control reg
     R_ETHER_PHY_Read(p_instance_ctrl, ETHER_PHY_REG_BASIC_STATUS, &reg);   // read basic statusp reg
     R_ETHER_PHY_Read(p_instance_ctrl, ETHER_PHY_REG_INTERRUPT_FLAG, &reg); // clear interrupt
 
