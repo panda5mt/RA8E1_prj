@@ -80,7 +80,7 @@ def main():
     CHUNK_SIZE = 128
 
     ih = IntelHex()
-    ih.loadhex(args.file)
+    ih.fromfile(args.file, format='hex' if args.file.lower().endswith('.hex') or args.file.lower().endswith('.ihex') else 'srec')
     all_addrs = sorted(ih.addresses())
 
     # Flash領域に限定
