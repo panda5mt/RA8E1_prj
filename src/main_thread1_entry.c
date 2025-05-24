@@ -2,9 +2,7 @@
 #include "hal_data.h"
 
 #include "putchar_ra8usb.h"
-#include "r_ether_phy.h"
 #include "r_ether_phy_target_lan8720a.h"
-#include "ra/fsp/src/bsp/cmsis/Device/RENESAS/Include/R7FA8E1AF.h"
 
 #define ETHER_EXAMPLE_MAXIMUM_ETHERNET_FRAME_SIZE (1514)
 #define ETHER_EXAMPLE_TRANSMIT_ETHERNET_FRAME_SIZE (1514)
