@@ -25,7 +25,7 @@
 #define ETHER_EXAMPLE_ALIGNMENT_32_BYTE (32)
 static volatile uint32_t g_example_receive_complete = 0;
 static volatile uint32_t g_example_transfer_complete = 0;
-static volatile uint32_t g_example_magic_packet_done = 0;
+static volatile uint32_t g_example_link_on = 0;
 #define PHY_REG_BCR 0x00 // Basic Control Register
 #define PHY_REG_BSR 0x01 // Basic Status Register
 #define PHY_REG_PHYID1 0x02
@@ -58,6 +58,7 @@ void ether_example_callback(ether_callback_args_t *p_args)
 
     case ETHER_EVENT_LINK_ON:
         // xprintf("[ETH] LINK ON.\n");
+        g_example_link_on = 1;
         break;
 
     default:
@@ -84,7 +85,6 @@ void main_thread1_entry(void *pvParameters)
     static uint8_t *p_read_buffer_nocopy;
     uint32_t read_data_size = 0;
 
-    // NVIC_EnableIRQ(EDMAC0_EINT_IRQn);
     err = R_ETHER_Open(&g_ether0_ctrl, &g_ether0_cfg);
     assert(FSP_SUCCESS == err);
     xprintf("[ETH] OPEN.\n");
@@ -92,48 +92,34 @@ void main_thread1_entry(void *pvParameters)
     do
     {
         err = R_ETHER_LinkProcess(&g_ether0_ctrl);
-    } while (FSP_SUCCESS != err);
+    } while (g_example_link_on != 1);
 
-    xprintf("[ETH]LINK OK.\n");
-
-    uint32_t id1 = 0, id2 = 0;
-
-    if (R_ETHER_PHY_Read(&g_ether_phy0_ctrl, 0x02, &id1) != FSP_SUCCESS ||
-        R_ETHER_PHY_Read(&g_ether_phy0_ctrl, 0x03, &id2) != FSP_SUCCESS)
+    for (int i = 0; i < 10; i++)
     {
-        xprintf("PHY init fail"); // 読み出し失敗
-    }
-    xprintf("ID1=%X,ID2=%X\n", id1, id2);
-
-    uint32_t bsr = 0;
-    do
-    {
-        R_ETHER_PHY_Read(&g_ether_phy0_ctrl, 0x01, &bsr);
-        xprintf("LINK STATUS:%X\n", bsr);
-    } while (bsr != 0x782d);
-
-    g_example_transfer_complete = 0;
-    /* Set user buffer to TX descriptor and enable transmission. */
-    err = R_ETHER_Write(&g_ether0_ctrl, (void *)gp_send_data_internal, sizeof(gp_send_data_internal));
-    xprintf("[ETH]result:%d\n", err); //
-    if (FSP_SUCCESS == err)
-    {
-        /* Wait for the transmission to complete. */
-        /* Data array should not change in zero copy mode until transfer complete. */
-        while (ETHER_EXAMPLE_FLAG_ON != g_example_transfer_complete)
+        g_example_transfer_complete = 0;
+        /* Set user buffer to TX descriptor and enable transmission. */
+        err = R_ETHER_Write(&g_ether0_ctrl, (void *)gp_send_data_internal, sizeof(gp_send_data_internal));
+        if (FSP_SUCCESS == err)
         {
-            ;
+            /* Wait for the transmission to complete. */
+            /* Data array should not change in zero copy mode until transfer complete. */
+            while (ETHER_EXAMPLE_FLAG_ON != g_example_transfer_complete)
+            {
+                ;
+            }
         }
+        xprintf("[ETH]OK!\n");
     }
-    xprintf("[ETH]OK!\n");
+
     /* Get receive buffer from RX descriptor. */
-    err = R_ETHER_Read(&g_ether0_ctrl, (void *)&p_read_buffer_nocopy, &read_data_size);
-    assert(FSP_SUCCESS == err);
-    /* Process received data here */
-    /* Release receive buffer to RX descriptor. */
-    err = R_ETHER_BufferRelease(&g_ether0_ctrl);
-    assert(FSP_SUCCESS == err);
-    /* Disable transmission and receive function and close the ether instance. */
+    // err = R_ETHER_Read(&g_ether0_ctrl, (void *)&p_read_buffer_nocopy, &read_data_size);
+    // assert(FSP_SUCCESS == err);
+    // /* Process received data here */
+    // /* Release receive buffer to RX descriptor. */
+    // err = R_ETHER_BufferRelease(&g_ether0_ctrl);
+    // assert(FSP_SUCCESS == err);
+    // xprintf("[ETH]RCV OK!\n");
+    // /* Disable transmission and receive function and close the ether instance. */
     R_ETHER_Close(&g_ether0_ctrl);
 
     while (1)
