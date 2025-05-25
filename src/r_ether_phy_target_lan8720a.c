@@ -68,11 +68,11 @@ void ether_phy_target_lan8720a_initialize(ether_phy_instance_ctrl_t *p_instance_
     R_ETHER_PHY_Read(p_instance_ctrl, ETHER_PHY_REG_BASIC_STATUS, &reg);   // read basic statusp reg
     R_ETHER_PHY_Read(p_instance_ctrl, ETHER_PHY_REG_INTERRUPT_FLAG, &reg); // clear interrupt
 
-    do
-    {
-        reg = 0;
-        R_ETHER_PHY_Read(&g_ether_phy0_ctrl, 0x02, &reg);
-    } while (reg != 7); // PHY_ID=7 : Microchip
+    // do
+    // {
+    //     reg = 0;
+    //     R_ETHER_PHY_Read(&g_ether_phy0_ctrl, 0x02, &reg);
+    // } while (reg != 7); // PHY_ID=7 : Microchip
 
 } /* End of function ether_phy_targets_initialize() */
 
