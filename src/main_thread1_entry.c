@@ -2,6 +2,7 @@
 #include "hal_data.h"
 
 #include "putchar_ra8usb.h"
+#include "r_ether_api.h"
 #include "r_ether_phy_target_lan8720a.h"
 
 #define ETHER_EXAMPLE_MAXIMUM_ETHERNET_FRAME_SIZE (1514)
@@ -39,22 +40,28 @@ void ether_example_callback(ether_callback_args_t *p_args)
     switch (p_args->event)
     {
     case ETHER_EVENT_TX_COMPLETE:
-        // xprintf("[ETH] TX COMPLETE.\n");
+        // xprintf("[ISR] TX COMPLETE.\n");
         g_example_transfer_complete = 1;
         break;
 
     case ETHER_EVENT_RX_COMPLETE:
-        // xprintf("[ETH] RX COMPLETE.\n");
+        // xprintf("[ISR] RX COMPLETE.\n");
         g_example_receive_complete = 1;
         break;
 
     case ETHER_EVENT_LINK_ON:
-        // xprintf("[ETH] LINK ON.\n");
+        // xprintf("[ISR] LINK ON.\n");
         g_example_link_on = 1;
+        break;
+    case ETHER_EVENT_LINK_OFF:
+        // xprintf("[ISR] LINK OFF.\n");
+        g_example_link_on = 0;
         break;
 
     default:
-        // xprintf("[ETH] Event: %d\n", p_args->event);
+        xprintf("[ISR] Event: %d\n", p_args->event);
+        g_example_link_on = 0;
+        g_example_transfer_complete = 0;
         break;
     }
 }
@@ -64,6 +71,8 @@ void ether_example_callback(ether_callback_args_t *p_args)
 void main_thread1_entry(void *pvParameters)
 {
     FSP_PARAMETER_NOT_USED(pvParameters);
+
+    // START:LAN8720A Reset
     R_BSP_PinAccessEnable();
     R_BSP_PinWrite(LAN8720_nRST, BSP_IO_LEVEL_LOW); // Reset LAN8720
     xprintf("GPIO = L\n");
@@ -72,6 +81,7 @@ void main_thread1_entry(void *pvParameters)
     R_BSP_PinWrite(LAN8720_nRST, BSP_IO_LEVEL_HIGH); // Start LAN8720
     xprintf("GPIO = H\n");
     vTaskDelay(pdMS_TO_TICKS(300));
+    // END:LAN8720A Reset
 
     fsp_err_t err = FSP_SUCCESS;
 
@@ -79,13 +89,23 @@ void main_thread1_entry(void *pvParameters)
     assert(FSP_SUCCESS == err);
     xprintf("[ETH] OPEN.\n");
 
+    // Check Link ON
+    g_example_link_on = 0;
     do
     {
         err = R_ETHER_LinkProcess(&g_ether0_ctrl);
+        if (err == FSP_SUCCESS || g_example_link_on == 1)
+        {
+            g_example_link_on = 1;
+            break;
+        }
     } while (g_example_link_on != 1);
+
+    xprintf("LINK ON\n");
 
     for (int i = 0; i < 10; i++)
     {
+
         g_example_transfer_complete = 0;
         /* Set user buffer to TX descriptor and enable transmission. */
         err = R_ETHER_Write(&g_ether0_ctrl, (void *)gp_send_data_internal, sizeof(gp_send_data_internal));
@@ -117,6 +137,8 @@ void main_thread1_entry(void *pvParameters)
             ;
         }
     }
+    vTaskDelay(pdMS_TO_TICKS(1));
+
     /* Release receive buffer to RX descriptor. */
     err = R_ETHER_BufferRelease(&g_ether0_ctrl);
     assert(FSP_SUCCESS == err);
