@@ -865,8 +865,7 @@ int32_t reg_write(uint32_t addr, // Camera's hw address
     }
     if (I2C_MASTER_EVENT_ABORTED == g_i2c_callback_event)
     {
-        xprintf("I2C FAIL\n");
-
+        xprintf("[I2C]Write FAIL\n");
         vTaskSuspend(NULL);
         //__BKPT(0);
     }
