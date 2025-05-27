@@ -622,7 +622,7 @@
       <property id="_symbol" value="main_thread1"/>
       <property id="rtos.awsfreertos.thread.name" value="Main Thread1"/>
       <property id="rtos.awsfreertos.thread.stack" value="65536"/>
-      <property id="rtos.awsfreertos.thread.priority" value="1"/>
+      <property id="rtos.awsfreertos.thread.priority" value="3"/>
       <property id="rtos.awsfreertos.thread.context" value="NULL"/>
       <property id="rtos.awsfreertos.thread.allocation" value="rtos.awsfreertos.thread.allocation.static"/>
       <property id="rtos.awsfreertos.thread.secure_context" value="rtos.awsfreertos.thread.secure_context.enable"/>

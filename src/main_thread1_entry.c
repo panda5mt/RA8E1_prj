@@ -144,6 +144,7 @@ void main_thread1_entry(void *pvParameters)
     // /* Disable transmission and receive function and close the ether instance. */
     R_ETHER_Close(&g_ether0_ctrl);
     xprintf("[ETH]Close.\n");
+    vTaskSuspend(NULL);
     while (1)
     {
         vTaskDelay(pdMS_TO_TICKS(1000));
