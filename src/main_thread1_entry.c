@@ -135,7 +135,7 @@ void main_thread1_entry(void *pvParameters)
             ;
         }
     }
-    vTaskDelay(pdMS_TO_TICKS(1));
+    vTaskDelay(pdMS_TO_TICKS(10));
     xprintf("[ETH]RCV OK!\n");
     /* Release receive buffer to RX descriptor. */
     err = R_ETHER_BufferRelease(&g_ether0_ctrl);
