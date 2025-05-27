@@ -99,7 +99,7 @@ void main_thread1_entry(void *pvParameters)
 
     xprintf("LINK ON\n");
 
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 100; i++)
     {
         g_example_transfer_complete = 0;
         /* Set user buffer to TX descriptor and enable transmission. */
