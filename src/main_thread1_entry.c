@@ -99,20 +99,24 @@ void main_thread1_entry(void *pvParameters)
 
     xprintf("LINK ON\n");
 
-    g_example_transfer_complete = 0;
-    /* Set user buffer to TX descriptor and enable transmission. */
-    err = R_ETHER_Write(&g_ether0_ctrl, (void *)gp_send_data_internal, sizeof(gp_send_data_internal));
-    if (FSP_SUCCESS == err)
+    for (int i = 0; i < 10; i++)
     {
-        /* Wait for the transmission to complete. */
-        /* Data array should not change in zero copy mode until transfer complete. */
-        while (ETHER_EXAMPLE_FLAG_ON != g_example_transfer_complete)
+        g_example_transfer_complete = 0;
+        /* Set user buffer to TX descriptor and enable transmission. */
+        err = R_ETHER_Write(&g_ether0_ctrl, (void *)gp_send_data_internal, sizeof(gp_send_data_internal));
+        assert(FSP_SUCCESS == err);
+        if (FSP_SUCCESS == err)
         {
-            ;
+            /* Wait for the transmission to complete. */
+            /* Data array should not change in zero copy mode until transfer complete. */
+            while (ETHER_EXAMPLE_FLAG_ON != g_example_transfer_complete)
+            {
+                ;
+            }
         }
+        vTaskDelay(pdMS_TO_TICKS(10));
+        xprintf("[ETH]Write OK!\n");
     }
-    xprintf("[ETH]Write OK!\n");
-
     /* Get receive buffer from RX descriptor. */
     static uint8_t *p_read_buffer_nocopy;
     uint32_t read_data_size = 0;

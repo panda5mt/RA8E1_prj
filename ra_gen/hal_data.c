@@ -305,7 +305,7 @@ __attribute__((__aligned__(32)))uint8_t g_ether0_ether_buffer7[1536]ETHER_BUFFER
                 .irq                = FSP_INVALID_VECTOR,
 #endif
 
-                .interrupt_priority = (8),
+                .interrupt_priority = (10),
 
                 .p_callback         = ether_example_callback,
                 .p_ether_phy_instance = &g_ether_phy0,
@@ -512,7 +512,7 @@ const i2c_master_cfg_t g_i2c_master1_cfg =
 #else
     .eri_irq             = FSP_INVALID_VECTOR,
 #endif
-    .ipl                 = (12),
+    .ipl                 = (11),
     .p_extend            = &g_i2c_master1_extend,
 };
 /* Instance structure to use this module. */

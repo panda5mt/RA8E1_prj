@@ -357,7 +357,7 @@
       <property id="module.driver.i2c_master.timeout_mode" value="module.driver.i2c_master.timeout_mode.short_mode"/>
       <property id="module.driver.i2c_master.timeout_scl_low" value="module.driver.i2c_master.timeout_scl_low.enabled"/>
       <property id="module.driver.i2c_master.p_callback" value="g_i2c_callback"/>
-      <property id="module.driver.i2c_master.ipl" value="board.icu.common.irq.priority12"/>
+      <property id="module.driver.i2c_master.ipl" value="board.icu.common.irq.priority11"/>
     </module>
     <module id="module.driver.ospi_on_ospi_b.821567523">
       <property id="module.driver.ospi_b.name" value="g_ospi0"/>
@@ -423,7 +423,7 @@
       <property id="module.driver.ether.padding_offset" value="0"/>
       <property id="module.driver.ether.eesr_event_mask" value="module.driver.ether.eesr_event_mask.fr,module.driver.ether.eesr_event_mask.tc,module.driver.ether.eesr_event_mask.twb"/>
       <property id="module.driver.ether.ecsr_event_mask" value=""/>
-      <property id="module.driver.ether.interrupt_priority" value="board.icu.common.irq.priority8"/>
+      <property id="module.driver.ether.interrupt_priority" value="board.icu.common.irq.priority10"/>
       <property id="module.driver.ether.p_callback" value="ether_example_callback"/>
     </module>
     <module id="module.driver.ether_phy_on_ether_phy.374025461">
