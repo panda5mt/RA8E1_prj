@@ -512,7 +512,7 @@ const i2c_master_cfg_t g_i2c_master1_cfg =
 #else
     .eri_irq             = FSP_INVALID_VECTOR,
 #endif
-    .ipl                 = (2),
+    .ipl                 = (12),
     .p_extend            = &g_i2c_master1_extend,
 };
 /* Instance structure to use this module. */

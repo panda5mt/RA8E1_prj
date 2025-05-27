@@ -865,7 +865,9 @@ int32_t reg_write(uint32_t addr, // Camera's hw address
     }
     if (I2C_MASTER_EVENT_ABORTED == g_i2c_callback_event)
     {
-        __BKPT(0);
+        xprintf("I2C FAIL\n");
+        vTaskSuspend(NULL);
+        //__BKPT(0);
     }
 
     // xprintf("g_flag=%d\n", g_flag);
@@ -932,6 +934,7 @@ void sccb_init(camera_dev_t cam)
     // init I2C HW
     err = R_IIC_MASTER_Open(&g_i2c_master1_ctrl, &g_i2c_master1_cfg);
     // Handle any errors. This function should be defined by the user.
+
     assert(FSP_SUCCESS == err);
 
     uint16_t i = 0;

@@ -636,7 +636,7 @@ FSP Configuration
       Timeout Mode: Short Mode
       Timeout during SCL Low: Enabled
       Callback: g_i2c_callback
-      Interrupt Priority Level: Priority 2
+      Interrupt Priority Level: Priority 12
       
     Instance "g_ospi0 OSPI Flash (r_ospi_b)"
       General: Name: g_ospi0

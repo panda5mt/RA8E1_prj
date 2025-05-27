@@ -357,7 +357,7 @@
       <property id="module.driver.i2c_master.timeout_mode" value="module.driver.i2c_master.timeout_mode.short_mode"/>
       <property id="module.driver.i2c_master.timeout_scl_low" value="module.driver.i2c_master.timeout_scl_low.enabled"/>
       <property id="module.driver.i2c_master.p_callback" value="g_i2c_callback"/>
-      <property id="module.driver.i2c_master.ipl" value="board.icu.common.irq.priority2"/>
+      <property id="module.driver.i2c_master.ipl" value="board.icu.common.irq.priority12"/>
     </module>
     <module id="module.driver.ospi_on_ospi_b.821567523">
       <property id="module.driver.ospi_b.name" value="g_ospi0"/>

@@ -73,11 +73,8 @@ void main_thread1_entry(void *pvParameters)
     // START:LAN8720A Reset
     R_BSP_PinAccessEnable();
     R_BSP_PinWrite(LAN8720_nRST, BSP_IO_LEVEL_LOW); // Reset LAN8720
-    xprintf("GPIO = L\n");
     vTaskDelay(pdMS_TO_TICKS(300));
-
     R_BSP_PinWrite(LAN8720_nRST, BSP_IO_LEVEL_HIGH); // Start LAN8720
-    xprintf("GPIO = H\n");
     vTaskDelay(pdMS_TO_TICKS(300));
     // END:LAN8720A Reset
 
