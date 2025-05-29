@@ -83,10 +83,10 @@
         </peripheral>
         <peripheral name="CEU.CM85" security="s"/>
         <peripheral name="IIC1.CM85" group="IIC" security="s"/>
-        <peripheral name="ETHERC0.CM85" group="ETHERC" security="s"/>
         <peripheral name="GPT5.CM85" group="GPT" security="s"/>
         <peripheral name="GPT3.CM85" group="GPT" security="s"/>
         <peripheral name="USB_FS.CM85" security="s"/>
+        <peripheral name="ETHERC0.CM85" group="ETHERC" security="s"/>
         <peripheral name="ICU.CM85">
             <slot name="IRQ0.CM85" secure="true"/>
             <slot name="IRQ1.CM85" secure="true"/>

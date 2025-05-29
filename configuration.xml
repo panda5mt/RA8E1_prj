@@ -276,6 +276,22 @@
       <description>USB Peripheral Communications Device Class</description>
       <originalPack>Renesas.RA.5.9.0.pack</originalPack>
     </component>
+    <component apiversion="" class="Middleware" condition="" group="all" subgroup="rm_lwip_ether" variant="" vendor="Renesas" version="5.9.0">
+      <description>lwIP Ethernet driver</description>
+      <originalPack>Renesas.RA.5.9.0.pack</originalPack>
+    </component>
+    <component apiversion="" class="Middleware" condition="" group="all" subgroup="rm_lwip_sys_freertos" variant="" vendor="Renesas" version="5.9.0">
+      <description>lwIP FreeRTOS port</description>
+      <originalPack>Renesas.RA.5.9.0.pack</originalPack>
+    </component>
+    <component apiversion="" class="LwIP" condition="" group="Common" subgroup="Source" variant="" vendor="LwIP_TCPIP" version="2.2.0+fsp.5.9.0">
+      <description>lwIP tcpip</description>
+      <originalPack>lwIP.lwIP.2.2.0+fsp.5.9.0.pack</originalPack>
+    </component>
+    <component apiversion="" class="LwIP" condition="" group="Port" subgroup="FreeRTOS" variant="" vendor="LwIP_TCPIP" version="2.2.0+fsp.5.9.0">
+      <description>lwIP FreeRTOS</description>
+      <originalPack>lwIP.lwIP.2.2.0+fsp.5.9.0.pack</originalPack>
+    </component>
   </raComponentSelection>
   <raElcConfiguration/>
   <raIcuConfiguration/>
@@ -406,38 +422,6 @@
       <property id="module.driver.ospi_b.dotf.start_address" value="0x90000000"/>
       <property id="module.driver.ospi_b.dotf.end_address" value="0x90001FFF"/>
     </module>
-    <module id="module.driver.ether_on_ether.390055062">
-      <property id="module.driver.ether.name" value="g_ether0"/>
-      <property id="module.driver.ether.channel" value="module.driver.ether.channel.0"/>
-      <property id="module.driver.ether.mac_address" value="AA:BB:CC:DD:EE:FF"/>
-      <property id="module.driver.ether.zerocopy" value="module.driver.ether.zerocopy.0"/>
-      <property id="module.driver.ether.flow_control" value="module.driver.ether.flow_control.1"/>
-      <property id="module.driver.ether.multicast" value="module.driver.ether.multicast.1"/>
-      <property id="module.driver.ether.promiscuous" value="module.driver.ether.promiscuous.0"/>
-      <property id="module.driver.ether.broadcast_filter" value="0"/>
-      <property id="module.driver.ether.num_tx_descriptors" value="4"/>
-      <property id="module.driver.ether.num_rx_descriptors" value="4"/>
-      <property id="module.driver.ether.allocate_rx_buffer" value="module.driver.ether.allocate_rx_buffer.1"/>
-      <property id="module.driver.ether.ether_buffer_size" value="1514"/>
-      <property id="module.driver.ether.padding" value="module.driver.ether.padding.0"/>
-      <property id="module.driver.ether.padding_offset" value="0"/>
-      <property id="module.driver.ether.eesr_event_mask" value="module.driver.ether.eesr_event_mask.fr,module.driver.ether.eesr_event_mask.tc,module.driver.ether.eesr_event_mask.twb"/>
-      <property id="module.driver.ether.ecsr_event_mask" value=""/>
-      <property id="module.driver.ether.interrupt_priority" value="board.icu.common.irq.priority10"/>
-      <property id="module.driver.ether.p_callback" value="ether_example_callback"/>
-    </module>
-    <module id="module.driver.ether_phy_on_ether_phy.374025461">
-      <property id="module.driver.ether_phy.name" value="g_ether_phy0"/>
-      <property id="module.driver.ether_phy.channel" value="module.driver.ether_phy.channel.0"/>
-      <property id="module.driver.ether_phy.phy_lsi_address" value="0x00"/>
-      <property id="module.driver.ether_phy.phy_reset_wait_time" value="0x00020000"/>
-      <property id="module.driver.ether_phy.mii_type" value="module.driver.mii_type.rmii"/>
-      <property id="module.driver.ether_phy.phy_lsi_type" value="module.driver.ether_phy.phy_lsi_type.custom"/>
-      <property id="module.driver.ether_phy.target_init" value="ether_phy_target_lan8720a_initialize"/>
-      <property id="module.driver.ether_phy.target_link_partner_ability_get" value="ether_phy_target_lan8720_is_support_link_partner_ability"/>
-      <property id="module.driver.ether_phy.mii_bit_access_wait_time" value="8"/>
-      <property id="module.driver.ether_phy.flow_control" value="module.driver.ether_phy.flow_control.0"/>
-    </module>
     <module id="module.driver.timer_on_gpt.1622483141">
       <property id="module.driver.timer.name" value="g_timer5"/>
       <property id="module.driver.timer.channel" value="5"/>
@@ -564,6 +548,51 @@
       <property id="module.driver.usb_basic.rtos_callback" value="usb_cdc_rtos_callback"/>
       <property id="module.driver.usb_basic.other_context" value="NULL"/>
     </module>
+    <module id="module.middleware.lwip_tcpip.1563186778"/>
+    <module id="module.middleware.lwip_nic_on_ether.1118802934">
+      <property id="module.middleware.lwip_ether.name" value="g_lwip_ether0"/>
+      <property id="module.middleware.lwip_ether.mtu" value="1500"/>
+      <property id="module.middleware.lwip_ether.netif_flags" value="module.middleware.lwip_ether.netif_flags.broadcast,module.middleware.lwip_ether.netif_flags.etharp"/>
+      <property id="module.middleware.lwip_ether.zero_copy_mode" value="module.middleware.lwip_ether.zero_copy_mode.enable"/>
+      <property id="module.middleware.lwip_ether.rx_buffer_pool_size" value="10"/>
+      <property id="module.middleware.lwip_ether.link_check_interval" value="100"/>
+      <property id="module.middleware.lwip_ether.rx_thread_stacksize" value="1024"/>
+      <property id="module.middleware.lwip_ether.rx_thread_priority" value="4"/>
+    </module>
+    <module id="module.lwip.port.freertos.949045050"/>
+    <module id="module.middleware.lwip_sys_freertos.1476669244"/>
+    <module id="module.driver.ether_on_ether.494953750">
+      <property id="module.driver.ether.name" value="g_ether0"/>
+      <property id="module.driver.ether.channel" value="module.driver.ether.channel.0"/>
+      <property id="module.driver.ether.mac_address" value="AA:BB:CC:DD:EE:FF"/>
+      <property id="module.driver.ether.zerocopy" value="module.driver.ether.zerocopy.0"/>
+      <property id="module.driver.ether.flow_control" value="module.driver.ether.flow_control.1"/>
+      <property id="module.driver.ether.multicast" value="module.driver.ether.multicast.1"/>
+      <property id="module.driver.ether.promiscuous" value="module.driver.ether.promiscuous.0"/>
+      <property id="module.driver.ether.broadcast_filter" value="0"/>
+      <property id="module.driver.ether.num_tx_descriptors" value="4"/>
+      <property id="module.driver.ether.num_rx_descriptors" value="4"/>
+      <property id="module.driver.ether.allocate_rx_buffer" value="module.driver.ether.allocate_rx_buffer.1"/>
+      <property id="module.driver.ether.ether_buffer_size" value="1514"/>
+      <property id="module.driver.ether.padding" value="module.driver.ether.padding.0"/>
+      <property id="module.driver.ether.padding_offset" value="0"/>
+      <property id="module.driver.ether.eesr_event_mask" value="module.driver.ether.eesr_event_mask.rfof,module.driver.ether.eesr_event_mask.rde,module.driver.ether.eesr_event_mask.fr,module.driver.ether.eesr_event_mask.tc,module.driver.ether.eesr_event_mask.tabt,module.driver.ether.eesr_event_mask.twb"/>
+      <property id="module.driver.ether.ecsr_event_mask" value=""/>
+      <property id="module.driver.ether.interrupt_priority" value="board.icu.common.irq.priority10"/>
+      <property id="module.driver.ether.p_callback" value="ether_example_callback"/>
+    </module>
+    <module id="module.driver.ether_phy_on_ether_phy.624009494">
+      <property id="module.driver.ether_phy.name" value="g_ether_phy0"/>
+      <property id="module.driver.ether_phy.channel" value="module.driver.ether_phy.channel.0"/>
+      <property id="module.driver.ether_phy.phy_lsi_address" value="0x00"/>
+      <property id="module.driver.ether_phy.phy_reset_wait_time" value="0x00020000"/>
+      <property id="module.driver.ether_phy.mii_type" value="module.driver.mii_type.rmii"/>
+      <property id="module.driver.ether_phy.phy_lsi_type" value="module.driver.ether_phy.phy_lsi_type.custom"/>
+      <property id="module.driver.ether_phy.target_init" value="ether_phy_target_lan8720a_initialize"/>
+      <property id="module.driver.ether_phy.target_link_partner_ability_get" value="ether_phy_target_lan8720_is_support_link_partner_ability"/>
+      <property id="module.driver.ether_phy.mii_bit_access_wait_time" value="8"/>
+      <property id="module.driver.ether_phy.flow_control" value="module.driver.ether_phy.flow_control.0"/>
+    </module>
     <object id="rtos.awsfreertos.object.semaphore.1429114281">
       <property id="rtos.awsfreertos.object.semaphore.symbol" value="g_usb_write_complete_binary_semaphore"/>
       <property id="rtos.awsfreertos.object.semaphore.count" value="0"/>
@@ -590,9 +619,6 @@
       <stack module="module.driver.ceu_on_capture.450115502"/>
       <stack module="module.driver.i2c_on_iic_master.994544474"/>
       <stack module="module.driver.ospi_on_ospi_b.821567523"/>
-      <stack module="module.driver.ether_on_ether.390055062">
-        <stack module="module.driver.ether_phy_on_ether_phy.374025461" requires="module.driver.ether.requires.ether_phy"/>
-      </stack>
       <stack module="module.driver.timer_on_gpt.1622483141"/>
       <stack module="module.driver.timer_on_gpt.2107044541"/>
     </context>
@@ -626,6 +652,15 @@
       <property id="rtos.awsfreertos.thread.context" value="NULL"/>
       <property id="rtos.awsfreertos.thread.allocation" value="rtos.awsfreertos.thread.allocation.static"/>
       <property id="rtos.awsfreertos.thread.secure_context" value="rtos.awsfreertos.thread.secure_context.enable"/>
+      <stack module="module.middleware.lwip_tcpip.1563186778">
+        <stack module="module.middleware.lwip_nic_on_ether.1118802934" requires="module.middleware.lwip_tcp_on_lwip.requires.lwip_tcpip_nic">
+          <stack module="module.driver.ether_on_ether.494953750" requires="module.middleware.lwip_nic_on_ether.requires.ether">
+            <stack module="module.driver.ether_phy_on_ether_phy.624009494" requires="module.driver.ether.requires.ether_phy"/>
+          </stack>
+        </stack>
+        <stack module="module.middleware.lwip_sys_freertos.1476669244" requires="module.middleware.lwip_tcp_on_lwip.requires.lwip_tcpip_sys"/>
+      </stack>
+      <stack module="module.lwip.port.freertos.949045050"/>
     </context>
     <config id="config.driver.ospi_b">
       <property id="config.driver.ospi_b.param_checking_enable" value="config.driver.ospi_b.param_checking_enable.disabled"/>
@@ -635,6 +670,314 @@
       <property id="config.driver.ospi_b.combination_function" value="config.driver.ospi_b.combination_function.64_BYTE"/>
       <property id="config.driver.ospi_b.xip_support" value="config.driver.ospi_b.xip_support.disabled"/>
       <property id="config.driver.ospi_b.dotf_support" value="config.driver.ospi_b.dotf_support.disabled"/>
+    </config>
+    <config id="config.middleware.lwip_tcpip">
+      <property id="config.middleware.lwip_tcpip.no_sys" value="config.middleware.lwip_tcpip.no_sys.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_timers" value="config.middleware.lwip_tcpip.lwip_timers.enabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_timers_custom" value="config.middleware.lwip_tcpip.lwip_timers_custom.disabled"/>
+      <property id="config.middleware.lwip_tcpip.memcpy" value="memcpy"/>
+      <property id="config.middleware.lwip_tcpip.smemcpy" value="memcpy"/>
+      <property id="config.middleware.lwip_tcpip.memmove" value="memmove"/>
+      <property id="config.middleware.lwip_tcpip.lwip_mpu_compatible" value="config.middleware.lwip_tcpip.lwip_mpu_compatible.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_tcpip_core_locking" value="config.middleware.lwip_tcpip.lwip_tcpip_core_locking.enabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_tcpip_core_locking_input" value="config.middleware.lwip_tcpip.lwip_tcpip_core_locking_input.disabled"/>
+      <property id="config.middleware.lwip_tcpip.sys_lightweight_prot" value="config.middleware.lwip_tcpip.sys_lightweight_prot.enabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_assert_core_locked" value=""/>
+      <property id="config.middleware.lwip_tcpip.mem_libc_malloc" value="config.middleware.lwip_tcpip.mem_libc_malloc.disabled"/>
+      <property id="config.middleware.lwip_tcpip.mem_custom_allocator" value="config.middleware.lwip_tcpip.mem_custom_allocator.disabled"/>
+      <property id="config.middleware.lwip_tcpip.memp_mem_malloc" value="config.middleware.lwip_tcpip.memp_mem_malloc.disabled"/>
+      <property id="config.middleware.lwip_tcpip.memp_mem_init" value="0"/>
+      <property id="config.middleware.lwip_tcpip.mem_alignment" value="32"/>
+      <property id="config.middleware.lwip_tcpip.mem_size" value="1600"/>
+      <property id="config.middleware.lwip_tcpip.memp_overflow_check" value="config.middleware.lwip_tcpip.memp_overflow_check.nochk"/>
+      <property id="config.middleware.lwip_tcpip.memp_sanity_check" value="config.middleware.lwip_tcpip.memp_sanity_check.disabled"/>
+      <property id="config.middleware.lwip_tcpip.mem_overflow_check" value="config.middleware.lwip_tcpip.mem_overflow_check.nochk"/>
+      <property id="config.middleware.lwip_tcpip.mem_sanity_check" value="config.middleware.lwip_tcpip.mem_sanity_check.disabled"/>
+      <property id="config.middleware.lwip_tcpip.mem_use_pools" value="config.middleware.lwip_tcpip.mem_use_pools.disabled"/>
+      <property id="config.middleware.lwip_tcpip.mem_use_pools_try_bigger_pool" value="config.middleware.lwip_tcpip.mem_use_pools_try_bigger_pool.disabled"/>
+      <property id="config.middleware.lwip_tcpip.memp_use_custom_pools" value="config.middleware.lwip_tcpip.memp_use_custom_pools.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_allow_mem_free_from_other_context" value="config.middleware.lwip_tcpip.lwip_allow_mem_free_from_other_context.disabled"/>
+      <property id="config.middleware.lwip_tcpip.memp_num_pbuf" value="16"/>
+      <property id="config.middleware.lwip_tcpip.memp_num_raw_pcb" value="4"/>
+      <property id="config.middleware.lwip_tcpip.memp_num_udp_pcb" value="4"/>
+      <property id="config.middleware.lwip_tcpip.memp_num_tcp_pcb" value="5"/>
+      <property id="config.middleware.lwip_tcpip.memp_num_tcp_pcb_listen" value="8"/>
+      <property id="config.middleware.lwip_tcpip.memp_num_tcp_seg" value="16"/>
+      <property id="config.middleware.lwip_tcpip.memp_num_altcp_pcb" value="MEMP_NUM_TCP_PCB"/>
+      <property id="config.middleware.lwip_tcpip.memp_num_reassdata" value="5"/>
+      <property id="config.middleware.lwip_tcpip.memp_num_frag_pbuf" value="15"/>
+      <property id="config.middleware.lwip_tcpip.memp_num_arp_queue" value="30"/>
+      <property id="config.middleware.lwip_tcpip.memp_num_igmp_group" value="8"/>
+      <property id="config.middleware.lwip_tcpip.memp_num_sys_timeout" value="LWIP_NUM_SYS_TIMEOUT_INTERNAL"/>
+      <property id="config.middleware.lwip_tcpip.memp_num_netbuf" value="2"/>
+      <property id="config.middleware.lwip_tcpip.memp_num_netconn" value="4"/>
+      <property id="config.middleware.lwip_tcpip.memp_num_select_cb" value="4"/>
+      <property id="config.middleware.lwip_tcpip.memp_num_tcpip_msg_api" value="8"/>
+      <property id="config.middleware.lwip_tcpip.memp_num_tcpip_msg_inpkt" value="8"/>
+      <property id="config.middleware.lwip_tcpip.memp_num_netdb" value="1"/>
+      <property id="config.middleware.lwip_tcpip.memp_num_localhostlist" value="1"/>
+      <property id="config.middleware.lwip_tcpip.pbuf_pool_size" value="16"/>
+      <property id="config.middleware.lwip_tcpip.memp_num_api_msg" value="MEMP_NUM_TCPIP_MSG_API"/>
+      <property id="config.middleware.lwip_tcpip.memp_num_dns_api_msg" value="MEMP_NUM_TCPIP_MSG_API"/>
+      <property id="config.middleware.lwip_tcpip.memp_num_socket_setgetsockopt_data" value="MEMP_NUM_TCPIP_MSG_API"/>
+      <property id="config.middleware.lwip_tcpip.memp_num_netifapi_msg" value="MEMP_NUM_TCPIP_MSG_API"/>
+      <property id="config.middleware.lwip_tcpip.lwip_arp" value="config.middleware.lwip_tcpip.lwip_arp.enabled"/>
+      <property id="config.middleware.lwip_tcpip.arp_table_size" value="10"/>
+      <property id="config.middleware.lwip_tcpip.arp_maxage" value="300"/>
+      <property id="config.middleware.lwip_tcpip.arp_queueing" value="config.middleware.lwip_tcpip.arp_queueing.disabled"/>
+      <property id="config.middleware.lwip_tcpip.arp_queue_len" value="3"/>
+      <property id="config.middleware.lwip_tcpip.etharp_support_vlan" value="config.middleware.lwip_tcpip.etharp_support_vlan.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_vlan_pcp" value="config.middleware.lwip_tcpip.lwip_vlan_pcp.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_ethernet" value="config.middleware.lwip_tcpip.lwip_arp"/>
+      <property id="config.middleware.lwip_tcpip.eth_pad_size" value="config.middleware.lwip_tcpip.eth_pad_size.disabled"/>
+      <property id="config.middleware.lwip_tcpip.etharp_support_static_entries" value="config.middleware.lwip_tcpip.etharp_support_static_entries.disabled"/>
+      <property id="config.middleware.lwip_tcpip.etharp_table_match_netif" value="!LWIP_SINGLE_NETIF"/>
+      <property id="config.middleware.lwip_tcpip.lwip_ipv4" value="config.middleware.lwip_tcpip.lwip_ipv4.enabled"/>
+      <property id="config.middleware.lwip_tcpip.ip_forward" value="config.middleware.lwip_tcpip.ip_forward.disabled"/>
+      <property id="config.middleware.lwip_tcpip.ip_reassembly" value="config.middleware.lwip_tcpip.ip_reassembly.enabled"/>
+      <property id="config.middleware.lwip_tcpip.ip_frag" value="config.middleware.lwip_tcpip.ip_frag.enabled"/>
+      <property id="config.middleware.lwip_tcpip.ip_options_allowed" value="config.middleware.lwip_tcpip.ip_options_allowed.enabled"/>
+      <property id="config.middleware.lwip_tcpip.ip_reass_maxage" value="15"/>
+      <property id="config.middleware.lwip_tcpip.ip_reass_max_pbufs" value="10"/>
+      <property id="config.middleware.lwip_tcpip.ip_default_ttl" value="255"/>
+      <property id="config.middleware.lwip_tcpip.ip_sof_broadcast" value="config.middleware.lwip_tcpip.ip_sof_broadcast.disabled"/>
+      <property id="config.middleware.lwip_tcpip.ip_sof_broadcast_recv" value="config.middleware.lwip_tcpip.ip_sof_broadcast_recv.disabled"/>
+      <property id="config.middleware.lwip_tcpip.ip_forward_allow_tx_on_rx_netif" value="config.middleware.lwip_tcpip.ip_forward_allow_tx_on_rx_netif.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_icmp" value="config.middleware.lwip_tcpip.lwip_icmp.enabled"/>
+      <property id="config.middleware.lwip_tcpip.icmp_ttl" value="IP_DEFAULT_TTL"/>
+      <property id="config.middleware.lwip_tcpip.lwip_broadcast_ping" value="config.middleware.lwip_tcpip.lwip_broadcast_ping.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_multicast_ping" value="config.middleware.lwip_tcpip.lwip_multicast_ping.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_raw" value="config.middleware.lwip_tcpip.lwip_raw.enabled"/>
+      <property id="config.middleware.lwip_tcpip.raw_ttl" value="IP_DEFAULT_TTL"/>
+      <property id="config.middleware.lwip_tcpip.lwip_dhcp" value="config.middleware.lwip_tcpip.lwip_dhcp.enabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_dhcp_does_acd_check" value="config.middleware.lwip_tcpip.lwip_dhcp_does_acd_check.enabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_dhcp_bootp_file" value="config.middleware.lwip_tcpip.lwip_dhcp_bootp_file.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_dhcp_get_ntp_srv" value="config.middleware.lwip_tcpip.lwip_dhcp_get_ntp_srv.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_dhcp_max_ntp_servers" value="1"/>
+      <property id="config.middleware.lwip_tcpip.lwip_dhcp_max_dns_servers" value="DNS_MAX_SERVERS"/>
+      <property id="config.middleware.lwip_tcpip.lwip_dhcp_discover_add_hostname" value="config.middleware.lwip_tcpip.lwip_dhcp_discover_add_hostname.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_autoip" value="config.middleware.lwip_tcpip.lwip_autoip.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_dhcp_autoip_coop" value="config.middleware.lwip_tcpip.lwip_dhcp_autoip_coop.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_dhcp_autoip_coop_tries" value="9"/>
+      <property id="config.middleware.lwip_tcpip.lwip_acd" value="config.middleware.lwip_tcpip.lwip_acd.enabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_mib2_callbacks" value="config.middleware.lwip_tcpip.lwip_mib2_callbacks.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_multicast_tx_options" value="config.middleware.lwip_tcpip.lwip_mib2_callbacks.lwip_igmp_lwip_ipv6_mld_lwip_udp_lwip_raw"/>
+      <property id="config.middleware.lwip_tcpip.lwip_igmp" value="config.middleware.lwip_tcpip.lwip_igmp.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_dns" value="config.middleware.lwip_tcpip.lwip_dns.disabled"/>
+      <property id="config.middleware.lwip_tcpip.dns_table_size" value="4"/>
+      <property id="config.middleware.lwip_tcpip.dns_max_name_length" value="256"/>
+      <property id="config.middleware.lwip_tcpip.dns_max_servers" value="2"/>
+      <property id="config.middleware.lwip_tcpip.dns_max_retries" value="4"/>
+      <property id="config.middleware.lwip_tcpip.dns_does_name_check" value="config.middleware.lwip_tcpip.dns_does_name_check.enabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_dns_secure" value="7"/>
+      <property id="config.middleware.lwip_tcpip.dns_local_hostlist" value="config.middleware.lwip_tcpip.dns_local_hostlist.disabled"/>
+      <property id="config.middleware.lwip_tcpip.dns_local_hostlist_is_dynamic" value="config.middleware.lwip_tcpip.dns_local_hostlist_is_dynamic.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_dns_support_mdns_queries" value="config.middleware.lwip_tcpip.lwip_dns_support_mdns_queries.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_udp" value="config.middleware.lwip_tcpip.lwip_udp.enabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_udplite" value="config.middleware.lwip_tcpip.lwip_udplite.disabled"/>
+      <property id="config.middleware.lwip_tcpip.udp_ttl" value="IP_DEFAULT_TTL"/>
+      <property id="config.middleware.lwip_tcpip.lwip_netbuf_recvinfo" value="config.middleware.lwip_tcpip.lwip_netbuf_recvinfo.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_tcp" value="config.middleware.lwip_tcpip.lwip_tcp.enabled"/>
+      <property id="config.middleware.lwip_tcpip.tcp_ttl" value="IP_DEFAULT_TTL"/>
+      <property id="config.middleware.lwip_tcpip.tcp_wnd" value="(4 * TCP_MSS)"/>
+      <property id="config.middleware.lwip_tcpip.tcp_maxrtx" value="12"/>
+      <property id="config.middleware.lwip_tcpip.tcp_synmaxrtx" value="6"/>
+      <property id="config.middleware.lwip_tcpip.tcp_queue_ooseq" value="config.middleware.lwip_tcpip.tcp_queue_ooseq.lwip_tcp"/>
+      <property id="config.middleware.lwip_tcpip.lwip_tcp_sack_out" value="config.middleware.lwip_tcpip.lwip_tcp_sack_out.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_tcp_max_sack_num" value="4"/>
+      <property id="config.middleware.lwip_tcpip.tcp_mss" value="536"/>
+      <property id="config.middleware.lwip_tcpip.tcp_calculate_eff_send_mss" value="1"/>
+      <property id="config.middleware.lwip_tcpip.lwip_tcp_rto_time" value="3000"/>
+      <property id="config.middleware.lwip_tcpip.tcp_snd_buf" value="(2 * TCP_MSS)"/>
+      <property id="config.middleware.lwip_tcpip.tcp_snd_queuelen" value="((4 * (TCP_SND_BUF) + (TCP_MSS - 1))/(TCP_MSS))"/>
+      <property id="config.middleware.lwip_tcpip.tcp_sndlowat" value="LWIP_MIN(LWIP_MAX(((TCP_SND_BUF)/2), (2 * TCP_MSS) + 1), (TCP_SND_BUF) - 1)"/>
+      <property id="config.middleware.lwip_tcpip.tcp_sndqueuelowat" value="LWIP_MAX(((TCP_SND_QUEUELEN)/2), 5)"/>
+      <property id="config.middleware.lwip_tcpip.tcp_ooseq_max_bytes" value="0"/>
+      <property id="config.middleware.lwip_tcpip.tcp_ooseq_bytes_limit" value="TCP_OOSEQ_MAX_BYTES"/>
+      <property id="config.middleware.lwip_tcpip.tcp_ooseq_max_pbufs" value="0"/>
+      <property id="config.middleware.lwip_tcpip.tcp_ooseq_pbufs_limit" value="TCP_OOSEQ_MAX_PBUFS"/>
+      <property id="config.middleware.lwip_tcpip.tcp_listen_backlog" value="config.middleware.lwip_tcpip.tcp_listen_backlog.disabled"/>
+      <property id="config.middleware.lwip_tcpip.tcp_default_listen_backlog" value="0xff"/>
+      <property id="config.middleware.lwip_tcpip.tcp_oversize" value="TCP_MSS"/>
+      <property id="config.middleware.lwip_tcpip.lwip_tcp_timestamps" value="config.middleware.lwip_tcpip.lwip_tcp_timestamps.disabled"/>
+      <property id="config.middleware.lwip_tcpip.tcp_wnd_update_threshold" value="LWIP_MIN((TCP_WND / 4), (TCP_MSS * 4))"/>
+      <property id="config.middleware.lwip_tcpip.lwip_event_api" value="config.middleware.lwip_tcpip.lwip_event_api.callback"/>
+      <property id="config.middleware.lwip_tcpip.lwip_wnd_scale" value="config.middleware.lwip_tcpip.lwip_wnd_scale.disabled"/>
+      <property id="config.middleware.lwip_tcpip.tcp_rcv_scale" value="0"/>
+      <property id="config.middleware.lwip_tcpip.lwip_tcp_pcb_num_ext_args" value="0"/>
+      <property id="config.middleware.lwip_tcpip.lwip_altcp" value="config.middleware.lwip_tcpip.lwip_altcp.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_altcp_tls" value="config.middleware.lwip_tcpip.lwip_altcp_tls.disabled"/>
+      <property id="config.middleware.lwip_tcpip.pbuf_link_hlen" value="(14 + ETH_PAD_SIZE)"/>
+      <property id="config.middleware.lwip_tcpip.pbuf_link_encapsulation_hlen" value="0"/>
+      <property id="config.middleware.lwip_tcpip.pbuf_pool_bufsize" value="LWIP_MEM_ALIGN_SIZE(TCP_MSS+PBUF_IP_HLEN+PBUF_TRANSPORT_HLEN+PBUF_LINK_ENCAPSULATION_HLEN+PBUF_LINK_HLEN)"/>
+      <property id="config.middleware.lwip_tcpip.lwip_pbuf_ref_t" value="config.middleware.lwip_tcpip.lwip_pbuf_ref_t.u8_t"/>
+      <property id="config.middleware.lwip_tcpip.lwip_pbuf_custom_data" value=""/>
+      <property id="config.middleware.lwip_tcpip.lwip_pbuf_custom_data_init" value="config.middleware.lwip_tcpip.lwip_pbuf_custom_data_init.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_single_netif" value="config.middleware.lwip_tcpip.lwip_single_netif.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_netif_hostname" value="config.middleware.lwip_tcpip.lwip_netif_hostname.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_netif_api" value="config.middleware.lwip_tcpip.lwip_netif_api.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_netif_status_callback" value="config.middleware.lwip_tcpip.lwip_netif_status_callback.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_netif_ext_status_callback" value="config.middleware.lwip_tcpip.lwip_netif_ext_status_callback.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_netif_link_callback" value="config.middleware.lwip_tcpip.lwip_netif_link_callback.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_netif_remove_callback" value="config.middleware.lwip_tcpip.lwip_netif_remove_callback.enabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_netif_hwaddrhint" value="config.middleware.lwip_tcpip.lwip_netif_hwaddrhint.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_netif_tx_single_pbuf" value="config.middleware.lwip_tcpip.lwip_netif_tx_single_pbuf.enabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_num_netif_client_data" value="0"/>
+      <property id="config.middleware.lwip_tcpip.lwip_have_loopif" value="config.middleware.lwip_tcpip.lwip_have_loopif.lwip_netif_loopback_lwip_single_netif"/>
+      <property id="config.middleware.lwip_tcpip.lwip_loopif_multicast" value="config.middleware.lwip_tcpip.lwip_loopif_multicast.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_netif_loopback" value="config.middleware.lwip_tcpip.lwip_netif_loopback.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_loopback_max_pbufs" value="0"/>
+      <property id="config.middleware.lwip_tcpip.lwip_netif_loopback_multithreading" value="config.middleware.lwip_tcpip.lwip_netif_loopback_multithreading.no_sys"/>
+      <property id="config.middleware.lwip_tcpip.tcpip_thread_name" value="tcpip_thread"/>
+      <property id="config.middleware.lwip_tcpip.tcpip_thread_stacksize" value="0"/>
+      <property id="config.middleware.lwip_tcpip.tcpip_thread_prio" value="1"/>
+      <property id="config.middleware.lwip_tcpip.tcpip_mbox_size" value="0"/>
+      <property id="config.middleware.lwip_tcpip.lwip_tcpip_thread_alive" value=""/>
+      <property id="config.middleware.lwip_tcpip.slipif_thread_name" value="slipif_loop"/>
+      <property id="config.middleware.lwip_tcpip.slipif_thread_stacksize" value="0"/>
+      <property id="config.middleware.lwip_tcpip.slipif_thread_prio" value="1"/>
+      <property id="config.middleware.lwip_tcpip.default_thread_name" value="lwIP"/>
+      <property id="config.middleware.lwip_tcpip.default_thread_stacksize" value="0"/>
+      <property id="config.middleware.lwip_tcpip.default_thread_prio" value="1"/>
+      <property id="config.middleware.lwip_tcpip.default_raw_recvmbox_size" value="0"/>
+      <property id="config.middleware.lwip_tcpip.default_udp_recvmbox_size" value="0"/>
+      <property id="config.middleware.lwip_tcpip.default_tcp_recvmbox_size" value="0"/>
+      <property id="config.middleware.lwip_tcpip.default_acceptmbox_size" value="0"/>
+      <property id="config.middleware.lwip_tcpip.lwip_netconn" value="config.middleware.lwip_tcpip.lwip_netconn.enabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_tcpip_timeout" value="config.middleware.lwip_tcpip.lwip_tcpip_timeout.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_netconn_sem_per_thread" value="config.middleware.lwip_tcpip.lwip_netconn_sem_per_thread.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_netconn_fullduplex" value="config.middleware.lwip_tcpip.lwip_netconn_fullduplex.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_socket" value="config.middleware.lwip_tcpip.lwip_socket.enabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_compat_sockets" value="1"/>
+      <property id="config.middleware.lwip_tcpip.lwip_posix_sockets_io_names" value="config.middleware.lwip_tcpip.lwip_posix_sockets_io_names.enabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_socket_offset" value="0"/>
+      <property id="config.middleware.lwip_tcpip.lwip_socket_external_headers" value="config.middleware.lwip_tcpip.lwip_socket_external_headers.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_tcp_keepalive" value="config.middleware.lwip_tcpip.lwip_tcp_keepalive.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_so_sndtimeo" value="config.middleware.lwip_tcpip.lwip_so_sndtimeo.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_so_rcvtimeo" value="config.middleware.lwip_tcpip.lwip_so_rcvtimeo.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_so_sndrcvtimeo_nonstandard" value="config.middleware.lwip_tcpip.lwip_so_sndrcvtimeo_nonstandard.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_so_rcvbuf" value="config.middleware.lwip_tcpip.lwip_so_rcvbuf.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_so_linger" value="config.middleware.lwip_tcpip.lwip_so_linger.disabled"/>
+      <property id="config.middleware.lwip_tcpip.recv_bufsize_default" value="INT_MAX"/>
+      <property id="config.middleware.lwip_tcpip.lwip_tcp_close_timeout_ms_default" value="20000"/>
+      <property id="config.middleware.lwip_tcpip.so_reuse" value="config.middleware.lwip_tcpip.so_reuse.disabled"/>
+      <property id="config.middleware.lwip_tcpip.so_reuse_rxtoall" value="config.middleware.lwip_tcpip.so_reuse_rxtoall.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_fionread_linuxmode" value="config.middleware.lwip_tcpip.lwip_fionread_linuxmode.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_socket_select" value="config.middleware.lwip_tcpip.lwip_socket_select.enabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_socket_poll" value="config.middleware.lwip_tcpip.lwip_socket_poll.enabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_stats" value="config.middleware.lwip_tcpip.lwip_stats.enabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_stats_display" value="config.middleware.lwip_tcpip.lwip_stats_display.disabled"/>
+      <property id="config.middleware.lwip_tcpip.link_stats" value="config.middleware.lwip_tcpip.link_stats.enabled"/>
+      <property id="config.middleware.lwip_tcpip.etharp_stats" value="LWIP_ARP"/>
+      <property id="config.middleware.lwip_tcpip.ip_stats" value="config.middleware.lwip_tcpip.ip_stats.enabled"/>
+      <property id="config.middleware.lwip_tcpip.ipfrag_stats" value="config.middleware.lwip_tcpip.ipfrag_stats.ip_reassembly_ip_frag"/>
+      <property id="config.middleware.lwip_tcpip.icmp_stats" value="config.middleware.lwip_tcpip.icmp_stats.enabled"/>
+      <property id="config.middleware.lwip_tcpip.igmp_stats" value="LWIP_IGMP"/>
+      <property id="config.middleware.lwip_tcpip.udp_stats" value="LWIP_UDP"/>
+      <property id="config.middleware.lwip_tcpip.tcp_stats" value="LWIP_TCP"/>
+      <property id="config.middleware.lwip_tcpip.mem_stats" value="config.middleware.lwip_tcpip.mem_stats.mem_custom_allocator_mem_use_pools"/>
+      <property id="config.middleware.lwip_tcpip.memp_stats" value="config.middleware.lwip_tcpip.memp_stats.memp_mem_malloc"/>
+      <property id="config.middleware.lwip_tcpip.sys_stats" value="config.middleware.lwip_tcpip.sys_stats.no_sys"/>
+      <property id="config.middleware.lwip_tcpip.ip6_stats" value="LWIP_IPV6"/>
+      <property id="config.middleware.lwip_tcpip.icmp6_stats" value="config.middleware.lwip_tcpip.icmp6_stats.lwip_ipv6_lwip_icmp6"/>
+      <property id="config.middleware.lwip_tcpip.ip6_frag_stats" value="config.middleware.lwip_tcpip.ip6_frag_stats.lwip_ipv6_lwip_ipv6_frag_lwip_ipv6_reass"/>
+      <property id="config.middleware.lwip_tcpip.mld6_stats" value="config.middleware.lwip_tcpip.mld6_stats.lwip_ipv6_lwip_ipv6_mld"/>
+      <property id="config.middleware.lwip_tcpip.nd6_stats" value="LWIP_IPV6"/>
+      <property id="config.middleware.lwip_tcpip.mib2_stats" value="config.middleware.lwip_tcpip.mib2_stats.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_checksum_ctrl_per_netif" value="config.middleware.lwip_tcpip.lwip_checksum_ctrl_per_netif.disabled"/>
+      <property id="config.middleware.lwip_tcpip.checksum_gen_ip" value="config.middleware.lwip_tcpip.checksum_gen_ip.enabled"/>
+      <property id="config.middleware.lwip_tcpip.checksum_gen_udp" value="config.middleware.lwip_tcpip.checksum_gen_udp.enabled"/>
+      <property id="config.middleware.lwip_tcpip.checksum_gen_tcp" value="config.middleware.lwip_tcpip.checksum_gen_tcp.enabled"/>
+      <property id="config.middleware.lwip_tcpip.checksum_gen_icmp" value="config.middleware.lwip_tcpip.checksum_gen_icmp.enabled"/>
+      <property id="config.middleware.lwip_tcpip.checksum_gen_icmp6" value="config.middleware.lwip_tcpip.checksum_gen_icmp6.enabled"/>
+      <property id="config.middleware.lwip_tcpip.checksum_check_ip" value="config.middleware.lwip_tcpip.checksum_check_ip.enabled"/>
+      <property id="config.middleware.lwip_tcpip.checksum_check_udp" value="config.middleware.lwip_tcpip.checksum_check_udp.enabled"/>
+      <property id="config.middleware.lwip_tcpip.checksum_check_tcp" value="config.middleware.lwip_tcpip.checksum_check_tcp.enabled"/>
+      <property id="config.middleware.lwip_tcpip.checksum_check_icmp" value="config.middleware.lwip_tcpip.checksum_check_icmp.enabled"/>
+      <property id="config.middleware.lwip_tcpip.checksum_check_icmp6" value="config.middleware.lwip_tcpip.checksum_check_icmp6.enabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_checksum_on_copy" value="config.middleware.lwip_tcpip.lwip_checksum_on_copy.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_ipv6" value="config.middleware.lwip_tcpip.lwip_ipv6.disabled"/>
+      <property id="config.middleware.lwip_tcpip.ipv6_reass_maxage" value="60"/>
+      <property id="config.middleware.lwip_tcpip.lwip_ipv6_scopes" value="config.middleware.lwip_tcpip.lwip_ipv6_scopes.lwip_ipv6_lwip_single_netif"/>
+      <property id="config.middleware.lwip_tcpip.lwip_ipv6_scopes_debug" value="config.middleware.lwip_tcpip.lwip_ipv6_scopes_debug.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_ipv6_num_addresses" value="3"/>
+      <property id="config.middleware.lwip_tcpip.lwip_ipv6_forward" value="config.middleware.lwip_tcpip.lwip_ipv6_forward.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_ipv6_frag" value="config.middleware.lwip_tcpip.lwip_ipv6_frag.enabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_ipv6_reass" value="LWIP_IPV6"/>
+      <property id="config.middleware.lwip_tcpip.lwip_ipv6_send_router_solicit" value="LWIP_IPV6"/>
+      <property id="config.middleware.lwip_tcpip.lwip_ipv6_autoconfig" value="LWIP_IPV6"/>
+      <property id="config.middleware.lwip_tcpip.lwip_ipv6_address_lifetimes" value="LWIP_IPV6_AUTOCONFIG"/>
+      <property id="config.middleware.lwip_tcpip.lwip_ipv6_dup_detect_attempts" value="1"/>
+      <property id="config.middleware.lwip_tcpip.lwip_icmp6" value="LWIP_IPV6"/>
+      <property id="config.middleware.lwip_tcpip.lwip_icmp6_datasize" value="0"/>
+      <property id="config.middleware.lwip_tcpip.lwip_icmp6_hl" value="255"/>
+      <property id="config.middleware.lwip_tcpip.lwip_ipv6_mld" value="LWIP_IPV6"/>
+      <property id="config.middleware.lwip_tcpip.memp_num_mld6_group" value="4"/>
+      <property id="config.middleware.lwip_tcpip.lwip_nd6_queueing" value="LWIP_IPV6"/>
+      <property id="config.middleware.lwip_tcpip.memp_num_nd6_queue" value="20"/>
+      <property id="config.middleware.lwip_tcpip.lwip_nd6_num_neighbors" value="10"/>
+      <property id="config.middleware.lwip_tcpip.lwip_nd6_num_destinations" value="10"/>
+      <property id="config.middleware.lwip_tcpip.lwip_nd6_num_prefixes" value="5"/>
+      <property id="config.middleware.lwip_tcpip.lwip_nd6_num_routers" value="3"/>
+      <property id="config.middleware.lwip_tcpip.lwip_nd6_max_multicast_solicit" value="3"/>
+      <property id="config.middleware.lwip_tcpip.lwip_nd6_max_unicast_solicit" value="3"/>
+      <property id="config.middleware.lwip_tcpip.lwip_nd6_reachable_time" value="30000"/>
+      <property id="config.middleware.lwip_tcpip.lwip_nd6_retrans_timer" value="1000"/>
+      <property id="config.middleware.lwip_tcpip.lwip_nd6_delay_first_probe_time" value="5000"/>
+      <property id="config.middleware.lwip_tcpip.lwip_nd6_allow_ra_updates" value="config.middleware.lwip_tcpip.lwip_nd6_allow_ra_updates.enabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_nd6_tcp_reachability_hints" value="config.middleware.lwip_tcpip.lwip_nd6_tcp_reachability_hints.enabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_nd6_rdnss_max_dns_servers" value="0"/>
+      <property id="config.middleware.lwip_tcpip.lwip_ipv6_dhcp6" value="config.middleware.lwip_tcpip.lwip_ipv6_dhcp6.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_ipv6_dhcp6_stateful" value="config.middleware.lwip_tcpip.lwip_ipv6_dhcp6_stateful.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_ipv6_dhcp6_stateless" value="LWIP_IPV6_DHCP6"/>
+      <property id="config.middleware.lwip_tcpip.lwip_dhcp6_get_ntp_srv" value="config.middleware.lwip_tcpip.lwip_dhcp6_get_ntp_srv.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_dhcp6_max_ntp_servers" value="1"/>
+      <property id="config.middleware.lwip_tcpip.lwip_dhcp6_max_dns_servers" value="DNS_MAX_SERVERS"/>
+      <property id="config.middleware.lwip_tcpip.lwip_hook_filename" value=""/>
+      <property id="config.middleware.lwip_tcpip.lwip_dbg_min_level" value="LWIP_DBG_LEVEL_ALL"/>
+      <property id="config.middleware.lwip_tcpip.lwip_dbg_types_on" value="LWIP_DBG_ON"/>
+      <property id="config.middleware.lwip_tcpip.etharp_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.netif_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.pbuf_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.api_lib_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.api_msg_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.sockets_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.icmp_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.igmp_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.inet_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.ip_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.ip_reass_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.raw_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.mem_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.memp_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.sys_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.timers_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.tcp_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.tcp_input_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.tcp_fr_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.tcp_rto_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.tcp_cwnd_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.tcp_wnd_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.tcp_output_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.tcp_rst_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.tcp_qlen_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.udp_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.tcpip_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.slip_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.dhcp_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.autoip_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.acd_debug" value="config.middleware.lwip_tcpip.acd_debug.disabled"/>
+      <property id="config.middleware.lwip_tcpip.dns_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.ip6_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.dhcp6_debug" value="LWIP_DBG_OFF"/>
+      <property id="config.middleware.lwip_tcpip.lwip_testmode" value="config.middleware.lwip_tcpip.lwip_testmode.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_perf" value="config.middleware.lwip_tcpip.lwip_perf.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_support_custom_pbuf" value="config.middleware.lwip_tcpip.lwip_support_custom_pbuf.enabled"/>
+    </config>
+    <config id="config.middleware.lwip_tcpip_cc">
+      <property id="config.middleware.lwip_tcpip.custom_config" value="bsp_api.h"/>
+      <property id="config.middleware.lwip_tcpip.platform_assert" value="do {FSP_LOG_PRINT(x); BSP_CFG_HANDLE_UNRECOVERABLE_ERROR(0);} while (0)"/>
+      <property id="config.middleware.lwip_tcpip.rand" value="(u32_t) rand()"/>
     </config>
     <config id="config.driver.sci_b_uart">
       <property id="config.driver.sci_b_uart.param_checking_enable" value="config.driver.sci_b_uart.param_checking_enable.disabled"/>
@@ -722,7 +1065,7 @@
       <property id="config.awsfreertos.thread.configuse_queue_sets" value="config.awsfreertos.thread.configuse_queue_sets.disabled"/>
       <property id="config.awsfreertos.thread.configuse_time_slicing" value="config.awsfreertos.thread.configuse_time_slicing.disabled"/>
       <property id="config.awsfreertos.thread.configuse_newlib_reentrant" value="config.awsfreertos.thread.configuse_newlib_reentrant.disabled"/>
-      <property id="config.awsfreertos.thread.configenable_backward_compatibility" value="config.awsfreertos.thread.configenable_backward_compatibility.disabled"/>
+      <property id="config.awsfreertos.thread.configenable_backward_compatibility" value="config.awsfreertos.thread.configenable_backward_compatibility.enabled"/>
       <property id="config.awsfreertos.thread.confignum_thread_local_storage_pointers" value="5"/>
       <property id="config.awsfreertos.thread.configstack_depth_type" value="uint32_t"/>
       <property id="config.awsfreertos.thread.configmessage_buffer_length_type" value="size_t"/>

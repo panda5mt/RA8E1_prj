@@ -107,7 +107,7 @@
             #define configUSE_NEWLIB_REENTRANT (0)
             #endif
             #ifndef configENABLE_BACKWARD_COMPATIBILITY
-            #define configENABLE_BACKWARD_COMPATIBILITY (0)
+            #define configENABLE_BACKWARD_COMPATIBILITY (1)
             #endif
             #ifndef configNUM_THREAD_LOCAL_STORAGE_POINTERS
             #define configNUM_THREAD_LOCAL_STORAGE_POINTERS (5)

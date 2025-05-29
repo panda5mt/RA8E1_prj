@@ -52,7 +52,12 @@ target_include_directories(${PROJECT_NAME}.elf
     ${CMAKE_CURRENT_SOURCE_DIR}/ra/fsp/inc/api
     ${CMAKE_CURRENT_SOURCE_DIR}/ra/fsp/inc/instances
     ${CMAKE_CURRENT_SOURCE_DIR}/ra/fsp/src/rm_freertos_port
+    ${CMAKE_CURRENT_SOURCE_DIR}/ra/fsp/src/rm_lwip_ether
+    ${CMAKE_CURRENT_SOURCE_DIR}/ra/lwip-tcpip/lwip/src/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/ra/lwip-tcpip/lwip/src/include/lwip
+    ${CMAKE_CURRENT_SOURCE_DIR}/ra/lwip-tcpip/lwip/contrib/ports/freertos/include
     ${CMAKE_CURRENT_SOURCE_DIR}/ra_cfg/aws
+    ${CMAKE_CURRENT_SOURCE_DIR}/ra_cfg/lwip
     ${CMAKE_CURRENT_SOURCE_DIR}/ra_cfg/fsp_cfg
     ${CMAKE_CURRENT_SOURCE_DIR}/ra_cfg/fsp_cfg/bsp
     ${CMAKE_CURRENT_SOURCE_DIR}/ra_gen

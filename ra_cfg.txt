@@ -446,22 +446,6 @@ FSP Configuration
     Memory-mapping Support: XiP Support: Disable
     DOTF Support: Disable
     
-  Module "Ethernet (r_ether)"
-    Parameter Checking: Default (BSP)
-    ET0_LINKSTA Pin Status Flag: Fall -> Rise
-    Link Signal Change Flag: Unused
-    Interrupt event backward compatibility: Do not keep compatibility
-    
-  Module "Ethernet (r_ether_phy)"
-    Parameter Checking: Default (BSP)
-    KSZ8091RNB Target: Disabled
-    KSZ8041 Target: Disabled
-    DP83620 Target: Disabled
-    ICS1894 Target: Disabled
-    User Own Target: Enabled
-    Reference Clock: Disabled
-    Automatic Phy LSI Initialization: Enabled
-    
   Module "Timer, General PWM (r_gpt)"
     Parameter Checking: Enabled
     Pin Output Support: Enabled
@@ -489,6 +473,328 @@ FSP Configuration
     DMA/DTC Destination Address: DMA Disabled
     USB Compliance Test mode: Disabled
     USB TPL table name: NULL
+    
+  Module "lwIP tcpip (lwip_tcpip)"
+    Infrastructure: NO_SYS: Disabled
+    Infrastructure: Timers: Timers support: Enabled
+    Infrastructure: Timers: Timers custom: Disabled
+    Infrastructure: memcpy: Memcpy: memcpy
+    Infrastructure: memcpy: Smemcpy: memcpy
+    Infrastructure: memcpy: Memmove: memmove
+    Infrastructure: Core locking and MPU: Special memory management: Disabled
+    Infrastructure: Core locking and MPU: TCPIP core locking: Enabled
+    Infrastructure: Core locking and MPU: TCPIP core locking input: Disabled
+    Infrastructure: Core locking and MPU: SYS lightweight port: Enabled
+    Infrastructure: Core locking and MPU: Assert core locked: 
+    Infrastructure: Heap and memory pools: Mem lib C malloc: Disabled
+    Infrastructure: Heap and memory pools: Mem custom allocator: Disabled
+    Infrastructure: Heap and memory pools: Memp mem malloc: Disabled
+    Infrastructure: Heap and memory pools: Memp mem init: 0
+    Infrastructure: Heap and memory pools: Mem alignment: 32
+    Infrastructure: Heap and memory pools: Mem size: 1600
+    Infrastructure: Heap and memory pools: Memp overflow check: No checking
+    Infrastructure: Heap and memory pools: Memp sanity check: Disabled
+    Infrastructure: Heap and memory pools: Mem overflow check: No checking
+    Infrastructure: Heap and memory pools: Mem sanity check: Disabled
+    Infrastructure: Heap and memory pools: Mem use pools: Disabled
+    Infrastructure: Heap and memory pools: Mem use pools try bigger pool: Disabled
+    Infrastructure: Heap and memory pools: Memp use custom pools: Disabled
+    Infrastructure: Heap and memory pools: LwIP allow mem free from other context: Disabled
+    Infrastructure: Internal memory pools: Memp num pbuf: 16
+    Infrastructure: Internal memory pools: Memp num RAW PCB: 4
+    Infrastructure: Internal memory pools: Memp num UDP PCB: 4
+    Infrastructure: Internal memory pools: Memp num TCP PCB: 5
+    Infrastructure: Internal memory pools: Memp num TCP PCB listen: 8
+    Infrastructure: Internal memory pools: Memp num TCP seg: 16
+    Infrastructure: Internal memory pools: Memp num ALTCP PBC: MEMP_NUM_TCP_PCB
+    Infrastructure: Internal memory pools: Memp num reassdata: 5
+    Infrastructure: Internal memory pools: Memp num frag pbuf: 15
+    Infrastructure: Internal memory pools: Memp num ARP queue: 30
+    Infrastructure: Internal memory pools: Memp num igmp group: 8
+    Infrastructure: Internal memory pools: Memp num sys timeout: LWIP_NUM_SYS_TIMEOUT_INTERNAL
+    Infrastructure: Internal memory pools: Memp num netbuf: 2
+    Infrastructure: Internal memory pools: Memp num netconn: 4
+    Infrastructure: Internal memory pools: Memp num select cb: 4
+    Infrastructure: Internal memory pools: Memp num TCPIP msg api: 8
+    Infrastructure: Internal memory pools: Memp num TCPIP msg inpkt: 8
+    Infrastructure: Internal memory pools: Memp num netdb: 1
+    Infrastructure: Internal memory pools: Memp num localhostlist: 1
+    Infrastructure: Internal memory pools: Pbuf pool size: 16
+    Infrastructure: Internal memory pools: Memp num API msg: MEMP_NUM_TCPIP_MSG_API
+    Infrastructure: Internal memory pools: Memp num DNS API msg: MEMP_NUM_TCPIP_MSG_API
+    Infrastructure: Internal memory pools: Memp num socket setgetsockopt data: MEMP_NUM_TCPIP_MSG_API
+    Infrastructure: Internal memory pools: Memp num netifapi msg: MEMP_NUM_TCPIP_MSG_API
+    IPv4: ARP: LwIP arp: Enabled
+    IPv4: ARP: ARP table size: 10
+    IPv4: ARP: ARP maxage: 300
+    IPv4: ARP: ARP queueing: Disabled
+    IPv4: ARP: ARP queue len: 3
+    IPv4: ARP: Etharp support VLAN: Disabled
+    IPv4: ARP: LwIP VLAN PCP: Disabled
+    IPv4: ARP: LwIP ethernet support: LWIP_ARP
+    IPv4: ARP: Ethernet padding size: 0
+    IPv4: ARP: Etharp support static entries: Disabled
+    IPv4: ARP: Etharp table match netif: !LWIP_SINGLE_NETIF
+    IPv4: LwIP IPv4: Enabled
+    IPv4: IP forward: Disabled
+    IPv4: IP reassembly: Enabled
+    IPv4: IP fragment: Enabled
+    IPv4: IP options allowed: Enabled
+    IPv4: IP reass maxage: 15
+    IPv4: IP reass max pbufs: 10
+    IPv4: IP default TTL: 255
+    IPv4: IP sof broadcast filter: Disabled
+    IPv4: IP sof broadcast recv filter: Disabled
+    IPv4: IP forward allow TX on RX netif: Disabled
+    IPv4: ICMP: LwIP ICMP: Enabled
+    IPv4: ICMP: ICMP TTL: IP_DEFAULT_TTL
+    IPv4: ICMP: LwIP broadcast ping: Disabled
+    IPv4: ICMP: LwIP multicast ping: Disabled
+    Callback-style APIs: RAW: LwIP RAW: Enabled
+    Callback-style APIs: RAW: RAW TTL: IP_DEFAULT_TTL
+    IPv4: DHCP: LwIP DHCP: Enabled
+    IPv4: DHCP: LwIP DHCP address check: Enabled
+    IPv4: DHCP: LwIP DHCP bootp file: Disabled
+    IPv4: DHCP: LwIP DHCP get NTP server: Disabled
+    IPv4: DHCP: LwIP DHCP max NTP servers: 1
+    IPv4: DHCP: LwIP DHCP max DNS servers: DNS_MAX_SERVERS
+    IPv4: DHCP: LwIP DHCP discover add hostname: Disabled
+    IPv4: AUTOIP: LwIP autoip: Disabled
+    IPv4: AUTOIP: LwIP DHCP autoip coop: Disabled
+    IPv4: AUTOIP: LwIP DHCP autoip coop tries: 9
+    IPv4: AUTOIP: LwIP ACD: Enabled
+    Infrastructure: SNMP MIB2 callbacks: LWIP_MIB2_CALLBACKS : Disabled
+    Infrastructure: Multicast: LwIP multicast TX options: ((LWIP_IGMP || LWIP_IPV6_MLD) && (LWIP_UDP || LWIP_RAW))
+    IPv4: IGMP: LwIP IGMP: Disabled
+    Callback-style APIs: DNS: LwIP DNS: Disabled
+    Callback-style APIs: DNS: DNS table size: 4
+    Callback-style APIs: DNS: DNS max name length: 256
+    Callback-style APIs: DNS: DNS max servers: 2
+    Callback-style APIs: DNS: DNS max retries: 4
+    Callback-style APIs: DNS: DNS does name check: Enabled
+    Callback-style APIs: DNS: LwIP DNS secure: 7
+    Callback-style APIs: DNS: DNS local hostlist: Disabled
+    Callback-style APIs: DNS: DNS local hostlist is dynamic: Disabled
+    Callback-style APIs: DNS: LwIP dns support mDNS queries: Disabled
+    Callback-style APIs: UDP: LwIP UDP: Enabled
+    Callback-style APIs: UDP: LwIP UDP lite: Disabled
+    Callback-style APIs: UDP: UDP TTL: IP_DEFAULT_TTL
+    Callback-style APIs: UDP: LwIP netbuf recvinfo: Disabled
+    Callback-style APIs: TCP: LwIP TCP: Enabled
+    Callback-style APIs: TCP: TCP TTL: IP_DEFAULT_TTL
+    Callback-style APIs: TCP: TCP window size: (4 * TCP_MSS)
+    Callback-style APIs: TCP: TCP max rtx: 12
+    Callback-style APIs: TCP: TCP SYN max rtx: 6
+    Callback-style APIs: TCP: TCP queue ooswq: LWIP_TCP
+    Callback-style APIs: TCP: LwIP TCP SACK out: Disabled
+    Callback-style APIs: TCP: LwIP TCP max SACK num: 4
+    Callback-style APIs: TCP: TCP MSS: 536
+    Callback-style APIs: TCP: TCP calculate eff send MSS: 1
+    Callback-style APIs: TCP: LwIP TCP rto time: 3000
+    Callback-style APIs: TCP: TCP send buffer: (2 * TCP_MSS)
+    Callback-style APIs: TCP: TCP send queuelen: ((4 * (TCP_SND_BUF) + (TCP_MSS - 1))/(TCP_MSS))
+    Callback-style APIs: TCP: TCP writable space: LWIP_MIN(LWIP_MAX(((TCP_SND_BUF)/2), (2 * TCP_MSS) + 1), (TCP_SND_BUF) - 1)
+    Callback-style APIs: TCP: TCP writable bufs: LWIP_MAX(((TCP_SND_QUEUELEN)/2), 5)
+    Callback-style APIs: TCP: TCP ooseq max bytes: 0
+    Callback-style APIs: TCP: TCP ooseq bytes limit: TCP_OOSEQ_MAX_BYTES
+    Callback-style APIs: TCP: TCP ooseq max pbufs: 0
+    Callback-style APIs: TCP: TCP ooseq pbufs limit: TCP_OOSEQ_MAX_PBUFS
+    Callback-style APIs: TCP: TCP listen backlog: Disabled
+    Callback-style APIs: TCP: TCP default listen backlog: 0xff
+    Callback-style APIs: TCP: TCP oversize: TCP_MSS
+    Callback-style APIs: TCP: LwIP TCP timestamps: Disabled
+    Callback-style APIs: TCP: TCP window update threshold: LWIP_MIN((TCP_WND / 4), (TCP_MSS * 4))
+    Callback-style APIs: TCP: LwIP event or callback API: Callback API
+    Callback-style APIs: TCP: LwIP window scale: Disabled
+    Callback-style APIs: TCP: TCP rcv scale: 0
+    Callback-style APIs: TCP: LwIP TCP pcb num ext args: 0
+    Callback-style APIs: TCP: LwIP altcp: Disabled
+    Callback-style APIs: TCP: LwIP altcp TLS: Disabled
+    PBUF: Pbuf link hlen: (14 + ETH_PAD_SIZE)
+    PBUF: Pbuf link encapsulation header size: 0
+    PBUF: Pbuf pool bufsize: LWIP_MEM_ALIGN_SIZE(TCP_MSS+PBUF_IP_HLEN+PBUF_TRANSPORT_HLEN+PBUF_LINK_ENCAPSULATION_HLEN+PBUF_LINK_HLEN)
+    PBUF: LwIP pbuf refcount type: u8_t
+    PBUF: LwIP pbuf custom data: 
+    PBUF: LwIP pbuf custom data init: Disabled
+    NETIF: LwIP single netif: Disabled
+    NETIF: LwIP netif hostname: Disabled
+    NETIF: LwIP netif api: Disabled
+    NETIF: LwIP netif status callback: Disabled
+    NETIF: LwIP netif ext status callback: Disabled
+    NETIF: LwIP netif link callback: Disabled
+    NETIF: LwIP netif remove callback: Enabled
+    NETIF: LwIP netif hardware addr hint: Disabled
+    NETIF: LwIP netif TX single pbuf: Enabled
+    NETIF: LwIP num netif client data: 0
+    NETIF: Loopback interface: LwIP have loop interface: (LWIP_NETIF_LOOPBACK && !LWIP_SINGLE_NETIF)
+    NETIF: Loopback interface: LwIP loop interface multicast: Disabled
+    NETIF: Loopback interface: LwIP netif loopback: Disabled
+    NETIF: Loopback interface: LwIP loopback max pbufs: 0
+    NETIF: Loopback interface: LwIP netif loopback multithreading: (!NO_SYS)
+    Infrastructure: Threading: TCPIP thread name: tcpip_thread
+    Infrastructure: Threading: TCPIP thread stacksize: 0
+    Infrastructure: Threading: TCPIP thread prio: 1
+    Infrastructure: Threading: TCPIP mbox size: 0
+    Infrastructure: Threading: LwIP tcpip thread alive: 
+    Infrastructure: Threading: Slipif thread name: slipif_loop
+    Infrastructure: Threading: Slipif thread stacksize: 0
+    Infrastructure: Threading: Slipif thread prio: 1
+    Infrastructure: Threading: Default thread name: lwIP
+    Infrastructure: Threading: Default thread stacksize: 0
+    Infrastructure: Threading: Default thread prio: 1
+    Infrastructure: Threading: Default RAW recvmbox size: 0
+    Infrastructure: Threading: Default UDP recvmbox size: 0
+    Infrastructure: Threading: Default TCP recvmbox size: 0
+    Infrastructure: Threading: Default acceptmbox size: 0
+    Thread-safe APIs: Netconn: LwIP netconn: Enabled
+    Thread-safe APIs: Netconn: LwIP TCPIP timeout: Disabled
+    Thread-safe APIs: Netconn: LwIP netconn sem per thread: Disabled
+    Thread-safe APIs: Netconn: LwIP netconn fullduplex: Disabled
+    Thread-safe APIs: Sockets: LwIP socket: Enabled
+    Thread-safe APIs: Sockets: LwIP compat sockets: 1
+    Thread-safe APIs: Sockets: LwIP posix sockets io names: Enable
+    Thread-safe APIs: Sockets: LwIP socket offset: 0
+    Thread-safe APIs: Sockets: LwIP socket external headers: Disabled
+    Thread-safe APIs: Sockets: LwIP TCP keepalive: Disabled
+    Thread-safe APIs: Sockets: LwIP so send timeout: Disabled
+    Thread-safe APIs: Sockets: LwIP so rcv timeout: Disabled
+    Thread-safe APIs: Sockets: LwIP so send/rcv timeout nonstandard: Disabled
+    Thread-safe APIs: Sockets: LwIP so rcvbuf: Disabled
+    Thread-safe APIs: Sockets: LwIP so linger: Disabled
+    Thread-safe APIs: Sockets: Recv bufsize: INT_MAX
+    Thread-safe APIs: Sockets: LwIP tcp close timeout ms: 20000
+    Thread-safe APIs: Sockets: So reuseaddr: Disabled
+    Thread-safe APIs: Sockets: So reuse rxtoall: Disabled
+    Thread-safe APIs: Sockets: LwIP fionread linuxmode: Disabled
+    Thread-safe APIs: Sockets: LwIP socket select: Enabled
+    Thread-safe APIs: Sockets: LwIP socket poll: Enabled
+    Debugging: Statistics: LwIP stats: Enabled
+    Debugging: Statistics: LwIP stats display: Disabled
+    Debugging: Statistics: Link stats: Enabled
+    Debugging: Statistics: Etharp stats: LWIP_ARP
+    Debugging: Statistics: IP stats: Enabled
+    Debugging: Statistics: IP frag stats: (IP_REASSEMBLY || IP_FRAG)
+    Debugging: Statistics: ICMP stats: Enabled
+    Debugging: Statistics: IGMP stats: LWIP_IGMP
+    Debugging: Statistics: UDP stats: LWIP_UDP
+    Debugging: Statistics: TCP stats: LWIP_TCP
+    Debugging: Statistics: Mem stats: ((MEM_CUSTOM_ALLOCATOR == 0) && (MEM_USE_POOLS == 0))
+    Debugging: Statistics: Memp stats: MEMP_MEM_MALLOC == 0
+    Debugging: Statistics: SYS stats: NO_SYS == 0
+    Debugging: Statistics: IPv6 stats: LWIP_IPV6
+    Debugging: Statistics: ICMP IPv6 stats: (LWIP_IPV6 && LWIP_ICMP6)
+    Debugging: Statistics: IPv6 frag stats: (LWIP_IPV6 && (LWIP_IPV6_FRAG || LWIP_IPV6_REASS))
+    Debugging: Statistics: MLD IPv6 stats: (LWIP_IPV6 && LWIP_IPV6_MLD)
+    Debugging: Statistics: ND IPv6 stats: LWIP_IPV6
+    Debugging: Statistics: MIB2 stats: Disabled
+    Infrastructure: Checksum: LwIP checksum ctrl per netif: Disabled
+    Infrastructure: Checksum: Checksum gen IP: Enabled
+    Infrastructure: Checksum: Checksum gen UDP: Enabled
+    Infrastructure: Checksum: Checksum gen TCP: Enabled
+    Infrastructure: Checksum: Checksum gen ICMP: Enabled
+    Infrastructure: Checksum: Checksum gen ICMP6: Enabled
+    Infrastructure: Checksum: Checksum check IP: Enabled
+    Infrastructure: Checksum: Checksum check UDP: Enabled
+    Infrastructure: Checksum: Checksum check TCP: Enabled
+    Infrastructure: Checksum: Checksum check ICMP: Enabled
+    Infrastructure: Checksum: Checksum check ICMP6: Enabled
+    Infrastructure: Checksum: LwIP checksum on copy: Disabled
+    IPv6: LwIP IPv6: Disabled
+    IPv6: IPv6 reass maxage: 60
+    IPv6: LwIP IPv6 scopes: (LWIP_IPV6 && !LWIP_SINGLE_NETIF)
+    IPv6: LwIP IPv6 scopes debug: Disabled
+    IPv6: LwIP IPv6 num addresses: 3
+    IPv6: LwIP IPv6 forward: Disabled
+    IPv6: LwIP IPv6 frag: Enabled
+    IPv6: LwIP IPv6 reass: LWIP_IPV6
+    IPv6: LwIP IPv6 send router solicit: LWIP_IPV6
+    IPv6: LwIP IPv6 autoconfig: LWIP_IPV6
+    IPv6: LwIP IPv6 address lifetimes: LWIP_IPV6_AUTOCONFIG
+    IPv6: LwIP IPv6 dup detect attempts: 1
+    IPv6: ICMP6: LwIP ICMP6: LWIP_IPV6
+    IPv6: ICMP6: LwIP ICMP6 datasize: 0
+    IPv6: ICMP6: LwIP ICMP6 hop limit: 255
+    IPv6: Multicast listener discovery: LwIP IPv6 mld: LWIP_IPV6
+    IPv6: Multicast listener discovery: Memp num mld IPv6 group: 4
+    IPv6: Neighbor discovery: LwIP ND IPv6 queueing: LWIP_IPV6
+    IPv6: Neighbor discovery: Memp num ND IPv6 queue: 20
+    IPv6: Neighbor discovery: LwIP ND IPv6 num neighbors: 10
+    IPv6: Neighbor discovery: LwIP ND IPv6 num destinations: 10
+    IPv6: Neighbor discovery: LwIP ND IPv6 num prefixes: 5
+    IPv6: Neighbor discovery: LwIP ND IPv6 num routers: 3
+    IPv6: Neighbor discovery: LwIP ND IPv6 max multicast solicit: 3
+    IPv6: Neighbor discovery: LwIP ND IPv6 max unicast solicit: 3
+    IPv6: Neighbor discovery: LwIP ND IPv6 reachable time: 30000
+    IPv6: Neighbor discovery: LwIP ND IPv6 retrans timer: 1000
+    IPv6: Neighbor discovery: LwIP ND IPv6 delay first probe time: 5000
+    IPv6: Neighbor discovery: LwIP ND IPv6 allow RA updates: Enabled
+    IPv6: Neighbor discovery: LwIP ND IPv6 TCP reachability hints: Enabled
+    IPv6: Neighbor discovery: LwIP ND IPv6 rdnss max DNS servers: 0
+    IPv6: DHCPv6: LwIP IPv6 DHCP: Disabled
+    IPv6: DHCPv6: LwIP IPv6 DHCP stateful: Disabled
+    IPv6: DHCPv6: LwIP IPv6 DHCP stateless: LWIP_IPV6_DHCP6
+    IPv6: DHCPv6: LwIP DHCP IPv6 get NTP srv: Disabled
+    IPv6: DHCPv6: LwIP DHCP IPv6 max NTP servers: 1
+    IPv6: DHCPv6: LwIP DHCP IPv6 max DNS servers: DNS_MAX_SERVERS
+    Infrastructure: Hooks: LwIP hook filename: 
+    Debugging: Debug messages: LwIP debug min level: LWIP_DBG_LEVEL_ALL
+    Debugging: Debug messages: LwIP debug types on: LWIP_DBG_ON
+    Debugging: Debug messages: Etharp debug: LWIP_DBG_OFF
+    Debugging: Debug messages: Netif debug: LWIP_DBG_OFF
+    Debugging: Debug messages: Pbuf debug: LWIP_DBG_OFF
+    Debugging: Debug messages: API lib debug: LWIP_DBG_OFF
+    Debugging: Debug messages: API msg debug: LWIP_DBG_OFF
+    Debugging: Debug messages: Sockets debug: LWIP_DBG_OFF
+    Debugging: Debug messages: ICMP debug: LWIP_DBG_OFF
+    Debugging: Debug messages: IGMP debug: LWIP_DBG_OFF
+    Debugging: Debug messages: Inet debug: LWIP_DBG_OFF
+    Debugging: Debug messages: IP debug: LWIP_DBG_OFF
+    Debugging: Debug messages: IP reass debug: LWIP_DBG_OFF
+    Debugging: Debug messages: RAW debug: LWIP_DBG_OFF
+    Debugging: Debug messages: Mem debug: LWIP_DBG_OFF
+    Debugging: Debug messages: Memp debug: LWIP_DBG_OFF
+    Debugging: Debug messages: SYS debug: LWIP_DBG_OFF
+    Debugging: Debug messages: Timers debug: LWIP_DBG_OFF
+    Debugging: Debug messages: TCP debug: LWIP_DBG_OFF
+    Debugging: Debug messages: TCP input debug: LWIP_DBG_OFF
+    Debugging: Debug messages: TCP fast retransmit debug: LWIP_DBG_OFF
+    Debugging: Debug messages: TCP retransmit timeout debug: LWIP_DBG_OFF
+    Debugging: Debug messages: TCP congestion window debug: LWIP_DBG_OFF
+    Debugging: Debug messages: TCP window debug: LWIP_DBG_OFF
+    Debugging: Debug messages: TCP output debug: LWIP_DBG_OFF
+    Debugging: Debug messages: TCP RST debug: LWIP_DBG_OFF
+    Debugging: Debug messages: TCP qlen debug: LWIP_DBG_OFF
+    Debugging: Debug messages: UDP debug: LWIP_DBG_OFF
+    Debugging: Debug messages: TCPIP debug: LWIP_DBG_OFF
+    Debugging: Debug messages: Slip debug: LWIP_DBG_OFF
+    Debugging: Debug messages: DHCP debug: LWIP_DBG_OFF
+    Debugging: Debug messages: AutoIP debug: LWIP_DBG_OFF
+    Debugging: Debug messages: Acd debug: Disabled
+    Debugging: Debug messages: DNS debug: LWIP_DBG_OFF
+    Debugging: Debug messages: IPv6 debug: LWIP_DBG_OFF
+    Debugging: Debug messages: DHCP IPv6 debug: LWIP_DBG_OFF
+    Debugging: Debug messages: LwIP testmode: Disabled
+    Debugging: LwIP perf: Disabled
+    LwIP support custom pbuf: Enabled
+    
+  Module "lwIP Wrapper to r_ether (rm_lwip_ether)"
+  Module "LwIP system FreeRTOS port"
+  Module "lwIP system freertos Ethernet (rm_lwip_sys_freertos)"
+  Module "Ethernet (r_ether)"
+    Parameter Checking: Default (BSP)
+    ET0_LINKSTA Pin Status Flag: Fall -> Rise
+    Link Signal Change Flag: Unused
+    Interrupt event backward compatibility: Do not keep compatibility
+    
+  Module "Ethernet (r_ether_phy)"
+    Parameter Checking: Default (BSP)
+    KSZ8091RNB Target: Disabled
+    KSZ8041 Target: Disabled
+    DP83620 Target: Disabled
+    ICS1894 Target: Disabled
+    User Own Target: Enabled
+    Reference Clock: Disabled
+    Automatic Phy LSI Initialization: Enabled
     
   FreeRTOS
     General: Custom FreeRTOSConfig.h: 
@@ -518,7 +824,7 @@ FSP Configuration
     General: Use Queue Sets: Disabled
     General: Use Time Slicing: Disabled
     General: Use Newlib Reentrant: Disabled
-    General: Enable Backward Compatibility: Disabled
+    General: Enable Backward Compatibility: Enabled
     General: Num Thread Local Storage Pointers: 5
     General: Stack Depth Type: uint32_t
     General: Message Buffer Length Type: size_t
@@ -685,38 +991,6 @@ FSP Configuration
       DOTF: Decryption start address: 0x90000000
       DOTF: Decryption end address: 0x90001FFF
       
-    Instance "g_ether0 Ethernet (r_ether)"
-      General: Name: g_ether0
-      General: Channel: 0
-      General: MAC address: AA:BB:CC:DD:EE:FF
-      General: Zero-copy Mode: Disable
-      General: Flow control functionality: Enable
-      Filters: Multicast Mode: Enable
-      Filters: Promiscuous Mode: Disable
-      Filters: Broadcast filter: 0
-      Buffers: Number of TX buffer: 4
-      Buffers: Number of RX buffer: 4
-      Buffers: Allocate RX buffer: Enable
-      Buffers: Buffer size: 1514
-      Buffers: Padding size: Disable
-      Buffers: Padding offset: 0
-      Interrupts: EESR event: FR, TC, TWB
-      Interrupts: ECSR event: 
-      Interrupts: Interrupt priority: Priority 10
-      Interrupts: Callback: ether_example_callback
-      
-      Instance "g_ether_phy0 Ethernet (r_ether_phy)"
-        Name: g_ether_phy0
-        Channel: 0
-        PHY-LSI Address: 0x00
-        PHY-LSI Reset Completion Timeout: 0x00020000
-        Select MII type: RMII
-        Phy LSI type: User own PHY
-        Port Custom Init Function: ether_phy_target_lan8720a_initialize
-        Port Custom Link Partner Ability Get Function: ether_phy_target_lan8720_is_support_link_partner_ability
-        MII/RMII Register Access Wait-time: 8
-        Flow Control: Disable
-        
     Instance "g_timer5 Timer, General PWM (r_gpt)"
       General: Name: g_timer5
       General: Channel: 5
@@ -870,6 +1144,52 @@ FSP Configuration
     Memory Allocation: Static
     Allocate Secure Context: Enable
     
+    Instance "lwIP tcpip (lwip_tcpip)"
+      
+      Instance "lwIP Wrapper to r_ether (rm_lwip_ether)"
+        Name: g_lwip_ether0
+        MTU: 1500
+        Netif flags: BROADCAST, ETHARP
+        Zero-copy mode: Enable
+        RX buffer pool size: 10
+        Link check interval: 100
+        RTOS: RX thread stacksize: 1024
+        RTOS: RX thread priority: 4
+        
+        Instance "g_ether0 Ethernet (r_ether)"
+          General: Name: g_ether0
+          General: Channel: 0
+          General: MAC address: AA:BB:CC:DD:EE:FF
+          General: Zero-copy Mode: Enable
+          General: Flow control functionality: Enable
+          Filters: Multicast Mode: Enable
+          Filters: Promiscuous Mode: Disable
+          Filters: Broadcast filter: 0
+          Buffers: Number of TX buffer: 4
+          Buffers: Number of RX buffer: 4
+          Buffers: Allocate RX buffer: Disable
+          Buffers: Buffer size: 1514
+          Buffers: Padding size: Disable
+          Buffers: Padding offset: 0
+          Interrupts: EESR event: RFOF, RDE, FR, TC, TABT, TWB
+          Interrupts: ECSR event: 
+          Interrupts: Interrupt priority: Priority 10
+          Interrupts: Callback: rm_lwip_ether_callback
+          
+          Instance "g_ether_phy0 Ethernet (r_ether_phy)"
+            Name: g_ether_phy0
+            Channel: 0
+            PHY-LSI Address: 0x00
+            PHY-LSI Reset Completion Timeout: 0x00020000
+            Select MII type: RMII
+            Phy LSI type: User own PHY
+            Port Custom Init Function: ether_phy_target_lan8720a_initialize
+            Port Custom Link Partner Ability Get Function: ether_phy_target_lan8720_is_support_link_partner_ability
+            MII/RMII Register Access Wait-time: 8
+            Flow Control: Disable
+            
+      Instance "lwIP system freertos Ethernet (rm_lwip_sys_freertos)"
+    Instance "LwIP system FreeRTOS port"
   Object "g_usb_write_complete_binary_semaphore Counting Semaphore"
     Symbol: g_usb_write_complete_binary_semaphore
     Initial count: 0

@@ -28,4 +28,4 @@
                 DTCM_LENGTH = 0x4000;
                 NS_OFFSET_START  = 0x10000000;
                 NS_OFFSET_LENGTH = 0x0;
-                    RAM_NS_BUFFER_LENGTH = 0x3080;
+                    RAM_NS_BUFFER_LENGTH = 0x80;
