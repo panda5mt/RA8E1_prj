@@ -78,17 +78,14 @@ void main_thread1_entry(void *pvParameters)
     // Destination Settings
     ip_addr_t dest_ip;
     IP4_ADDR(&dest_ip, 192, 168, 10, 123);
-    for (int i = 0; i < 100; i++)
+    err_t err = udp_sendto(pcb, p, &dest_ip, UDP_PORT_DEST);
+    if (err == ERR_OK)
     {
-        err_t err = udp_sendto(pcb, p, &dest_ip, UDP_PORT_DEST);
-        if (err == ERR_OK)
-        {
-            xprintf("[UDP] Message sent\n");
-        }
-        else
-        {
-            xprintf("[UDP] Send failed: %d\n", err);
-        }
+        xprintf("[UDP] Message sent\n");
+    }
+    else
+    {
+        xprintf("[UDP] Send failed: %d\n", err);
     }
 
     pbuf_free(p);
