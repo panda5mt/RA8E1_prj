@@ -43,11 +43,11 @@ void main_thread1_entry(void *pvParameters)
     netif_set_up(&netif);
     netif_set_link_up(&netif);
 
-    // DHCP 開始
+    // DHCP Start
     dhcp_start(&netif);
     xprintf("[DHCP] Waiting for IP...\n");
 
-    // IP取得完了まで待機
+    // wait until getting IP address
     while (netif.ip_addr.addr == 0)
     {
         sys_check_timeouts();
@@ -56,7 +56,7 @@ void main_thread1_entry(void *pvParameters)
 
     xprintf("[DHCP] IP acquired: %s\n", ipaddr_ntoa(&netif.ip_addr));
 
-    // UDPペイロード
+    // UDP Payload
     const char *message = "Hello from Renesas RA8E1 UDP!!!!!!!!!!YEAHHHHHHHHHHHHHHHHH!!!!!!!!!!!!!!!!";
     struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, strlen(message), PBUF_RAM);
     if (!p)
@@ -66,7 +66,7 @@ void main_thread1_entry(void *pvParameters)
     }
     memcpy(p->payload, message, strlen(message));
 
-    // UDP PCB作成
+    // Make UDP PCB
     struct udp_pcb *pcb = udp_new();
     if (!pcb)
     {
@@ -75,10 +75,9 @@ void main_thread1_entry(void *pvParameters)
         return;
     }
 
-    // 送信先設定
+    // Destination Settings
     ip_addr_t dest_ip;
-    IP4_ADDR(&dest_ip, 192, 168, 10, 123); // 送信先IP
-
+    IP4_ADDR(&dest_ip, 192, 168, 10, 123);
     err_t err = udp_sendto(pcb, p, &dest_ip, UDP_PORT_DEST);
     if (err == ERR_OK)
     {
