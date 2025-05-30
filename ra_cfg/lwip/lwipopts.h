@@ -108,9 +108,9 @@ extern "C" {
 #if (LWIP_IPV4 == 0)
             #define LWIP_AUTOIP 0
 #else
-            #define LWIP_AUTOIP ((0))
+            #define LWIP_AUTOIP ((1))
 #endif
-            #define LWIP_DHCP_AUTOIP_COOP ((0))
+            #define LWIP_DHCP_AUTOIP_COOP ((1))
             #define LWIP_DHCP_AUTOIP_COOP_TRIES (9)
 #if (LWIP_IPV4 == 0)
             #define LWIP_ACD 0

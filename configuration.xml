@@ -756,8 +756,8 @@
       <property id="config.middleware.lwip_tcpip.lwip_dhcp_max_ntp_servers" value="1"/>
       <property id="config.middleware.lwip_tcpip.lwip_dhcp_max_dns_servers" value="DNS_MAX_SERVERS"/>
       <property id="config.middleware.lwip_tcpip.lwip_dhcp_discover_add_hostname" value="config.middleware.lwip_tcpip.lwip_dhcp_discover_add_hostname.disabled"/>
-      <property id="config.middleware.lwip_tcpip.lwip_autoip" value="config.middleware.lwip_tcpip.lwip_autoip.disabled"/>
-      <property id="config.middleware.lwip_tcpip.lwip_dhcp_autoip_coop" value="config.middleware.lwip_tcpip.lwip_dhcp_autoip_coop.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_autoip" value="config.middleware.lwip_tcpip.lwip_autoip.enabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_dhcp_autoip_coop" value="config.middleware.lwip_tcpip.lwip_dhcp_autoip_coop.enabled"/>
       <property id="config.middleware.lwip_tcpip.lwip_dhcp_autoip_coop_tries" value="9"/>
       <property id="config.middleware.lwip_tcpip.lwip_acd" value="config.middleware.lwip_tcpip.lwip_acd.enabled"/>
       <property id="config.middleware.lwip_tcpip.lwip_mib2_callbacks" value="config.middleware.lwip_tcpip.lwip_mib2_callbacks.disabled"/>

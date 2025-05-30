@@ -2,13 +2,13 @@
 #include "putchar_ra8usb.h"
 
 #include "main_thread1.h"
-#include "r_ether_phy_target_lan8720a.h"
 
 #include "lwip/init.h"
 #include "lwip/netif.h"
 #include "lwip/timeouts.h"
 #include "lwip/udp.h"
 #include "lwip/dhcp.h"
+#include "lwip/autoip.h"
 
 #define UDP_PORT_DEST 9000
 
@@ -37,58 +37,77 @@ void main_thread1_entry(void *pvParameters)
 
     lwip_init();
 
-    // ネットワーク初期化
     netif_add(&netif, &ipaddr, &netmask, &gw, &g_lwip_ether0_instance, rm_lwip_ether_init, netif_input);
     netif_set_default(&netif);
     netif_set_up(&netif);
-    netif_set_link_up(&netif);
 
-    // DHCP Start
     dhcp_start(&netif);
-    xprintf("[DHCP] Waiting for IP...\n");
 
-    // wait until getting IP address
-    while (netif.ip_addr.addr == 0)
+    // DHCP待機タイマ（タイムアウト = 10秒）
+    for (int i = 0; i < 100; i++)
     {
-        sys_check_timeouts();
+        if (netif.ip_addr.addr != 0)
+        {
+            xprintf("[LwIP] DHCP assigned IP: %s\n", ip4addr_ntoa(&netif.ip_addr));
+            break;
+        }
         vTaskDelay(pdMS_TO_TICKS(100));
     }
-
-    xprintf("[DHCP] IP acquired: %s\n", ipaddr_ntoa(&netif.ip_addr));
-
-    // UDP Payload
-    const char *message = "Hello from Renesas RA8E1 UDP!! YEAHHHHHHHHHHHHHHHHH!!";
-    struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, strlen(message), PBUF_RAM);
-    if (!p)
+    // if DHCP is not valid, AUTOIP will Start
+    if (netif.ip_addr.addr == 0)
     {
-        xprintf("[UDP] pbuf_alloc failed\n");
-        return;
-    }
-    memcpy(p->payload, message, strlen(message));
+        xprintf("[LwIP] DHCP failed. Using AutoIP.\n");
+        autoip_start(&netif);
 
-    // Make UDP PCB
+        while (netif.ip_addr.addr == 0)
+        {
+            sys_check_timeouts();
+            vTaskDelay(pdMS_TO_TICKS(100));
+        }
+
+        xprintf("[LwIP] AutoIP assigned IP: %s\n", ip4addr_ntoa(&netif.ip_addr));
+    }
+
+    // UDP通信準備
+    const char *message = "Hello from RA8E1 UDP";
     struct udp_pcb *pcb = udp_new();
     if (!pcb)
     {
         xprintf("[UDP] udp_new failed\n");
-        pbuf_free(p);
         return;
     }
 
-    // Destination Settings
-    ip_addr_t dest_ip;
-    IP4_ADDR(&dest_ip, 192, 168, 10, 123);
-    err_t err = udp_sendto(pcb, p, &dest_ip, UDP_PORT_DEST);
-    if (err == ERR_OK)
+    // ip_addr_t dest_ip;
+    // IP4_ADDR(&dest_ip, 192, 168, 10, 123); // 送信先
+
+    ip_addr_t broadcast_ip;
+    broadcast_ip.addr = (netif.ip_addr.addr & netif.netmask.addr) | ~netif.netmask.addr;
+
+    for (int i = 0; i < 100; i++)
     {
-        xprintf("[UDP] Message sent\n");
-    }
-    else
-    {
-        xprintf("[UDP] Send failed: %d\n", err);
+        struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, strlen(message), PBUF_RAM);
+        if (!p)
+        {
+            xprintf("[UDP] pbuf_alloc failed\n");
+            break;
+        }
+
+        memcpy(p->payload, message, strlen(message));
+
+        err_t err = udp_sendto(pcb, p, &broadcast_ip, UDP_PORT_DEST);
+        if (err == ERR_OK)
+        {
+            xprintf("[UDP] #%d sent OK\n", i + 1);
+        }
+        else
+        {
+            xprintf("[UDP] #%d send failed: %d\n", i + 1, err);
+        }
+
+        pbuf_free(p);
+        vTaskDelay(pdMS_TO_TICKS(20));
     }
 
-    pbuf_free(p);
     udp_remove(pcb);
 
     while (1)

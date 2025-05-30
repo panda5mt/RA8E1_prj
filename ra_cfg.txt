@@ -559,8 +559,8 @@ FSP Configuration
     IPv4: DHCP: LwIP DHCP max NTP servers: 1
     IPv4: DHCP: LwIP DHCP max DNS servers: DNS_MAX_SERVERS
     IPv4: DHCP: LwIP DHCP discover add hostname: Disabled
-    IPv4: AUTOIP: LwIP autoip: Disabled
-    IPv4: AUTOIP: LwIP DHCP autoip coop: Disabled
+    IPv4: AUTOIP: LwIP autoip: Enabled
+    IPv4: AUTOIP: LwIP DHCP autoip coop: Enabled
     IPv4: AUTOIP: LwIP DHCP autoip coop tries: 9
     IPv4: AUTOIP: LwIP ACD: Enabled
     Infrastructure: SNMP MIB2 callbacks: LWIP_MIB2_CALLBACKS : Disabled
