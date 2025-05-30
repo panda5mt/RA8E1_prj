@@ -40,19 +40,26 @@ void main_thread1_entry(void *pvParameters)
     netif_add(&netif, &ipaddr, &netmask, &gw, &g_lwip_ether0_instance, rm_lwip_ether_init, netif_input);
     netif_set_default(&netif);
     netif_set_up(&netif);
+    netif_set_link_up(&netif);
 
     dhcp_start(&netif);
 
-    // DHCP待機タイマ（タイムアウト = 10秒）
-    for (int i = 0; i < 100; i++)
+    // DHCP待機
+    for (int i = 0; i < 2000; i++)
     {
+        sys_check_timeouts();
         if (netif.ip_addr.addr != 0)
         {
             xprintf("[LwIP] DHCP assigned IP: %s\n", ip4addr_ntoa(&netif.ip_addr));
             break;
         }
-        vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
+
+    // while (netif.ip_addr.addr == 0)
+    //     ;
+    // xprintf("[LwIP] DHCP assigned IP1: %s\n", ip4addr_ntoa(&netif.ip_addr));
+
     // if DHCP is not valid, AUTOIP will Start
     if (netif.ip_addr.addr == 0)
     {
