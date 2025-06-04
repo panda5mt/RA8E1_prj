@@ -113,6 +113,20 @@
       <configSetting altId="jtag_fslash_swd.tdi.p208" configurationId="jtag_fslash_swd.tdi" peripheral="JTAG/SWD"/>
       <configSetting altId="jtag_fslash_swd.tdo.p209" configurationId="jtag_fslash_swd.tdo" peripheral="JTAG/SWD"/>
       <configSetting altId="jtag_fslash_swd.tms.p210" configurationId="jtag_fslash_swd.tms" peripheral="JTAG/SWD"/>
+      <configSetting altId="ospi.om_cs0.p107" configurationId="ospi.om_cs0" isUsedByDriver="true" peripheral="OSPI"/>
+      <configSetting altId="ospi.om_cs1.p104" configurationId="ospi.om_cs1" isUsedByDriver="true" peripheral="OSPI"/>
+      <configSetting altId="ospi.om_dqs.p801" configurationId="ospi.om_dqs" isUsedByDriver="true" peripheral="OSPI"/>
+      <configSetting altId="ospi.om_reset.p106" configurationId="ospi.om_reset" isUsedByDriver="true" peripheral="OSPI"/>
+      <configSetting altId="ospi.om_sclk.p808" configurationId="ospi.om_sclk" isUsedByDriver="true" peripheral="OSPI"/>
+      <configSetting altId="ospi.om_sclkn.p809" configurationId="ospi.om_sclkn" isUsedByDriver="true" peripheral="OSPI"/>
+      <configSetting altId="ospi.om_sio0.p100" configurationId="ospi.om_sio0" isUsedByDriver="true" peripheral="OSPI"/>
+      <configSetting altId="ospi.om_sio1.p803" configurationId="ospi.om_sio1" isUsedByDriver="true" peripheral="OSPI"/>
+      <configSetting altId="ospi.om_sio2.p103" configurationId="ospi.om_sio2" isUsedByDriver="true" peripheral="OSPI"/>
+      <configSetting altId="ospi.om_sio3.p101" configurationId="ospi.om_sio3" isUsedByDriver="true" peripheral="OSPI"/>
+      <configSetting altId="ospi.om_sio4.p102" configurationId="ospi.om_sio4" isUsedByDriver="true" peripheral="OSPI"/>
+      <configSetting altId="ospi.om_sio5.p800" configurationId="ospi.om_sio5" isUsedByDriver="true" peripheral="OSPI"/>
+      <configSetting altId="ospi.om_sio6.p802" configurationId="ospi.om_sio6" isUsedByDriver="true" peripheral="OSPI"/>
+      <configSetting altId="ospi.om_sio7.p804" configurationId="ospi.om_sio7" isUsedByDriver="true" peripheral="OSPI"/>
       <configSetting altId="p001.input" configurationId="p001"/>
       <configSetting altId="p003.input" configurationId="p003"/>
       <configSetting altId="p004.input" configurationId="p004"/>
@@ -136,8 +150,6 @@
       <configSetting altId="p614.input" configurationId="p614"/>
       <configSetting altId="sci0.rxd0.p602" configurationId="sci0.rxd0" peripheral="SCI0"/>
       <configSetting altId="sci0.txd0.p603" configurationId="sci0.txd0" peripheral="SCI0"/>
-      <configSetting altId="sci9.rxd9.p101" configurationId="sci9.rxd9" isUsedByDriver="true" peripheral="SCI9"/>
-      <configSetting altId="sci9.txd9.p102" configurationId="sci9.txd9" isUsedByDriver="true" peripheral="SCI9"/>
       <configSetting altId="usbfs.usb_dm.p815" configurationId="usbfs.usb_dm" isUsedByDriver="true" peripheral="USB FS"/>
       <configSetting altId="usbfs.usb_dp.p814" configurationId="usbfs.usb_dp" isUsedByDriver="true" peripheral="USB FS"/>
       <configSetting altId="usbfs.usb_vbus.p407" configurationId="usbfs.usb_vbus" isUsedByDriver="true" peripheral="USB FS"/>

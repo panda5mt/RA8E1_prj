@@ -14,9 +14,14 @@
             <slot name="P015.CM85" secure="true"/>
         </peripheral>
         <peripheral name="PORT1.CM85" group="PORT">
+            <slot name="P100.CM85" secure="true"/>
             <slot name="P101.CM85" secure="true"/>
             <slot name="P102.CM85" secure="true"/>
+            <slot name="P103.CM85" secure="true"/>
+            <slot name="P104.CM85" secure="true"/>
             <slot name="P105.CM85" secure="true"/>
+            <slot name="P106.CM85" secure="true"/>
+            <slot name="P107.CM85" secure="true"/>
             <slot name="P112.CM85" secure="true"/>
             <slot name="P113.CM85" secure="true"/>
             <slot name="P114.CM85" secure="true"/>
@@ -78,6 +83,13 @@
             <slot name="P710.CM85" secure="true"/>
         </peripheral>
         <peripheral name="PORT8.CM85" group="PORT">
+            <slot name="P800.CM85" secure="true"/>
+            <slot name="P801.CM85" secure="true"/>
+            <slot name="P802.CM85" secure="true"/>
+            <slot name="P803.CM85" secure="true"/>
+            <slot name="P804.CM85" secure="true"/>
+            <slot name="P808.CM85" secure="true"/>
+            <slot name="P809.CM85" secure="true"/>
             <slot name="P814.CM85" secure="true"/>
             <slot name="P815.CM85" secure="true"/>
         </peripheral>
@@ -98,10 +110,6 @@
             <slot name="IRQ7.CM85" secure="true"/>
             <slot name="IRQ8.CM85" secure="true"/>
             <slot name="IRQ9.CM85" secure="true"/>
-            <slot name="IRQ10.CM85" secure="true"/>
-            <slot name="IRQ11.CM85" secure="true"/>
-            <slot name="IRQ12.CM85" secure="true"/>
-            <slot name="IRQ13.CM85" secure="true"/>
         </peripheral>
     </partition>
 </azone>

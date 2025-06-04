@@ -139,14 +139,14 @@ FSP Configuration
       P010 127 IRQ14_IRQ14 PMOD2_IRQ - IRQ14 "IRQ mode" - - "ACMPHS0: IVCMP0_0; ADC0: AN005; IRQ14: IRQ14" - IO - - 
       P014 120 GPIO Arduino_A4 - - "Input mode" - - "ADC0: AN007; DAC120: DA0" - IO - - 
       P015 119 GPIO Arduino_A5 - None "Input mode" - - "ADC1: AN105; IRQ13: IRQ13" - IO - - 
-      P100 108 - - - - Disabled - - "AGT0: AGTIO0; GPT_POEGA: GTETRGA; IRQ2: IRQ2; OSPI: OM_SIO0; SCI9: DE9; SCI9: SCK9; SPI1: MISO1" - None - - 
-      P101 105 SCI9_RXD9 JLINK_VCOM_RXD HH None "Peripheral mode" - - "AGT0: AGTEE0; GPT_POEGB: GTETRGB; IRQ1: IRQ1; OSPI: OM_SIO3; SCI9: RXD9; SPI1: MOSI1" - I - - 
-      P102 104 SCI9_TXD9 JLINK_VCOM_TXD HH - "Peripheral mode" - - "ADC(Digital): ADTRG0; AGT0: AGTO0; CANFD0: CRX0; GPT2: GTIOC2B; OSPI: OM_SIO4; SCI9: TXD9; SPI1: RSPCK1" - O - - 
-      P103 103 - JLINK_VCOM_CTS_RTS - - Disabled - - "CANFD0: CTX0; GPT2: GTIOC2A; OSPI: OM_SIO2; SCI9: CTS_RTS9; SCI9: DE9; SPI1: SSLB0" - None - - 
-      P104 102 - JLINK_VCOM_CTS - - Disabled - - "GPT1: GTIOC1B; GPT_POEGB: GTETRGB; IRQ1: IRQ1; OSPI: OM_CS1; SCI9: CTS9; SPI1: SSLB1" - None - - 
+      P100 108 OSPI_OM_SIO0 - HH None "Peripheral mode" - - "AGT0: AGTIO0; GPT_POEGA: GTETRGA; IRQ2: IRQ2; OSPI: OM_SIO0; SCI9: DE9; SCI9: SCK9; SPI1: MISO1" - O - - 
+      P101 105 OSPI_OM_SIO3 JLINK_VCOM_RXD HH None "Peripheral mode" - - "AGT0: AGTEE0; GPT_POEGB: GTETRGB; IRQ1: IRQ1; OSPI: OM_SIO3; SCI9: RXD9; SPI1: MOSI1" - O - - 
+      P102 104 OSPI_OM_SIO4 JLINK_VCOM_TXD HH - "Peripheral mode" - - "ADC(Digital): ADTRG0; AGT0: AGTO0; CANFD0: CRX0; GPT2: GTIOC2B; OSPI: OM_SIO4; SCI9: TXD9; SPI1: RSPCK1" - O - - 
+      P103 103 OSPI_OM_SIO2 JLINK_VCOM_CTS_RTS HH - "Peripheral mode" - - "CANFD0: CTX0; GPT2: GTIOC2A; OSPI: OM_SIO2; SCI9: CTS_RTS9; SCI9: DE9; SPI1: SSLB0" - O - - 
+      P104 102 OSPI_OM_CS1 JLINK_VCOM_CTS H None "Peripheral mode" - - "GPT1: GTIOC1B; GPT_POEGB: GTETRGB; IRQ1: IRQ1; OSPI: OM_CS1; SCI9: CTS9; SPI1: SSLB1" - O - - 
       P105 101 GPIO Ardiuno_RST - None "Input mode" - - "GPT1: GTIOC1A; IRQ0: IRQ0; OSPI: OM_ECSINT1; SPI1: SSLB2; ULPT1: ULPTO1_A-DS" - IO - - 
-      P106 100 - PMOD2_RST - - Disabled - - "AGT0: AGTOB0; OSPI: OM_RESET; SPI1: SSLB3; ULPT1: ULPTEE1_A-DS" - None - - 
-      P107 99 - PMOD2_P9 - - Disabled - - "AGT0: AGTOA0; OSPI: OM_CS0" - None - - 
+      P106 100 OSPI_OM_RESET PMOD2_RST L - "Peripheral mode" - - "AGT0: AGTOB0; OSPI: OM_RESET; SPI1: SSLB3; ULPT1: ULPTEE1_A-DS" - IO - - 
+      P107 99 OSPI_OM_CS0 PMOD2_P9 H - "Peripheral mode" - - "AGT0: AGTOA0; OSPI: OM_CS0" - O - - 
       P112 73 ETHER_RMII_RMII0_CRS_DV Ardiuno_D9 H - "Peripheral mode" - - "ETHER_MII: ET0_CRS; ETHER_RMII: RMII0_CRS_DV; GPT3: GTIOC3B; SCI0: TXD0; SPI0: SSLA2; SSIE0: SSISCK0; ULPT0: ULPTOB0_A-DS" - IO - - 
       P113 74 GPIO Ardiuno_D6 - - "Input mode" - - "ETHER_MII: ET0_EXOUT; ETHER_RMII: ET0_EXOUT; GPT2: GTIOC2A; SCI0: RXD0; SPI0: SSLA1; SSIE0: SSIWS0; ULPT0: ULPTOA0_A-DS" - IO - - 
       P114 75 ETHER_RMII_ET0_LINKSTA Ardiuno_D5 H - "Peripheral mode" - - "ETHER_MII: ET0_LINKSTA; ETHER_RMII: ET0_LINKSTA; GPT2: GTIOC2B; SCI0: CTS_RTS0; SCI0: DE0; SPI0: SSLA0; SSIE0: SSIRXD0" - IO - - 
@@ -221,15 +221,15 @@ FSP Configuration
       P711 24 - - - - Disabled - - "AGT0: AGTEE0" - None - - 
       P712 23 - - - - Disabled - - "AGT0: AGTOB0; GPT2: GTIOC2B" - None - - 
       P713 22 - - - - Disabled - - "AGT0: AGTOA0; GPT2: GTIOC2A" - None - - 
-      P800 109 - PMOD2_CTS2 - - Disabled - - "AGT0: AGTOA0; GPT11: GTIOC11A; IRQ11: IRQ11; OSPI: OM_SIO5; SCI2: CTS2" - None - - 
-      P801 110 - PMOD2_MOSI2_TXD2 - - Disabled - - "AGT0: AGTOB0; GPT11: GTIOC11B; IRQ12: IRQ12; OSPI: OM_DQS; SCI2: TXD2" - None - - 
-      P802 111 - PMOD2_MISO2_RXD2 - - Disabled - - "GPT12: GTIOC12A; OSPI: OM_SIO6; SCI2: RXD2" - None - - 
-      P803 112 - PMOD2_SCK2 - - Disabled - - "GPT12: GTIOC12B; GPT_POEGC: GTETRGC; OSPI: OM_SIO1; SCI2: DE2; SCI2: SCK2" - None - - 
-      P804 113 - PMOD2_SS2_CTS_RTS2 - - Disabled - - "GPT13: GTIOC13A; GPT_POEGD: GTETRGD; IRQ14: IRQ14; OSPI: OM_SIO7; SCI2: CTS_RTS2; SCI2: DE2" - None - - 
+      P800 109 OSPI_OM_SIO5 PMOD2_CTS2 HH None "Peripheral mode" - - "AGT0: AGTOA0; GPT11: GTIOC11A; IRQ11: IRQ11; OSPI: OM_SIO5; SCI2: CTS2" - O - - 
+      P801 110 OSPI_OM_DQS PMOD2_MOSI2_TXD2 HH None "Peripheral mode" - - "AGT0: AGTOB0; GPT11: GTIOC11B; IRQ12: IRQ12; OSPI: OM_DQS; SCI2: TXD2" - IO - - 
+      P802 111 OSPI_OM_SIO6 PMOD2_MISO2_RXD2 HH - "Peripheral mode" - - "GPT12: GTIOC12A; OSPI: OM_SIO6; SCI2: RXD2" - O - - 
+      P803 112 OSPI_OM_SIO1 PMOD2_SCK2 HH - "Peripheral mode" - - "GPT12: GTIOC12B; GPT_POEGC: GTETRGC; OSPI: OM_SIO1; SCI2: DE2; SCI2: SCK2" - O - - 
+      P804 113 OSPI_OM_SIO7 PMOD2_SS2_CTS_RTS2 HH None "Peripheral mode" - - "GPT13: GTIOC13A; GPT_POEGD: GTETRGD; IRQ14: IRQ14; OSPI: OM_SIO7; SCI2: CTS_RTS2; SCI2: DE2" - O - - 
       P805 141 - CAM_E23 - - Disabled - - - - None - - 
       P806 140 - CAM_E34 - - Disabled - - "IRQ0: IRQ0" - None - - 
-      P808 114 - - - - Disabled - - "GPT13: GTIOC13B; IRQ15: IRQ15; OSPI: OM_SCLK" - None - - 
-      P809 115 - PMOD2_P10 - - Disabled - - "OSPI: OM_SCLKN" - None - - 
+      P808 114 OSPI_OM_SCLK - HH None "Peripheral mode" - - "GPT13: GTIOC13B; IRQ15: IRQ15; OSPI: OM_SCLK" - O - - 
+      P809 115 OSPI_OM_SCLKN PMOD2_P10 HH - "Peripheral mode" - - "OSPI: OM_SCLKN" - O - - 
       P814 39 "USB FS_USB_DP" - L - "Peripheral mode" - - "CANFD0: CRX0; USB FS: USB_DP" - IO - - 
       P815 38 "USB FS_USB_DM" - L - "Peripheral mode" - - "CANFD0: CTX0; USB FS: USB_DM" - IO - - 
       P905 57 - Arduino_D4 - - Disabled - - "IRQ8: IRQ8; SCI3: CTS3" - None - - 
@@ -284,14 +284,14 @@ FSP Configuration
       P010 127 - PMOD2_IRQ - None Disabled - - "ACMPHS0: IVCMP0_0; ADC0: AN005; IRQ14: IRQ14" - IO - - 
       P014 120 - Arduino_A4 - - Disabled - - "ADC0: AN007; DAC120: DA0" - IO - - 
       P015 119 - Arduino_A5 - None Disabled - - "ADC1: AN105; IRQ13: IRQ13" - IO - - 
-      P100 108 - - - - Disabled - - "AGT0: AGTIO0; GPT_POEGA: GTETRGA; IRQ2: IRQ2; OSPI: OM_SIO0; SCI9: DE9; SCI9: SCK9; SPI1: MISO1" - None - - 
-      P101 105 - JLINK_VCOM_RXD L None Disabled - - "AGT0: AGTEE0; GPT_POEGB: GTETRGB; IRQ1: IRQ1; OSPI: OM_SIO3; SCI9: RXD9; SPI1: MOSI1" - I - - 
+      P100 108 - - L None Disabled - - "AGT0: AGTIO0; GPT_POEGA: GTETRGA; IRQ2: IRQ2; OSPI: OM_SIO0; SCI9: DE9; SCI9: SCK9; SPI1: MISO1" - O - - 
+      P101 105 - JLINK_VCOM_RXD L None Disabled - - "AGT0: AGTEE0; GPT_POEGB: GTETRGB; IRQ1: IRQ1; OSPI: OM_SIO3; SCI9: RXD9; SPI1: MOSI1" - O - - 
       P102 104 - JLINK_VCOM_TXD L - Disabled - - "ADC(Digital): ADTRG0; AGT0: AGTO0; CANFD0: CRX0; GPT2: GTIOC2B; OSPI: OM_SIO4; SCI9: TXD9; SPI1: RSPCK1" - O - - 
-      P103 103 - JLINK_VCOM_CTS_RTS - - Disabled - - "CANFD0: CTX0; GPT2: GTIOC2A; OSPI: OM_SIO2; SCI9: CTS_RTS9; SCI9: DE9; SPI1: SSLB0" - None - - 
-      P104 102 - JLINK_VCOM_CTS - - Disabled - - "GPT1: GTIOC1B; GPT_POEGB: GTETRGB; IRQ1: IRQ1; OSPI: OM_CS1; SCI9: CTS9; SPI1: SSLB1" - None - - 
+      P103 103 - JLINK_VCOM_CTS_RTS L - Disabled - - "CANFD0: CTX0; GPT2: GTIOC2A; OSPI: OM_SIO2; SCI9: CTS_RTS9; SCI9: DE9; SPI1: SSLB0" - O - - 
+      P104 102 - JLINK_VCOM_CTS L None Disabled - - "GPT1: GTIOC1B; GPT_POEGB: GTETRGB; IRQ1: IRQ1; OSPI: OM_CS1; SCI9: CTS9; SPI1: SSLB1" - O - - 
       P105 101 - Ardiuno_RST - None Disabled - - "GPT1: GTIOC1A; IRQ0: IRQ0; OSPI: OM_ECSINT1; SPI1: SSLB2; ULPT1: ULPTO1_A-DS" - IO - - 
-      P106 100 - PMOD2_RST - - Disabled - - "AGT0: AGTOB0; OSPI: OM_RESET; SPI1: SSLB3; ULPT1: ULPTEE1_A-DS" - None - - 
-      P107 99 - PMOD2_P9 - - Disabled - - "AGT0: AGTOA0; OSPI: OM_CS0" - None - - 
+      P106 100 - PMOD2_RST L - Disabled - - "AGT0: AGTOB0; OSPI: OM_RESET; SPI1: SSLB3; ULPT1: ULPTEE1_A-DS" - IO - - 
+      P107 99 - PMOD2_P9 L - Disabled - - "AGT0: AGTOA0; OSPI: OM_CS0" - O - - 
       P112 73 - Ardiuno_D9 L - Disabled - - "ETHER_MII: ET0_CRS; ETHER_RMII: RMII0_CRS_DV; GPT3: GTIOC3B; SCI0: TXD0; SPI0: SSLA2; SSIE0: SSISCK0; ULPT0: ULPTOB0_A-DS" - IO - - 
       P113 74 - Ardiuno_D6 - - Disabled - - "ETHER_MII: ET0_EXOUT; ETHER_RMII: ET0_EXOUT; GPT2: GTIOC2A; SCI0: RXD0; SPI0: SSLA1; SSIE0: SSIWS0; ULPT0: ULPTOA0_A-DS" - IO - - 
       P114 75 - Ardiuno_D5 L - Disabled - - "ETHER_MII: ET0_LINKSTA; ETHER_RMII: ET0_LINKSTA; GPT2: GTIOC2B; SCI0: CTS_RTS0; SCI0: DE0; SPI0: SSLA0; SSIE0: SSIRXD0" - IO - - 
@@ -366,15 +366,15 @@ FSP Configuration
       P711 24 - - - - Disabled - - "AGT0: AGTEE0" - None - - 
       P712 23 - - - - Disabled - - "AGT0: AGTOB0; GPT2: GTIOC2B" - None - - 
       P713 22 - - - - Disabled - - "AGT0: AGTOA0; GPT2: GTIOC2A" - None - - 
-      P800 109 - PMOD2_CTS2 - - Disabled - - "AGT0: AGTOA0; GPT11: GTIOC11A; IRQ11: IRQ11; OSPI: OM_SIO5; SCI2: CTS2" - None - - 
-      P801 110 - PMOD2_MOSI2_TXD2 - - Disabled - - "AGT0: AGTOB0; GPT11: GTIOC11B; IRQ12: IRQ12; OSPI: OM_DQS; SCI2: TXD2" - None - - 
-      P802 111 - PMOD2_MISO2_RXD2 - - Disabled - - "GPT12: GTIOC12A; OSPI: OM_SIO6; SCI2: RXD2" - None - - 
-      P803 112 - PMOD2_SCK2 - - Disabled - - "GPT12: GTIOC12B; GPT_POEGC: GTETRGC; OSPI: OM_SIO1; SCI2: DE2; SCI2: SCK2" - None - - 
-      P804 113 - PMOD2_SS2_CTS_RTS2 - - Disabled - - "GPT13: GTIOC13A; GPT_POEGD: GTETRGD; IRQ14: IRQ14; OSPI: OM_SIO7; SCI2: CTS_RTS2; SCI2: DE2" - None - - 
+      P800 109 - PMOD2_CTS2 L None Disabled - - "AGT0: AGTOA0; GPT11: GTIOC11A; IRQ11: IRQ11; OSPI: OM_SIO5; SCI2: CTS2" - O - - 
+      P801 110 - PMOD2_MOSI2_TXD2 L None Disabled - - "AGT0: AGTOB0; GPT11: GTIOC11B; IRQ12: IRQ12; OSPI: OM_DQS; SCI2: TXD2" - IO - - 
+      P802 111 - PMOD2_MISO2_RXD2 L - Disabled - - "GPT12: GTIOC12A; OSPI: OM_SIO6; SCI2: RXD2" - O - - 
+      P803 112 - PMOD2_SCK2 L - Disabled - - "GPT12: GTIOC12B; GPT_POEGC: GTETRGC; OSPI: OM_SIO1; SCI2: DE2; SCI2: SCK2" - O - - 
+      P804 113 - PMOD2_SS2_CTS_RTS2 L None Disabled - - "GPT13: GTIOC13A; GPT_POEGD: GTETRGD; IRQ14: IRQ14; OSPI: OM_SIO7; SCI2: CTS_RTS2; SCI2: DE2" - O - - 
       P805 141 - CAM_E23 - - Disabled - - - - None - - 
       P806 140 - CAM_E34 - - Disabled - - "IRQ0: IRQ0" - None - - 
-      P808 114 - - - - Disabled - - "GPT13: GTIOC13B; IRQ15: IRQ15; OSPI: OM_SCLK" - None - - 
-      P809 115 - PMOD2_P10 - - Disabled - - "OSPI: OM_SCLKN" - None - - 
+      P808 114 - - L None Disabled - - "GPT13: GTIOC13B; IRQ15: IRQ15; OSPI: OM_SCLK" - O - - 
+      P809 115 - PMOD2_P10 L - Disabled - - "OSPI: OM_SCLKN" - O - - 
       P814 39 - - L - Disabled - - "CANFD0: CRX0; USB FS: USB_DP" - IO - - 
       P815 38 - - L - Disabled - - "CANFD0: CTX0; USB FS: USB_DM" - IO - - 
       P905 57 - Arduino_D4 - - Disabled - - "IRQ8: IRQ8; SCI3: CTS3" - None - - 
@@ -423,12 +423,6 @@ FSP Configuration
     
   Module "FreeRTOS Port (rm_freertos_port)"
   Module "Arm CMSIS DSP Library Source"
-  Module "UART (r_sci_b_uart)"
-    Parameter Checking: Disabled
-    FIFO Support: Enable
-    DTC Support: Enable
-    Flow Control Support: Enable
-    
   Module "Capture Engine Unit (r_ceu)"
     Parameter Checking: Default (BSP)
     
@@ -875,32 +869,6 @@ FSP Configuration
       
     Instance "FreeRTOS Port (rm_freertos_port)"
     Instance "Arm CMSIS DSP Library Source"
-    Instance "g_uart9 UART (r_sci_b_uart)"
-      General: Name: g_uart9
-      General: Channel: 9
-      General: Data Bits: 8bits
-      General: Parity: None
-      General: Stop Bits: 1bit
-      Baud: Baud Rate: 115200
-      Baud: Baud Rate Modulation: Disabled
-      Baud: Max Error (%): 5
-      Flow Control: CTS/RTS Selection: Hardware RTS
-      Flow Control: Software RTS Port: Disabled
-      Flow Control: Software RTS Pin: Disabled
-      Extra: Clock Source: Internal Clock
-      Extra: Start bit detection: Falling Edge
-      Extra: Noise Filter: Enable
-      Extra: Receive FIFO Trigger Level: Max
-      Extra: RS-485: DE Pin: Disable
-      Extra: RS-485: DE Pin Polarity: Active High
-      Extra: RS-485: DE Pin Assertion Time: 1
-      Extra: RS-485: DE Pin Negation Time: 1
-      Interrupts: Callback: NULL
-      Interrupts: Receive Interrupt Priority: Priority 12
-      Interrupts: Transmit Data Empty Interrupt Priority: Priority 12
-      Interrupts: Transmit End Interrupt Priority: Priority 12
-      Interrupts: Error Interrupt Priority: Priority 12
-      
     Instance "g_ceu0 Capture Engine Unit (r_ceu)"
       General: Name: g_ceu0
       Input: Capture Mode: Data Synchronous Fetch
