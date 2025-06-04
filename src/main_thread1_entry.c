@@ -76,7 +76,7 @@ void main_thread1_entry(void *pvParameters)
     }
 
     // UDP通信準備
-    const char *message = "Hello from RA8E1 UDP";
+    const char *message = "Hello from RA8E1 UDP!! Hello World!!";
     struct udp_pcb *pcb = udp_new();
     if (!pcb)
     {

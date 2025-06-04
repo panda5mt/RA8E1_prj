@@ -306,7 +306,7 @@ ospi_b_instance_ctrl_t g_ospi0_ctrl;
             static const ospi_b_extended_cfg_t g_ospi0_extended_cfg =
             {
                 .ospi_b_unit                             = 0,
-                .channel                                 = (ospi_b_device_number_t) 0,
+                .channel                                 = (ospi_b_device_number_t) 1,
                 .data_latch_delay_clocks                 = 0x08,
                 .p_timing_settings                       = &g_ospi0_timing_settings,
                 .p_xspi_command_set                      = &g_ospi0_command_set,

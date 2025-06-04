@@ -915,7 +915,7 @@ FSP Configuration
     Instance "g_ospi0 OSPI Flash (r_ospi_b)"
       General: Name: g_ospi0
       General: Unit: OSPI_B0
-      General: Channel: CS0
+      General: Channel: CS1
       General: Initial Protocol Mode: Dual data rate OPI (8D-8D-8D)
       General: Initial Address Bytes: 4
       General: Write Status Bit: 0

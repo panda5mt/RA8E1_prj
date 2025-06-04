@@ -348,7 +348,7 @@
     <module id="module.driver.ospi_on_ospi_b.821567523">
       <property id="module.driver.ospi_b.name" value="g_ospi0"/>
       <property id="module.driver.ospi_b.unit" value="module.driver.ospi_b.unit.0"/>
-      <property id="module.driver.ospi_b.channel" value="module.driver.ospi_b.channel.0"/>
+      <property id="module.driver.ospi_b.channel" value="module.driver.ospi_b.channel.1"/>
       <property id="module.driver.ospi_b.spi_protocol" value="module.driver.ospi_b.protocol_mode.protocol_8D_8D_8D"/>
       <property id="module.driver.ospi_b.address_bytes" value="module.driver.ospi_b.address_bytes.address_bytes_4"/>
       <property id="module.driver.ospi_b.write_status_bit" value="0"/>
