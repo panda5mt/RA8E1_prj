@@ -288,6 +288,10 @@
       <description>lwIP FreeRTOS</description>
       <originalPack>lwIP.lwIP.2.2.0+fsp.5.9.0.pack</originalPack>
     </component>
+    <component apiversion="" class="HAL Drivers" condition="" group="all" subgroup="r_dmac" variant="" vendor="Renesas" version="5.9.0">
+      <description>Direct Memory Access Controller</description>
+      <originalPack>Renesas.RA.5.9.0.pack</originalPack>
+    </component>
   </raComponentSelection>
   <raElcConfiguration/>
   <raIcuConfiguration/>
@@ -563,6 +567,23 @@
       <property id="module.driver.ether_phy.mii_bit_access_wait_time" value="8"/>
       <property id="module.driver.ether_phy.flow_control" value="module.driver.ether_phy.flow_control.0"/>
     </module>
+    <module id="module.driver.transfer_on_dmac.2123877949">
+      <property id="module.driver.transfer.name" value="g_transfer0"/>
+      <property id="module.driver.transfer.channel" value="0"/>
+      <property id="module.driver.transfer.mode" value="module.driver.transfer.mode.mode_normal"/>
+      <property id="module.driver.transfer.size" value="module.driver.transfer.size.size_2_byte"/>
+      <property id="module.driver.transfer.dest_addr_mode" value="module.driver.transfer.dest_addr_mode.addr_mode_fixed"/>
+      <property id="module.driver.transfer.src_addr_mode" value="module.driver.transfer.src_addr_mode.addr_mode_fixed"/>
+      <property id="module.driver.transfer.repeat_area" value="module.driver.transfer.repeat_area.repeat_area_source"/>
+      <property id="module.driver.transfer.length" value="1"/>
+      <property id="module.driver.transfer.num_blocks" value="0"/>
+      <property id="module.driver.transfer.activation_event" value="enum.elc_none.none"/>
+      <property id="module.driver.transfer.p_callback" value="NULL"/>
+      <property id="module.driver.transfer.ipl" value="_disabled"/>
+      <property id="module.driver.transfer.interrupt" value="module.driver.transfer.interrupt.interrupt_end"/>
+      <property id="module.driver.transfer.offset" value="1"/>
+      <property id="module.driver.transfer.src.buffer" value="1"/>
+    </module>
     <object id="rtos.awsfreertos.object.semaphore.1429114281">
       <property id="rtos.awsfreertos.object.semaphore.symbol" value="g_usb_write_complete_binary_semaphore"/>
       <property id="rtos.awsfreertos.object.semaphore.count" value="0"/>
@@ -587,7 +608,9 @@
       <stack module="module.arm.cmsis5.dsp.1126511039"/>
       <stack module="module.driver.ceu_on_capture.450115502"/>
       <stack module="module.driver.i2c_on_iic_master.994544474"/>
-      <stack module="module.driver.ospi_on_ospi_b.821567523"/>
+      <stack module="module.driver.ospi_on_ospi_b.821567523">
+        <stack module="module.driver.transfer_on_dmac.2123877949" requires="module.driver.ospi_on_ospi_b.requires.transfer"/>
+      </stack>
       <stack module="module.driver.timer_on_gpt.1622483141"/>
       <stack module="module.driver.timer_on_gpt.2107044541"/>
     </context>
@@ -633,7 +656,7 @@
     </context>
     <config id="config.driver.ospi_b">
       <property id="config.driver.ospi_b.param_checking_enable" value="config.driver.ospi_b.param_checking_enable.disabled"/>
-      <property id="config.driver.ospi_b.dmac_support" value="config.driver.ospi_b.dmac_support.disabled"/>
+      <property id="config.driver.ospi_b.dmac_support" value="config.driver.ospi_b.dmac_support.enabled"/>
       <property id="config.driver.ospi_b.autocalibration_support" value="config.driver.ospi_b.autocalibration_support.disabled"/>
       <property id="config.driver.ospi_b.prefetch_function" value="config.driver.ospi_b.prefetch_function.enabled"/>
       <property id="config.driver.ospi_b.combination_function" value="config.driver.ospi_b.combination_function.64_BYTE"/>
@@ -970,6 +993,9 @@
       <property id="config.driver.ether.link_present" value="config.driver.ether.link_present.0"/>
       <property id="config.driver.ether.use_linksta" value="config.driver.ether.use_linksta.0"/>
       <property id="config.driver.ether.interrupt_event_backword_compatibility" value="config.driver.ether.interrupt_event_backword_compatibility.disabled"/>
+    </config>
+    <config id="config.driver.dmac">
+      <property id="config.driver.dmac.param_checking_enable" value="config.driver.dmac.param_checking_enable.bsp"/>
     </config>
     <config id="config.driver.ether_phy">
       <property id="config.driver.ether_phy.param_checking_enable" value="config.driver.ether_phy.param_checking_enable.bsp"/>
@@ -1422,6 +1448,7 @@
       <lockSetting id="ospi.om_sclk" lock="true"/>
       <lockSetting id="ospi.om_sclkn" lock="true"/>
       <lockSetting id="ospi.om_sio0" lock="true"/>
+      <lockSetting id="ospi.om_sio1" lock="true"/>
       <lockSetting id="ospi.om_sio2" lock="true"/>
       <lockSetting id="ospi.om_sio3" lock="true"/>
       <lockSetting id="ospi.om_sio4" lock="true"/>

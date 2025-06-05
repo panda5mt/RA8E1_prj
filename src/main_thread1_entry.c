@@ -1,7 +1,6 @@
 #include "main_thread1.h"
 #include "putchar_ra8usb.h"
-
-#include "main_thread1.h"
+#include "hal_data.h"
 
 #include "lwip/init.h"
 #include "lwip/netif.h"
@@ -10,7 +9,58 @@
 #include "lwip/dhcp.h"
 #include "lwip/autoip.h"
 
+#include <string.h> // for memcpy
+
 #define UDP_PORT_DEST 9000
+
+#define HYPERRAM_BASE_ADDR ((void *)0x90000000U) /* Device on CS1 */
+#define TEST_DATA_LENGTH (1024U * 16U)           // テストデータ長
+
+void ospi_hyperram_test(void)
+{
+    fsp_err_t err = FSP_SUCCESS;
+
+    // 1. OSPI 初期化
+    err = R_OSPI_B_Open(&g_ospi0_ctrl, &g_ospi0_cfg);
+    if (FSP_SUCCESS != err)
+    {
+        //__BKPT(); // 初期化失敗
+        xprintf("[OSPI] init error!\n");
+        return;
+    }
+    xprintf("[OSPI] init Ok\n");
+
+    // 2. 書き込みデータ作成
+    uint8_t write_data[TEST_DATA_LENGTH];
+    uint8_t read_data[TEST_DATA_LENGTH];
+
+    for (uint32_t i = 0; i < TEST_DATA_LENGTH; i++)
+    {
+        write_data[i] = 255 - (uint8_t)(i & 0xff);
+        read_data[i] = 0xff;
+    }
+
+    // 3. 書き込み先アドレス（HyperRAM内）
+    uint8_t *hyperram_ptr = (uint8_t *)HYPERRAM_BASE_ADDR;
+
+    // 4. 書き込み（メモリマップドアクセス）
+    memcpy(hyperram_ptr, write_data, TEST_DATA_LENGTH);
+
+    // 5. 読み出しバッファ
+    memcpy(read_data, hyperram_ptr, TEST_DATA_LENGTH);
+
+    // 6. 検証（任意）
+    for (uint32_t i = 0; i < TEST_DATA_LENGTH; i++)
+    {
+        if (read_data[i] != write_data[i])
+        {
+            xprintf("[OSPI] data error at %d\n", i);
+        }
+    }
+
+    // 正常終了
+    xprintf("[OSPI] RW end\n");
+}
 
 void main_thread1_entry(void *pvParameters)
 {
@@ -24,7 +74,7 @@ void main_thread1_entry(void *pvParameters)
     vTaskDelay(pdMS_TO_TICKS(300));
 
     xprintf("[ETH] LAN8720A Ready\n");
-
+    ospi_hyperram_test();
     struct netif netif;
 
     ip_addr_t ipaddr;

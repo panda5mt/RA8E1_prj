@@ -213,6 +213,48 @@ const timer_instance_t g_timer5 =
     .p_cfg         = &g_timer5_cfg,
     .p_api         = &g_timer_on_gpt
 };
+dmac_instance_ctrl_t g_transfer0_ctrl;
+transfer_info_t g_transfer0_info =
+{
+    .transfer_settings_word_b.dest_addr_mode = TRANSFER_ADDR_MODE_INCREMENTED,
+    .transfer_settings_word_b.repeat_area    = TRANSFER_REPEAT_AREA_SOURCE,
+    .transfer_settings_word_b.irq            = TRANSFER_IRQ_END,
+    .transfer_settings_word_b.chain_mode     = TRANSFER_CHAIN_MODE_DISABLED,
+    .transfer_settings_word_b.src_addr_mode  = TRANSFER_ADDR_MODE_INCREMENTED,
+    .transfer_settings_word_b.size           = TRANSFER_SIZE_1_BYTE,
+    .transfer_settings_word_b.mode           = TRANSFER_MODE_BLOCK,
+    .p_dest                                  = (void *) NULL,
+    .p_src                                   = (void const *) NULL,
+    .num_blocks                              = 1,
+    .length                                  = 64,
+};
+const dmac_extended_cfg_t g_transfer0_extend =
+{
+    .offset              = 0,
+    .src_buffer_size     = 0,
+#if defined(VECTOR_NUMBER_DMAC0_INT)
+    .irq                 = VECTOR_NUMBER_DMAC0_INT,
+#else
+    .irq                 = FSP_INVALID_VECTOR,
+#endif
+    .ipl                 = (BSP_IRQ_DISABLED),
+    .channel             = 0,
+    .p_callback          = NULL,
+    .p_context           = NULL,
+    .activation_source   = ELC_EVENT_NONE,
+};
+const transfer_cfg_t g_transfer0_cfg =
+{
+    .p_info              = &g_transfer0_info,
+    .p_extend            = &g_transfer0_extend,
+};
+/* Instance structure to use this module. */
+const transfer_instance_t g_transfer0 =
+{
+    .p_ctrl        = &g_transfer0_ctrl,
+    .p_cfg         = &g_transfer0_cfg,
+    .p_api         = &g_transfer_on_dmac
+};
 ospi_b_instance_ctrl_t g_ospi0_ctrl;
 
             static const spi_flash_erase_command_t g_ospi0_erase_command_list[] =
@@ -312,7 +354,7 @@ ospi_b_instance_ctrl_t g_ospi0_ctrl;
                 .p_xspi_command_set                      = &g_ospi0_command_set,
                 .p_autocalibration_preamble_pattern_addr = (uint8_t *) 0x00,
             #if OSPI_B_CFG_DMAC_SUPPORT_ENABLE
-                .p_lower_lvl_transfer                    = &RA_NOT_DEFINED,
+                .p_lower_lvl_transfer                    = &g_transfer0,
             #endif
             #if OSPI_B_CFG_DOTF_SUPPORT_ENABLE
                 .p_dotf_cfg                              = &g_ospi_dotf_cfg,

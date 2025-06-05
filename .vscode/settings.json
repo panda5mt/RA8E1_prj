@@ -37,6 +37,7 @@
     "sccb_if.h": "c",
     "picotls.h": "c",
     "r_usb_basic_api.h": "c",
-    "freertosconfig.h": "c"
+    "freertosconfig.h": "c",
+    "string.h": "c"
   },
 }

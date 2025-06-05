@@ -433,7 +433,7 @@ FSP Configuration
     
   Module "OSPI Flash (r_ospi_b)"
     Parameter Checking: Disabled
-    DMAC Support: Disable
+    DMAC Support: Enable
     Autocalibration Support: Disable
     Memory-mapping Support: Prefetch Function: Enable
     Memory-mapping Support: Combination Function: 64 Byte
@@ -790,6 +790,9 @@ FSP Configuration
     Reference Clock: Disabled
     Automatic Phy LSI Initialization: Enabled
     
+  Module "Transfer (r_dmac)"
+    Parameter Checking: Default (BSP)
+    
   FreeRTOS
     General: Custom FreeRTOSConfig.h: 
     General: Use Preemption: Enabled
@@ -959,6 +962,23 @@ FSP Configuration
       DOTF: Decryption start address: 0x90000000
       DOTF: Decryption end address: 0x90001FFF
       
+      Instance "g_transfer0 Transfer (r_dmac) No ELC Trigger"
+        Name: g_transfer0
+        Channel: 0
+        Mode: Block
+        Transfer Size: 1 Byte
+        Destination Address Mode: Incremented
+        Source Address Mode: Incremented
+        Repeat Area (Unused in Normal Mode): Source
+        Number of Transfers: 64
+        Number of Blocks (Valid only in Repeat,Block or Repeat-Block Mode): 1
+        Activation Source: No ELC Trigger
+        Callback: NULL
+        Transfer End Interrupt Priority: Disabled
+        Interrupt Frequency: Interrupt after all transfers have completed
+        Offset value (Valid only when address mode is \'Offset\'): 0
+        Source Buffer Size: 0
+        
     Instance "g_timer5 Timer, General PWM (r_gpt)"
       General: Name: g_timer5
       General: Channel: 5

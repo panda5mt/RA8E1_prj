@@ -1,4 +1,4 @@
-#Wed Jun 04 13:50:02 JST 2025
+#Thu Jun 05 12:48:17 JST 2025
 com.renesas.cdt.ddsc.content/com.renesas.cdt.ddsc.content.defaultlinkerscript=script/fsp.lld
 com.renesas.cdt.ddsc.contentgen.options/options/suppresswarningspaths=ra/arm,ra/aws,ra/lwip-tcpip
 com.renesas.cdt.ddsc.packs.componentfiles/AWS\#\#Heaps\#\#FreeRTOS\#\#heap_4\#\#\#\#11.1.0+fsp.5.9.0/all=271572837,ra/aws/FreeRTOS/FreeRTOS/Source/portable/MemMang/heap_4.c
@@ -27,6 +27,8 @@ com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#Common\#\#all\#\#fsp_common
 com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#Common\#\#all\#\#fsp_common\#\#\#\#5.9.0/libraries=
 com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#HAL\ Drivers\#\#all\#\#r_ceu\#\#\#\#5.9.0/all=2790901949,ra/fsp/inc/api/r_capture_api.h|235557102,ra/fsp/inc/instances/r_ceu.h|4082950558,ra/fsp/src/r_ceu/r_ceu.c
 com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#HAL\ Drivers\#\#all\#\#r_ceu\#\#\#\#5.9.0/libraries=
+com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#HAL\ Drivers\#\#all\#\#r_dmac\#\#\#\#5.9.0/all=2458545632,ra/fsp/inc/api/r_transfer_api.h|229967978,ra/fsp/inc/instances/r_dmac.h|912749703,ra/fsp/src/r_dmac/r_dmac.c
+com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#HAL\ Drivers\#\#all\#\#r_dmac\#\#\#\#5.9.0/libraries=
 com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#HAL\ Drivers\#\#all\#\#r_ether\#\#\#\#5.9.0/all=689443380,ra/fsp/inc/api/r_ether_api.h|567148770,ra/fsp/inc/instances/r_ether.h|1547031464,ra/fsp/src/r_ether/r_ether.c
 com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#HAL\ Drivers\#\#all\#\#r_ether\#\#\#\#5.9.0/libraries=
 com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#HAL\ Drivers\#\#all\#\#r_ether_phy\#\#\#\#5.9.0/all=1368649074,ra/fsp/inc/api/r_ether_phy_api.h|3786522117,ra/fsp/inc/instances/r_ether_phy.h|4257624380,ra/fsp/src/r_ether_phy/r_ether_phy.c|1281813603,ra/fsp/src/r_ether_phy/targets/DP83620/r_ether_phy_target_dp83620.c|3378885181,ra/fsp/src/r_ether_phy/targets/ICS1894/r_ether_phy_target_ics1894.c|4073493999,ra/fsp/src/r_ether_phy/targets/KSZ8041/r_ether_phy_target_ksz8041.c|1032119103,ra/fsp/src/r_ether_phy/targets/KSZ8091RNB/r_ether_phy_target_ksz8091rnb.c
@@ -52,7 +54,7 @@ com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#Middleware\#\#all\#\#rm_lwi
 com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#Middleware\#\#all\#\#rm_lwip_sys_freertos\#\#\#\#5.9.0/all=
 com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#Middleware\#\#all\#\#rm_lwip_sys_freertos\#\#\#\#5.9.0/libraries=
 com.renesas.cdt.ddsc.project.standalone.projectgenerationoptions/isCpp=false
-com.renesas.cdt.ddsc.settingseditor/com.renesas.cdt.ddsc.settingseditor.active_page=SWPConfigurator
+com.renesas.cdt.ddsc.settingseditor/com.renesas.cdt.ddsc.settingseditor.active_page=PinConfiguration
 com.renesas.cdt.ddsc.threads.configurator/collapse/module.arm.cmsis5.dsp.1126511039=false
 com.renesas.cdt.ddsc.threads.configurator/collapse/module.arm.cmsis5.dsp.974860439=false
 com.renesas.cdt.ddsc.threads.configurator/collapse/module.driver.basic_on_usb.1113695201=false
