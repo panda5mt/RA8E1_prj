@@ -5,27 +5,32 @@
     </device>
     <resources>
         <memories>
-            <memory name="RAM" type="RAM" start="0x22060000" size="0x00080000" security=""/>
-            <memory name="FLASH" type="ROM" start="0x02000000" size="0x00100000" security=""/>
-            <memory name="DATA_FLASH" type="ROM" start="0x27000000" size="0x00003000" security=""/>
-            <memory name="OPTION_SETTING" type="ROM" start="0x0300a100" size="0x00000100" security=""/>
-            <memory name="OPTION_SETTING_S" type="ROM" start="0x0300a200" size="0x00000100" security=""/>
-            <memory name="OPTION_SETTING_DATA_FLASH_S" type="ROM" start="0x27030098" size="0x800" security=""/>
-            <memory name="ID_CODE" type="ROM" start="0x00000000" size="0x00000000" security=""/>
-            <memory name="SDRAM" type="RAM" start="0x80010000" size="0x00000000" security=""/>
-            <memory name="QSPI_FLASH" type="ROM" start="0x60000000" size="0x0" security=""/>
-            <memory name="OSPI_DEVICE_0" type="ROM" start="0x80000000" size="0x10000000" security=""/>
-            <memory name="OSPI_DEVICE_1" type="ROM" start="0x90000000" size="0x10000000" security=""/>
-            <memory name="ITCM" type="ROM" start="0x00000000" size="0x00004000" security=""/>
-            <memory name="DTCM" type="RAM" start="0x20000000" size="0x00004000" security=""/>
-            <memory name="NS_OFFSET" type="ROM" start="0x10000000" size="0" security=""/>
-            <memory name="RAM_NS" type="RAM" start="0x32060000" physical="0x22060000" size="0x00080000" security="n"/>
-            <memory name="FLASH_NS" type="ROM" start="0x12000000" physical="0x02000000" size="0x00100000" security="n"/>
-            <memory name="DATA_FLASH_NS" type="ROM" start="0x37000000" physical="0x27000000" size="0x00003000" security="n"/>
-            <memory name="OPTION_SETTING_NS" type="ROM" start="0x1300a100" physical="0x0300a100" size="0x00000100" security="n"/>
-            <memory name="OPTION_SETTING_S_NS" type="ROM" start="0x1300a200" physical="0x0300a200" size="0x00000100" security="n"/>
-            <memory name="ITCM_NS" type="ROM" start="0x10000000" physical="0x00000000" size="0x00004000" security="n"/>
-            <memory name="DTCM_NS" type="RAM" start="0x30000000" physical="0x20000000" size="0x00004000" security="n"/>
+            <memory name="RAM_NS" type="RAM" start="0x32060000" physical="0x22060000" size="0x00080000" access="rwx" security="n" info="On chip RAM memory @nsAlign:0x00002000"/>
+            <memory name="RAM" type="RAM" start="0x22060000" size="0x00080000" access="rwx" security="s" info="On chip RAM memory @nscAlign:0x00000040"/>
+            <memory name="FLASH_NS" type="ROM" start="0x12000000" physical="0x02000000" size="0x00100000" access="rx" security="n" info="On chip flash memory @nsAlign:0x00008000"/>
+            <memory name="FLASH" type="ROM" start="0x02000000" size="0x00100000" access="rx" security="s" info="On chip flash memory @nscAlign:0x00000040"/>
+            <memory name="DATA_FLASH_NS" type="ROM" start="0x37000000" physical="0x27000000" size="0x00003000" access="rx" security="n" info="On chip data flash memory @nsAlign:0x00000400"/>
+            <memory name="DATA_FLASH" type="ROM" start="0x27000000" size="0x00003000" access="rx" security="s" info="On chip data flash memory"/>
+            <memory name="OSPI0_CS0" type="RAM" start="0x80000000" size="0x10000000" access="rwx" security="" info="external ospi0 cs0 (ram)"/>
+            <memory name="OSPI0_CS1" type="ROM" start="0x90000000" size="0x10000000" access="rx" security="" info="external ospi0 cs1 (rom)"/>
+            <memory name="OPTION_SETTING_OFS0" type="ROM" start="0x0300a100" size="0x00000004" access="r" security="s" info="Option Function Select Register 0"/>
+            <memory name="OPTION_SETTING_OFS2" type="ROM" start="0x0300a104" size="0x00000004" access="r" security="s" info="Option Function Select Register 2"/>
+            <memory name="OPTION_SETTING_DUALSEL" type="ROM" start="0x0300a110" size="0x00000004" access="r" security="s" info="Dual Mode Select Register"/>
+            <memory name="OPTION_SETTING_OFS1" type="ROM" start="0x1300a180" size="0x00000004" access="r" security="n" info="Option Function Select Register 1"/>
+            <memory name="OPTION_SETTING_BANKSEL" type="ROM" start="0x1300a190" size="0x00000004" access="r" security="n" info="Bank Select Register"/>
+            <memory name="OPTION_SETTING_BPS" type="ROM" start="0x1300a1c0" size="0x00000010" access="r" security="n" info="Block Protect Setting Register"/>
+            <memory name="OPTION_SETTING_PBPS" type="ROM" start="0x1300a1e0" size="0x00000010" access="r" security="n" info="Permanent Block Protect Setting Register"/>
+            <memory name="OPTION_SETTING_OFS1_SEC" type="ROM" start="0x0300a200" size="0x00000004" access="r" security="s" info="Option Function Select Register 1 Secure"/>
+            <memory name="OPTION_SETTING_BANKSEL_SEC" type="ROM" start="0x0300a210" size="0x00000004" access="r" security="s" info="Bank Select Register Secure"/>
+            <memory name="OPTION_SETTING_BPS_SEC" type="ROM" start="0x0300a240" size="0x00000010" access="r" security="s" info="Block Protect Setting Register Secure"/>
+            <memory name="OPTION_SETTING_PBPS_SEC" type="ROM" start="0x0300a260" size="0x00000010" access="r" security="s" info="Permanent Block Protect Setting Register Secure"/>
+            <memory name="OPTION_SETTING_OFS1_SEL" type="ROM" start="0x0300a280" size="0x00000004" access="r" security="s" info="OFS1 Register Select"/>
+            <memory name="OPTION_SETTING_BANKSEL_SEL" type="ROM" start="0x0300a290" size="0x00000004" access="r" security="s" info="Banksel Register Select"/>
+            <memory name="OPTION_SETTING_BPS_SEL" type="ROM" start="0x0300a2c0" size="0x00000010" access="r" security="s" info="BPS Register Select"/>
+            <memory name="ITCM_NS" type="RAM" start="0x10000000" physical="0x00000000" size="0x00004000" access="rwx" security="n" info="internal instruction tightly coupled memory @nsAlign:0x00002000"/>
+            <memory name="ITCM" type="RAM" start="0x00000000" size="0x00004000" access="rwx" security="s" info="internal instruction tightly coupled memory"/>
+            <memory name="DTCM_NS" type="RAM" start="0x30000000" physical="0x20000000" size="0x00004000" access="rwx" security="n" info="internal data tightly coupled memory @nsAlign:0x00002000"/>
+            <memory name="DTCM" type="RAM" start="0x20000000" size="0x00004000" access="rwx" security="s" info="internal data tightly coupled memory"/>
         </memories>
         <peripherals>
             <group name="ACMPHS" start="0x40236000" size="0x00000100" info="High Speed Analog Comparator">

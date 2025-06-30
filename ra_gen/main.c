@@ -156,7 +156,7 @@ main_thread1_create();
                     * function then they must be declared static - otherwise they will be allocated on
                     * the stack and so not exists after this function exits. */
                     static StaticTask_t xTimerTaskTCB;
-                    static StackType_t uxTimerTaskStack[ configMINIMAL_STACK_SIZE ];
+                    static StackType_t uxTimerTaskStack[ configTIMER_TASK_STACK_DEPTH ];
 
                     /* Pass out a pointer to the StaticTask_t structure in which the Idle
                     * task's state will be stored. */
@@ -167,7 +167,7 @@ main_thread1_create();
 
                     /* Pass out the size of the array pointed to by *ppxTimerTaskStackBuffer.
                     * Note that, as the array is necessarily of type StackType_t,
-                    * configMINIMAL_STACK_SIZE is specified in words, not bytes. */
-                    *pulTimerTaskStackSize = configMINIMAL_STACK_SIZE;
+                    * configTIMER_TASK_STACK_DEPTH is specified in words, not bytes. */
+                    *pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
                 }
                 #endif

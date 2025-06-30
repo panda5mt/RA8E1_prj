@@ -329,7 +329,11 @@ void R_BSP_PinCfgSecurityInit(void)
     for(uint32_t i = 0; i < BSP_FEATURE_BSP_NUM_PMSAR; i++)
     {
  #if (2U == BSP_FEATURE_IOPORT_VERSION)
+    #if BSP_SECONDARY_CORE_BUILD
+        R_PMISC->PMSAR[i].PMSAR &= (uint16_t) pmsar[i];
+    #else
         R_PMISC->PMSAR[i].PMSAR = (uint16_t) pmsar[i];
+    #endif
  #else
         R_PMISC->PMSAR[i].PMSAR = pmsar[i];
  #endif

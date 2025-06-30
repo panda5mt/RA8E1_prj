@@ -82,7 +82,7 @@ extern usb_descriptor_t g_usb_descriptor;
 #if defined(NULL)
                 .p_context = NULL,
 #else
-                .p_context = &NULL,
+                .p_context = (void *) &NULL,
 #endif
 #if (RA_NOT_DEFINED == RA_NOT_DEFINED)
 #else

@@ -7,6 +7,7 @@
 
             #include "bsp_clock_cfg.h"
             #include "bsp_mcu_family_cfg.h"
+            #include "bsp_mcu_ofs_cfg.h"
             #include "board_cfg.h"
             #include "vector_data.h"
             #define RA_NOT_DEFINED 0

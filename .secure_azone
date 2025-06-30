@@ -95,7 +95,6 @@
         </peripheral>
         <peripheral name="CEU.CM85" security="s"/>
         <peripheral name="IIC1.CM85" group="IIC" security="s"/>
-        <peripheral name="DMA_DMAC0.CM85" group="DMA_DMAC" security="s"/>
         <peripheral name="GPT5.CM85" group="GPT" security="s"/>
         <peripheral name="GPT3.CM85" group="GPT" security="s"/>
         <peripheral name="USB_FS.CM85" security="s"/>

@@ -14,7 +14,7 @@
 #define UDP_PORT_DEST 9000
 
 #define HYPERRAM_BASE_ADDR ((void *)0x90000000U) /* Device on CS1 */
-#define TEST_DATA_LENGTH (1024U * 16U)           // テストデータ長
+#define TEST_DATA_LENGTH (1024U * 1U)            // テストデータ長
 
 void ospi_hyperram_test(void)
 {
@@ -45,7 +45,7 @@ void ospi_hyperram_test(void)
 
     // 4. 書き込み（メモリマップドアクセス）
     memcpy(hyperram_ptr, write_data, TEST_DATA_LENGTH);
-
+    xprintf("[OSPI] data wrote\n");
     // 5. 読み出しバッファ
     memcpy(read_data, hyperram_ptr, TEST_DATA_LENGTH);
 

@@ -35,8 +35,8 @@ extern const ether_phy_instance_t g_ether_phy0;
 extern ether_phy_instance_ctrl_t g_ether_phy0_ctrl;
 extern const ether_phy_cfg_t g_ether_phy0_cfg;
 extern const ether_phy_extended_cfg_t g_ether_phy0_extended_cfg;
-#if (BSP_FEATURE_TZ_HAS_TRUSTZONE == 1) && (BSP_TZ_SECURE_BUILD != 1) && (BSP_TZ_NONSECURE_BUILD != 1) && (BSP_FEATURE_ETHER_SUPPORTS_TZ_SECURE == 0)
-#define ETHER_BUFFER_PLACE_IN_SECTION BSP_PLACE_IN_SECTION(".ns_buffer.eth")
+#if (BSP_FEATURE_TZ_HAS_TRUSTZONE == 1)  && (BSP_TZ_NONSECURE_BUILD != 1) && (BSP_FEATURE_ETHER_SUPPORTS_TZ_SECURE == 0)
+#define ETHER_BUFFER_PLACE_IN_SECTION BSP_PLACE_IN_SECTION(BSP_UNINIT_SECTION_PREFIX ".ns_buffer")
 #else
 #define ETHER_BUFFER_PLACE_IN_SECTION
 #endif

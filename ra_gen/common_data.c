@@ -4,20 +4,31 @@
 #if LWIP_PROVIDE_ERRNO
         int errno;
 #endif
+const ether_phy_lsi_cfg_t g_ether_phy_lsi0 =
+{
+    .address           = 0,
+    .type              = ETHER_PHY_LSI_TYPE_CUSTOM,
+};
 ether_phy_instance_ctrl_t g_ether_phy0_ctrl;
-
+#define RA_NOT_DEFINED (1)
 const ether_phy_extended_cfg_t g_ether_phy0_extended_cfg =
 {
     .p_target_init                     = ether_phy_target_lan8720a_initialize,
-    .p_target_link_partner_ability_get = ether_phy_target_lan8720_is_support_link_partner_ability
-
+    .p_target_link_partner_ability_get = ether_phy_target_lan8720_is_support_link_partner_ability,
+    .p_phy_lsi_cfg_list = {
+#if (RA_NOT_DEFINED != g_ether_phy_lsi0)
+    	&g_ether_phy_lsi0,
+#else
+    	NULL,
+#endif
+    },
 };
-
+#undef RA_NOT_DEFINED
 const ether_phy_cfg_t g_ether_phy0_cfg =
 {
 
     .channel                   = 0,
-    .phy_lsi_address           = 0x00,
+    .phy_lsi_address           = 0,
     .phy_reset_wait_time       = 0x00020000,
     .mii_bit_access_wait_time  = 8,
     .phy_lsi_type              = ETHER_PHY_LSI_TYPE_CUSTOM,

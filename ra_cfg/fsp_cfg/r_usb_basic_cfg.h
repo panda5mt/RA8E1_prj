@@ -32,7 +32,13 @@
             #define USB_CFG_PCDC_USE
             #endif
             #if (RA_NOT_DEFINED != RA_NOT_DEFINED)
+            #define USB_CFG_PCDC2_USE
+            #endif
+            #if (RA_NOT_DEFINED != RA_NOT_DEFINED)
             #define USB_CFG_PHID_USE
+            #endif
+            #if (RA_NOT_DEFINED != RA_NOT_DEFINED)
+            #define USB_CFG_PHID2_USE
             #endif
             #if (RA_NOT_DEFINED != RA_NOT_DEFINED)
             #define USB_CFG_PMSC_USE
@@ -97,7 +103,7 @@
             #define USB_CFG_MODE (USB_CFG_PERI_MODE | USB_CFG_HOST_MODE)
 
             #define USB_CFG_PARAM_CHECKING_ENABLE (BSP_CFG_PARAM_CHECKING_ENABLE)
-            #define USB_CFG_CLKSEL (USB_CFG_20MHZ)
+            #define USB_CFG_CLKSEL (USB_CFG_24MHZ)
             #define USB_CFG_BUSWAIT (USB_CFG_BUSWAIT_7)
             #define USB_CFG_BC (USB_CFG_ENABLE)
             #define USB_CFG_VBUS (USB_CFG_HIGH)
