@@ -45,8 +45,7 @@ void ospi_hyperram_test(void)
 
     // 4. 書き込み（メモリマップドアクセス）
     memcpy(hyperram_ptr, write_data, TEST_DATA_LENGTH);
-    xprintf("[OSPI] data wrote\n");
-    // 5. 読み出しバッファ
+    //   5. 読み出しバッファ
     memcpy(read_data, hyperram_ptr, TEST_DATA_LENGTH);
 
     // 6. 検証（任意）

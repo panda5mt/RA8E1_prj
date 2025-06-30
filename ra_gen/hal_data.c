@@ -248,8 +248,8 @@ static const ospi_b_xspi_command_set_t g_ospi0_command_set_table[] =
 {
     {
         .protocol = SPI_FLASH_PROTOCOL_8D_8D_8D,
-        .frame_format = OSPI_B_FRAME_FORMAT_XSPI_PROFILE_2,
-        .latency_mode = OSPI_B_LATENCY_MODE_FIXED,
+        .frame_format = OSPI_B_FRAME_FORMAT_XSPI_PROFILE_2_EXTENDED,
+        .latency_mode = OSPI_B_LATENCY_MODE_VARIABLE,
         .command_bytes = OSPI_B_COMMAND_BYTES_2,
         .address_bytes = SPI_FLASH_ADDRESS_BYTES_4,
         .address_msb_mask = 0xF0,
@@ -272,7 +272,7 @@ static const ospi_b_xspi_command_set_t g_ospi0_command_set_table[] =
     {
         .protocol = SPI_FLASH_PROTOCOL_8D_8D_8D,
         .frame_format = OSPI_B_FRAME_FORMAT_XSPI_PROFILE_2,
-        .latency_mode = OSPI_B_LATENCY_MODE_FIXED,
+        .latency_mode = OSPI_B_LATENCY_MODE_VARIABLE,
         .command_bytes = OSPI_B_COMMAND_BYTES_2,
         .address_bytes = SPI_FLASH_ADDRESS_BYTES_4,
         .address_msb_mask = 0xF0,
