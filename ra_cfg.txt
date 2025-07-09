@@ -1065,8 +1065,8 @@ FSP Configuration
       General: Name: g_ospi0
       General: Unit: OSPI_B0
       General: Chip Select: CS1
-      General: Write Status Bit: b0
-      General: Write Enable Bit: b0
+      General: Write Status Bit: b7
+      General: Write Enable Bit: b7
       General: DS Auto-calibration Pattern Address: 0
       Command Sets: Custom Table: Table Pointer: 
       Command Sets: Custom Table: Table Length: 0
@@ -1076,7 +1076,7 @@ FSP Configuration
       Command Sets: Initial Mode: Frame Format: xSPI Profile 2.0
       Command Sets: Initial Mode: Latency Mode: Variable (DQS)
       Command Sets: Initial Mode: Address Length: 4 bytes
-      Command Sets: Initial Mode: Address MSB Mask: 0xe0
+      Command Sets: Initial Mode: Address MSB Mask: 0
       Command Sets: Initial Mode: Command Code Length: 2 bytes
       Command Sets: Initial Mode: Status Register Address Length: 4 bytes
       Command Sets: Initial Mode: Status Register Address: 0x00
@@ -1095,16 +1095,16 @@ FSP Configuration
       Command Sets: Initial Mode: Block Erase: Command Code: 0
       Command Sets: Initial Mode: Chip Erase: Command Code: 0
       Command Sets: High-speed Mode: Protocol Mode: Dual data rate OPI (8D-8D-8D)
-      Command Sets: High-speed Mode: Frame Format: xSPI Profile 2.0
+      Command Sets: High-speed Mode: Frame Format: xSPI Profile 2.0 Extended
       Command Sets: High-speed Mode: Latency Mode: Variable (DQS)
       Command Sets: High-speed Mode: Address Length: 4 bytes
       Command Sets: High-speed Mode: Address MSB Mask: 0xe0
       Command Sets: High-speed Mode: Command Code Length: 2 bytes
       Command Sets: High-speed Mode: Status Register Address Length: 4 bytes
       Command Sets: High-speed Mode: Status Register Address: 0x00
-      Command Sets: High-speed Mode: Read: Command Code: 0xEEEE
+      Command Sets: High-speed Mode: Read: Command Code: 0xeeee
       Command Sets: High-speed Mode: Read: Dummy Cycles: 7
-      Command Sets: High-speed Mode: Program: Command Code: 0xDEDE
+      Command Sets: High-speed Mode: Program: Command Code: 0xdede
       Command Sets: High-speed Mode: Program: Dummy Cycles: 7
       Command Sets: High-speed Mode: Row Load: Command Code: 0x00
       Command Sets: High-speed Mode: Row Load: Dummy Cycles: 0
