@@ -38,7 +38,7 @@ extern uint32_t g_fsp_common_thread_count;
                         (const char *)"Main Thread1",
                         65536/4, // In words, not bytes
                         (void *) &main_thread1_parameters, //pvParameters
-                        3,
+                        1,
                         #if 1
                         (StackType_t *)&main_thread1_stack,
                         (StaticTask_t *)&main_thread1_memory

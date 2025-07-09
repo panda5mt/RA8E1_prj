@@ -8,6 +8,7 @@
 #include "lwip/udp.h"
 #include "lwip/dhcp.h"
 #include "lwip/autoip.h"
+#include "r_spi_flash_api.h"
 
 #include <string.h> // for memcpy
 
@@ -29,6 +30,21 @@ void ospi_hyperram_test(void)
         return;
     }
     xprintf("[OSPI] init Ok\n");
+    ospi_b_xspi_command_set_t cs;
+    // // ID0,ID1を見てみる
+    // ID0-Die0
+    // spi_flash_direct_transfer_t g_ospi0_trans = {
+    //     .command = 0xc0,
+    //     .command_length = 1,
+    //     .address = 0x00000000,
+    //     .address_length = 4,
+    //     .data_length = 4,
+    // };
+    // for (int k = 0; k < 10; k++)
+    // {
+    //     R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
+    //     xprintf("[ID0]dat=0x%x\n", g_ospi0_trans.data);
+    //}
 
     // 2. 書き込みデータ作成
     uint8_t write_data[TEST_DATA_LENGTH];
@@ -45,7 +61,9 @@ void ospi_hyperram_test(void)
 
     // 4. 書き込み（メモリマップドアクセス）
     memcpy(hyperram_ptr, write_data, TEST_DATA_LENGTH);
-    //   5. 読み出しバッファ
+    vTaskDelay(pdMS_TO_TICKS(10));
+
+    // 5. 読み出しバッファ
     memcpy(read_data, hyperram_ptr, TEST_DATA_LENGTH);
 
     // 6. 検証（任意）
@@ -56,7 +74,6 @@ void ospi_hyperram_test(void)
             xprintf("[OSPI] data error at %d\n", i);
         }
     }
-
     // 正常終了
     xprintf("[OSPI] RW end\n");
 }
