@@ -79,7 +79,8 @@ target_link_libraries(${PROJECT_NAME}.elf
 
 add_custom_target(obj_copy ALL
     COMMAND ${CMAKE_OBJCOPY} ${PROJECT_NAME}.elf -O ihex  ${PROJECT_NAME}.hex
-    COMMAND ${CMAKE_OBJCOPY} ${PROJECT_NAME}.elf -O srec -j .text -j .data ${PROJECT_NAME}.srec
+    # COMMAND ${CMAKE_OBJCOPY} ${PROJECT_NAME}.elf -O srec -j .text -j .data ${PROJECT_NAME}.srec
+    COMMAND ${CMAKE_OBJCOPY} ${PROJECT_NAME}.elf -O srec ${PROJECT_NAME}.srec
     COMMENT "Creating Intel Hex file and SREC file in ${PROJECT_BINARY_DIR}"
 )
 
