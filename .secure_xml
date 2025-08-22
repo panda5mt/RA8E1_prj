@@ -102,8 +102,9 @@
       <configSetting altId="ether_rmii.rmii0_txd0.p304" configurationId="ether_rmii.rmii0_txd0" isUsedByDriver="true" peripheral="ETHER_RMII"/>
       <configSetting altId="ether_rmii.rmii0_txd1.p305" configurationId="ether_rmii.rmii0_txd1" isUsedByDriver="true" peripheral="ETHER_RMII"/>
       <configSetting altId="ether_rmii.rmii0_txd_en.p306" configurationId="ether_rmii.rmii0_txd_en" isUsedByDriver="true" peripheral="ETHER_RMII"/>
+      <configSetting altId="gpt2.gtioc2a.p113" configurationId="gpt2.gtioc2a" isUsedByDriver="true" peripheral="GPT2"/>
       <configSetting altId="gpt3.gtioc3a.p403" configurationId="gpt3.gtioc3a" isUsedByDriver="true" peripheral="GPT3"/>
-      <configSetting altId="gpt5.gtioc5a.p115" configurationId="gpt5.gtioc5a" isUsedByDriver="true" peripheral="GPT5"/>
+      <configSetting altId="gpt5.gtioc5a.p115" configurationId="gpt5.gtioc5a" peripheral="GPT5"/>
       <configSetting altId="iic1.scl1.p512" configurationId="iic1.scl1" isUsedByDriver="true" peripheral="IIC1"/>
       <configSetting altId="iic1.sda1.p511" configurationId="iic1.sda1" isUsedByDriver="true" peripheral="IIC1"/>
       <configSetting altId="irq11.irq11_dash_ds.p006" configurationId="irq11.irq11_dash_ds" peripheral="IRQ11"/>
@@ -134,7 +135,6 @@
       <configSetting altId="p014.input" configurationId="p014"/>
       <configSetting altId="p015.input" configurationId="p015"/>
       <configSetting altId="p105.input" configurationId="p105"/>
-      <configSetting altId="p113.input" configurationId="p113"/>
       <configSetting altId="p203.input" configurationId="p203"/>
       <configSetting altId="p204.input" configurationId="p204"/>
       <configSetting altId="p309.output.high" configurationId="p309"/>

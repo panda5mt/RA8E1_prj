@@ -53,25 +53,25 @@ void ospi_hyperram_test(void)
     for (uint32_t i = 0; i < TEST_DATA_LENGTH; i++)
     {
         write_data[i] = 255 - (uint8_t)(i & 0xff);
-        read_data[i] = 0xff;
+        read_data[i] = 0x00;
     }
 
     // 3. 書き込み先アドレス（HyperRAM内）
     uint8_t *hyperram_ptr = (uint8_t *)HYPERRAM_BASE_ADDR;
 
     // 4. 書き込み（メモリマップドアクセス）
-    memcpy(hyperram_ptr, write_data, TEST_DATA_LENGTH);
+    memcpy(&hyperram_ptr[0], &write_data[0], TEST_DATA_LENGTH);
     vTaskDelay(pdMS_TO_TICKS(10));
 
     // 5. 読み出しバッファ
-    memcpy(read_data, hyperram_ptr, TEST_DATA_LENGTH);
+    memcpy(&read_data[0], &hyperram_ptr[0], TEST_DATA_LENGTH);
 
     // 6. 検証（任意）
     for (uint32_t i = 0; i < TEST_DATA_LENGTH; i++)
     {
         if (read_data[i] != write_data[i])
         {
-            xprintf("[OSPI] data error at %d\n", i);
+            xprintf("[OSPI] data error at %d: %d\n", i, read_data[i]);
         }
     }
     // 正常終了

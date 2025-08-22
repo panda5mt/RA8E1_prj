@@ -1,6 +1,48 @@
 /* generated HAL source file - do not edit */
 #include "hal_data.h"
 
+dmac_instance_ctrl_t g_transfer0_ctrl;
+transfer_info_t g_transfer0_info =
+{
+    .transfer_settings_word_b.dest_addr_mode = TRANSFER_ADDR_MODE_INCREMENTED,
+    .transfer_settings_word_b.repeat_area    = TRANSFER_REPEAT_AREA_SOURCE,
+    .transfer_settings_word_b.irq            = TRANSFER_IRQ_END,
+    .transfer_settings_word_b.chain_mode     = TRANSFER_CHAIN_MODE_DISABLED,
+    .transfer_settings_word_b.src_addr_mode  = TRANSFER_ADDR_MODE_INCREMENTED,
+    .transfer_settings_word_b.size           = TRANSFER_SIZE_1_BYTE,
+    .transfer_settings_word_b.mode           = TRANSFER_MODE_BLOCK,
+    .p_dest                                  = (void *) NULL,
+    .p_src                                   = (void const *) NULL,
+    .num_blocks                              = 1,
+    .length                                  = 64,
+};
+const dmac_extended_cfg_t g_transfer0_extend =
+{
+    .offset              = 0,
+    .src_buffer_size     = 0,
+#if defined(VECTOR_NUMBER_DMAC0_INT)
+    .irq                 = VECTOR_NUMBER_DMAC0_INT,
+#else
+    .irq                 = FSP_INVALID_VECTOR,
+#endif
+    .ipl                 = (BSP_IRQ_DISABLED),
+    .channel             = 0,
+    .p_callback          = NULL,
+    .p_context           = NULL,
+    .activation_source   = ELC_EVENT_NONE,
+};
+const transfer_cfg_t g_transfer0_cfg =
+{
+    .p_info              = &g_transfer0_info,
+    .p_extend            = &g_transfer0_extend,
+};
+/* Instance structure to use this module. */
+const transfer_instance_t g_transfer0 =
+{
+    .p_ctrl        = &g_transfer0_ctrl,
+    .p_cfg         = &g_transfer0_cfg,
+    .p_api         = &g_transfer_on_dmac
+};
 ospi_b_instance_ctrl_t g_ospi0_ctrl;
 
 static ospi_b_timing_setting_t g_ospi0_timing_settings =
@@ -8,7 +50,7 @@ static ospi_b_timing_setting_t g_ospi0_timing_settings =
     .command_to_command_interval = OSPI_B_COMMAND_INTERVAL_CLOCKS_2,
     .cs_pullup_lag               = OSPI_B_COMMAND_CS_PULLUP_CLOCKS_NO_EXTENSION,
     .cs_pulldown_lead            = OSPI_B_COMMAND_CS_PULLDOWN_CLOCKS_NO_EXTENSION,
-    .sdr_drive_timing            = OSPI_B_SDR_DRIVE_TIMING_BEFORE_CK,
+    .sdr_drive_timing            = OSPI_B_SDR_DRIVE_TIMING_AT_CK,
     .sdr_sampling_edge           = OSPI_B_CK_EDGE_FALLING,
     .sdr_sampling_delay          = OSPI_B_SDR_SAMPLING_DELAY_NONE,
     .ddr_sampling_extension      = OSPI_B_DDR_SAMPLING_EXTENSION_NONE,
@@ -35,8 +77,8 @@ static const ospi_b_xspi_command_set_t g_ospi0_command_set_table[] =
 {
     {
         .protocol = SPI_FLASH_PROTOCOL_8D_8D_8D,
-        .frame_format = OSPI_B_FRAME_FORMAT_XSPI_PROFILE_2,
-        .latency_mode = OSPI_B_LATENCY_MODE_VARIABLE,
+        .frame_format = OSPI_B_FRAME_FORMAT_XSPI_PROFILE_1,
+        .latency_mode = OSPI_B_LATENCY_MODE_FIXED,
         .command_bytes = OSPI_B_COMMAND_BYTES_2,
         .address_bytes = SPI_FLASH_ADDRESS_BYTES_4,
         .address_msb_mask = 0,
@@ -45,32 +87,32 @@ static const ospi_b_xspi_command_set_t g_ospi0_command_set_table[] =
         .status_address_bytes = SPI_FLASH_ADDRESS_BYTES_4,
         .p_erase_commands = &g_ospi0_command_set_initial_erase_table,
         .read_command = 0xEEEE,
-        .read_dummy_cycles = 7,
+        .read_dummy_cycles = 14,
         .program_command = 0xDEDE,
-        .program_dummy_cycles = 7,
+        .program_dummy_cycles = 14,
         .row_load_command = 0x00,
         .row_load_dummy_cycles = 0,
         .row_store_command = 0x00,
         .row_store_dummy_cycles = 0,
         .write_enable_command = 0x0606,
         .status_command = 0,
-        .status_dummy_cycles = 7,
+        .status_dummy_cycles = 0,
     },
     {
         .protocol = SPI_FLASH_PROTOCOL_8D_8D_8D,
-        .frame_format = OSPI_B_FRAME_FORMAT_XSPI_PROFILE_2_EXTENDED,
-        .latency_mode = OSPI_B_LATENCY_MODE_VARIABLE,
+        .frame_format = OSPI_B_FRAME_FORMAT_XSPI_PROFILE_1,
+        .latency_mode = OSPI_B_LATENCY_MODE_FIXED,
         .command_bytes = OSPI_B_COMMAND_BYTES_2,
         .address_bytes = SPI_FLASH_ADDRESS_BYTES_4,
-        .address_msb_mask = 0xe0,
+        .address_msb_mask = 0,
         .status_needs_address =  true,
         .status_address = 0x00,
         .status_address_bytes = SPI_FLASH_ADDRESS_BYTES_4,
         .p_erase_commands = &g_ospi0_command_set_high_speed_erase_table,
-        .read_command = 0xeeee,
-        .read_dummy_cycles = 7,
-        .program_command = 0xdede,
-        .program_dummy_cycles = 7,
+        .read_command = 0xEEEE,
+        .read_dummy_cycles = 14,
+        .program_command = 0xDEDE,
+        .program_dummy_cycles = 0,
         .row_load_command = 0x00,
         .row_load_dummy_cycles = 0,
         .row_store_command = 0x00,
@@ -111,7 +153,7 @@ static const ospi_b_extended_cfg_t g_ospi0_extended_cfg =
     .data_latch_delay_clocks                 = OSPI_B_DS_TIMING_DELAY_NONE,
     .p_autocalibration_preamble_pattern_addr = (uint8_t *) 0,
 #if OSPI_B_CFG_DMAC_SUPPORT_ENABLE
-    .p_lower_lvl_transfer                    = &RA_NOT_DEFINED,
+    .p_lower_lvl_transfer                    = &g_transfer0,
 #endif
 #if OSPI_B_CFG_DOTF_SUPPORT_ENABLE
     .p_dotf_cfg                              = &g_ospi_dotf_cfg,
@@ -263,13 +305,13 @@ const timer_instance_t g_timer3 =
     .p_cfg         = &g_timer3_cfg,
     .p_api         = &g_timer_on_gpt
 };
-gpt_instance_ctrl_t g_timer5_ctrl;
+gpt_instance_ctrl_t g_timer2_ctrl;
 #if 0
-const gpt_extended_pwm_cfg_t g_timer5_pwm_extend =
+const gpt_extended_pwm_cfg_t g_timer2_pwm_extend =
 {
     .trough_ipl          = (BSP_IRQ_DISABLED),
-#if defined(VECTOR_NUMBER_GPT5_COUNTER_UNDERFLOW)
-    .trough_irq          = VECTOR_NUMBER_GPT5_COUNTER_UNDERFLOW,
+#if defined(VECTOR_NUMBER_GPT2_COUNTER_UNDERFLOW)
+    .trough_irq          = VECTOR_NUMBER_GPT2_COUNTER_UNDERFLOW,
 #else
     .trough_irq          = FSP_INVALID_VECTOR,
 #endif
@@ -287,7 +329,7 @@ const gpt_extended_pwm_cfg_t g_timer5_pwm_extend =
     .gtiocb_disable_setting = GPT_GTIOC_DISABLE_PROHIBITED,
 };
 #endif
-const gpt_extended_cfg_t g_timer5_extend =
+const gpt_extended_cfg_t g_timer2_extend =
 {
     .gtioca = { .output_enabled = true,
                 .stop_level     = GPT_PIN_LEVEL_LOW
@@ -304,13 +346,13 @@ const gpt_extended_cfg_t g_timer5_extend =
     .capture_b_source    = (gpt_source_t) ( GPT_SOURCE_NONE),
     .capture_a_ipl       = (BSP_IRQ_DISABLED),
     .capture_b_ipl       = (BSP_IRQ_DISABLED),
-#if defined(VECTOR_NUMBER_GPT5_CAPTURE_COMPARE_A)
-    .capture_a_irq       = VECTOR_NUMBER_GPT5_CAPTURE_COMPARE_A,
+#if defined(VECTOR_NUMBER_GPT2_CAPTURE_COMPARE_A)
+    .capture_a_irq       = VECTOR_NUMBER_GPT2_CAPTURE_COMPARE_A,
 #else
     .capture_a_irq       = FSP_INVALID_VECTOR,
 #endif
-#if defined(VECTOR_NUMBER_GPT5_CAPTURE_COMPARE_B)
-    .capture_b_irq       = VECTOR_NUMBER_GPT5_CAPTURE_COMPARE_B,
+#if defined(VECTOR_NUMBER_GPT2_CAPTURE_COMPARE_B)
+    .capture_b_irq       = VECTOR_NUMBER_GPT2_CAPTURE_COMPARE_B,
 #else
     .capture_b_irq       = FSP_INVALID_VECTOR,
 #endif
@@ -318,7 +360,7 @@ const gpt_extended_cfg_t g_timer5_extend =
     .capture_filter_gtioca       = GPT_CAPTURE_FILTER_NONE,
     .capture_filter_gtiocb       = GPT_CAPTURE_FILTER_NONE,
 #if 0
-    .p_pwm_cfg                   = &g_timer5_pwm_extend,
+    .p_pwm_cfg                   = &g_timer2_pwm_extend,
 #else
     .p_pwm_cfg                   = NULL,
 #endif
@@ -342,11 +384,11 @@ const gpt_extended_cfg_t g_timer5_extend =
 #endif
 };
 
-const timer_cfg_t g_timer5_cfg =
+const timer_cfg_t g_timer2_cfg =
 {
     .mode                = TIMER_MODE_PERIODIC,
     /* Actual period: 0.5 seconds. Actual duty: 50%. */ .period_counts = (uint32_t) 0x3938700, .duty_cycle_counts = 0x1c9c380, .source_div = (timer_source_div_t)0,
-    .channel             = 5,
+    .channel             = 2,
     .p_callback          = NULL,
     /** If NULL then do not add & */
 #if defined(NULL)
@@ -354,19 +396,19 @@ const timer_cfg_t g_timer5_cfg =
 #else
     .p_context           = (void *) &NULL,
 #endif
-    .p_extend            = &g_timer5_extend,
+    .p_extend            = &g_timer2_extend,
     .cycle_end_ipl       = (BSP_IRQ_DISABLED),
-#if defined(VECTOR_NUMBER_GPT5_COUNTER_OVERFLOW)
-    .cycle_end_irq       = VECTOR_NUMBER_GPT5_COUNTER_OVERFLOW,
+#if defined(VECTOR_NUMBER_GPT2_COUNTER_OVERFLOW)
+    .cycle_end_irq       = VECTOR_NUMBER_GPT2_COUNTER_OVERFLOW,
 #else
     .cycle_end_irq       = FSP_INVALID_VECTOR,
 #endif
 };
 /* Instance structure to use this module. */
-const timer_instance_t g_timer5 =
+const timer_instance_t g_timer2 =
 {
-    .p_ctrl        = &g_timer5_ctrl,
-    .p_cfg         = &g_timer5_cfg,
+    .p_ctrl        = &g_timer2_ctrl,
+    .p_cfg         = &g_timer2_cfg,
     .p_api         = &g_timer_on_gpt
 };
 iic_master_instance_ctrl_t g_i2c_master1_ctrl;

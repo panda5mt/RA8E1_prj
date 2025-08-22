@@ -166,35 +166,35 @@ FSP Configuration
       AVCC0 123 SYSTEM_AVCC0 - - - - - - - - IO "Read only" - 
       AVSS0 124 SYSTEM_AVSS0 - - - - - - - - IO "Read only" - 
       P000 137 - - - - Disabled - - "ACMPHS1: IVCMP1_2; ADC1: AN100; IRQ6: IRQ6-DS" - None - - 
-      P001 136 GPIO Arduino_A3 - - "Input mode" - - "ACMPHS0: IVREF_0; ADC1: AN101; IRQ7: IRQ7-DS" - None - - 
+      P001 136 GPIO Arduino_A3 - None "Input mode" - - "ACMPHS0: IVREF_0; ADC1: AN101; IRQ7: IRQ7-DS" - IO - - 
       P002 135 - - - - Disabled - - "ACMPHS1: IVCMP1_3; ADC1: AN102; IRQ8: IRQ8-DS" - None - - 
-      P003 134 GPIO Arduino_A1 - - "Input mode" - - "ACMPHS1: IVREF_1; ADC1: AN104" - None - - 
-      P004 133 GPIO Arduino_A0 - - "Input mode" - - "ACMPHS0: IVCMP0_2; ADC0: AN000; IRQ9: IRQ9-DS" - None - - 
+      P003 134 GPIO Arduino_A1 - - "Input mode" - - "ACMPHS1: IVREF_1; ADC1: AN104" - IO - - 
+      P004 133 GPIO Arduino_A0 - None "Input mode" - - "ACMPHS0: IVCMP0_2; ADC0: AN000; IRQ9: IRQ9-DS" - IO - - 
       P005 132 - - - - Disabled - - "ADC0: AN001; IRQ10: IRQ10-DS" - None - - 
-      P006 131 IRQ11_IRQ11-DS PMOD1_IRQ - - "IRQ mode" - - "ACMPHS0: IVCMP0_3; ADC0: AN002; IRQ11: IRQ11-DS" - None - - 
-      P007 130 GPIO Arduino_A2 - - "Input mode" - - "ADC0: AN004" - None - - 
+      P006 131 IRQ11_IRQ11-DS PMOD1_IRQ - IRQ11-DS "IRQ mode" - - "ACMPHS0: IVCMP0_3; ADC0: AN002; IRQ11: IRQ11-DS" - IO - - 
+      P007 130 GPIO Arduino_A2 - - "Input mode" - - "ADC0: AN004" - IO - - 
       P008 129 - - - - Disabled - - "ADC0: AN008; IRQ12: IRQ12-DS" - None - - 
-      P009 128 IRQ13_IRQ13-DS USER_SW - - "IRQ mode" - - "ADC0: AN006; IRQ13: IRQ13-DS" - None - - 
-      P010 127 IRQ14_IRQ14 PMOD2_IRQ - - "IRQ mode" - - "ACMPHS0: IVCMP0_0; ADC0: AN005; IRQ14: IRQ14" - None - - 
-      P014 120 GPIO Arduino_A4 - - "Input mode" - - "ADC0: AN007; DAC120: DA0" - None - - 
-      P015 119 GPIO Arduino_A5 - - "Input mode" - - "ADC1: AN105; IRQ13: IRQ13" - None - - 
+      P009 128 IRQ13_IRQ13-DS USER_SW - IRQ13-DS "IRQ mode" - - "ADC0: AN006; IRQ13: IRQ13-DS" - IO - - 
+      P010 127 IRQ14_IRQ14 PMOD2_IRQ - IRQ14 "IRQ mode" - - "ACMPHS0: IVCMP0_0; ADC0: AN005; IRQ14: IRQ14" - IO - - 
+      P014 120 GPIO Arduino_A4 - - "Input mode" - - "ADC0: AN007; DAC120: DA0" - IO - - 
+      P015 119 GPIO Arduino_A5 - None "Input mode" - - "ADC1: AN105; IRQ13: IRQ13" - IO - - 
       P100 108 OSPI_OM_SIO0 - HH None "Peripheral mode" - - "AGT0: AGTIO0; GPT_POEGA: GTETRGA; IRQ2: IRQ2; OSPI: OM_SIO0; SCI9: DE9; SCI9: SCK9; SPI1: MISO1" - O - - 
       P101 105 OSPI_OM_SIO3 JLINK_VCOM_RXD HH None "Peripheral mode" - - "AGT0: AGTEE0; GPT_POEGB: GTETRGB; IRQ1: IRQ1; OSPI: OM_SIO3; SCI9: RXD9; SPI1: MOSI1" - O - - 
       P102 104 OSPI_OM_SIO4 JLINK_VCOM_TXD HH - "Peripheral mode" - - "ADC(Digital): ADTRG0; AGT0: AGTO0; CANFD0: CRX0; GPT2: GTIOC2B; OSPI: OM_SIO4; SCI9: TXD9; SPI1: RSPCK1" - O - - 
       P103 103 OSPI_OM_SIO2 JLINK_VCOM_CTS_RTS HH - "Peripheral mode" - - "CANFD0: CTX0; GPT2: GTIOC2A; OSPI: OM_SIO2; SCI9: CTS_RTS9; SCI9: DE9; SPI1: SSLB0" - O - - 
       P104 102 OSPI_OM_CS1 JLINK_VCOM_CTS H None "Peripheral mode" - - "GPT1: GTIOC1B; GPT_POEGB: GTETRGB; IRQ1: IRQ1; OSPI: OM_CS1; SCI9: CTS9; SPI1: SSLB1" - O - - 
-      P105 101 GPIO Ardiuno_RST - - "Input mode" - - "GPT1: GTIOC1A; IRQ0: IRQ0; OSPI: OM_ECSINT1; SPI1: SSLB2; ULPT1: ULPTO1_A-DS" - None - - 
+      P105 101 GPIO Ardiuno_RST - None "Input mode" - - "GPT1: GTIOC1A; IRQ0: IRQ0; OSPI: OM_ECSINT1; SPI1: SSLB2; ULPT1: ULPTO1_A-DS" - IO - - 
       P106 100 OSPI_OM_RESET PMOD2_RST L - "Peripheral mode" - - "AGT0: AGTOB0; OSPI: OM_RESET; SPI1: SSLB3; ULPT1: ULPTEE1_A-DS" - IO - - 
-      P107 99 OSPI_OM_CS0 PMOD2_P9 - - "Peripheral mode" - - "AGT0: AGTOA0; OSPI: OM_CS0" - None - - 
+      P107 99 OSPI_OM_CS0 PMOD2_P9 H - "Peripheral mode" - - "AGT0: AGTOA0; OSPI: OM_CS0" - O - - 
       P112 73 ETHER_RMII_RMII0_CRS_DV Ardiuno_D9 H - "Peripheral mode" - - "ETHER_MII: ET0_CRS; ETHER_RMII: RMII0_CRS_DV; GPT3: GTIOC3B; SCI0: TXD0; SPI0: SSLA2; SSIE: SSIBLK0; ULPT0: ULPTOB0_A-DS" - IO - - 
-      P113 74 GPIO Ardiuno_D6 - - "Input mode" - - "ETHER_MII: ET0_EXOUT; ETHER_RMII: ET0_EXOUT; GPT2: GTIOC2A; SCI0: RXD0; SPI0: SSLA1; SSIE: SSIFS0; SSIE: SSILRCK0; ULPT0: ULPTOA0_A-DS" - None - - 
-      P114 75 ETHER_RMII_ET0_LINKSTA Ardiuno_D5 - - "Peripheral mode" - - "ETHER_MII: ET0_LINKSTA; ETHER_RMII: ET0_LINKSTA; GPT2: GTIOC2B; SCI0: CTS_RTS0; SCI0: DE0; SPI0: SSLA0; SSIE0: SSIRXD0" - None - - 
-      P115 76 GPT5_GTIOC5A - - - "Peripheral mode" - - "ETHER_MII: ET0_WOL; ETHER_RMII: ET0_WOL; GPT5: GTIOC5A; SCI0: CTS0; SPI0: MOSI0; SSIE0: SSITXD0" - None - - 
+      P113 74 GPT2_GTIOC2A Ardiuno_D6 L - "Peripheral mode" - - "ETHER_MII: ET0_EXOUT; ETHER_RMII: ET0_EXOUT; GPT2: GTIOC2A; SCI0: RXD0; SPI0: SSLA1; SSIE: SSIFS0; SSIE: SSILRCK0; ULPT0: ULPTOA0_A-DS" - IO - - 
+      P114 75 ETHER_RMII_ET0_LINKSTA Ardiuno_D5 H - "Peripheral mode" - - "ETHER_MII: ET0_LINKSTA; ETHER_RMII: ET0_LINKSTA; GPT2: GTIOC2B; SCI0: CTS_RTS0; SCI0: DE0; SPI0: SSLA0; SSIE0: SSIRXD0" - IO - - 
+      P115 76 GPT5_GTIOC5A - L - "Peripheral mode" - - "ETHER_MII: ET0_WOL; ETHER_RMII: ET0_WOL; GPT5: GTIOC5A; SCI0: CTS0; SPI0: MOSI0; SSIE0: SSITXD0" - IO - - 
       P200 56 - NMI - - Disabled - - "IRQ: NMI" - None - - 
       P201 55 - MD - - Disabled - - "SYSTEM: MD" - None - - 
       P202 45 - Arduino_D11 - - Disabled - - "CANFD0: CRX0; GPT5: GTIOC5B; IRQ3: IRQ3-DS; SPI0: MOSI0; ULPT1: ULPTOB1" - None - - 
-      P203 44 GPIO Arduino_D13 - - "Input mode" - - "CANFD0: CTX0; GPT5: GTIOC5A; IRQ2: IRQ2-DS; SPI0: RSPCK0; ULPT1: ULPTOA1" - None - - 
-      P204 43 GPIO Arduino_D10 - - "Input mode" - - "AGT1: AGTIO1; CAC: CACREF; GPT4: GTIOC4B; SCI4: DE4; SCI4: SCK4; SPI0: SSLA0; SSIE: SSIBLK1; USB FS: USB_OVRCURB" - None - - 
+      P203 44 GPIO Arduino_D13 - None "Input mode" - - "CANFD0: CTX0; GPT5: GTIOC5A; IRQ2: IRQ2-DS; SPI0: RSPCK0; ULPT1: ULPTOA1" - IO - - 
+      P204 43 GPIO Arduino_D10 - - "Input mode" - - "AGT1: AGTIO1; CAC: CACREF; GPT4: GTIOC4B; SCI4: DE4; SCI4: SCK4; SPI0: SSLA0; SSIE: SSIBLK1; USB FS: USB_OVRCURB" - IO - - 
       P205 42 - - - - Disabled - - "AGT1: AGTO1; CLKOUT: CLKOUT; GPT4: GTIOC4A; IIC1: SCL1; IRQ1: IRQ1-DS; SCI4: TXD4; SPI0: SSLA1; SSIE: SSIFS1; SSIE: SSILRCK1; USB FS: USB_OVRCURA" - None - - 
       P206 41 - - - - Disabled - - "IIC1: SDA1; IRQ0: IRQ0-DS; SCI4: RXD4; SPI0: SSLA2; SSIE1: SSIDATA1; USB FS: USB_VBUSEN" - None - - 
       P208 53 JTAG/SWD_TDI DEBUG_TDI L None "Peripheral mode" - - "CANFD1: CRX1; CLKOUT: VCOUT; GPT1: GTIOC1B; IRQ3: IRQ3; JTAG/SWD: TDI; SCI9: RXD9" - IO - - 
@@ -212,20 +212,20 @@ FSP Configuration
       P306 64 ETHER_RMII_RMII0_TXD_EN - H - "Peripheral mode" - - "ETHER_MII: ET0_TX_EN; ETHER_RMII: RMII0_TXD_EN; TRACE: TDATA1; ULPT1: ULPTEVI1" - IO - - 
       P307 63 ETHER_RMII_ET0_MDIO - M - "Peripheral mode" - - "ETHER_MII: ET0_MDIO; ETHER_RMII: ET0_MDIO; TRACE: TDATA0; ULPT1: ULPTOA1" - IO - - 
       P308 62 ETHER_RMII_ET0_MDC - M - "Peripheral mode" - - "ETHER_MII: ET0_MDC; ETHER_RMII: ET0_MDC; SCI9: CTS9; TRACE: TCLK; ULPT1: ULPTOB1" - IO - - 
-      P309 61 GPIO LAN8720_nRST - - "Output mode (Initial High)" - - "ETHER_MII: ET0_ETXD3; SCI3: RXD3" - None - - 
-      P310 60 GPIO Arduino_D1 - - "Input mode" - - "AGT1: AGTEE1; ETHER_MII: ET0_ETXD2; SCI3: TXD3" - None - - 
-      P311 59 GPIO - - - "Input mode" - - "AGT1: AGTOB1; CANFD0: CRX0; ETHER_MII: ET0_TX_ER; GPT_POEG: GTADSM1; SCI3: DE3; SCI3: SCK3" - None - - 
+      P309 61 GPIO LAN8720_nRST L - "Output mode (Initial High)" - - "ETHER_MII: ET0_ETXD3; SCI3: RXD3" - IO - - 
+      P310 60 GPIO Arduino_D1 - - "Input mode" - - "AGT1: AGTEE1; ETHER_MII: ET0_ETXD2; SCI3: TXD3" - IO - - 
+      P311 59 GPIO - - - "Input mode" - - "AGT1: AGTOB1; CANFD0: CRX0; ETHER_MII: ET0_TX_ER; GPT_POEG: GTADSM1; SCI3: DE3; SCI3: SCK3" - IO - - 
       P312 58 - - - - Disabled - - "AGT1: AGTOA1; CANFD0: CTX0; ETHER_MII: ET0_TX_CLK; GPT_POEG: GTADSM0; SCI3: CTS_RTS3; SCI3: DE3" - None - - 
       P313 46 - Arduino_D12 - - Disabled - - "SCI3: CTS3; SPI0: MISO0" - None - - 
-      P400 1 CEU_VIO_D0 CAM_D0 - - "Peripheral mode" - - "ADC(Digital): ADTRG1; AGT1: AGTIO1; CEU: VIO_D0; ETHER_MII: ET0_WOL; ETHER_RMII: ET0_WOL; IRQ0: IRQ0; SCI1: TXD1; SSIE: AUDIO_CLK" - None - - 
-      P401 2 CEU_VIO_D1 CAM_D1 - - "Peripheral mode" - - "CANFD0: CTX0; CEU: VIO_D1; ETHER_MII: ET0_MDC; ETHER_RMII: ET0_MDC; GPT_POEGA: GTETRGA; IRQ5: IRQ5-DS; SCI1: RXD1" - None - - 
+      P400 1 CEU_VIO_D0 CAM_D0 L None "Peripheral mode" - - "ADC(Digital): ADTRG1; AGT1: AGTIO1; CEU: VIO_D0; ETHER_MII: ET0_WOL; ETHER_RMII: ET0_WOL; IRQ0: IRQ0; SCI1: TXD1; SSIE: AUDIO_CLK" - I - - 
+      P401 2 CEU_VIO_D1 CAM_D1 L None "Peripheral mode" - - "CANFD0: CTX0; CEU: VIO_D1; ETHER_MII: ET0_MDC; ETHER_RMII: ET0_MDC; GPT_POEGA: GTETRGA; IRQ5: IRQ5-DS; SCI1: RXD1" - I - - 
       P402 3 - - - - Disabled - - "CAC: CACREF; CANFD0: CRX0; ETHER_MII: ET0_MDIO; ETHER_RMII: ET0_MDIO; IRQ4: IRQ4-DS; RTC: RTCIC0; SCI1: DE1; SCI1: SCK1; SSIE: AUDIO_CLK" - None - - 
-      P403 4 GPT3_GTIOC3A CAM_XCLK - - "Peripheral mode" - - "ETHER_MII: ET0_LINKSTA; ETHER_RMII: ET0_LINKSTA; GPT3: GTIOC3A; IRQ14: IRQ14-DS; RTC: RTCIC1; SCI1: CTS_RTS1; SCI1: DE1; SSIE: SSIBLK0" - None - - 
+      P403 4 GPT3_GTIOC3A CAM_XCLK L None "Peripheral mode" - - "ETHER_MII: ET0_LINKSTA; ETHER_RMII: ET0_LINKSTA; GPT3: GTIOC3A; IRQ14: IRQ14-DS; RTC: RTCIC1; SCI1: CTS_RTS1; SCI1: DE1; SSIE: SSIBLK0" - IO - - 
       P404 5 - LED_G2 - - Disabled - - "CEU: VIO_D3; ETHER_MII: ET0_EXOUT; ETHER_RMII: ET0_EXOUT; GPT3: GTIOC3B; IRQ15: IRQ15-DS; RTC: RTCIC2; SCI1: CTS1; SSIE: SSIFS0; SSIE: SSILRCK0" - None - - 
-      P405 6 CEU_VIO_D2 CAM_D2 - - "Peripheral mode" - - "AGT1: AGTIO1; CEU: VIO_D2; ETHER_MII: ET0_TX_EN; ETHER_RMII: RMII0_TXD_EN; GPT1: GTIOC1A; SCI2: DE2; SCI2: SCK2; SSIE0: SSITXD0" - None - - 
-      P406 7 CEU_VIO_D3 CAM_D3 - - "Peripheral mode" - - "CEU: VIO_D3; CGC: EXCIN; ETHER_MII: ET0_RX_ER; ETHER_RMII: RMII0_TXD1; GPT1: GTIOC1B; SCI2: TXD2; SPI0: SSLA3; SSIE0: SSIRXD0" - None - - 
-      P407 36 "USB FS_USB_VBUS" - - - "Peripheral mode" - - "ADC(Digital): ADTRG0; AGT0: AGTIO0; GPT10: GTIOC10B; IIC0: SDA0; RTC: RTCOUT; SCI4: CTS_RTS4; SCI4: DE4; SPI0: SSLA3; USB FS: USB_VBUS" - None - - 
-      P408 35 GPIO LED_G1 - - "Output mode (Initial Low)" - - "GPT10: GTIOC10A; IIC0: SCL0; IRQ7: IRQ7; SCI3: RXD3; SCI4: CTS4; ULPT0: ULPTOB0; USB FS: USB_VBUSEN" - None - - 
+      P405 6 CEU_VIO_D2 CAM_D2 L - "Peripheral mode" - - "AGT1: AGTIO1; CEU: VIO_D2; ETHER_MII: ET0_TX_EN; ETHER_RMII: RMII0_TXD_EN; GPT1: GTIOC1A; SCI2: DE2; SCI2: SCK2; SSIE0: SSITXD0" - I - - 
+      P406 7 CEU_VIO_D3 CAM_D3 L - "Peripheral mode" - - "CEU: VIO_D3; CGC: EXCIN; ETHER_MII: ET0_RX_ER; ETHER_RMII: RMII0_TXD1; GPT1: GTIOC1B; SCI2: TXD2; SPI0: SSLA3; SSIE0: SSIRXD0" - I - - 
+      P407 36 "USB FS_USB_VBUS" - L - "Peripheral mode" - - "ADC(Digital): ADTRG0; AGT0: AGTIO0; GPT10: GTIOC10B; IIC0: SDA0; RTC: RTCOUT; SCI4: CTS_RTS4; SCI4: DE4; SPI0: SSLA3; USB FS: USB_VBUS" - IO - - 
+      P408 35 GPIO LED_G1 L - "Output mode (Initial Low)" - - "GPT10: GTIOC10A; IIC0: SCL0; IRQ7: IRQ7; SCI3: RXD3; SCI4: CTS4; ULPT0: ULPTOB0; USB FS: USB_VBUSEN" - IO - - 
       P409 34 - - - - Disabled - - "IIC0: SDA0; IRQ6: IRQ6; SCI3: TXD3; ULPT0: ULPTOA0; USB FS: USB_OVRCURA_A-DS" - None - - 
       P410 33 - - - - Disabled - - "AGT1: AGTOB1; IIC0: SCL0; IRQ5: IRQ5; SCI3: DE3; SCI3: SCK3; SPI1: MISO1; USB FS: USB_OVRCURB_A-DS" - None - - 
       P411 32 - - - - Disabled - - "AGT1: AGTOA1; IRQ4: IRQ4; SCI3: CTS_RTS3; SCI3: DE3; SPI1: MOSI1; USB FS: USB_ID" - None - - 
@@ -233,30 +233,30 @@ FSP Configuration
       P413 30 - - - - Disabled - - "SPI1: SSLB0; ULPT1: ULPTEE1" - None - - 
       P414 29 - CAM_E19 - - Disabled - - "CANFD1: CRX1; GPT0: GTIOC0B; GPT_POEG: GTADSM1; IRQ9: IRQ9; SCI4: RXD4; SPI1: SSLB1" - None - - 
       P415 28 - CAM_User_Arduino_D3 - - Disabled - - "CANFD1: CTX1; GPT0: GTIOC0A; GPT_POEG: GTADSM0; IRQ8: IRQ8; SCI4: TXD4; SPI1: SSLB2" - None - - 
-      P511 144 IIC1_SDA1 IIC_SYSTEM_SDA1 - - "Peripheral mode" - - "CANFD1: CRX1; GPT0: GTIOC0B; IIC1: SDA1; IRQ15: IRQ15" - None - - 
-      P512 143 IIC1_SCL1 IIC_SYSTEM_SCL1 - - "Peripheral mode" - - "CANFD1: CTX1; GPT0: GTIOC0A; IIC1: SCL1; IRQ14: IRQ14" - None - - 
+      P511 144 IIC1_SDA1 IIC_SYSTEM_SDA1 M None "Peripheral mode" - - "CANFD1: CRX1; GPT0: GTIOC0B; IIC1: SDA1; IRQ15: IRQ15" - IO - - 
+      P512 143 IIC1_SCL1 IIC_SYSTEM_SCL1 M None "Peripheral mode" - - "CANFD1: CTX1; GPT0: GTIOC0A; IIC1: SCL1; IRQ14: IRQ14" - IO - - 
       P513 142 - - - - Disabled - - "ACMPHS1: IVCMP1_0; CEU: VIO_FLD" - None - - 
       P600 98 - - - - Disabled - - "CAC: CACREF; OSPI: OM_RSTO1; ULPT1: ULPTEVI1_A-DS" - None - - 
       P601 97 - - - - Disabled - - "OSPI: OM_WP1; RTC: RTCOUT; SCI0: DE0; SCI0: SCK0; ULPT0: ULPTEVI0" - None - - 
-      P602 96 SCI0_RXD0 - - - "Peripheral mode" - - "SCI0: RXD0; ULPT0: ULPTEE0" - None - - 
-      P603 95 SCI0_TXD0 - - - "Peripheral mode" - - "SCI0: TXD0; ULPT0: ULPTO0" - None - - 
-      P604 94 GPIO PMOD1_RST - - "Input mode" - - "SCI0: CTS_RTS0; SCI0: DE0" - None - - 
-      P605 93 GPIO PMOD1_P9 - - "Input mode" - - "SCI0: CTS0" - None - - 
-      P609 77 GPIO PMOD1_MOSI0_TXD0 - - "Input mode" - - "CANFD1: CTX1; ETHER_MII: ET0_RX_DV; GPT5: GTIOC5B; SCI0: TXD0; SPI0: MISO0; ULPT1: ULPTOA1_A-DS" - None - - 
-      P610 80 GPIO PMOD1_MISOO_RXD0 - - "Input mode" - - "CANFD1: CRX1; ETHER_MII: ET0_COL; GPT4: GTIOC4A; SCI0: RXD0; SPI0: RSPCK0; ULPT1: ULPTOB1_A-DS" - None - - 
-      P611 81 GPIO PMOD1_SCK0 - - "Input mode" - - "CAC: CACREF; CLKOUT: CLKOUT; ETHER_MII: ET0_ERXD2; GPT4: GTIOC4B; SCI0: DE0; SCI0: SCK0; SPI0: MOSI0" - None - - 
-      P612 82 GPIO PMOD1_SS0_CTD_RTS0 - - "Input mode" - - "ETHER_MII: ET0_ERXD3; SCI0: CTS_RTS0; SCI0: DE0; SPI0: SSLA0" - None - - 
+      P602 96 SCI0_RXD0 - L - "Peripheral mode" - - "SCI0: RXD0; ULPT0: ULPTEE0" - I - - 
+      P603 95 SCI0_TXD0 - L - "Peripheral mode" - - "SCI0: TXD0; ULPT0: ULPTO0" - O - - 
+      P604 94 GPIO PMOD1_RST - - "Input mode" - - "SCI0: CTS_RTS0; SCI0: DE0" - IO - - 
+      P605 93 GPIO PMOD1_P9 - - "Input mode" - - "SCI0: CTS0" - IO - - 
+      P609 77 GPIO PMOD1_MOSI0_TXD0 - - "Input mode" - - "CANFD1: CTX1; ETHER_MII: ET0_RX_DV; GPT5: GTIOC5B; SCI0: TXD0; SPI0: MISO0; ULPT1: ULPTOA1_A-DS" - IO - - 
+      P610 80 GPIO PMOD1_MISOO_RXD0 - - "Input mode" - - "CANFD1: CRX1; ETHER_MII: ET0_COL; GPT4: GTIOC4A; SCI0: RXD0; SPI0: RSPCK0; ULPT1: ULPTOB1_A-DS" - IO - - 
+      P611 81 GPIO PMOD1_SCK0 - - "Input mode" - - "CAC: CACREF; CLKOUT: CLKOUT; ETHER_MII: ET0_ERXD2; GPT4: GTIOC4B; SCI0: DE0; SCI0: SCK0; SPI0: MOSI0" - IO - - 
+      P612 82 GPIO PMOD1_SS0_CTD_RTS0 - - "Input mode" - - "ETHER_MII: ET0_ERXD3; SCI0: CTS_RTS0; SCI0: DE0; SPI0: SSLA0" - IO - - 
       P613 83 - PMOD1_CTS0 - - Disabled - - "AGT1: AGTO1; GPT_POEGA: GTETRGA; SCI0: CTS0" - None - - 
-      P614 84 GPIO PMOD1_P10 - - "Input mode" - - "AGT0: AGTO0; GPT_POEGB: GTETRGB" - None - - 
-      P700 8 CEU_VIO_D4 CAM_D4 - - "Peripheral mode" - - "CEU: VIO_D4; ETHER_MII: ET0_ETXD1; ETHER_RMII: RMII0_TXD0; GPT5: GTIOC5A; SCI2: RXD2; SPI0: MISO0; SSIE1: SSIDATA1" - None - - 
-      P701 9 CEU_VIO_D5 CAM_D5 - - "Peripheral mode" - - "CEU: VIO_D5; ETHER_MII: ET0_ETXD0; ETHER_RMII: REF50CK0; GPT5: GTIOC5B; SCI2: CTS_RTS2; SCI2: DE2; SPI0: MOSI0; SSIE: SSIFS1; SSIE: SSILRCK1; ULPT1: ULPTO1" - None - - 
-      P702 10 CEU_VIO_D6 CAM_D6 - - "Peripheral mode" - - "CEU: VIO_D6; ETHER_MII: ET0_ERXD1; ETHER_RMII: RMII0_RXD0; SCI2: CTS2; SPI0: RSPCK0; SSIE: SSIBLK1; ULPT0: ULPTO0" - None - - 
-      P703 11 CEU_VIO_D7 CAM_D7 - - "Peripheral mode" - - "AGT1: AGTO1; CEU: VIO_D7; CLKOUT: VCOUT; ETHER_MII: ET0_ERXD0; ETHER_RMII: RMII0_RXD1; SPI0: SSLA0" - None - - 
+      P614 84 GPIO PMOD1_P10 - - "Input mode" - - "AGT0: AGTO0; GPT_POEGB: GTETRGB" - IO - - 
+      P700 8 CEU_VIO_D4 CAM_D4 L - "Peripheral mode" - - "CEU: VIO_D4; ETHER_MII: ET0_ETXD1; ETHER_RMII: RMII0_TXD0; GPT5: GTIOC5A; SCI2: RXD2; SPI0: MISO0; SSIE1: SSIDATA1" - I - - 
+      P701 9 CEU_VIO_D5 CAM_D5 L - "Peripheral mode" - - "CEU: VIO_D5; ETHER_MII: ET0_ETXD0; ETHER_RMII: REF50CK0; GPT5: GTIOC5B; SCI2: CTS_RTS2; SCI2: DE2; SPI0: MOSI0; SSIE: SSIFS1; SSIE: SSILRCK1; ULPT1: ULPTO1" - I - - 
+      P702 10 CEU_VIO_D6 CAM_D6 L - "Peripheral mode" - - "CEU: VIO_D6; ETHER_MII: ET0_ERXD1; ETHER_RMII: RMII0_RXD0; SCI2: CTS2; SPI0: RSPCK0; SSIE: SSIBLK1; ULPT0: ULPTO0" - I - - 
+      P703 11 CEU_VIO_D7 CAM_D7 L - "Peripheral mode" - - "AGT1: AGTO1; CEU: VIO_D7; CLKOUT: VCOUT; ETHER_MII: ET0_ERXD0; ETHER_RMII: RMII0_RXD1; SPI0: SSLA0" - I - - 
       P704 12 - - - - Disabled - - "AGT0: AGTO0; CANFD0: CTX0; ETHER_MII: ET0_RX_CLK; ETHER_RMII: RMII0_RX_ER; GPT_POEG: GTADSM0; SPI0: SSLA1" - None - - 
       P705 13 - - - - Disabled - - "AGT0: AGTIO0; CANFD0: CRX0; ETHER_MII: ET0_CRS; ETHER_RMII: RMII0_CRS_DV; GPT_POEG: GTADSM1; SCI1: CTS1; SPI0: SSLA2" - None - - 
-      P708 27 CEU_VIO_CLK CAM_CLK - - "Peripheral mode" - - "CAC: CACREF; CEU: VIO_CLK; IRQ11: IRQ11; SCI4: DE4; SCI4: SCK4; SPI1: SSLB3; SSIE: AUDIO_CLK" - None - - 
-      P709 26 CEU_VIO_HD CAM_HD - - "Peripheral mode" - - "CEU: VIO_HD; IRQ10: IRQ10; SCI4: CTS_RTS4; SCI4: DE4" - None - - 
-      P710 25 CEU_VIO_VD CAM_VD - - "Peripheral mode" - - "CEU: VIO_VD; SCI4: CTS4" - None - - 
+      P708 27 CEU_VIO_CLK CAM_CLK L None "Peripheral mode" - - "CAC: CACREF; CEU: VIO_CLK; IRQ11: IRQ11; SCI4: DE4; SCI4: SCK4; SPI1: SSLB3; SSIE: AUDIO_CLK" - I - - 
+      P709 26 CEU_VIO_HD CAM_HD L None "Peripheral mode" - - "CEU: VIO_HD; IRQ10: IRQ10; SCI4: CTS_RTS4; SCI4: DE4" - I - - 
+      P710 25 CEU_VIO_VD CAM_VD L - "Peripheral mode" - - "CEU: VIO_VD; SCI4: CTS4" - I - - 
       P711 24 - - - - Disabled - - "AGT0: AGTEE0" - None - - 
       P712 23 - - - - Disabled - - "AGT0: AGTOB0; GPT2: GTIOC2B" - None - - 
       P713 22 - - - - Disabled - - "AGT0: AGTOA0; GPT2: GTIOC2A" - None - - 
@@ -269,8 +269,8 @@ FSP Configuration
       P806 140 - CAM_E34 - - Disabled - - "IRQ0: IRQ0" - None - - 
       P808 114 OSPI_OM_SCLK - HH None "Peripheral mode" - - "GPT13: GTIOC13B; IRQ15: IRQ15; OSPI: OM_SCLK" - O - - 
       P809 115 OSPI_OM_SCLKN PMOD2_P10 HH - "Peripheral mode" - - "OSPI: OM_SCLKN" - O - - 
-      P814 39 "USB FS_USB_DP" - - - "Peripheral mode" - - "CANFD0: CRX0; USB FS: USB_DP" - None - - 
-      P815 38 "USB FS_USB_DM" - - - "Peripheral mode" - - "CANFD0: CTX0; USB FS: USB_DM" - None - - 
+      P814 39 "USB FS_USB_DP" - L - "Peripheral mode" - - "CANFD0: CRX0; USB FS: USB_DP" - IO - - 
+      P815 38 "USB FS_USB_DM" - L - "Peripheral mode" - - "CANFD0: CTX0; USB FS: USB_DM" - IO - - 
       P905 57 - Arduino_D4 - - Disabled - - "IRQ8: IRQ8; SCI3: CTS3" - None - - 
       RES 54 SYSTEM_RES - - - - - - - - IO "Read only" - 
       VBATT 14 SYSTEM_VBATT - - - - - - - - IO "Read only" - 
@@ -311,35 +311,35 @@ FSP Configuration
       AVCC0 123 SYSTEM_AVCC0 - - - - - - - - IO "Read only" - 
       AVSS0 124 SYSTEM_AVSS0 - - - - - - - - IO "Read only" - 
       P000 137 - - - - Disabled - - "ACMPHS1: IVCMP1_2; ADC1: AN100; IRQ6: IRQ6-DS" - None - - 
-      P001 136 - Arduino_A3 - - Disabled - - "ACMPHS0: IVREF_0; ADC1: AN101; IRQ7: IRQ7-DS" - None - - 
+      P001 136 - Arduino_A3 - None Disabled - - "ACMPHS0: IVREF_0; ADC1: AN101; IRQ7: IRQ7-DS" - IO - - 
       P002 135 - - - - Disabled - - "ACMPHS1: IVCMP1_3; ADC1: AN102; IRQ8: IRQ8-DS" - None - - 
-      P003 134 - Arduino_A1 - - Disabled - - "ACMPHS1: IVREF_1; ADC1: AN104" - None - - 
-      P004 133 - Arduino_A0 - - Disabled - - "ACMPHS0: IVCMP0_2; ADC0: AN000; IRQ9: IRQ9-DS" - None - - 
+      P003 134 - Arduino_A1 - - Disabled - - "ACMPHS1: IVREF_1; ADC1: AN104" - IO - - 
+      P004 133 - Arduino_A0 - None Disabled - - "ACMPHS0: IVCMP0_2; ADC0: AN000; IRQ9: IRQ9-DS" - IO - - 
       P005 132 - - - - Disabled - - "ADC0: AN001; IRQ10: IRQ10-DS" - None - - 
-      P006 131 - PMOD1_IRQ - - Disabled - - "ACMPHS0: IVCMP0_3; ADC0: AN002; IRQ11: IRQ11-DS" - None - - 
-      P007 130 - Arduino_A2 - - Disabled - - "ADC0: AN004" - None - - 
+      P006 131 - PMOD1_IRQ - None Disabled - - "ACMPHS0: IVCMP0_3; ADC0: AN002; IRQ11: IRQ11-DS" - IO - - 
+      P007 130 - Arduino_A2 - - Disabled - - "ADC0: AN004" - IO - - 
       P008 129 - - - - Disabled - - "ADC0: AN008; IRQ12: IRQ12-DS" - None - - 
-      P009 128 - USER_SW - - Disabled - - "ADC0: AN006; IRQ13: IRQ13-DS" - None - - 
-      P010 127 - PMOD2_IRQ - - Disabled - - "ACMPHS0: IVCMP0_0; ADC0: AN005; IRQ14: IRQ14" - None - - 
-      P014 120 - Arduino_A4 - - Disabled - - "ADC0: AN007; DAC120: DA0" - None - - 
-      P015 119 - Arduino_A5 - - Disabled - - "ADC1: AN105; IRQ13: IRQ13" - None - - 
+      P009 128 - USER_SW - None Disabled - - "ADC0: AN006; IRQ13: IRQ13-DS" - IO - - 
+      P010 127 - PMOD2_IRQ - None Disabled - - "ACMPHS0: IVCMP0_0; ADC0: AN005; IRQ14: IRQ14" - IO - - 
+      P014 120 - Arduino_A4 - - Disabled - - "ADC0: AN007; DAC120: DA0" - IO - - 
+      P015 119 - Arduino_A5 - None Disabled - - "ADC1: AN105; IRQ13: IRQ13" - IO - - 
       P100 108 OSPI_OM_SIO0 - HH None "Peripheral mode" - - "AGT0: AGTIO0; GPT_POEGA: GTETRGA; IRQ2: IRQ2; OSPI: OM_SIO0; SCI9: DE9; SCI9: SCK9; SPI1: MISO1" - O - - 
       P101 105 OSPI_OM_SIO3 JLINK_VCOM_RXD HH None "Peripheral mode" - - "AGT0: AGTEE0; GPT_POEGB: GTETRGB; IRQ1: IRQ1; OSPI: OM_SIO3; SCI9: RXD9; SPI1: MOSI1" - O - - 
       P102 104 OSPI_OM_SIO4 JLINK_VCOM_TXD HH - "Peripheral mode" - - "ADC(Digital): ADTRG0; AGT0: AGTO0; CANFD0: CRX0; GPT2: GTIOC2B; OSPI: OM_SIO4; SCI9: TXD9; SPI1: RSPCK1" - O - - 
       P103 103 OSPI_OM_SIO2 JLINK_VCOM_CTS_RTS HH - "Peripheral mode" - - "CANFD0: CTX0; GPT2: GTIOC2A; OSPI: OM_SIO2; SCI9: CTS_RTS9; SCI9: DE9; SPI1: SSLB0" - O - - 
       P104 102 OSPI_OM_CS1 JLINK_VCOM_CTS H None "Peripheral mode" - - "GPT1: GTIOC1B; GPT_POEGB: GTETRGB; IRQ1: IRQ1; OSPI: OM_CS1; SCI9: CTS9; SPI1: SSLB1" - O - - 
-      P105 101 - Ardiuno_RST - - Disabled - - "GPT1: GTIOC1A; IRQ0: IRQ0; OSPI: OM_ECSINT1; SPI1: SSLB2; ULPT1: ULPTO1_A-DS" - None - - 
+      P105 101 - Ardiuno_RST - None Disabled - - "GPT1: GTIOC1A; IRQ0: IRQ0; OSPI: OM_ECSINT1; SPI1: SSLB2; ULPT1: ULPTO1_A-DS" - IO - - 
       P106 100 OSPI_OM_RESET PMOD2_RST H - "Peripheral mode" - - "AGT0: AGTOB0; OSPI: OM_RESET; SPI1: SSLB3; ULPT1: ULPTEE1_A-DS" - IO - - 
-      P107 99 - PMOD2_P9 - - Disabled - - "AGT0: AGTOA0; OSPI: OM_CS0" - None - - 
+      P107 99 - PMOD2_P9 L - Disabled - - "AGT0: AGTOA0; OSPI: OM_CS0" - O - - 
       P112 73 ETHER_RMII_RMII0_CRS_DV Ardiuno_D9 H - "Peripheral mode" - - "ETHER_MII: ET0_CRS; ETHER_RMII: RMII0_CRS_DV; GPT3: GTIOC3B; SCI0: TXD0; SPI0: SSLA2; SSIE: SSIBLK0; ULPT0: ULPTOB0_A-DS" - IO - - 
-      P113 74 - Ardiuno_D6 - - Disabled - - "ETHER_MII: ET0_EXOUT; ETHER_RMII: ET0_EXOUT; GPT2: GTIOC2A; SCI0: RXD0; SPI0: SSLA1; SSIE: SSIFS0; SSIE: SSILRCK0; ULPT0: ULPTOA0_A-DS" - None - - 
-      P114 75 - Ardiuno_D5 - - Disabled - - "ETHER_MII: ET0_LINKSTA; ETHER_RMII: ET0_LINKSTA; GPT2: GTIOC2B; SCI0: CTS_RTS0; SCI0: DE0; SPI0: SSLA0; SSIE0: SSIRXD0" - None - - 
-      P115 76 - - - - Disabled - - "ETHER_MII: ET0_WOL; ETHER_RMII: ET0_WOL; GPT5: GTIOC5A; SCI0: CTS0; SPI0: MOSI0; SSIE0: SSITXD0" - None - - 
+      P113 74 - Ardiuno_D6 L - Disabled - - "ETHER_MII: ET0_EXOUT; ETHER_RMII: ET0_EXOUT; GPT2: GTIOC2A; SCI0: RXD0; SPI0: SSLA1; SSIE: SSIFS0; SSIE: SSILRCK0; ULPT0: ULPTOA0_A-DS" - IO - - 
+      P114 75 - Ardiuno_D5 L - Disabled - - "ETHER_MII: ET0_LINKSTA; ETHER_RMII: ET0_LINKSTA; GPT2: GTIOC2B; SCI0: CTS_RTS0; SCI0: DE0; SPI0: SSLA0; SSIE0: SSIRXD0" - IO - - 
+      P115 76 - - L - Disabled - - "ETHER_MII: ET0_WOL; ETHER_RMII: ET0_WOL; GPT5: GTIOC5A; SCI0: CTS0; SPI0: MOSI0; SSIE0: SSITXD0" - IO - - 
       P200 56 - NMI - - Disabled - - "IRQ: NMI" - None - - 
       P201 55 - MD - - Disabled - - "SYSTEM: MD" - None - - 
       P202 45 - Arduino_D11 - - Disabled - - "CANFD0: CRX0; GPT5: GTIOC5B; IRQ3: IRQ3-DS; SPI0: MOSI0; ULPT1: ULPTOB1" - None - - 
-      P203 44 - Arduino_D13 - - Disabled - - "CANFD0: CTX0; GPT5: GTIOC5A; IRQ2: IRQ2-DS; SPI0: RSPCK0; ULPT1: ULPTOA1" - None - - 
-      P204 43 - Arduino_D10 - - Disabled - - "AGT1: AGTIO1; CAC: CACREF; GPT4: GTIOC4B; SCI4: DE4; SCI4: SCK4; SPI0: SSLA0; SSIE: SSIBLK1; USB FS: USB_OVRCURB" - None - - 
+      P203 44 - Arduino_D13 - None Disabled - - "CANFD0: CTX0; GPT5: GTIOC5A; IRQ2: IRQ2-DS; SPI0: RSPCK0; ULPT1: ULPTOA1" - IO - - 
+      P204 43 - Arduino_D10 - - Disabled - - "AGT1: AGTIO1; CAC: CACREF; GPT4: GTIOC4B; SCI4: DE4; SCI4: SCK4; SPI0: SSLA0; SSIE: SSIBLK1; USB FS: USB_OVRCURB" - IO - - 
       P205 42 - - - - Disabled - - "AGT1: AGTO1; CLKOUT: CLKOUT; GPT4: GTIOC4A; IIC1: SCL1; IRQ1: IRQ1-DS; SCI4: TXD4; SPI0: SSLA1; SSIE: SSIFS1; SSIE: SSILRCK1; USB FS: USB_OVRCURA" - None - - 
       P206 41 - - - - Disabled - - "IIC1: SDA1; IRQ0: IRQ0-DS; SCI4: RXD4; SPI0: SSLA2; SSIE1: SSIDATA1; USB FS: USB_VBUSEN" - None - - 
       P208 53 JTAG/SWD_TDI DEBUG_TDI L None "Peripheral mode" - - "CANFD1: CRX1; CLKOUT: VCOUT; GPT1: GTIOC1B; IRQ3: IRQ3; JTAG/SWD: TDI; SCI9: RXD9" - IO - - 
@@ -357,20 +357,20 @@ FSP Configuration
       P306 64 ETHER_RMII_RMII0_TXD_EN - H - "Peripheral mode" - - "ETHER_MII: ET0_TX_EN; ETHER_RMII: RMII0_TXD_EN; TRACE: TDATA1; ULPT1: ULPTEVI1" - IO - - 
       P307 63 ETHER_RMII_ET0_MDIO - M - "Peripheral mode" - - "ETHER_MII: ET0_MDIO; ETHER_RMII: ET0_MDIO; TRACE: TDATA0; ULPT1: ULPTOA1" - IO - - 
       P308 62 ETHER_RMII_ET0_MDC - M - "Peripheral mode" - - "ETHER_MII: ET0_MDC; ETHER_RMII: ET0_MDC; SCI9: CTS9; TRACE: TCLK; ULPT1: ULPTOB1" - IO - - 
-      P309 61 - LAN8720_nRST - - Disabled - - "ETHER_MII: ET0_ETXD3; SCI3: RXD3" - None - - 
-      P310 60 - Arduino_D1 - - Disabled - - "AGT1: AGTEE1; ETHER_MII: ET0_ETXD2; SCI3: TXD3" - None - - 
-      P311 59 - - - - Disabled - - "AGT1: AGTOB1; CANFD0: CRX0; ETHER_MII: ET0_TX_ER; GPT_POEG: GTADSM1; SCI3: DE3; SCI3: SCK3" - None - - 
+      P309 61 - LAN8720_nRST L - Disabled - - "ETHER_MII: ET0_ETXD3; SCI3: RXD3" - IO - - 
+      P310 60 - Arduino_D1 - - Disabled - - "AGT1: AGTEE1; ETHER_MII: ET0_ETXD2; SCI3: TXD3" - IO - - 
+      P311 59 - - - - Disabled - - "AGT1: AGTOB1; CANFD0: CRX0; ETHER_MII: ET0_TX_ER; GPT_POEG: GTADSM1; SCI3: DE3; SCI3: SCK3" - IO - - 
       P312 58 - - - - Disabled - - "AGT1: AGTOA1; CANFD0: CTX0; ETHER_MII: ET0_TX_CLK; GPT_POEG: GTADSM0; SCI3: CTS_RTS3; SCI3: DE3" - None - - 
       P313 46 - Arduino_D12 - - Disabled - - "SCI3: CTS3; SPI0: MISO0" - None - - 
-      P400 1 - CAM_D0 - - Disabled - - "ADC(Digital): ADTRG1; AGT1: AGTIO1; CEU: VIO_D0; ETHER_MII: ET0_WOL; ETHER_RMII: ET0_WOL; IRQ0: IRQ0; SCI1: TXD1; SSIE: AUDIO_CLK" - None - - 
-      P401 2 - CAM_D1 - - Disabled - - "CANFD0: CTX0; CEU: VIO_D1; ETHER_MII: ET0_MDC; ETHER_RMII: ET0_MDC; GPT_POEGA: GTETRGA; IRQ5: IRQ5-DS; SCI1: RXD1" - None - - 
+      P400 1 - CAM_D0 L None Disabled - - "ADC(Digital): ADTRG1; AGT1: AGTIO1; CEU: VIO_D0; ETHER_MII: ET0_WOL; ETHER_RMII: ET0_WOL; IRQ0: IRQ0; SCI1: TXD1; SSIE: AUDIO_CLK" - I - - 
+      P401 2 - CAM_D1 L None Disabled - - "CANFD0: CTX0; CEU: VIO_D1; ETHER_MII: ET0_MDC; ETHER_RMII: ET0_MDC; GPT_POEGA: GTETRGA; IRQ5: IRQ5-DS; SCI1: RXD1" - I - - 
       P402 3 - - - - Disabled - - "CAC: CACREF; CANFD0: CRX0; ETHER_MII: ET0_MDIO; ETHER_RMII: ET0_MDIO; IRQ4: IRQ4-DS; RTC: RTCIC0; SCI1: DE1; SCI1: SCK1; SSIE: AUDIO_CLK" - None - - 
-      P403 4 - CAM_XCLK - - Disabled - - "ETHER_MII: ET0_LINKSTA; ETHER_RMII: ET0_LINKSTA; GPT3: GTIOC3A; IRQ14: IRQ14-DS; RTC: RTCIC1; SCI1: CTS_RTS1; SCI1: DE1; SSIE: SSIBLK0" - None - - 
+      P403 4 - CAM_XCLK L None Disabled - - "ETHER_MII: ET0_LINKSTA; ETHER_RMII: ET0_LINKSTA; GPT3: GTIOC3A; IRQ14: IRQ14-DS; RTC: RTCIC1; SCI1: CTS_RTS1; SCI1: DE1; SSIE: SSIBLK0" - IO - - 
       P404 5 - LED_G2 - - Disabled - - "CEU: VIO_D3; ETHER_MII: ET0_EXOUT; ETHER_RMII: ET0_EXOUT; GPT3: GTIOC3B; IRQ15: IRQ15-DS; RTC: RTCIC2; SCI1: CTS1; SSIE: SSIFS0; SSIE: SSILRCK0" - None - - 
-      P405 6 - CAM_D2 - - Disabled - - "AGT1: AGTIO1; CEU: VIO_D2; ETHER_MII: ET0_TX_EN; ETHER_RMII: RMII0_TXD_EN; GPT1: GTIOC1A; SCI2: DE2; SCI2: SCK2; SSIE0: SSITXD0" - None - - 
-      P406 7 - CAM_D3 - - Disabled - - "CEU: VIO_D3; CGC: EXCIN; ETHER_MII: ET0_RX_ER; ETHER_RMII: RMII0_TXD1; GPT1: GTIOC1B; SCI2: TXD2; SPI0: SSLA3; SSIE0: SSIRXD0" - None - - 
-      P407 36 - - - - Disabled - - "ADC(Digital): ADTRG0; AGT0: AGTIO0; GPT10: GTIOC10B; IIC0: SDA0; RTC: RTCOUT; SCI4: CTS_RTS4; SCI4: DE4; SPI0: SSLA3; USB FS: USB_VBUS" - None - - 
-      P408 35 - LED_G1 - - Disabled - - "GPT10: GTIOC10A; IIC0: SCL0; IRQ7: IRQ7; SCI3: RXD3; SCI4: CTS4; ULPT0: ULPTOB0; USB FS: USB_VBUSEN" - None - - 
+      P405 6 - CAM_D2 L - Disabled - - "AGT1: AGTIO1; CEU: VIO_D2; ETHER_MII: ET0_TX_EN; ETHER_RMII: RMII0_TXD_EN; GPT1: GTIOC1A; SCI2: DE2; SCI2: SCK2; SSIE0: SSITXD0" - I - - 
+      P406 7 - CAM_D3 L - Disabled - - "CEU: VIO_D3; CGC: EXCIN; ETHER_MII: ET0_RX_ER; ETHER_RMII: RMII0_TXD1; GPT1: GTIOC1B; SCI2: TXD2; SPI0: SSLA3; SSIE0: SSIRXD0" - I - - 
+      P407 36 - - L - Disabled - - "ADC(Digital): ADTRG0; AGT0: AGTIO0; GPT10: GTIOC10B; IIC0: SDA0; RTC: RTCOUT; SCI4: CTS_RTS4; SCI4: DE4; SPI0: SSLA3; USB FS: USB_VBUS" - IO - - 
+      P408 35 - LED_G1 L - Disabled - - "GPT10: GTIOC10A; IIC0: SCL0; IRQ7: IRQ7; SCI3: RXD3; SCI4: CTS4; ULPT0: ULPTOB0; USB FS: USB_VBUSEN" - IO - - 
       P409 34 - - - - Disabled - - "IIC0: SDA0; IRQ6: IRQ6; SCI3: TXD3; ULPT0: ULPTOA0; USB FS: USB_OVRCURA_A-DS" - None - - 
       P410 33 - - - - Disabled - - "AGT1: AGTOB1; IIC0: SCL0; IRQ5: IRQ5; SCI3: DE3; SCI3: SCK3; SPI1: MISO1; USB FS: USB_OVRCURB_A-DS" - None - - 
       P411 32 - - - - Disabled - - "AGT1: AGTOA1; IRQ4: IRQ4; SCI3: CTS_RTS3; SCI3: DE3; SPI1: MOSI1; USB FS: USB_ID" - None - - 
@@ -378,30 +378,30 @@ FSP Configuration
       P413 30 - - - - Disabled - - "SPI1: SSLB0; ULPT1: ULPTEE1" - None - - 
       P414 29 - CAM_E19 - - Disabled - - "CANFD1: CRX1; GPT0: GTIOC0B; GPT_POEG: GTADSM1; IRQ9: IRQ9; SCI4: RXD4; SPI1: SSLB1" - None - - 
       P415 28 - CAM_User_Arduino_D3 - - Disabled - - "CANFD1: CTX1; GPT0: GTIOC0A; GPT_POEG: GTADSM0; IRQ8: IRQ8; SCI4: TXD4; SPI1: SSLB2" - None - - 
-      P511 144 - IIC_SYSTEM_SDA1 - - Disabled - - "CANFD1: CRX1; GPT0: GTIOC0B; IIC1: SDA1; IRQ15: IRQ15" - None - - 
-      P512 143 - IIC_SYSTEM_SCL1 - - Disabled - - "CANFD1: CTX1; GPT0: GTIOC0A; IIC1: SCL1; IRQ14: IRQ14" - None - - 
+      P511 144 - IIC_SYSTEM_SDA1 L None Disabled - - "CANFD1: CRX1; GPT0: GTIOC0B; IIC1: SDA1; IRQ15: IRQ15" - IO - - 
+      P512 143 - IIC_SYSTEM_SCL1 L None Disabled - - "CANFD1: CTX1; GPT0: GTIOC0A; IIC1: SCL1; IRQ14: IRQ14" - IO - - 
       P513 142 - - - - Disabled - - "ACMPHS1: IVCMP1_0; CEU: VIO_FLD" - None - - 
       P600 98 - - - - Disabled - - "CAC: CACREF; OSPI: OM_RSTO1; ULPT1: ULPTEVI1_A-DS" - None - - 
       P601 97 - - - - Disabled - - "OSPI: OM_WP1; RTC: RTCOUT; SCI0: DE0; SCI0: SCK0; ULPT0: ULPTEVI0" - None - - 
-      P602 96 - - - - Disabled - - "SCI0: RXD0; ULPT0: ULPTEE0" - None - - 
-      P603 95 - - - - Disabled - - "SCI0: TXD0; ULPT0: ULPTO0" - None - - 
-      P604 94 - PMOD1_RST - - Disabled - - "SCI0: CTS_RTS0; SCI0: DE0" - None - - 
-      P605 93 - PMOD1_P9 - - Disabled - - "SCI0: CTS0" - None - - 
-      P609 77 - PMOD1_MOSI0_TXD0 - - Disabled - - "CANFD1: CTX1; ETHER_MII: ET0_RX_DV; GPT5: GTIOC5B; SCI0: TXD0; SPI0: MISO0; ULPT1: ULPTOA1_A-DS" - None - - 
-      P610 80 - PMOD1_MISOO_RXD0 - - Disabled - - "CANFD1: CRX1; ETHER_MII: ET0_COL; GPT4: GTIOC4A; SCI0: RXD0; SPI0: RSPCK0; ULPT1: ULPTOB1_A-DS" - None - - 
-      P611 81 - PMOD1_SCK0 - - Disabled - - "CAC: CACREF; CLKOUT: CLKOUT; ETHER_MII: ET0_ERXD2; GPT4: GTIOC4B; SCI0: DE0; SCI0: SCK0; SPI0: MOSI0" - None - - 
-      P612 82 - PMOD1_SS0_CTD_RTS0 - - Disabled - - "ETHER_MII: ET0_ERXD3; SCI0: CTS_RTS0; SCI0: DE0; SPI0: SSLA0" - None - - 
+      P602 96 - - L - Disabled - - "SCI0: RXD0; ULPT0: ULPTEE0" - I - - 
+      P603 95 - - L - Disabled - - "SCI0: TXD0; ULPT0: ULPTO0" - O - - 
+      P604 94 - PMOD1_RST - - Disabled - - "SCI0: CTS_RTS0; SCI0: DE0" - IO - - 
+      P605 93 - PMOD1_P9 - - Disabled - - "SCI0: CTS0" - IO - - 
+      P609 77 - PMOD1_MOSI0_TXD0 - - Disabled - - "CANFD1: CTX1; ETHER_MII: ET0_RX_DV; GPT5: GTIOC5B; SCI0: TXD0; SPI0: MISO0; ULPT1: ULPTOA1_A-DS" - IO - - 
+      P610 80 - PMOD1_MISOO_RXD0 - - Disabled - - "CANFD1: CRX1; ETHER_MII: ET0_COL; GPT4: GTIOC4A; SCI0: RXD0; SPI0: RSPCK0; ULPT1: ULPTOB1_A-DS" - IO - - 
+      P611 81 - PMOD1_SCK0 - - Disabled - - "CAC: CACREF; CLKOUT: CLKOUT; ETHER_MII: ET0_ERXD2; GPT4: GTIOC4B; SCI0: DE0; SCI0: SCK0; SPI0: MOSI0" - IO - - 
+      P612 82 - PMOD1_SS0_CTD_RTS0 - - Disabled - - "ETHER_MII: ET0_ERXD3; SCI0: CTS_RTS0; SCI0: DE0; SPI0: SSLA0" - IO - - 
       P613 83 - PMOD1_CTS0 - - Disabled - - "AGT1: AGTO1; GPT_POEGA: GTETRGA; SCI0: CTS0" - None - - 
-      P614 84 - PMOD1_P10 - - Disabled - - "AGT0: AGTO0; GPT_POEGB: GTETRGB" - None - - 
-      P700 8 - CAM_D4 - - Disabled - - "CEU: VIO_D4; ETHER_MII: ET0_ETXD1; ETHER_RMII: RMII0_TXD0; GPT5: GTIOC5A; SCI2: RXD2; SPI0: MISO0; SSIE1: SSIDATA1" - None - - 
-      P701 9 - CAM_D5 - - Disabled - - "CEU: VIO_D5; ETHER_MII: ET0_ETXD0; ETHER_RMII: REF50CK0; GPT5: GTIOC5B; SCI2: CTS_RTS2; SCI2: DE2; SPI0: MOSI0; SSIE: SSIFS1; SSIE: SSILRCK1; ULPT1: ULPTO1" - None - - 
-      P702 10 - CAM_D6 - - Disabled - - "CEU: VIO_D6; ETHER_MII: ET0_ERXD1; ETHER_RMII: RMII0_RXD0; SCI2: CTS2; SPI0: RSPCK0; SSIE: SSIBLK1; ULPT0: ULPTO0" - None - - 
-      P703 11 - CAM_D7 - - Disabled - - "AGT1: AGTO1; CEU: VIO_D7; CLKOUT: VCOUT; ETHER_MII: ET0_ERXD0; ETHER_RMII: RMII0_RXD1; SPI0: SSLA0" - None - - 
+      P614 84 - PMOD1_P10 - - Disabled - - "AGT0: AGTO0; GPT_POEGB: GTETRGB" - IO - - 
+      P700 8 - CAM_D4 L - Disabled - - "CEU: VIO_D4; ETHER_MII: ET0_ETXD1; ETHER_RMII: RMII0_TXD0; GPT5: GTIOC5A; SCI2: RXD2; SPI0: MISO0; SSIE1: SSIDATA1" - I - - 
+      P701 9 - CAM_D5 L - Disabled - - "CEU: VIO_D5; ETHER_MII: ET0_ETXD0; ETHER_RMII: REF50CK0; GPT5: GTIOC5B; SCI2: CTS_RTS2; SCI2: DE2; SPI0: MOSI0; SSIE: SSIFS1; SSIE: SSILRCK1; ULPT1: ULPTO1" - I - - 
+      P702 10 - CAM_D6 L - Disabled - - "CEU: VIO_D6; ETHER_MII: ET0_ERXD1; ETHER_RMII: RMII0_RXD0; SCI2: CTS2; SPI0: RSPCK0; SSIE: SSIBLK1; ULPT0: ULPTO0" - I - - 
+      P703 11 - CAM_D7 L - Disabled - - "AGT1: AGTO1; CEU: VIO_D7; CLKOUT: VCOUT; ETHER_MII: ET0_ERXD0; ETHER_RMII: RMII0_RXD1; SPI0: SSLA0" - I - - 
       P704 12 - - - - Disabled - - "AGT0: AGTO0; CANFD0: CTX0; ETHER_MII: ET0_RX_CLK; ETHER_RMII: RMII0_RX_ER; GPT_POEG: GTADSM0; SPI0: SSLA1" - None - - 
       P705 13 - - - - Disabled - - "AGT0: AGTIO0; CANFD0: CRX0; ETHER_MII: ET0_CRS; ETHER_RMII: RMII0_CRS_DV; GPT_POEG: GTADSM1; SCI1: CTS1; SPI0: SSLA2" - None - - 
-      P708 27 - CAM_CLK - - Disabled - - "CAC: CACREF; CEU: VIO_CLK; IRQ11: IRQ11; SCI4: DE4; SCI4: SCK4; SPI1: SSLB3; SSIE: AUDIO_CLK" - None - - 
-      P709 26 - CAM_HD - - Disabled - - "CEU: VIO_HD; IRQ10: IRQ10; SCI4: CTS_RTS4; SCI4: DE4" - None - - 
-      P710 25 - CAM_VD - - Disabled - - "CEU: VIO_VD; SCI4: CTS4" - None - - 
+      P708 27 - CAM_CLK L None Disabled - - "CAC: CACREF; CEU: VIO_CLK; IRQ11: IRQ11; SCI4: DE4; SCI4: SCK4; SPI1: SSLB3; SSIE: AUDIO_CLK" - I - - 
+      P709 26 - CAM_HD L None Disabled - - "CEU: VIO_HD; IRQ10: IRQ10; SCI4: CTS_RTS4; SCI4: DE4" - I - - 
+      P710 25 - CAM_VD L - Disabled - - "CEU: VIO_VD; SCI4: CTS4" - I - - 
       P711 24 - - - - Disabled - - "AGT0: AGTEE0" - None - - 
       P712 23 - - - - Disabled - - "AGT0: AGTOB0; GPT2: GTIOC2B" - None - - 
       P713 22 - - - - Disabled - - "AGT0: AGTOA0; GPT2: GTIOC2A" - None - - 
@@ -414,8 +414,8 @@ FSP Configuration
       P806 140 - CAM_E34 - - Disabled - - "IRQ0: IRQ0" - None - - 
       P808 114 OSPI_OM_SCLK - HH None "Peripheral mode" - - "GPT13: GTIOC13B; IRQ15: IRQ15; OSPI: OM_SCLK" - O - - 
       P809 115 OSPI_OM_SCLKN PMOD2_P10 HH - "Peripheral mode" - - "OSPI: OM_SCLKN" - O - - 
-      P814 39 - - - - Disabled - - "CANFD0: CRX0; USB FS: USB_DP" - None - - 
-      P815 38 - - - - Disabled - - "CANFD0: CTX0; USB FS: USB_DM" - None - - 
+      P814 39 - - L - Disabled - - "CANFD0: CRX0; USB FS: USB_DP" - IO - - 
+      P815 38 - - L - Disabled - - "CANFD0: CTX0; USB FS: USB_DM" - IO - - 
       P905 57 - Arduino_D4 - - Disabled - - "IRQ8: IRQ8; SCI3: CTS3" - None - - 
       RES 54 SYSTEM_RES - - - - - - - - IO "Read only" - 
       VBATT 14 SYSTEM_VBATT - - - - - - - - IO "Read only" - 
@@ -827,13 +827,16 @@ FSP Configuration
     
   Module "OSPI (r_ospi_b)"
     Parameter Checking: Default (BSP)
-    DMAC Support: Disable
+    DMAC Support: Enable
     Autocalibration Support: Disable
     Memory-mapping Support: Prefetch Function: Enable
     Memory-mapping Support: Combination Function: 64 Bytes
     Memory-mapping Support: XiP Support: Disable
     DOTF Support: Disable
     Row Addressing Support: Disable
+    
+  Module "Transfer (r_dmac)"
+    Parameter Checking: Default (BSP)
     
   FreeRTOS
     General: Custom FreeRTOSConfig.h: 
@@ -957,9 +960,9 @@ FSP Configuration
       Callback: g_i2c_callback
       Interrupt Priority Level: Priority 11
       
-    Instance "g_timer5 Timer, General PWM (r_gpt)"
-      General: Name: g_timer5
-      General: Channel: 5
+    Instance "g_timer2 Timer, General PWM (r_gpt)"
+      General: Name: g_timer2
+      General: Channel: 2
       General: Mode: Periodic
       General: Period: 2
       General: Compare Match: Compare Match A: Status: Disabled
@@ -1073,39 +1076,39 @@ FSP Configuration
       Command Sets: Erase Sizes: Sector Erase: 4096
       Command Sets: Erase Sizes: Block Erase: 262144
       Command Sets: Initial Mode: Protocol Mode: Dual data rate OPI (8D-8D-8D)
-      Command Sets: Initial Mode: Frame Format: xSPI Profile 2.0
-      Command Sets: Initial Mode: Latency Mode: Variable (DQS)
+      Command Sets: Initial Mode: Frame Format: xSPI Profile 1.0
+      Command Sets: Initial Mode: Latency Mode: Fixed
       Command Sets: Initial Mode: Address Length: 4 bytes
       Command Sets: Initial Mode: Address MSB Mask: 0
       Command Sets: Initial Mode: Command Code Length: 2 bytes
       Command Sets: Initial Mode: Status Register Address Length: 4 bytes
       Command Sets: Initial Mode: Status Register Address: 0x00
       Command Sets: Initial Mode: Read: Command Code: 0xEEEE
-      Command Sets: Initial Mode: Read: Dummy Cycles: 7
+      Command Sets: Initial Mode: Read: Dummy Cycles: 14
       Command Sets: Initial Mode: Program: Command Code: 0xDEDE
-      Command Sets: Initial Mode: Program: Dummy Cycles: 7
+      Command Sets: Initial Mode: Program: Dummy Cycles: 14
       Command Sets: Initial Mode: Row Load: Command Code: 0x00
       Command Sets: Initial Mode: Row Load: Dummy Cycles: 0
       Command Sets: Initial Mode: Row Store: Command Code: 0x00
       Command Sets: Initial Mode: Row Store: Dummy Cycles: 0
       Command Sets: Initial Mode: Write Enable: Command Code: 0x0606
       Command Sets: Initial Mode: Status Read: Command Code: 0
-      Command Sets: Initial Mode: Status Read: Dummy Cycles: 7
+      Command Sets: Initial Mode: Status Read: Dummy Cycles: 0
       Command Sets: Initial Mode: Sector Erase: Command Code: 0
       Command Sets: Initial Mode: Block Erase: Command Code: 0
       Command Sets: Initial Mode: Chip Erase: Command Code: 0
       Command Sets: High-speed Mode: Protocol Mode: Dual data rate OPI (8D-8D-8D)
-      Command Sets: High-speed Mode: Frame Format: xSPI Profile 2.0 Extended
-      Command Sets: High-speed Mode: Latency Mode: Variable (DQS)
+      Command Sets: High-speed Mode: Frame Format: xSPI Profile 1.0
+      Command Sets: High-speed Mode: Latency Mode: Fixed
       Command Sets: High-speed Mode: Address Length: 4 bytes
-      Command Sets: High-speed Mode: Address MSB Mask: 0xe0
+      Command Sets: High-speed Mode: Address MSB Mask: 0
       Command Sets: High-speed Mode: Command Code Length: 2 bytes
       Command Sets: High-speed Mode: Status Register Address Length: 4 bytes
       Command Sets: High-speed Mode: Status Register Address: 0x00
-      Command Sets: High-speed Mode: Read: Command Code: 0xeeee
-      Command Sets: High-speed Mode: Read: Dummy Cycles: 7
-      Command Sets: High-speed Mode: Program: Command Code: 0xdede
-      Command Sets: High-speed Mode: Program: Dummy Cycles: 7
+      Command Sets: High-speed Mode: Read: Command Code: 0xEEEE
+      Command Sets: High-speed Mode: Read: Dummy Cycles: 14
+      Command Sets: High-speed Mode: Program: Command Code: 0xDEDE
+      Command Sets: High-speed Mode: Program: Dummy Cycles: 0
       Command Sets: High-speed Mode: Row Load: Command Code: 0x00
       Command Sets: High-speed Mode: Row Load: Dummy Cycles: 0
       Command Sets: High-speed Mode: Row Store: Command Code: 0x00
@@ -1120,7 +1123,7 @@ FSP Configuration
       Timing Settings: Chip Select: Pull-up Timing: No Extension
       Timing Settings: Chip Select: Pull-down Timing: No Extension
       Timing Settings: DS Latching Delay: Auto-calibrate
-      Timing Settings: SDR: Drive Timing: Drive 1/2 cycle before CK
+      Timing Settings: SDR: Drive Timing: Drive at CK
       Timing Settings: SDR: CK Sampling Edge: Falling edge
       Timing Settings: SDR: Sampling Delay: None
       Timing Settings: DDR: Sampling Window Extension: None
@@ -1135,6 +1138,23 @@ FSP Configuration
       DOTF: Decryption end address: 0x90001FFF
       Row Addressing: Row Address Length: No address
       
+      Instance "g_transfer0 Transfer (r_dmac) No ELC Trigger"
+        Name: g_transfer0
+        Channel: 0
+        Mode: Block
+        Transfer Size: 1 Byte
+        Destination Address Mode: Incremented
+        Source Address Mode: Incremented
+        Repeat Area (Unused in Normal Mode): Source
+        Number of Transfers: 64
+        Number of Blocks (Valid only in Repeat,Block or Repeat-Block Mode): 1
+        Activation Source: No ELC Trigger
+        Callback: NULL
+        Transfer End Interrupt Priority: Disabled
+        Interrupt Frequency: Interrupt after all transfers have completed
+        Offset value (Valid only when address mode is \'Offset\'): 0
+        Source Buffer Size: 0
+        
   Thread "Main Thread0"
     Symbol: main_thread0
     Name: Main Thread0

@@ -329,6 +329,10 @@
       <description>Octa Serial Peripheral Interface Flash</description>
       <originalPack>Renesas.RA.6.0.0.pack</originalPack>
     </component>
+    <component apiversion="" class="HAL Drivers" condition="" group="all" subgroup="r_dmac" variant="" vendor="Renesas" version="6.0.0">
+      <description>Direct Memory Access Controller</description>
+      <originalPack>Renesas.RA.6.0.0.pack</originalPack>
+    </component>
   </raComponentSelection>
   <raElcConfiguration/>
   <raIcuConfiguration/>
@@ -387,8 +391,8 @@
       <property id="module.driver.i2c_master.ipl" value="board.icu.common.irq.priority11"/>
     </module>
     <module id="module.driver.timer_on_gpt.1622483141">
-      <property id="module.driver.timer.name" value="g_timer5"/>
-      <property id="module.driver.timer.channel" value="5"/>
+      <property id="module.driver.timer.name" value="g_timer2"/>
+      <property id="module.driver.timer.channel" value="2"/>
       <property id="module.driver.timer.mode" value="module.driver.timer.mode.mode_periodic"/>
       <property id="module.driver.timer.period" value="2"/>
       <property id="module.driver.timer.compare_match.a.status" value="module.driver.timer.compare_match.a.status.disabled"/>
@@ -575,39 +579,39 @@
       <property id="module.driver.ospi_b.sector_erase_size" value="4096"/>
       <property id="module.driver.ospi_b.block_erase_size" value="262144"/>
       <property id="module.driver.ospi_b.spi_protocol" value="module.driver.ospi_b.protocol_mode.protocol_8D_8D_8D"/>
-      <property id="module.driver.ospi_b.cmd_set.initial.frame_format" value="module.driver.ospi_b.frame_format.xspi_profile2"/>
-      <property id="module.driver.ospi_b.cmd_set.initial.latency_mode" value="module.driver.ospi_b.latency_mode.variable"/>
+      <property id="module.driver.ospi_b.cmd_set.initial.frame_format" value="module.driver.ospi_b.frame_format.xspi_profile1"/>
+      <property id="module.driver.ospi_b.cmd_set.initial.latency_mode" value="module.driver.ospi_b.latency_mode.fixed"/>
       <property id="module.driver.ospi_b.address_bytes" value="module.driver.ospi_b.address_bytes.address_bytes_4"/>
       <property id="module.driver.ospi_b.cmd_set.initial.address_msb_mask" value="0"/>
       <property id="module.driver.ospi_b.command_bytes" value="module.driver.ospi_b.command_bytes.2"/>
       <property id="module.driver.ospi_b.cmd_set.initial.status_address_bytes" value="module.driver.ospi_b.address_bytes.address_bytes_4"/>
       <property id="module.driver.ospi_b.cmd_set.initial.status_address" value="0x00"/>
       <property id="module.driver.ospi_b.spi_read_command" value="0xEEEE"/>
-      <property id="module.driver.ospi_b.default_mem_read_dummy_cycles" value="7"/>
+      <property id="module.driver.ospi_b.default_mem_read_dummy_cycles" value="14"/>
       <property id="module.driver.ospi_b.spi_page_program_command" value="0xDEDE"/>
-      <property id="module.driver.ospi_b.cmd_set.initial.program.dummy_cycles" value="7"/>
+      <property id="module.driver.ospi_b.cmd_set.initial.program.dummy_cycles" value="14"/>
       <property id="module.driver.ospi_b.cmd_set.initial.row_load.command" value="0x00"/>
       <property id="module.driver.ospi_b.cmd_set.initial.row_load.dummy_cycles" value="0"/>
       <property id="module.driver.ospi_b.cmd_set.initial.row_store.command" value="0x00"/>
       <property id="module.driver.ospi_b.cmd_set.initial.row_store.dummy_cycles" value="0"/>
       <property id="module.driver.ospi_b.spi_write_enable_command" value="0x0606"/>
       <property id="module.driver.ospi_b.spi_status_command" value="0"/>
-      <property id="module.driver.ospi_b.default_status_read_dummy_cycles" value="7"/>
+      <property id="module.driver.ospi_b.default_status_read_dummy_cycles" value="0"/>
       <property id="module.driver.ospi_b.sector_erase_command" value="0"/>
       <property id="module.driver.ospi_b.block_erase_command" value="0"/>
       <property id="module.driver.ospi_b.chip_erase_command" value="0"/>
       <property id="module.driver.ospi_b.high_speed_protocol" value="module.driver.ospi_b.protocol_mode.protocol_8D_8D_8D"/>
-      <property id="module.driver.ospi_b.cmd_set.high_speed.frame_format" value="module.driver.ospi_b.frame_format.xspi_profile2_extended"/>
-      <property id="module.driver.ospi_b.cmd_set.high_speed.latency_mode" value="module.driver.ospi_b.latency_mode.variable"/>
+      <property id="module.driver.ospi_b.cmd_set.high_speed.frame_format" value="module.driver.ospi_b.frame_format.xspi_profile1"/>
+      <property id="module.driver.ospi_b.cmd_set.high_speed.latency_mode" value="module.driver.ospi_b.latency_mode.fixed"/>
       <property id="module.driver.ospi_b.cmd_set.high_speed.address_bytes" value="module.driver.ospi_b.address_bytes.address_bytes_4"/>
-      <property id="module.driver.ospi_b.cmd_set.high_speed.address_msb_mask" value="0xe0"/>
+      <property id="module.driver.ospi_b.cmd_set.high_speed.address_msb_mask" value="0"/>
       <property id="module.driver.ospi_b.high_speed_command_length" value="module.driver.ospi_b.command_bytes.2"/>
       <property id="module.driver.ospi_b.cmd_set.high_speed.status_address_bytes" value="module.driver.ospi_b.address_bytes.address_bytes_4"/>
       <property id="module.driver.ospi_b.cmd_set.high_speed.status_address" value="0x00"/>
-      <property id="module.driver.ospi_b.high_speed_read_command" value="0xeeee"/>
-      <property id="module.driver.ospi_b.mem_read_dummy_cycles" value="7"/>
-      <property id="module.driver.ospi_b.high_speed_page_program_command" value="0xdede"/>
-      <property id="module.driver.ospi_b.cmd_set.high_speed.program.dummy_cycles" value="7"/>
+      <property id="module.driver.ospi_b.high_speed_read_command" value="0xEEEE"/>
+      <property id="module.driver.ospi_b.mem_read_dummy_cycles" value="14"/>
+      <property id="module.driver.ospi_b.high_speed_page_program_command" value="0xDEDE"/>
+      <property id="module.driver.ospi_b.cmd_set.high_speed.program.dummy_cycles" value="0"/>
       <property id="module.driver.ospi_b.cmd_set.high_speed.row_load.command" value="0x00"/>
       <property id="module.driver.ospi_b.cmd_set.high_speed.row_load.dummy_cycles" value="0"/>
       <property id="module.driver.ospi_b.cmd_set.high_speed.row_store.command" value="0x00"/>
@@ -622,7 +626,7 @@
       <property id="module.driver.ospi_b.pull_up_timing" value="module.driver.ospi_b.pull_up_timing.clocks_5"/>
       <property id="module.driver.ospi_b.pull_down_timing" value="module.driver.ospi_b.pull_down_timing.clocks_3"/>
       <property id="module.driver.ospi_b.data_latch_delay_setting" value="module.driver.ospi_b.ds_timing.delay.none"/>
-      <property id="module.driver.ospi_b.sdr_timing.drive_timing" value="module.driver.ospi_b.sdr_timing.drive_timing.before_ck_rising"/>
+      <property id="module.driver.ospi_b.sdr_timing.drive_timing" value="module.driver.ospi_b.sdr_timing.drive_timing.at_ck_rising"/>
       <property id="module.driver.ospi_b.sdr_timing.ck_sampling_edge" value="module.driver.ospi_b.sdr_timing.ck_sampling_edge.falling"/>
       <property id="module.driver.ospi_b.sdr_timing.sampling_delay" value="module.driver.ospi_b.sdr_timing.sampling_delay.none"/>
       <property id="module.driver.ospi_b.ddr_timing.sampling_extension" value="module.driver.ospi_b.ddr_timing.sampling_extension.none"/>
@@ -636,6 +640,23 @@
       <property id="module.driver.ospi_b.dotf.start_address" value="0x90000000"/>
       <property id="module.driver.ospi_b.dotf.end_address" value="0x90001FFF"/>
       <property id="module.driver.ospi_b.row_addressing.row_index_bytes" value="module.driver.ospi_b.address_bytes.none"/>
+    </module>
+    <module id="module.driver.transfer_on_dmac.477303345">
+      <property id="module.driver.transfer.name" value="g_transfer0"/>
+      <property id="module.driver.transfer.channel" value="0"/>
+      <property id="module.driver.transfer.mode" value="module.driver.transfer.mode.mode_normal"/>
+      <property id="module.driver.transfer.size" value="module.driver.transfer.size.size_2_byte"/>
+      <property id="module.driver.transfer.dest_addr_mode" value="module.driver.transfer.dest_addr_mode.addr_mode_fixed"/>
+      <property id="module.driver.transfer.src_addr_mode" value="module.driver.transfer.src_addr_mode.addr_mode_fixed"/>
+      <property id="module.driver.transfer.repeat_area" value="module.driver.transfer.repeat_area.repeat_area_source"/>
+      <property id="module.driver.transfer.length" value="1"/>
+      <property id="module.driver.transfer.num_blocks" value="0"/>
+      <property id="module.driver.transfer.activation_event" value="enum.elc_none.none"/>
+      <property id="module.driver.transfer.p_callback" value="NULL"/>
+      <property id="module.driver.transfer.ipl" value="_disabled"/>
+      <property id="module.driver.transfer.interrupt" value="module.driver.transfer.interrupt.interrupt_end"/>
+      <property id="module.driver.transfer.offset" value="1"/>
+      <property id="module.driver.transfer.src.buffer" value="1"/>
     </module>
     <object id="rtos.awsfreertos.object.semaphore.1429114281">
       <property id="rtos.awsfreertos.object.semaphore.symbol" value="g_usb_write_complete_binary_semaphore"/>
@@ -663,7 +684,9 @@
       <stack module="module.driver.i2c_on_iic_master.994544474"/>
       <stack module="module.driver.timer_on_gpt.1622483141"/>
       <stack module="module.driver.timer_on_gpt.2107044541"/>
-      <stack module="module.driver.ospi_on_ospi_b.1029231815"/>
+      <stack module="module.driver.ospi_on_ospi_b.1029231815">
+        <stack module="module.driver.transfer_on_dmac.477303345" requires="module.driver.ospi_on_ospi_b.requires.transfer"/>
+      </stack>
     </context>
     <context id="rtos.awsfreertos.thread.415524792">
       <property id="_symbol" value="main_thread0"/>
@@ -709,7 +732,7 @@
     </context>
     <config id="config.driver.ospi_b">
       <property id="config.driver.ospi_b.param_checking_enable" value="config.driver.ospi_b.param_checking_enable.bsp"/>
-      <property id="config.driver.ospi_b.dmac_support" value="config.driver.ospi_b.dmac_support.disabled"/>
+      <property id="config.driver.ospi_b.dmac_support" value="config.driver.ospi_b.dmac_support.enabled"/>
       <property id="config.driver.ospi_b.autocalibration_support" value="config.driver.ospi_b.autocalibration_support.disabled"/>
       <property id="config.driver.ospi_b.prefetch_function" value="config.driver.ospi_b.prefetch_function.enabled"/>
       <property id="config.driver.ospi_b.combination_function" value="config.driver.ospi_b.combination_function.64_BYTE"/>
@@ -1047,6 +1070,9 @@
       <property id="config.driver.ether.link_present" value="config.driver.ether.link_present.0"/>
       <property id="config.driver.ether.use_linksta" value="config.driver.ether.use_linksta.0"/>
     </config>
+    <config id="config.driver.dmac">
+      <property id="config.driver.dmac.param_checking_enable" value="config.driver.dmac.param_checking_enable.bsp"/>
+    </config>
     <config id="config.driver.ether_phy">
       <property id="config.driver.ether_phy.param_checking_enable" value="config.driver.ether_phy.param_checking_enable.bsp"/>
       <property id="config.driver.ether_phy.target_ksz8091rnb" value="config.driver.ether_phy.target_ksz8091rnb.disabled"/>
@@ -1216,7 +1242,7 @@
     <symbolicName propertyId="p806.symbolic_name" value="CAM_E34"/>
     <symbolicName propertyId="p809.symbolic_name" value="PMOD2_P10"/>
     <symbolicName propertyId="p905.symbolic_name" value="Arduino_D4"/>
-    <pincfg active="true" name="RA8E1 FPB" selected="false" symbol="g_bsp_pin_cfg">
+    <pincfg active="true" name="RA8E1 FPB" selected="true" symbol="g_bsp_pin_cfg">
       <configSetting altId="ceu.mode.custom.b" configurationId="ceu.mode"/>
       <configSetting altId="ceu.pairing.b" configurationId="ceu.pairing"/>
       <configSetting altId="ceu.vio_clk.p708" configurationId="ceu.vio_clk"/>
@@ -1244,8 +1270,11 @@
       <configSetting altId="ether_rmii.rmii0_txd_en.p306" configurationId="ether_rmii.rmii0_txd_en"/>
       <configSetting altId="gpt0.pairing.a" configurationId="gpt0.pairing"/>
       <configSetting altId="gpt1.mode.gtiocaorgtiocb.free" configurationId="gpt1.mode"/>
+      <configSetting altId="gpt2.gtioc2a.p113" configurationId="gpt2.gtioc2a"/>
+      <configSetting altId="gpt2.mode.gtiocaorgtiocb.free" configurationId="gpt2.mode"/>
       <configSetting altId="gpt3.gtioc3a.p403" configurationId="gpt3.gtioc3a"/>
       <configSetting altId="gpt3.mode.gtiocaorgtiocb.free" configurationId="gpt3.mode"/>
+      <configSetting altId="gpt4.mode.gtiocaorgtiocb.free" configurationId="gpt4.mode"/>
       <configSetting altId="gpt5.gtioc5a.p115" configurationId="gpt5.gtioc5a"/>
       <configSetting altId="gpt5.mode.gtiocaorgtiocb.free" configurationId="gpt5.mode"/>
       <configSetting altId="iic0.pairing.b" configurationId="iic0.pairing"/>
@@ -1324,8 +1353,8 @@
       <configSetting altId="p112.ether_rmii.rmii0_crs_dv" configurationId="p112"/>
       <configSetting altId="p112.gpio_speed.gpio_speed_h" configurationId="p112.gpio_drivecapacity"/>
       <configSetting altId="p112.gpio_mode.gpio_mode_peripheral" configurationId="p112.gpio_mode"/>
-      <configSetting altId="p113.input" configurationId="p113"/>
-      <configSetting altId="p113.gpio_mode.gpio_mode_in" configurationId="p113.gpio_mode"/>
+      <configSetting altId="p113.gpt2.gtioc2a" configurationId="p113"/>
+      <configSetting altId="p113.gpio_mode.gpio_mode_peripheral" configurationId="p113.gpio_mode"/>
       <configSetting altId="p114.ether_rmii.et0_linksta" configurationId="p114"/>
       <configSetting altId="p114.gpio_speed.gpio_speed_h" configurationId="p114.gpio_drivecapacity"/>
       <configSetting altId="p114.gpio_mode.gpio_mode_peripheral" configurationId="p114.gpio_mode"/>
@@ -1484,7 +1513,6 @@
       <lockSetting id="ether_rmii.rmii0_txd0" lock="true"/>
       <lockSetting id="ether_rmii.rmii0_txd1" lock="true"/>
       <lockSetting id="ether_rmii.rmii0_txd_en" lock="true"/>
-      <lockSetting id="gpt5.gtioc5a" lock="true"/>
       <lockSetting id="iic1.scl1" lock="true"/>
       <lockSetting id="iic1.sda1" lock="true"/>
       <lockSetting id="ospi.om_cs0" lock="true"/>
@@ -1502,7 +1530,7 @@
       <lockSetting id="ospi.om_sio6" lock="true"/>
       <lockSetting id="ospi.om_sio7" lock="true"/>
     </pincfg>
-    <pincfg active="false" name="R7FA8E1AFDCFB.pincfg" selected="true" symbol="">
+    <pincfg active="false" name="R7FA8E1AFDCFB.pincfg" selected="false" symbol="">
       <configSetting altId="ether_rmii.et0_mdc.p308" configurationId="ether_rmii.et0_mdc"/>
       <configSetting altId="ether_rmii.et0_mdio.p307" configurationId="ether_rmii.et0_mdio"/>
       <configSetting altId="ether_rmii.mode.rmii.free" configurationId="ether_rmii.mode"/>

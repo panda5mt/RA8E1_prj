@@ -1,4 +1,4 @@
-#Wed Jul 09 15:51:37 JST 2025
+#Sat Aug 23 02:22:12 JST 2025
 com.renesas.cdt.ddsc.content/com.renesas.cdt.ddsc.content.defaultlinkerscript=script/fsp.lld
 com.renesas.cdt.ddsc.contentgen.options/options/suppresswarningspaths=ra/arm,ra/aws,ra/lwip-tcpip
 com.renesas.cdt.ddsc.packs.componentfiles/AWS\#\#Heaps\#\#FreeRTOS\#\#heap_4\#\#\#\#11.1.0+fsp.6.0.0/all=271572837,ra/aws/FreeRTOS/FreeRTOS/Source/portable/MemMang/heap_4.c
@@ -29,6 +29,8 @@ com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#Common\#\#all\#\#fsp_common
 com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#Common\#\#all\#\#fsp_common\#\#\#\#6.0.0/libraries=
 com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#HAL\ Drivers\#\#all\#\#r_ceu\#\#\#\#6.0.0/all=3815496272,ra/fsp/inc/api/r_capture_api.h|4220176496,ra/fsp/inc/instances/r_ceu.h|1310104372,ra/fsp/src/r_ceu/r_ceu.c
 com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#HAL\ Drivers\#\#all\#\#r_ceu\#\#\#\#6.0.0/libraries=
+com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#HAL\ Drivers\#\#all\#\#r_dmac\#\#\#\#6.0.0/all=429738396,ra/fsp/inc/api/r_transfer_api.h|3646703680,ra/fsp/inc/instances/r_dmac.h|3084073898,ra/fsp/src/r_dmac/r_dmac.c
+com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#HAL\ Drivers\#\#all\#\#r_dmac\#\#\#\#6.0.0/libraries=
 com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#HAL\ Drivers\#\#all\#\#r_ether\#\#\#\#6.0.0/all=696897447,ra/fsp/inc/api/r_ether_api.h|3125398726,ra/fsp/inc/instances/r_ether.h|4008363632,ra/fsp/src/r_ether/r_ether.c
 com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#HAL\ Drivers\#\#all\#\#r_ether\#\#\#\#6.0.0/libraries=
 com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#HAL\ Drivers\#\#all\#\#r_ether_phy\#\#\#\#6.0.0/all=2336390258,ra/fsp/inc/api/r_ether_phy_api.h|3565639089,ra/fsp/inc/instances/r_ether_phy.h|1216818011,ra/fsp/src/r_ether_phy/r_ether_phy.c|1281813603,ra/fsp/src/r_ether_phy/targets/DP83620/r_ether_phy_target_dp83620.c|3378885181,ra/fsp/src/r_ether_phy/targets/ICS1894/r_ether_phy_target_ics1894.c|4073493999,ra/fsp/src/r_ether_phy/targets/KSZ8041/r_ether_phy_target_ksz8041.c|1032119103,ra/fsp/src/r_ether_phy/targets/KSZ8091RNB/r_ether_phy_target_ksz8091rnb.c
