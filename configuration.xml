@@ -207,7 +207,7 @@
     <node id="board.clock.spiclk.div" option="board.clock.spiclk.div.4"/>
     <node id="board.clock.canfdclk.div" option="board.clock.canfdclk.div.8"/>
     <node id="board.clock.uck.div" option="board.clock.uck.div.5"/>
-    <node id="board.clock.octaspiclk.div" option="board.clock.octaspiclk.div.8"/>
+    <node id="board.clock.octaspiclk.div" option="board.clock.octaspiclk.div.2"/>
     <node id="board.clock.cpuclk.display" option="board.clock.cpuclk.display.value"/>
     <node id="board.clock.iclk.display" option="board.clock.iclk.display.value"/>
     <node id="board.clock.pclka.display" option="board.clock.pclka.display.value"/>
@@ -627,7 +627,7 @@
       <property id="module.driver.ospi_b.pull_down_timing" value="module.driver.ospi_b.pull_down_timing.clocks_3"/>
       <property id="module.driver.ospi_b.data_latch_delay_setting" value="module.driver.ospi_b.ds_timing.delay.none"/>
       <property id="module.driver.ospi_b.sdr_timing.drive_timing" value="module.driver.ospi_b.sdr_timing.drive_timing.at_ck_rising"/>
-      <property id="module.driver.ospi_b.sdr_timing.ck_sampling_edge" value="module.driver.ospi_b.sdr_timing.ck_sampling_edge.falling"/>
+      <property id="module.driver.ospi_b.sdr_timing.ck_sampling_edge" value="module.driver.ospi_b.sdr_timing.ck_sampling_edge.rising"/>
       <property id="module.driver.ospi_b.sdr_timing.sampling_delay" value="module.driver.ospi_b.sdr_timing.sampling_delay.none"/>
       <property id="module.driver.ospi_b.ddr_timing.sampling_extension" value="module.driver.ospi_b.ddr_timing.sampling_extension.none"/>
       <property id="module.driver.ospi_b.xip.enter_code" value="0"/>

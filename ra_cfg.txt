@@ -159,7 +159,7 @@ FSP Configuration
     SPICLK Div /4
     CANFDCLK Div /8
     USBCLK Div /5
-    OCTACLK Div /8
+    OCTACLK Div /2
     
   Pin Configurations
     RA8E1 FPB -> g_bsp_pin_cfg
@@ -1124,7 +1124,7 @@ FSP Configuration
       Timing Settings: Chip Select: Pull-down Timing: No Extension
       Timing Settings: DS Latching Delay: Auto-calibrate
       Timing Settings: SDR: Drive Timing: Drive at CK
-      Timing Settings: SDR: CK Sampling Edge: Falling edge
+      Timing Settings: SDR: CK Sampling Edge: Rising edge
       Timing Settings: SDR: Sampling Delay: None
       Timing Settings: DDR: Sampling Window Extension: None
       XiP Mode: XiP Enter Code: 0

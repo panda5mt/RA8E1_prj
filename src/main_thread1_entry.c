@@ -30,30 +30,67 @@ void ospi_hyperram_test(void)
         return;
     }
     xprintf("[OSPI] init Ok\n");
-    ospi_b_xspi_command_set_t cs;
-    // // ID0,ID1を見てみる
-    // ID0-Die0
-    // spi_flash_direct_transfer_t g_ospi0_trans = {
-    //     .command = 0xc0,
-    //     .command_length = 1,
-    //     .address = 0x00000000,
-    //     .address_length = 4,
-    //     .data_length = 4,
-    // };
-    // for (int k = 0; k < 10; k++)
-    // {
-    //     R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
-    //     xprintf("[ID0]dat=0x%x\n", g_ospi0_trans.data);
-    //}
 
+    spi_flash_direct_transfer_t g_ospi0_trans;
+
+    // reset snable
+    g_ospi0_trans.command = 0x6666;
+    g_ospi0_trans.command_length = 2;
+    g_ospi0_trans.address = 0x00000000;
+    g_ospi0_trans.address_length = 0;
+    g_ospi0_trans.data_length = 0;
+    g_ospi0_trans.dummy_cycles = 0;
+
+    err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+    if (FSP_SUCCESS != err)
+    {
+        xprintf("[OSPI] direct transfer error!\n");
+        return;
+    }
+
+    // reset snable
+    g_ospi0_trans.command = 0x9999;
+    g_ospi0_trans.command_length = 2;
+    g_ospi0_trans.address = 0x00000000;
+    g_ospi0_trans.address_length = 0;
+    g_ospi0_trans.data_length = 0;
+    g_ospi0_trans.dummy_cycles = 0;
+
+    err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+    if (FSP_SUCCESS != err)
+    {
+        xprintf("[OSPI] direct transfer error!\n");
+        return;
+    }
+    for (int i = 1; i < 30; i++)
+    {
+
+        // read ID0
+        g_ospi0_trans.command = 0x9f9f; // 0x9f9f;
+        g_ospi0_trans.command_length = 2;
+        g_ospi0_trans.address = 0x00000000;
+        g_ospi0_trans.address_length = 4;
+        g_ospi0_trans.data_length = 4;
+        g_ospi0_trans.dummy_cycles = i;
+
+        err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
+        if (FSP_SUCCESS != err)
+        {
+            xprintf("[OSPI] direct transfer error!\n");
+            return;
+        }
+        xprintf("%d,data=0x%x\n", i, g_ospi0_trans.data);
+    }
     // 2. 書き込みデータ作成
     uint8_t write_data[TEST_DATA_LENGTH];
     uint8_t read_data[TEST_DATA_LENGTH];
-
+    while (1)
+    {
+    }
     for (uint32_t i = 0; i < TEST_DATA_LENGTH; i++)
     {
         write_data[i] = 255 - (uint8_t)(i & 0xff);
-        read_data[i] = 0x00;
+        // read_data[i] = 0x00;
     }
 
     // 3. 書き込み先アドレス（HyperRAM内）
@@ -61,7 +98,7 @@ void ospi_hyperram_test(void)
 
     // 4. 書き込み（メモリマップドアクセス）
     memcpy(&hyperram_ptr[0], &write_data[0], TEST_DATA_LENGTH);
-    vTaskDelay(pdMS_TO_TICKS(10));
+    vTaskDelay(pdMS_TO_TICKS(100));
 
     // 5. 読み出しバッファ
     memcpy(&read_data[0], &hyperram_ptr[0], TEST_DATA_LENGTH);
