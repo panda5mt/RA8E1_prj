@@ -587,9 +587,9 @@
       <property id="module.driver.ospi_b.cmd_set.initial.status_address_bytes" value="module.driver.ospi_b.address_bytes.address_bytes_4"/>
       <property id="module.driver.ospi_b.cmd_set.initial.status_address" value="0x00"/>
       <property id="module.driver.ospi_b.spi_read_command" value="0xEEEE"/>
-      <property id="module.driver.ospi_b.default_mem_read_dummy_cycles" value="14"/>
+      <property id="module.driver.ospi_b.default_mem_read_dummy_cycles" value="15"/>
       <property id="module.driver.ospi_b.spi_page_program_command" value="0xDEDE"/>
-      <property id="module.driver.ospi_b.cmd_set.initial.program.dummy_cycles" value="14"/>
+      <property id="module.driver.ospi_b.cmd_set.initial.program.dummy_cycles" value="15"/>
       <property id="module.driver.ospi_b.cmd_set.initial.row_load.command" value="0x00"/>
       <property id="module.driver.ospi_b.cmd_set.initial.row_load.dummy_cycles" value="0"/>
       <property id="module.driver.ospi_b.cmd_set.initial.row_store.command" value="0x00"/>
@@ -609,9 +609,9 @@
       <property id="module.driver.ospi_b.cmd_set.high_speed.status_address_bytes" value="module.driver.ospi_b.address_bytes.address_bytes_4"/>
       <property id="module.driver.ospi_b.cmd_set.high_speed.status_address" value="0x00"/>
       <property id="module.driver.ospi_b.high_speed_read_command" value="0xEEEE"/>
-      <property id="module.driver.ospi_b.mem_read_dummy_cycles" value="14"/>
+      <property id="module.driver.ospi_b.mem_read_dummy_cycles" value="15"/>
       <property id="module.driver.ospi_b.high_speed_page_program_command" value="0xDEDE"/>
-      <property id="module.driver.ospi_b.cmd_set.high_speed.program.dummy_cycles" value="0"/>
+      <property id="module.driver.ospi_b.cmd_set.high_speed.program.dummy_cycles" value="15"/>
       <property id="module.driver.ospi_b.cmd_set.high_speed.row_load.command" value="0x00"/>
       <property id="module.driver.ospi_b.cmd_set.high_speed.row_load.dummy_cycles" value="0"/>
       <property id="module.driver.ospi_b.cmd_set.high_speed.row_store.command" value="0x00"/>
@@ -626,10 +626,10 @@
       <property id="module.driver.ospi_b.pull_up_timing" value="module.driver.ospi_b.pull_up_timing.clocks_5"/>
       <property id="module.driver.ospi_b.pull_down_timing" value="module.driver.ospi_b.pull_down_timing.clocks_3"/>
       <property id="module.driver.ospi_b.data_latch_delay_setting" value="module.driver.ospi_b.ds_timing.delay.none"/>
-      <property id="module.driver.ospi_b.sdr_timing.drive_timing" value="module.driver.ospi_b.sdr_timing.drive_timing.at_ck_rising"/>
-      <property id="module.driver.ospi_b.sdr_timing.ck_sampling_edge" value="module.driver.ospi_b.sdr_timing.ck_sampling_edge.rising"/>
+      <property id="module.driver.ospi_b.sdr_timing.drive_timing" value="module.driver.ospi_b.sdr_timing.drive_timing.before_ck_rising"/>
+      <property id="module.driver.ospi_b.sdr_timing.ck_sampling_edge" value="module.driver.ospi_b.sdr_timing.ck_sampling_edge.falling"/>
       <property id="module.driver.ospi_b.sdr_timing.sampling_delay" value="module.driver.ospi_b.sdr_timing.sampling_delay.none"/>
-      <property id="module.driver.ospi_b.ddr_timing.sampling_extension" value="module.driver.ospi_b.ddr_timing.sampling_extension.none"/>
+      <property id="module.driver.ospi_b.ddr_timing.sampling_extension" value="module.driver.ospi_b.ddr_timing.sampling_extension.1"/>
       <property id="module.driver.ospi_b.xip.enter_code" value="0"/>
       <property id="module.driver.ospi_b.xip.exit_code" value="0"/>
       <property id="module.driver.ospi_b.dotf.name" value="g_ospi_dotf"/>

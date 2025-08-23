@@ -1084,9 +1084,9 @@ FSP Configuration
       Command Sets: Initial Mode: Status Register Address Length: 4 bytes
       Command Sets: Initial Mode: Status Register Address: 0x00
       Command Sets: Initial Mode: Read: Command Code: 0xEEEE
-      Command Sets: Initial Mode: Read: Dummy Cycles: 14
+      Command Sets: Initial Mode: Read: Dummy Cycles: 15
       Command Sets: Initial Mode: Program: Command Code: 0xDEDE
-      Command Sets: Initial Mode: Program: Dummy Cycles: 14
+      Command Sets: Initial Mode: Program: Dummy Cycles: 15
       Command Sets: Initial Mode: Row Load: Command Code: 0x00
       Command Sets: Initial Mode: Row Load: Dummy Cycles: 0
       Command Sets: Initial Mode: Row Store: Command Code: 0x00
@@ -1106,9 +1106,9 @@ FSP Configuration
       Command Sets: High-speed Mode: Status Register Address Length: 4 bytes
       Command Sets: High-speed Mode: Status Register Address: 0x00
       Command Sets: High-speed Mode: Read: Command Code: 0xEEEE
-      Command Sets: High-speed Mode: Read: Dummy Cycles: 14
+      Command Sets: High-speed Mode: Read: Dummy Cycles: 15
       Command Sets: High-speed Mode: Program: Command Code: 0xDEDE
-      Command Sets: High-speed Mode: Program: Dummy Cycles: 0
+      Command Sets: High-speed Mode: Program: Dummy Cycles: 15
       Command Sets: High-speed Mode: Row Load: Command Code: 0x00
       Command Sets: High-speed Mode: Row Load: Dummy Cycles: 0
       Command Sets: High-speed Mode: Row Store: Command Code: 0x00
@@ -1123,10 +1123,10 @@ FSP Configuration
       Timing Settings: Chip Select: Pull-up Timing: No Extension
       Timing Settings: Chip Select: Pull-down Timing: No Extension
       Timing Settings: DS Latching Delay: Auto-calibrate
-      Timing Settings: SDR: Drive Timing: Drive at CK
-      Timing Settings: SDR: CK Sampling Edge: Rising edge
+      Timing Settings: SDR: Drive Timing: Drive 1/2 cycle before CK
+      Timing Settings: SDR: CK Sampling Edge: Falling edge
       Timing Settings: SDR: Sampling Delay: None
-      Timing Settings: DDR: Sampling Window Extension: None
+      Timing Settings: DDR: Sampling Window Extension: 1 cycle
       XiP Mode: XiP Enter Code: 0
       XiP Mode: XiP Exit Code: 0
       DOTF: Name: g_ospi_dotf
