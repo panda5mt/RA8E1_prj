@@ -77,7 +77,7 @@ void ospi_hyperram_test(void)
         xprintf("[OSPI] direct transfer error!\n");
         return;
     }
-    xprintf("CR0=0x%x\n", g_ospi0_trans.data);
+    xprintf("CR0=0x%04x\n", g_ospi0_trans.data);
 
     // read ID0
     g_ospi0_trans.command = 0x6565; // 0x9f9f;
@@ -93,26 +93,40 @@ void ospi_hyperram_test(void)
         xprintf("[OSPI] direct transfer error!\n");
         return;
     }
-    xprintf("ID0=0x%x\n", g_ospi0_trans.data);
+    xprintf("ID0=0x%04x\n", g_ospi0_trans.data);
 
-    // // read cr0
-    // for (int i = 0; i < 24; i++)
-    // {
-    //     g_ospi0_trans.command = 0x6565;
-    //     g_ospi0_trans.command_length = 2;
-    //     g_ospi0_trans.address = 0x00000006;
-    //     g_ospi0_trans.address_length = 4;
-    //     g_ospi0_trans.data_length = 2;
-    //     g_ospi0_trans.dummy_cycles = i;
+    // read ID1
+    g_ospi0_trans.command = 0x6565; // 0x9f9f;
+    g_ospi0_trans.command_length = 2;
+    g_ospi0_trans.address = 0x00000002;
+    g_ospi0_trans.address_length = 4;
+    g_ospi0_trans.data_length = 2;
+    g_ospi0_trans.dummy_cycles = 15;
 
-    //     err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
-    //     if (FSP_SUCCESS != err)
-    //     {
-    //         xprintf("[OSPI] direct transfer error!\n");
-    //         return;
-    //     }
-    //     xprintf("CR0=0x%x\n", g_ospi0_trans.data);
-    // }
+    err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
+    if (FSP_SUCCESS != err)
+    {
+        xprintf("[OSPI] direct transfer error!\n");
+        return;
+    }
+    xprintf("ID1=0x%04x\n", g_ospi0_trans.data);
+
+    // read ID0/ID1
+    g_ospi0_trans.command = 0x9f9f;
+    g_ospi0_trans.command_length = 2;
+    g_ospi0_trans.address = 0x00000000;
+    g_ospi0_trans.address_length = 4;
+    g_ospi0_trans.data_length = 4;
+    g_ospi0_trans.dummy_cycles = 15;
+
+    err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
+    if (FSP_SUCCESS != err)
+    {
+        xprintf("[OSPI] direct transfer error!\n");
+        return;
+    }
+    xprintf("ID0/ID1=0x%08x\n", g_ospi0_trans.data);
+
     // 2. 書き込みデータ作成
     uint8_t write_data[TEST_DATA_LENGTH];
     uint8_t read_data[TEST_DATA_LENGTH];
