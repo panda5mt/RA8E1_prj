@@ -1076,7 +1076,7 @@ FSP Configuration
       Command Sets: Erase Sizes: Sector Erase: 4096
       Command Sets: Erase Sizes: Block Erase: 262144
       Command Sets: Initial Mode: Protocol Mode: Dual data rate OPI (8D-8D-8D)
-      Command Sets: Initial Mode: Frame Format: xSPI Profile 1.0
+      Command Sets: Initial Mode: Frame Format: xSPI Profile 2.0
       Command Sets: Initial Mode: Latency Mode: Fixed
       Command Sets: Initial Mode: Address Length: 4 bytes
       Command Sets: Initial Mode: Address MSB Mask: 0
@@ -1098,7 +1098,7 @@ FSP Configuration
       Command Sets: Initial Mode: Block Erase: Command Code: 0
       Command Sets: Initial Mode: Chip Erase: Command Code: 0
       Command Sets: High-speed Mode: Protocol Mode: Dual data rate OPI (8D-8D-8D)
-      Command Sets: High-speed Mode: Frame Format: xSPI Profile 1.0
+      Command Sets: High-speed Mode: Frame Format: xSPI Profile 2.0
       Command Sets: High-speed Mode: Latency Mode: Fixed
       Command Sets: High-speed Mode: Address Length: 4 bytes
       Command Sets: High-speed Mode: Address MSB Mask: 0

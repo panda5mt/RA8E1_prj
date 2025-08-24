@@ -579,7 +579,7 @@
       <property id="module.driver.ospi_b.sector_erase_size" value="4096"/>
       <property id="module.driver.ospi_b.block_erase_size" value="262144"/>
       <property id="module.driver.ospi_b.spi_protocol" value="module.driver.ospi_b.protocol_mode.protocol_8D_8D_8D"/>
-      <property id="module.driver.ospi_b.cmd_set.initial.frame_format" value="module.driver.ospi_b.frame_format.xspi_profile1"/>
+      <property id="module.driver.ospi_b.cmd_set.initial.frame_format" value="module.driver.ospi_b.frame_format.xspi_profile2"/>
       <property id="module.driver.ospi_b.cmd_set.initial.latency_mode" value="module.driver.ospi_b.latency_mode.fixed"/>
       <property id="module.driver.ospi_b.address_bytes" value="module.driver.ospi_b.address_bytes.address_bytes_4"/>
       <property id="module.driver.ospi_b.cmd_set.initial.address_msb_mask" value="0"/>
@@ -601,7 +601,7 @@
       <property id="module.driver.ospi_b.block_erase_command" value="0"/>
       <property id="module.driver.ospi_b.chip_erase_command" value="0"/>
       <property id="module.driver.ospi_b.high_speed_protocol" value="module.driver.ospi_b.protocol_mode.protocol_8D_8D_8D"/>
-      <property id="module.driver.ospi_b.cmd_set.high_speed.frame_format" value="module.driver.ospi_b.frame_format.xspi_profile1"/>
+      <property id="module.driver.ospi_b.cmd_set.high_speed.frame_format" value="module.driver.ospi_b.frame_format.xspi_profile2"/>
       <property id="module.driver.ospi_b.cmd_set.high_speed.latency_mode" value="module.driver.ospi_b.latency_mode.fixed"/>
       <property id="module.driver.ospi_b.cmd_set.high_speed.address_bytes" value="module.driver.ospi_b.address_bytes.address_bytes_4"/>
       <property id="module.driver.ospi_b.cmd_set.high_speed.address_msb_mask" value="0"/>

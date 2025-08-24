@@ -111,6 +111,39 @@ void ospi_hyperram_test(void)
     }
     xprintf("ID1=0x%04x\n", g_ospi0_trans.data);
 
+    // write enable
+    g_ospi0_trans.command = 0x0606;
+    g_ospi0_trans.command_length = 2;
+    g_ospi0_trans.address = 0x00000000;
+    g_ospi0_trans.address_length = 0;
+    g_ospi0_trans.data_length = 0;
+    g_ospi0_trans.dummy_cycles = 0;
+
+    err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+    if (FSP_SUCCESS != err)
+    {
+        xprintf("[OSPI] direct transfer error!\n");
+        return;
+    }
+
+    // write memory
+    g_ospi0_trans.command = 0xDEDE;
+    g_ospi0_trans.command_length = 2;
+    g_ospi0_trans.address = 0x00000080;
+    g_ospi0_trans.address_length = 4;
+    g_ospi0_trans.data_length = 4;
+    g_ospi0_trans.data = 0x11223344;
+    g_ospi0_trans.dummy_cycles = 15;
+
+    err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+    if (FSP_SUCCESS != err)
+    {
+        xprintf("[OSPI] direct transfer error!\n");
+        return;
+    }
+    xprintf("[OSPI] write Ok\n");
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
     // read ID0/ID1
     g_ospi0_trans.command = 0x9f9f;
     g_ospi0_trans.command_length = 2;
@@ -127,11 +160,32 @@ void ospi_hyperram_test(void)
     }
     xprintf("ID0/ID1=0x%08x\n", g_ospi0_trans.data);
 
+    // read memory
+    g_ospi0_trans.command = 0xEEEE;
+    g_ospi0_trans.command_length = 2;
+    g_ospi0_trans.address = 0x00000080;
+    g_ospi0_trans.address_length = 4;
+    g_ospi0_trans.data_length = 4;
+    g_ospi0_trans.data = 0;
+
+    g_ospi0_trans.dummy_cycles = 15;
+
+    err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
+    if (FSP_SUCCESS != err)
+    {
+        xprintf("[OSPI] direct transfer error!\n");
+        return;
+    }
+
+    xprintf("[OSPI] data: %0x\n", g_ospi0_trans.data);
+
+    while (1)
+        ;
+
     // 2. 書き込みデータ作成
     uint8_t write_data[TEST_DATA_LENGTH];
     uint8_t read_data[TEST_DATA_LENGTH];
-    while (1)
-        ;
+
     for (uint32_t i = 0; i < TEST_DATA_LENGTH; i++)
     {
         write_data[i] = 255 - (uint8_t)(i & 0xff);
