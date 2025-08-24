@@ -142,7 +142,6 @@ void ospi_hyperram_test(void)
         return;
     }
     xprintf("[OSPI] write Ok\n");
-    vTaskDelay(pdMS_TO_TICKS(1000));
 
     // read ID0/ID1
     g_ospi0_trans.command = 0x9f9f;
