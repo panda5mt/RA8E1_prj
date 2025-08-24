@@ -132,7 +132,7 @@ void ospi_hyperram_test(void)
     g_ospi0_trans.address = 0x00000080;
     g_ospi0_trans.address_length = 4;
     g_ospi0_trans.data_length = 4;
-    g_ospi0_trans.data = 0x11223344;
+    g_ospi0_trans.data = 0xDEADDEAD;
     g_ospi0_trans.dummy_cycles = 15;
 
     err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
