@@ -830,7 +830,7 @@ FSP Configuration
     DMAC Support: Enable
     Autocalibration Support: Disable
     Memory-mapping Support: Prefetch Function: Enable
-    Memory-mapping Support: Combination Function: 64 Bytes
+    Memory-mapping Support: Combination Function: 32 Bytes
     Memory-mapping Support: XiP Support: Disable
     DOTF Support: Disable
     Row Addressing Support: Disable
@@ -1073,8 +1073,8 @@ FSP Configuration
       General: DS Auto-calibration Pattern Address: 0
       Command Sets: Custom Table: Table Pointer: 
       Command Sets: Custom Table: Table Length: 0
-      Command Sets: Erase Sizes: Sector Erase: 4096
-      Command Sets: Erase Sizes: Block Erase: 262144
+      Command Sets: Erase Sizes: Sector Erase: 0
+      Command Sets: Erase Sizes: Block Erase: 0
       Command Sets: Initial Mode: Protocol Mode: Dual data rate OPI (8D-8D-8D)
       Command Sets: Initial Mode: Frame Format: xSPI Profile 2.0
       Command Sets: Initial Mode: Latency Mode: Fixed
@@ -1119,11 +1119,11 @@ FSP Configuration
       Command Sets: High-speed Mode: Sector Erase: Command Code: 0
       Command Sets: High-speed Mode: Block Erase: Command Code: 0
       Command Sets: High-speed Mode: Chip Erase: Command Code: 0
-      Timing Settings: Chip Select: Command Interval: 2 cycles
+      Timing Settings: Chip Select: Command Interval: 4 cycles
       Timing Settings: Chip Select: Pull-up Timing: No Extension
       Timing Settings: Chip Select: Pull-down Timing: No Extension
       Timing Settings: DS Latching Delay: Auto-calibrate
-      Timing Settings: SDR: Drive Timing: Drive 1/2 cycle before CK
+      Timing Settings: SDR: Drive Timing: Drive at CK
       Timing Settings: SDR: CK Sampling Edge: Falling edge
       Timing Settings: SDR: Sampling Delay: None
       Timing Settings: DDR: Sampling Window Extension: 1 cycle
