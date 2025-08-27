@@ -141,7 +141,7 @@ FSP Configuration
     Clock Src: PLL1P
     CLKOUT Src: MOCO
     SCICLK Src: HOCO
-    SPICLK Src: HOCO
+    SPICLK Disabled
     CANFDCLK Disabled
     USBCLK Src: PLL2P
     OCTACLK Src: PLL1P
@@ -830,7 +830,7 @@ FSP Configuration
     DMAC Support: Enable
     Autocalibration Support: Disable
     Memory-mapping Support: Prefetch Function: Enable
-    Memory-mapping Support: Combination Function: 32 Bytes
+    Memory-mapping Support: Combination Function: 64 Bytes
     Memory-mapping Support: XiP Support: Disable
     DOTF Support: Disable
     Row Addressing Support: Disable
@@ -1119,9 +1119,9 @@ FSP Configuration
       Command Sets: High-speed Mode: Sector Erase: Command Code: 0
       Command Sets: High-speed Mode: Block Erase: Command Code: 0
       Command Sets: High-speed Mode: Chip Erase: Command Code: 0
-      Timing Settings: Chip Select: Command Interval: 2 cycles
+      Timing Settings: Chip Select: Command Interval: 1 cycle
       Timing Settings: Chip Select: Pull-up Timing: No Extension
-      Timing Settings: Chip Select: Pull-down Timing: 1 Cycle
+      Timing Settings: Chip Select: Pull-down Timing: No Extension
       Timing Settings: DS Latching Delay: Auto-calibrate
       Timing Settings: SDR: Drive Timing: Drive at CK
       Timing Settings: SDR: CK Sampling Edge: Falling edge

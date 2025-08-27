@@ -10,7 +10,7 @@
             #define OSPI_B_CFG_XIP_SUPPORT_ENABLE             (0)
             #define OSPI_B_CFG_AUTOCALIBRATION_SUPPORT_ENABLE (0)
             #define OSPI_B_CFG_PREFETCH_FUNCTION              (1)
-            #define OSPI_B_CFG_COMBINATION_FUNCTION           OSPI_B_COMBINATION_FUNCTION_32BYTE
+            #define OSPI_B_CFG_COMBINATION_FUNCTION           OSPI_B_COMBINATION_FUNCTION_64BYTE
             #define OSPI_B_CFG_ROW_ADDRESSING_SUPPORT_ENABLE  (0)
 
             #if (2 == (0))

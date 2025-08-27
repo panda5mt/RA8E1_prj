@@ -189,7 +189,7 @@
     <node id="board.clock.clock.source" option="board.clock.clock.source.pll1p"/>
     <node id="board.clock.clkout.source" option="board.clock.clkout.source.moco"/>
     <node id="board.clock.sciclk.source" option="board.clock.sciclk.source.hoco"/>
-    <node id="board.clock.spiclk.source" option="board.clock.spiclk.source.hoco"/>
+    <node id="board.clock.spiclk.source" option="board.clock.spiclk.source.disabled"/>
     <node id="board.clock.canfdclk.source" option="board.clock.canfdclk.source.disabled"/>
     <node id="board.clock.uck.source" option="board.clock.uck.source.pll2p"/>
     <node id="board.clock.octaspiclk.source" option="board.clock.octaspiclk.source.pll1p"/>
@@ -622,9 +622,9 @@
       <property id="module.driver.ospi_b.high_speed_sector_erase_command" value="0"/>
       <property id="module.driver.ospi_b.high_speed_block_erase_command" value="0"/>
       <property id="module.driver.ospi_b.high_speed_chip_erase_command" value="0"/>
-      <property id="module.driver.ospi_b.command_interval_clocks" value="module.driver.ospi_b.command_interval_clocks.clocks_2"/>
+      <property id="module.driver.ospi_b.command_interval_clocks" value="module.driver.ospi_b.command_interval_clocks.clocks_1"/>
       <property id="module.driver.ospi_b.pull_up_timing" value="module.driver.ospi_b.pull_up_timing.clocks_5"/>
-      <property id="module.driver.ospi_b.pull_down_timing" value="module.driver.ospi_b.pull_down_timing.clocks_4"/>
+      <property id="module.driver.ospi_b.pull_down_timing" value="module.driver.ospi_b.pull_down_timing.clocks_3"/>
       <property id="module.driver.ospi_b.data_latch_delay_setting" value="module.driver.ospi_b.ds_timing.delay.none"/>
       <property id="module.driver.ospi_b.sdr_timing.drive_timing" value="module.driver.ospi_b.sdr_timing.drive_timing.at_ck_rising"/>
       <property id="module.driver.ospi_b.sdr_timing.ck_sampling_edge" value="module.driver.ospi_b.sdr_timing.ck_sampling_edge.falling"/>
@@ -735,7 +735,7 @@
       <property id="config.driver.ospi_b.dmac_support" value="config.driver.ospi_b.dmac_support.enabled"/>
       <property id="config.driver.ospi_b.autocalibration_support" value="config.driver.ospi_b.autocalibration_support.disabled"/>
       <property id="config.driver.ospi_b.prefetch_function" value="config.driver.ospi_b.prefetch_function.enabled"/>
-      <property id="config.driver.ospi_b.combination_function" value="config.driver.ospi_b.combination_function.32_BYTE"/>
+      <property id="config.driver.ospi_b.combination_function" value="config.driver.ospi_b.combination_function.64_BYTE"/>
       <property id="config.driver.ospi_b.xip_support" value="config.driver.ospi_b.xip_support.disabled"/>
       <property id="config.driver.ospi_b.dotf_support" value="config.driver.ospi_b.dotf_support.disabled"/>
       <property id="config.driver.ospi_b.row_addressing_support" value="config.driver.ospi_b.row_addressing_support.disabled"/>

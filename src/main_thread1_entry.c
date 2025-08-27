@@ -8,6 +8,7 @@
 #include "lwip/udp.h"
 #include "lwip/dhcp.h"
 #include "lwip/autoip.h"
+#include "r_ospi_b.h"
 #include "r_spi_flash_api.h"
 
 #include <string.h> // for memcpy
@@ -15,7 +16,7 @@
 #define UDP_PORT_DEST 9000
 
 #define HYPERRAM_BASE_ADDR ((void *)0x90000000U) /* Device on CS1 */
-#define TEST_DATA_LENGTH (32U)                   // テストデータ長
+#define TEST_DATA_LENGTH (64U)                   // テストデータ長
 
 #define OSPI_B_COMMAND_READ_DOPI_MODE 0xEEEE
 #define OSPI_B_COMMAND_PROGRAM_DOPI_MODE 0xDEDE
@@ -27,6 +28,7 @@ ospi_b_xspi_command_set_t g_command_sets[] =
         /* 8D-8D-8D example with inverted lower command byte. */
         {
             .protocol = SPI_FLASH_PROTOCOL_8D_8D_8D,
+            .latency_mode = OSPI_B_LATENCY_MODE_FIXED,
             .frame_format = OSPI_B_FRAME_FORMAT_XSPI_PROFILE_2,
             .command_bytes = OSPI_B_COMMAND_BYTES_2,
             .address_bytes = 4U,
@@ -58,35 +60,35 @@ void ospi_hyperram_test(void)
 
     spi_flash_direct_transfer_t g_ospi0_trans;
 
-    // reset enable
-    g_ospi0_trans.command = 0x6666;
-    g_ospi0_trans.command_length = 2;
-    g_ospi0_trans.address = 0x00000000;
-    g_ospi0_trans.address_length = 0;
-    g_ospi0_trans.data_length = 0;
-    g_ospi0_trans.dummy_cycles = 0;
+    // // reset enable
+    // g_ospi0_trans.command = 0x6666;
+    // g_ospi0_trans.command_length = 2;
+    // g_ospi0_trans.address = 0x00000000;
+    // g_ospi0_trans.address_length = 0;
+    // g_ospi0_trans.data_length = 0;
+    // g_ospi0_trans.dummy_cycles = 0;
 
-    err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
-    if (FSP_SUCCESS != err)
-    {
-        xprintf("[OSPI] direct transfer error!\n");
-        return;
-    }
+    // err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+    // if (FSP_SUCCESS != err)
+    // {
+    //     xprintf("[OSPI] direct transfer error!\n");
+    //     return;
+    // }
 
-    // reset
-    g_ospi0_trans.command = 0x9999;
-    g_ospi0_trans.command_length = 2;
-    g_ospi0_trans.address = 0x00000000;
-    g_ospi0_trans.address_length = 0;
-    g_ospi0_trans.data_length = 0;
-    g_ospi0_trans.dummy_cycles = 0;
+    // // reset
+    // g_ospi0_trans.command = 0x9999;
+    // g_ospi0_trans.command_length = 2;
+    // g_ospi0_trans.address = 0x00000000;
+    // g_ospi0_trans.address_length = 0;
+    // g_ospi0_trans.data_length = 0;
+    // g_ospi0_trans.dummy_cycles = 0;
 
-    err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
-    if (FSP_SUCCESS != err)
-    {
-        xprintf("[OSPI] direct transfer error!\n");
-        return;
-    }
+    // err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+    // if (FSP_SUCCESS != err)
+    // {
+    //     xprintf("[OSPI] direct transfer error!\n");
+    //     return;
+    // }
 
     // write enable
     g_ospi0_trans.command = 0x0606;
@@ -95,6 +97,12 @@ void ospi_hyperram_test(void)
     g_ospi0_trans.address_length = 0;
     g_ospi0_trans.data_length = 0;
     g_ospi0_trans.dummy_cycles = 0;
+    err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+    if (FSP_SUCCESS != err)
+    {
+        xprintf("[OSPI] direct transfer error!\n");
+        return;
+    }
 
     // write CR0
     g_ospi0_trans.command = 0x7171;
@@ -102,7 +110,7 @@ void ospi_hyperram_test(void)
     g_ospi0_trans.address = 0x00000004;
     g_ospi0_trans.address_length = 4;
     g_ospi0_trans.data_length = 2;
-    g_ospi0_trans.data = 0x2c8f; // 128byte, little endian
+    g_ospi0_trans.data = 0x2d8f; // 64byte, little endian
     g_ospi0_trans.dummy_cycles = 0;
 
     err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
@@ -112,37 +120,37 @@ void ospi_hyperram_test(void)
         return;
     }
 
-    // // read ID0
-    // g_ospi0_trans.command = 0x6565; // 0x9f9f;
-    // g_ospi0_trans.command_length = 2;
-    // g_ospi0_trans.address = 0x00000000;
-    // g_ospi0_trans.address_length = 4;
-    // g_ospi0_trans.data_length = 2;
-    // g_ospi0_trans.dummy_cycles = 15;
+    // // // read ID0
+    // // g_ospi0_trans.command = 0x6565; // 0x9f9f;
+    // // g_ospi0_trans.command_length = 2;
+    // // g_ospi0_trans.address = 0x00000000;
+    // // g_ospi0_trans.address_length = 4;
+    // // g_ospi0_trans.data_length = 2;
+    // // g_ospi0_trans.dummy_cycles = 15;
 
-    // err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
-    // if (FSP_SUCCESS != err)
-    // {
-    //     xprintf("[OSPI] direct transfer error!\n");
-    //     return;
-    // }
-    // xprintf("ID0=0x%04x\n", g_ospi0_trans.data);
+    // // err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
+    // // if (FSP_SUCCESS != err)
+    // // {
+    // //     xprintf("[OSPI] direct transfer error!\n");
+    // //     return;
+    // // }
+    // // xprintf("ID0=0x%04x\n", g_ospi0_trans.data);
 
-    // // read ID1
-    // g_ospi0_trans.command = 0x6565;
-    // g_ospi0_trans.command_length = 2;
-    // g_ospi0_trans.address = 0x00000002;
-    // g_ospi0_trans.address_length = 4;
-    // g_ospi0_trans.data_length = 2;
-    // g_ospi0_trans.dummy_cycles = 15;
+    // // // read ID1
+    // // g_ospi0_trans.command = 0x6565;
+    // // g_ospi0_trans.command_length = 2;
+    // // g_ospi0_trans.address = 0x00000002;
+    // // g_ospi0_trans.address_length = 4;
+    // // g_ospi0_trans.data_length = 2;
+    // // g_ospi0_trans.dummy_cycles = 15;
 
-    // err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
-    // if (FSP_SUCCESS != err)
-    // {
-    //     xprintf("[OSPI] direct transfer error!\n");
-    //     return;
-    // }
-    // xprintf("ID1=0x%04x\n", g_ospi0_trans.data);
+    // // err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
+    // // if (FSP_SUCCESS != err)
+    // // {
+    // //     xprintf("[OSPI] direct transfer error!\n");
+    // //     return;
+    // // }
+    // // xprintf("ID1=0x%04x\n", g_ospi0_trans.data);
 
     // write enable
     g_ospi0_trans.command = 0x0606;
@@ -159,74 +167,74 @@ void ospi_hyperram_test(void)
         return;
     }
 
-    // write memory
+    // // write memory
 
-    g_ospi0_trans.command = 0xDEDE;
-    g_ospi0_trans.command_length = 2;
-    g_ospi0_trans.address = 0x00000080;
-    g_ospi0_trans.address_length = 4;
-    g_ospi0_trans.data_length = 4;
-    g_ospi0_trans.data = 0xDEADDEAD;
-    g_ospi0_trans.dummy_cycles = 15;
+    // g_ospi0_trans.command = 0xDEDE;
+    // g_ospi0_trans.command_length = 2;
+    // g_ospi0_trans.address = 0x00000080;
+    // g_ospi0_trans.address_length = 4;
+    // g_ospi0_trans.data_length = 4;
+    // g_ospi0_trans.data = 0xDEADDEAD;
+    // g_ospi0_trans.dummy_cycles = 15;
 
-    err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
-    if (FSP_SUCCESS != err)
-    {
-        xprintf("[OSPI] direct transfer error!\n");
-        return;
-    }
-    xprintf("[OSPI] write Ok\n");
+    // err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+    // if (FSP_SUCCESS != err)
+    // {
+    //     xprintf("[OSPI] direct transfer error!\n");
+    //     return;
+    // }
+    // xprintf("[OSPI] write Ok\n");
 
-    // read ID0/ID1
-    g_ospi0_trans.command = 0x9f9f;
-    g_ospi0_trans.command_length = 2;
-    g_ospi0_trans.address = 0x00000000;
-    g_ospi0_trans.address_length = 4;
-    g_ospi0_trans.data_length = 4;
-    g_ospi0_trans.dummy_cycles = 15;
+    // // read ID0/ID1
+    // g_ospi0_trans.command = 0x9f9f;
+    // g_ospi0_trans.command_length = 2;
+    // g_ospi0_trans.address = 0x00000000;
+    // g_ospi0_trans.address_length = 4;
+    // g_ospi0_trans.data_length = 4;
+    // g_ospi0_trans.dummy_cycles = 15;
 
-    err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
-    if (FSP_SUCCESS != err)
-    {
-        xprintf("[OSPI] direct transfer error!\n");
-        return;
-    }
-    xprintf("ID0/ID1=0x%08x\n", g_ospi0_trans.data);
+    // err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
+    // if (FSP_SUCCESS != err)
+    // {
+    //     xprintf("[OSPI] direct transfer error!\n");
+    //     return;
+    // }
+    // xprintf("ID0/ID1=0x%08x\n", g_ospi0_trans.data);
 
-    // read CR0
-    g_ospi0_trans.command = 0x6565; // 0x9f9f;
-    g_ospi0_trans.command_length = 2;
-    g_ospi0_trans.address = 0x00000004;
-    g_ospi0_trans.address_length = 4;
-    g_ospi0_trans.data_length = 2;
-    g_ospi0_trans.dummy_cycles = 15;
+    // // read CR0
+    // g_ospi0_trans.command = 0x6565; // 0x9f9f;
+    // g_ospi0_trans.command_length = 2;
+    // g_ospi0_trans.address = 0x00000004;
+    // g_ospi0_trans.address_length = 4;
+    // g_ospi0_trans.data_length = 2;
+    // g_ospi0_trans.dummy_cycles = 15;
 
-    err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
-    if (FSP_SUCCESS != err)
-    {
-        xprintf("[OSPI] direct transfer error!\n");
-        return;
-    }
-    xprintf("CR0=0x%04x\n", g_ospi0_trans.data);
+    // err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
+    // if (FSP_SUCCESS != err)
+    // {
+    //     xprintf("[OSPI] direct transfer error!\n");
+    //     return;
+    // }
+    // xprintf("CR0=0x%04x\n", g_ospi0_trans.data);
 
-    // read memory
-    g_ospi0_trans.command = 0xEEEE;
-    g_ospi0_trans.command_length = 2;
-    g_ospi0_trans.address = 0x00000080;
-    g_ospi0_trans.address_length = 4;
-    g_ospi0_trans.data_length = 4;
-    g_ospi0_trans.data = 0;
+    // // read memory
+    // g_ospi0_trans.command = 0xEEEE;
+    // g_ospi0_trans.command_length = 2;
+    // g_ospi0_trans.address = 0x00000080;
+    // g_ospi0_trans.address_length = 4;
+    // g_ospi0_trans.data_length = 4;
+    // g_ospi0_trans.data = 0;
 
-    g_ospi0_trans.dummy_cycles = 15;
+    // g_ospi0_trans.dummy_cycles = 15;
 
-    err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
-    if (FSP_SUCCESS != err)
-    {
-        xprintf("[OSPI] direct transfer error!\n");
-        return;
-    }
+    // err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
+    // if (FSP_SUCCESS != err)
+    // {
+    //     xprintf("[OSPI] direct transfer error!\n");
+    //     return;
+    // }
 
-    xprintf("[OSPI] data: %0x\n", g_ospi0_trans.data);
+    // xprintf("[OSPI] data: %0x\n", g_ospi0_trans.data);
 
     // 2. 書き込みデータ作成
     uint8_t write_data[TEST_DATA_LENGTH];
@@ -242,7 +250,12 @@ void ospi_hyperram_test(void)
     uint8_t *hyperram_ptr = (uint8_t *)HYPERRAM_BASE_ADDR;
 
     // 4. 書き込み（メモリマップドアクセス）
-    memcpy(&hyperram_ptr[0], &write_data[0], TEST_DATA_LENGTH);
+    // memcpy(&hyperram_ptr[0], &write_data[0], TEST_DATA_LENGTH);
+    R_OSPI_B_Write(&g_ospi0_ctrl,
+                   (uint8_t const *const)&write_data[0],
+                   (uint8_t *const)&hyperram_ptr[0],
+                   TEST_DATA_LENGTH);
+
     vTaskDelay(pdMS_TO_TICKS(100));
 
     // 5. 読み出しバッファ

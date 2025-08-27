@@ -43,7 +43,7 @@
     <node id="board.clock.clock.source" option="board.clock.clock.source.pll1p"/>
     <node id="board.clock.clkout.source" option="board.clock.clkout.source.moco"/>
     <node id="board.clock.sciclk.source" option="board.clock.sciclk.source.hoco"/>
-    <node id="board.clock.spiclk.source" option="board.clock.spiclk.source.hoco"/>
+    <node id="board.clock.spiclk.source" option="board.clock.spiclk.source.disabled"/>
     <node id="board.clock.canfdclk.source" option="board.clock.canfdclk.source.disabled"/>
     <node id="board.clock.uck.source" option="board.clock.uck.source.pll2p"/>
     <node id="board.clock.octaspiclk.source" option="board.clock.octaspiclk.source.pll1p"/>
