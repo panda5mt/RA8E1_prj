@@ -1071,8 +1071,8 @@ FSP Configuration
       General: Write Status Bit: b7
       General: Write Enable Bit: b7
       General: DS Auto-calibration Pattern Address: 0
-      Command Sets: Custom Table: Table Pointer: 
-      Command Sets: Custom Table: Table Length: 0
+      Command Sets: Custom Table: Table Pointer: g_command_sets
+      Command Sets: Custom Table: Table Length: 1
       Command Sets: Erase Sizes: Sector Erase: 0
       Command Sets: Erase Sizes: Block Erase: 0
       Command Sets: Initial Mode: Protocol Mode: Dual data rate OPI (8D-8D-8D)
@@ -1119,9 +1119,9 @@ FSP Configuration
       Command Sets: High-speed Mode: Sector Erase: Command Code: 0
       Command Sets: High-speed Mode: Block Erase: Command Code: 0
       Command Sets: High-speed Mode: Chip Erase: Command Code: 0
-      Timing Settings: Chip Select: Command Interval: 4 cycles
+      Timing Settings: Chip Select: Command Interval: 2 cycles
       Timing Settings: Chip Select: Pull-up Timing: No Extension
-      Timing Settings: Chip Select: Pull-down Timing: No Extension
+      Timing Settings: Chip Select: Pull-down Timing: 1 Cycle
       Timing Settings: DS Latching Delay: Auto-calibrate
       Timing Settings: SDR: Drive Timing: Drive at CK
       Timing Settings: SDR: CK Sampling Edge: Falling edge

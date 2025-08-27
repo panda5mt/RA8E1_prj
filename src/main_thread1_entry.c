@@ -17,6 +17,31 @@
 #define HYPERRAM_BASE_ADDR ((void *)0x90000000U) /* Device on CS1 */
 #define TEST_DATA_LENGTH (32U)                   // テストデータ長
 
+#define OSPI_B_COMMAND_READ_DOPI_MODE 0xEEEE
+#define OSPI_B_COMMAND_PROGRAM_DOPI_MODE 0xDEDE
+#define OSPI_B_COMMAND_WRITE_ENABLE_DOPI_MODE 0x0606
+
+/* Custom command sets. */
+ospi_b_xspi_command_set_t g_command_sets[] =
+    {
+        /* 8D-8D-8D example with inverted lower command byte. */
+        {
+            .protocol = SPI_FLASH_PROTOCOL_8D_8D_8D,
+            .frame_format = OSPI_B_FRAME_FORMAT_XSPI_PROFILE_2,
+            .command_bytes = OSPI_B_COMMAND_BYTES_2,
+            .address_bytes = 4U,
+            .read_command = OSPI_B_COMMAND_READ_DOPI_MODE,
+            .program_command = OSPI_B_COMMAND_PROGRAM_DOPI_MODE,
+
+            .write_enable_command = OSPI_B_COMMAND_WRITE_ENABLE_DOPI_MODE,
+            .status_command = NULL,
+
+            .read_dummy_cycles = 16U,
+            .program_dummy_cycles = 16U,
+
+            .status_dummy_cycles = NULL,
+            .p_erase_commands = NULL}};
+
 void ospi_hyperram_test(void)
 {
     fsp_err_t err = FSP_SUCCESS;
@@ -70,13 +95,6 @@ void ospi_hyperram_test(void)
     g_ospi0_trans.address_length = 0;
     g_ospi0_trans.data_length = 0;
     g_ospi0_trans.dummy_cycles = 0;
-
-    err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
-    if (FSP_SUCCESS != err)
-    {
-        xprintf("[OSPI] direct transfer error!\n");
-        return;
-    }
 
     // write CR0
     g_ospi0_trans.command = 0x7171;
@@ -142,6 +160,7 @@ void ospi_hyperram_test(void)
     }
 
     // write memory
+
     g_ospi0_trans.command = 0xDEDE;
     g_ospi0_trans.command_length = 2;
     g_ospi0_trans.address = 0x00000080;
