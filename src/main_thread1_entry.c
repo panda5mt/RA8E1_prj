@@ -47,7 +47,11 @@ ospi_b_xspi_command_set_t g_command_sets[] =
 void ospi_hyperram_test(void)
 {
     fsp_err_t err = FSP_SUCCESS;
-
+    // VCC2 = 1.8VなのでLVOCR.LVO1E=1にする
+    uint32_t *lvocr_ptr = (uint32_t *)0x4001E000;
+    xprintf("[SYSTEM] LVOCR.LVO1E = 0x%02x\n", *lvocr_ptr);
+    *lvocr_ptr = 0x0001;
+    xprintf("[SYSTEM] LVOCR.LVO1E = 0x%02x\n", *lvocr_ptr);
     // 1. OSPI 初期化
     err = R_OSPI_B_Open(&g_ospi0_ctrl, &g_ospi0_cfg);
     if (FSP_SUCCESS != err)
