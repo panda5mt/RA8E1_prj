@@ -49,9 +49,9 @@ void ospi_hyperram_test(void)
     fsp_err_t err = FSP_SUCCESS;
     // VCC2 = 1.8VなのでLVOCR.LVO1E=1にする
     uint32_t *lvocr_ptr = (uint32_t *)0x4001E000;
-    xprintf("[SYSTEM] LVOCR.LVO1E = 0x%02x\n", *lvocr_ptr);
+    xprintf("[SYSTEM] LVOCR = 0x%02x\n", *lvocr_ptr);
     *lvocr_ptr = 0x0001;
-    xprintf("[SYSTEM] LVOCR.LVO1E = 0x%02x\n", *lvocr_ptr);
+    xprintf("[SYSTEM] LVOCR = 0x%02x\n", *lvocr_ptr);
     // 1. OSPI 初期化
     err = R_OSPI_B_Open(&g_ospi0_ctrl, &g_ospi0_cfg);
     if (FSP_SUCCESS != err)
@@ -94,6 +94,7 @@ void ospi_hyperram_test(void)
     //     return;
     // }
 
+    /*
     // write enable
     g_ospi0_trans.command = 0x0606;
     g_ospi0_trans.command_length = 2;
@@ -123,6 +124,7 @@ void ospi_hyperram_test(void)
         xprintf("[OSPI] direct transfer error!\n");
         return;
     }
+*/
 
     // // // read ID0
     // // g_ospi0_trans.command = 0x6565; // 0x9f9f;
@@ -205,21 +207,21 @@ void ospi_hyperram_test(void)
     // }
     // xprintf("ID0/ID1=0x%08x\n", g_ospi0_trans.data);
 
-    // // read CR0
-    // g_ospi0_trans.command = 0x6565; // 0x9f9f;
-    // g_ospi0_trans.command_length = 2;
-    // g_ospi0_trans.address = 0x00000004;
-    // g_ospi0_trans.address_length = 4;
-    // g_ospi0_trans.data_length = 2;
-    // g_ospi0_trans.dummy_cycles = 15;
+    // read CR0
+    g_ospi0_trans.command = 0x6565; // 0x9f9f;
+    g_ospi0_trans.command_length = 2;
+    g_ospi0_trans.address = 0x00000004;
+    g_ospi0_trans.address_length = 4;
+    g_ospi0_trans.data_length = 2;
+    g_ospi0_trans.dummy_cycles = 15;
 
-    // err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
-    // if (FSP_SUCCESS != err)
-    // {
-    //     xprintf("[OSPI] direct transfer error!\n");
-    //     return;
-    // }
-    // xprintf("CR0=0x%04x\n", g_ospi0_trans.data);
+    err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, &g_ospi0_trans, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
+    if (FSP_SUCCESS != err)
+    {
+        xprintf("[OSPI] direct transfer error!\n");
+        return;
+    }
+    xprintf("CR0=0x%04x\n", g_ospi0_trans.data);
 
     // // read memory
     // g_ospi0_trans.command = 0xEEEE;
