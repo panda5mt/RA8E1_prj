@@ -18,9 +18,16 @@
 #define HYPERRAM_BASE_ADDR ((void *)0x90000000U) /* Device on CS1 */
 #define TEST_DATA_LENGTH (64U)                   // テストデータ長
 
-#define OSPI_B_COMMAND_READ_DOPI_MODE 0xEEEE
-#define OSPI_B_COMMAND_PROGRAM_DOPI_MODE 0xDEDE
-#define OSPI_B_COMMAND_WRITE_ENABLE_DOPI_MODE 0x0606
+#define OSPI_B_COMMAND_READ_DOPI_MODE (0xEEEE)
+#define OSPI_B_COMMAND_PROGRAM_DOPI_MODE (0xDEDE)
+#define OSPI_B_COMMAND_WRITE_ENABLE_DOPI_MODE (0x0606)
+
+#define OSPI_B_DOPI_PREAMBLE_PATTERN_LENGTH_BYTES (16U)
+#define OSPI_B_EXAMPLE_PREAMBLE_ADDRESS (HYPERRAM_BASE_ADDR) /* Device connected to CS1 */
+const uint8_t g_preamble_bytes[OSPI_B_DOPI_PREAMBLE_PATTERN_LENGTH_BYTES] =
+    {
+        0x00, 0x00, 0xFF, 0xFF, 0xFF, 0x00, 0x08, 0x00,
+        0x00, 0xF7, 0xFF, 0x00, 0x08, 0xF7, 0x00, 0xF71};
 
 /* Custom command sets. */
 ospi_b_xspi_command_set_t g_command_sets[] =
