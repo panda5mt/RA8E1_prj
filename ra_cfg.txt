@@ -34,7 +34,6 @@ FSP Configuration
     Clocks: Settling Delay (us): 150
     Main Oscillator Wait Time: 8163 cycles
     Cache settings: Data cache: Disabled
-    : Enabled
     
   RA8E1 Device Options
     OFS Registers: OFS0 (Option Function Select Register 0) Settings: Enabled
@@ -64,7 +63,7 @@ FSP Configuration
     OFS Registers: OFS1 (Option Function Select Register 1) Settings: WDT/IWDT Software Debug Control: Disabled (WDT and IWDT continue operating while the CPU is in the debug state)
     OFS Registers: OFS1 (Option Function Select Register 1) Settings: Tightly Coupled Memory (TCM)/Cache ECC: Disable ECC function for TCM and Cache
     OFS Registers: BANKSEL (Bank Select Register) Settings: Disabled
-    OFS Registers: BANKSEL (Bank Select Register) Settings: Bank Swap Switch: Disabled
+    OFS Registers: BANKSEL (Bank Select Register) Settings: Startup Bank Switch: Disabled
     OFS Registers: BANKSEL (Bank Select Register) Settings: Block Swap Select: Disabled
     OFS Registers: BPS (Block Protect Setting Register) Settings: Disabled
     OFS Registers: BPS (Block Protect Setting Register) Settings: BPS0: 
@@ -82,7 +81,7 @@ FSP Configuration
     OFS Registers: OFS1_SEC (Option Function Select Register 1 Secure) Settings: WDT/IWDT Software Debug Control: Disabled (WDT and IWDT continue operating while the CPU is in the debug state)
     OFS Registers: OFS1_SEC (Option Function Select Register 1 Secure) Settings: Tightly Coupled Memory (TCM)/Cache ECC: Disable ECC function for TCM and Cache
     OFS Registers: BANKSEL_SEC (Bank Select Register Secure) Settings: Disabled
-    OFS Registers: BANKSEL_SEC (Bank Select Register Secure) Settings: Bank Swap Switch: Disabled
+    OFS Registers: BANKSEL_SEC (Bank Select Register Secure) Settings: Startup Bank Switch: Disabled
     OFS Registers: BANKSEL_SEC (Bank Select Register Secure) Settings: Block Swap Select: Disabled
     OFS Registers: BPS_SEC (Block Protect Setting Register Secure) Settings: Disabled
     OFS Registers: BPS_SEC (Block Protect Setting Register Secure) Settings: BPS_SEC0: 
@@ -92,18 +91,18 @@ FSP Configuration
     OFS Registers: PBPS_SEC (Permanent Block Protect Setting Register Secure) Settings: PBPS_SEC0: 
     OFS Registers: PBPS_SEC (Permanent Block Protect Setting Register Secure) Settings: PBPS_SEC1: 
     OFS Registers: PBPS_SEC (Permanent Block Protect Setting Register Secure) Settings: PBPS_SEC2: 
-    OFS Registers: OFS1_SEL (OFS1 Register Select) Settings: Enabled
-    OFS Registers: OFS1_SEL (OFS1 Register Select) Settings: Voltage Detection 0 Level Security Attribution: VDSEL setting loads from OFS1_SEC
-    OFS Registers: OFS1_SEL (OFS1 Register Select) Settings: Voltage Detection 0 Circuit Start Security Attribution: PVDAS setting loads from OFS1_SEC
-    OFS Registers: OFS1_SEL (OFS1 Register Select) Settings: Voltage Detection 0 Low Power Consumption Security Attribution: PVDLPSEL setting loads from OFS1_SEC
-    OFS Registers: OFS1_SEL (OFS1 Register Select) Settings: WDT/IWDT Software Debug Control Security Attribution: SWDBG setting loads from OFS1_SEC
-    OFS Registers: OFS1_SEL (OFS1 Register Select) Settings: Tightly Coupled Memory (TCM)/Cache ECC Security Attribution: INITECCEN setting loads from OFS1_SEC
-    OFS Registers: BANKSEL_SEL (Banksel Register Select) Settings: Disabled
-    OFS Registers: BANKSEL_SEL (Banksel Register Select) Settings: Flash Bank Select Accessibility: Both Secure and Non-Secure State
-    OFS Registers: BPS_SEL (BPS Register Select) Settings: Disabled
-    OFS Registers: BPS_SEL (BPS Register Select) Settings: BPS_SEL0: 
-    OFS Registers: BPS_SEL (BPS Register Select) Settings: BPS_SEL1: 
-    OFS Registers: BPS_SEL (BPS Register Select) Settings: BPS_SEL2: 
+    OFS Registers: OFS1_SEL (OFS1 Security Attribution) Settings: Enabled
+    OFS Registers: OFS1_SEL (OFS1 Security Attribution) Settings: Voltage Detection 0 Level Security Attribution: VDSEL setting loads from OFS1_SEC
+    OFS Registers: OFS1_SEL (OFS1 Security Attribution) Settings: Voltage Detection 0 Circuit Start Security Attribution: PVDAS setting loads from OFS1_SEC
+    OFS Registers: OFS1_SEL (OFS1 Security Attribution) Settings: Voltage Detection 0 Low Power Consumption Security Attribution: PVDLPSEL setting loads from OFS1_SEC
+    OFS Registers: OFS1_SEL (OFS1 Security Attribution) Settings: WDT/IWDT Software Debug Control Security Attribution: SWDBG setting loads from OFS1_SEC
+    OFS Registers: OFS1_SEL (OFS1 Security Attribution) Settings: Tightly Coupled Memory (TCM)/Cache ECC Security Attribution: INITECCEN setting loads from OFS1_SEC
+    OFS Registers: BANKSEL_SEL (Banksel Security Attribution) Settings: Disabled
+    OFS Registers: BANKSEL_SEL (Banksel Security Attribution) Settings: Flash Bank Select Accessibility: Non-Secure State
+    OFS Registers: BPS_SEL (BPS Security Attribution) Settings: Disabled
+    OFS Registers: BPS_SEL (BPS Security Attribution) Settings: BPS_SEL0: 
+    OFS Registers: BPS_SEL (BPS Security Attribution) Settings: BPS_SEL1: 
+    OFS Registers: BPS_SEL (BPS Security Attribution) Settings: BPS_SEL2: 
     
   RA8E1 event data
   RA Common
@@ -139,7 +138,7 @@ FSP Configuration
     PLL2Q Div /4
     PLL2R Div /4
     Clock Src: PLL1P
-    CLKOUT Src: MOCO
+    CLKOUT Src: SUBCLK
     SCICLK Src: HOCO
     SPICLK Disabled
     CANFDCLK Disabled
@@ -459,6 +458,7 @@ FSP Configuration
     
   Module "I/O Port (r_ioport)"
     Parameter Checking: Default (BSP)
+    CCD Support: Not Supported
     
   Module "FreeRTOS Port (rm_freertos_port)"
   Module "Arm CMSIS DSP Library Source"
@@ -993,6 +993,8 @@ FSP Configuration
       Input: Capture B Source: 
       Input: Noise Filter A Sampling Clock Select: No Filter
       Input: Noise Filter B Sampling Clock Select: No Filter
+      Pin Polarity: GTIOCnA Polarity: Normal
+      Pin Polarity: GTIOCnB Polarity: Normal
       Interrupts: Callback: NULL
       Interrupts: Overflow/Crest Interrupt Priority: Disabled
       Interrupts: Capture/Compare match A Interrupt Priority: Disabled
@@ -1045,6 +1047,8 @@ FSP Configuration
       Input: Capture B Source: 
       Input: Noise Filter A Sampling Clock Select: No Filter
       Input: Noise Filter B Sampling Clock Select: No Filter
+      Pin Polarity: GTIOCnA Polarity: Normal
+      Pin Polarity: GTIOCnB Polarity: Normal
       Interrupts: Callback: NULL
       Interrupts: Overflow/Crest Interrupt Priority: Disabled
       Interrupts: Capture/Compare match A Interrupt Priority: Disabled

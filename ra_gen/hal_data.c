@@ -210,6 +210,9 @@ const gpt_extended_cfg_t g_timer3_extend =
 #else
     .gtior_setting.gtior = 0U,
 #endif
+
+    .gtioca_polarity = GPT_GTIOC_POLARITY_NORMAL,
+    .gtiocb_polarity = GPT_GTIOC_POLARITY_NORMAL,
 };
 
 const timer_cfg_t g_timer3_cfg =
@@ -316,6 +319,9 @@ const gpt_extended_cfg_t g_timer2_extend =
 #else
     .gtior_setting.gtior = 0U,
 #endif
+
+    .gtioca_polarity = GPT_GTIOC_POLARITY_NORMAL,
+    .gtiocb_polarity = GPT_GTIOC_POLARITY_NORMAL,
 };
 
 const timer_cfg_t g_timer2_cfg =
