@@ -87,7 +87,7 @@ void ospi_hyperram_test(void)
 {
     fsp_err_t err = FSP_SUCCESS;
 
-    // VCC2 = 1.8VなのでLVOCR.LVO1E=1にする
+    // 0. VCCによるHW設定 VCC2 = 1.8VなのでLVOCR.LVO1E=1にする
     uint32_t *lvocr_ptr = (uint32_t *)0x4001E000;
     xprintf("[SYSTEM] LVOCR = 0x%02x\n", *lvocr_ptr);
     *lvocr_ptr = 0x0001;
@@ -121,7 +121,7 @@ void ospi_hyperram_test(void)
     err = ospi_raw_trans(&g_ospi0_trans,
                          OSPI_B_COMMAND_WRITE, 2,
                          0x00000080, 4,
-                         0xDEADDEAD, 4,
+                         0xDEADBEEF, 4,
                          15, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
     if (FSP_SUCCESS != err)
     {
@@ -131,7 +131,7 @@ void ospi_hyperram_test(void)
 
     // read ID0/ID1
     err = ospi_raw_trans(&g_ospi0_trans,
-                         0x9f9f, 2,
+                         OSPI_B_COMMAND_READ_ID, 2,
                          0x00000000, 4,
                          0, 4,
                          15, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
@@ -209,7 +209,7 @@ void ospi_hyperram_test(void)
                    (uint8_t *const)&read_data[0],
                    TEST_DATA_LENGTH);
 
-    // 6. 検証（任意）
+    // 6. 検証
     for (uint32_t i = 0; i < TEST_DATA_LENGTH; i++)
     {
         if (read_data[i] != write_data[i])
