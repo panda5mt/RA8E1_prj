@@ -56,6 +56,8 @@ ospi_b_xspi_command_set_t g_command_sets[] =
             .write_enable_command = OSPI_B_COMMAND_WRITE_ENABLE,
             .status_command = NULL,
 
+            .address_msb_mask = 0x03,
+
             .read_dummy_cycles = 16U,
             .program_dummy_cycles = 16U,
 

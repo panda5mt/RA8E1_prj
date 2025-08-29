@@ -1083,7 +1083,7 @@ FSP Configuration
       Command Sets: Initial Mode: Frame Format: xSPI Profile 2.0
       Command Sets: Initial Mode: Latency Mode: Fixed
       Command Sets: Initial Mode: Address Length: 4 bytes
-      Command Sets: Initial Mode: Address MSB Mask: 0
+      Command Sets: Initial Mode: Address MSB Mask: 0x01
       Command Sets: Initial Mode: Command Code Length: 2 bytes
       Command Sets: Initial Mode: Status Register Address Length: 4 bytes
       Command Sets: Initial Mode: Status Register Address: 0x00
