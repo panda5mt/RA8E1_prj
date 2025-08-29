@@ -77,7 +77,7 @@ fsp_err_t ospi_raw_trans(spi_flash_direct_transfer_t *p_trans,
     p_trans->address_length = addr_len;
     p_trans->data_length = data_len;
     p_trans->data = data;
-    p_trans->dummy_cycles = dummy_cycle;
+    p_trans->dummy_cycles = dummy_cycle; // The configurable latency cycle should be set as minus 1 when Profile 2.0
 
     err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, p_trans, dir);
     return err;
