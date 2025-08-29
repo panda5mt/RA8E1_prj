@@ -1074,7 +1074,7 @@ FSP Configuration
       General: Chip Select: CS1
       General: Write Status Bit: b7
       General: Write Enable Bit: b7
-      General: DS Auto-calibration Pattern Address: 0
+      General: DS Auto-calibration Pattern Address: 0x90000000
       Command Sets: Custom Table: Table Pointer: g_command_sets
       Command Sets: Custom Table: Table Length: 1
       Command Sets: Erase Sizes: Sector Erase: 0

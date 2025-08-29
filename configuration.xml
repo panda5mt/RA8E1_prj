@@ -577,7 +577,7 @@
       <property id="module.driver.ospi_b.channel" value="module.driver.ospi_b.channel.1"/>
       <property id="module.driver.ospi_b.write_status_bit" value="module.driver.ospi_b.bit_index.7"/>
       <property id="module.driver.ospi_b.write_enable_bit" value="module.driver.ospi_b.bit_index.7"/>
-      <property id="module.driver.ospi_b.auto_callibration_address" value="0"/>
+      <property id="module.driver.ospi_b.auto_callibration_address" value="0x90000000"/>
       <property id="module.driver.ospi_b.command_set_table" value="g_command_sets"/>
       <property id="module.driver.ospi_b.command_set_table_length" value="1"/>
       <property id="module.driver.ospi_b.sector_erase_size" value="0"/>
