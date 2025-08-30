@@ -184,7 +184,7 @@ FSP Configuration
       P104 102 OSPI_OM_CS1 JLINK_VCOM_CTS H None "Peripheral mode" - - "GPT1: GTIOC1B; GPT_POEGB: GTETRGB; IRQ1: IRQ1; OSPI: OM_CS1; SCI9: CTS9; SPI1: SSLB1" - O - - 
       P105 101 GPIO Ardiuno_RST - None "Input mode" - - "GPT1: GTIOC1A; IRQ0: IRQ0; OSPI: OM_ECSINT1; SPI1: SSLB2; ULPT1: ULPTO1_A-DS" - IO - - 
       P106 100 OSPI_OM_RESET PMOD2_RST L - "Peripheral mode" - - "AGT0: AGTOB0; OSPI: OM_RESET; SPI1: SSLB3; ULPT1: ULPTEE1_A-DS" - IO - - 
-      P107 99 OSPI_OM_CS0 PMOD2_P9 H - "Peripheral mode" - - "AGT0: AGTOA0; OSPI: OM_CS0" - O - - 
+      P107 99 - PMOD2_P9 - - Disabled - - "AGT0: AGTOA0; OSPI: OM_CS0" - None - - 
       P112 73 ETHER_RMII_RMII0_CRS_DV Ardiuno_D9 H - "Peripheral mode" - - "ETHER_MII: ET0_CRS; ETHER_RMII: RMII0_CRS_DV; GPT3: GTIOC3B; SCI0: TXD0; SPI0: SSLA2; SSIE: SSIBLK0; ULPT0: ULPTOB0_A-DS" - IO - - 
       P113 74 GPT2_GTIOC2A Ardiuno_D6 L - "Peripheral mode" - - "ETHER_MII: ET0_EXOUT; ETHER_RMII: ET0_EXOUT; GPT2: GTIOC2A; SCI0: RXD0; SPI0: SSLA1; SSIE: SSIFS0; SSIE: SSILRCK0; ULPT0: ULPTOA0_A-DS" - IO - - 
       P114 75 ETHER_RMII_ET0_LINKSTA Ardiuno_D5 H - "Peripheral mode" - - "ETHER_MII: ET0_LINKSTA; ETHER_RMII: ET0_LINKSTA; GPT2: GTIOC2B; SCI0: CTS_RTS0; SCI0: DE0; SPI0: SSLA0; SSIE0: SSIRXD0" - IO - - 
@@ -329,7 +329,7 @@ FSP Configuration
       P104 102 OSPI_OM_CS1 JLINK_VCOM_CTS H None "Peripheral mode" - - "GPT1: GTIOC1B; GPT_POEGB: GTETRGB; IRQ1: IRQ1; OSPI: OM_CS1; SCI9: CTS9; SPI1: SSLB1" - O - - 
       P105 101 - Ardiuno_RST - None Disabled - - "GPT1: GTIOC1A; IRQ0: IRQ0; OSPI: OM_ECSINT1; SPI1: SSLB2; ULPT1: ULPTO1_A-DS" - IO - - 
       P106 100 OSPI_OM_RESET PMOD2_RST H - "Peripheral mode" - - "AGT0: AGTOB0; OSPI: OM_RESET; SPI1: SSLB3; ULPT1: ULPTEE1_A-DS" - IO - - 
-      P107 99 - PMOD2_P9 L - Disabled - - "AGT0: AGTOA0; OSPI: OM_CS0" - O - - 
+      P107 99 - PMOD2_P9 - - Disabled - - "AGT0: AGTOA0; OSPI: OM_CS0" - None - - 
       P112 73 ETHER_RMII_RMII0_CRS_DV Ardiuno_D9 H - "Peripheral mode" - - "ETHER_MII: ET0_CRS; ETHER_RMII: RMII0_CRS_DV; GPT3: GTIOC3B; SCI0: TXD0; SPI0: SSLA2; SSIE: SSIBLK0; ULPT0: ULPTOB0_A-DS" - IO - - 
       P113 74 - Ardiuno_D6 L - Disabled - - "ETHER_MII: ET0_EXOUT; ETHER_RMII: ET0_EXOUT; GPT2: GTIOC2A; SCI0: RXD0; SPI0: SSLA1; SSIE: SSIFS0; SSIE: SSILRCK0; ULPT0: ULPTOA0_A-DS" - IO - - 
       P114 75 - Ardiuno_D5 L - Disabled - - "ETHER_MII: ET0_LINKSTA; ETHER_RMII: ET0_LINKSTA; GPT2: GTIOC2B; SCI0: CTS_RTS0; SCI0: DE0; SPI0: SSLA0; SSIE0: SSIRXD0" - IO - - 
@@ -1072,62 +1072,62 @@ FSP Configuration
       General: Name: g_ospi0
       General: Unit: OSPI_B0
       General: Chip Select: CS1
-      General: Write Status Bit: b7
-      General: Write Enable Bit: b7
-      General: DS Auto-calibration Pattern Address: 0x90000000
+      General: Write Status Bit: b0
+      General: Write Enable Bit: b1
+      General: DS Auto-calibration Pattern Address: 0
       Command Sets: Custom Table: Table Pointer: g_command_sets
       Command Sets: Custom Table: Table Length: 1
-      Command Sets: Erase Sizes: Sector Erase: 0
-      Command Sets: Erase Sizes: Block Erase: 0
+      Command Sets: Erase Sizes: Sector Erase: 4096
+      Command Sets: Erase Sizes: Block Erase: 262144
       Command Sets: Initial Mode: Protocol Mode: Dual data rate OPI (8D-8D-8D)
-      Command Sets: Initial Mode: Frame Format: xSPI Profile 2.0
+      Command Sets: Initial Mode: Frame Format: Standard
       Command Sets: Initial Mode: Latency Mode: Fixed
-      Command Sets: Initial Mode: Address Length: 4 bytes
-      Command Sets: Initial Mode: Address MSB Mask: 0x01
-      Command Sets: Initial Mode: Command Code Length: 2 bytes
-      Command Sets: Initial Mode: Status Register Address Length: 4 bytes
+      Command Sets: Initial Mode: Address Length: 3 bytes
+      Command Sets: Initial Mode: Address MSB Mask: 0xF0
+      Command Sets: Initial Mode: Command Code Length: 1 byte
+      Command Sets: Initial Mode: Status Register Address Length: No address
       Command Sets: Initial Mode: Status Register Address: 0x00
-      Command Sets: Initial Mode: Read: Command Code: 0xEEEE
-      Command Sets: Initial Mode: Read: Dummy Cycles: 15
-      Command Sets: Initial Mode: Program: Command Code: 0xDEDE
-      Command Sets: Initial Mode: Program: Dummy Cycles: 15
+      Command Sets: Initial Mode: Read: Command Code: 0x13
+      Command Sets: Initial Mode: Read: Dummy Cycles: 0
+      Command Sets: Initial Mode: Program: Command Code: 0x12
+      Command Sets: Initial Mode: Program: Dummy Cycles: 0
       Command Sets: Initial Mode: Row Load: Command Code: 0x00
       Command Sets: Initial Mode: Row Load: Dummy Cycles: 0
       Command Sets: Initial Mode: Row Store: Command Code: 0x00
       Command Sets: Initial Mode: Row Store: Dummy Cycles: 0
-      Command Sets: Initial Mode: Write Enable: Command Code: 0x0606
-      Command Sets: Initial Mode: Status Read: Command Code: 0
+      Command Sets: Initial Mode: Write Enable: Command Code: 0x06
+      Command Sets: Initial Mode: Status Read: Command Code: 0x05
       Command Sets: Initial Mode: Status Read: Dummy Cycles: 0
-      Command Sets: Initial Mode: Sector Erase: Command Code: 0
-      Command Sets: Initial Mode: Block Erase: Command Code: 0
-      Command Sets: Initial Mode: Chip Erase: Command Code: 0
+      Command Sets: Initial Mode: Sector Erase: Command Code: 0x21
+      Command Sets: Initial Mode: Block Erase: Command Code: 0xDC
+      Command Sets: Initial Mode: Chip Erase: Command Code: 0x60
       Command Sets: High-speed Mode: Protocol Mode: Dual data rate OPI (8D-8D-8D)
-      Command Sets: High-speed Mode: Frame Format: xSPI Profile 2.0
+      Command Sets: High-speed Mode: Frame Format: xSPI Profile 1.0
       Command Sets: High-speed Mode: Latency Mode: Fixed
       Command Sets: High-speed Mode: Address Length: 4 bytes
-      Command Sets: High-speed Mode: Address MSB Mask: 0
+      Command Sets: High-speed Mode: Address MSB Mask: 0xF0
       Command Sets: High-speed Mode: Command Code Length: 2 bytes
       Command Sets: High-speed Mode: Status Register Address Length: 4 bytes
       Command Sets: High-speed Mode: Status Register Address: 0x00
       Command Sets: High-speed Mode: Read: Command Code: 0xEEEE
-      Command Sets: High-speed Mode: Read: Dummy Cycles: 15
-      Command Sets: High-speed Mode: Program: Command Code: 0xDEDE
-      Command Sets: High-speed Mode: Program: Dummy Cycles: 15
+      Command Sets: High-speed Mode: Read: Dummy Cycles: 20
+      Command Sets: High-speed Mode: Program: Command Code: 0x1212
+      Command Sets: High-speed Mode: Program: Dummy Cycles: 0
       Command Sets: High-speed Mode: Row Load: Command Code: 0x00
       Command Sets: High-speed Mode: Row Load: Dummy Cycles: 0
       Command Sets: High-speed Mode: Row Store: Command Code: 0x00
       Command Sets: High-speed Mode: Row Store: Dummy Cycles: 0
       Command Sets: High-speed Mode: Write Enable: Command Code: 0x0606
-      Command Sets: High-speed Mode: Status Read: Command Code: 0
-      Command Sets: High-speed Mode: Status Read: Dummy Cycles: 0
-      Command Sets: High-speed Mode: Sector Erase: Command Code: 0
-      Command Sets: High-speed Mode: Block Erase: Command Code: 0
-      Command Sets: High-speed Mode: Chip Erase: Command Code: 0
-      Timing Settings: Chip Select: Command Interval: 1 cycle
+      Command Sets: High-speed Mode: Status Read: Command Code: 0x0505
+      Command Sets: High-speed Mode: Status Read: Dummy Cycles: 3
+      Command Sets: High-speed Mode: Sector Erase: Command Code: 0x2121
+      Command Sets: High-speed Mode: Block Erase: Command Code: 0xDCDC
+      Command Sets: High-speed Mode: Chip Erase: Command Code: 0x6060
+      Timing Settings: Chip Select: Command Interval: 2 cycles
       Timing Settings: Chip Select: Pull-up Timing: No Extension
-      Timing Settings: Chip Select: Pull-down Timing: No Extension
+      Timing Settings: Chip Select: Pull-down Timing: 1 Cycle
       Timing Settings: DS Latching Delay: Auto-calibrate
-      Timing Settings: SDR: Drive Timing: Drive at CK
+      Timing Settings: SDR: Drive Timing: Drive 1/2 cycle before CK
       Timing Settings: SDR: CK Sampling Edge: Falling edge
       Timing Settings: SDR: Sampling Delay: None
       Timing Settings: DDR: Sampling Window Extension: 1 cycle

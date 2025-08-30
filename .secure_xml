@@ -114,7 +114,6 @@
       <configSetting altId="jtag_fslash_swd.tdi.p208" configurationId="jtag_fslash_swd.tdi" peripheral="JTAG/SWD"/>
       <configSetting altId="jtag_fslash_swd.tdo.p209" configurationId="jtag_fslash_swd.tdo" peripheral="JTAG/SWD"/>
       <configSetting altId="jtag_fslash_swd.tms.p210" configurationId="jtag_fslash_swd.tms" peripheral="JTAG/SWD"/>
-      <configSetting altId="ospi.om_cs0.p107" configurationId="ospi.om_cs0" isUsedByDriver="true" peripheral="OSPI"/>
       <configSetting altId="ospi.om_cs1.p104" configurationId="ospi.om_cs1" isUsedByDriver="true" peripheral="OSPI"/>
       <configSetting altId="ospi.om_dqs.p801" configurationId="ospi.om_dqs" isUsedByDriver="true" peripheral="OSPI"/>
       <configSetting altId="ospi.om_reset.p106" configurationId="ospi.om_reset" isUsedByDriver="true" peripheral="OSPI"/>

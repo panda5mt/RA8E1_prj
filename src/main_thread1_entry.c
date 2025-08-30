@@ -52,12 +52,9 @@ ospi_b_xspi_command_set_t g_command_sets[] =
             .address_bytes = 4U,
             .read_command = OSPI_B_COMMAND_READ,
             .program_command = OSPI_B_COMMAND_WRITE,
-
             .write_enable_command = OSPI_B_COMMAND_WRITE_ENABLE,
             .status_command = NULL,
-
-            .address_msb_mask = 0x03,
-
+            .address_msb_mask = 0x01,
             .read_dummy_cycles = 16U,
             .program_dummy_cycles = 16U,
 

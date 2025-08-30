@@ -571,66 +571,66 @@
       <property id="module.driver.ether_phy_lsi.phy_lsi_address" value="0"/>
       <property id="module.driver.ether_phy_lsi.phy_lsi_type" value="module.driver.ether_phy_lsi.phy_lsi_type.custom"/>
     </module>
-    <module id="module.driver.ospi_on_ospi_b.1029231815">
+    <module id="module.driver.ospi_on_ospi_b.939546831">
       <property id="module.driver.ospi_b.name" value="g_ospi0"/>
       <property id="module.driver.ospi_b.unit" value="module.driver.ospi_b.unit.0"/>
       <property id="module.driver.ospi_b.channel" value="module.driver.ospi_b.channel.1"/>
-      <property id="module.driver.ospi_b.write_status_bit" value="module.driver.ospi_b.bit_index.7"/>
-      <property id="module.driver.ospi_b.write_enable_bit" value="module.driver.ospi_b.bit_index.7"/>
-      <property id="module.driver.ospi_b.auto_callibration_address" value="0x90000000"/>
+      <property id="module.driver.ospi_b.write_status_bit" value="module.driver.ospi_b.bit_index.0"/>
+      <property id="module.driver.ospi_b.write_enable_bit" value="module.driver.ospi_b.bit_index.1"/>
+      <property id="module.driver.ospi_b.auto_callibration_address" value="0"/>
       <property id="module.driver.ospi_b.command_set_table" value="g_command_sets"/>
       <property id="module.driver.ospi_b.command_set_table_length" value="1"/>
-      <property id="module.driver.ospi_b.sector_erase_size" value="0"/>
-      <property id="module.driver.ospi_b.block_erase_size" value="0"/>
+      <property id="module.driver.ospi_b.sector_erase_size" value="4096"/>
+      <property id="module.driver.ospi_b.block_erase_size" value="262144"/>
       <property id="module.driver.ospi_b.spi_protocol" value="module.driver.ospi_b.protocol_mode.protocol_8D_8D_8D"/>
-      <property id="module.driver.ospi_b.cmd_set.initial.frame_format" value="module.driver.ospi_b.frame_format.xspi_profile2"/>
+      <property id="module.driver.ospi_b.cmd_set.initial.frame_format" value="module.driver.ospi_b.frame_format.standard"/>
       <property id="module.driver.ospi_b.cmd_set.initial.latency_mode" value="module.driver.ospi_b.latency_mode.fixed"/>
-      <property id="module.driver.ospi_b.address_bytes" value="module.driver.ospi_b.address_bytes.address_bytes_4"/>
-      <property id="module.driver.ospi_b.cmd_set.initial.address_msb_mask" value="0x01"/>
-      <property id="module.driver.ospi_b.command_bytes" value="module.driver.ospi_b.command_bytes.2"/>
-      <property id="module.driver.ospi_b.cmd_set.initial.status_address_bytes" value="module.driver.ospi_b.address_bytes.address_bytes_4"/>
+      <property id="module.driver.ospi_b.address_bytes" value="module.driver.ospi_b.address_bytes.address_bytes_3"/>
+      <property id="module.driver.ospi_b.cmd_set.initial.address_msb_mask" value="0xF0"/>
+      <property id="module.driver.ospi_b.command_bytes" value="module.driver.ospi_b.command_bytes.1"/>
+      <property id="module.driver.ospi_b.cmd_set.initial.status_address_bytes" value="module.driver.ospi_b.address_bytes.none"/>
       <property id="module.driver.ospi_b.cmd_set.initial.status_address" value="0x00"/>
-      <property id="module.driver.ospi_b.spi_read_command" value="0xEEEE"/>
-      <property id="module.driver.ospi_b.default_mem_read_dummy_cycles" value="15"/>
-      <property id="module.driver.ospi_b.spi_page_program_command" value="0xDEDE"/>
-      <property id="module.driver.ospi_b.cmd_set.initial.program.dummy_cycles" value="15"/>
+      <property id="module.driver.ospi_b.spi_read_command" value="0x13"/>
+      <property id="module.driver.ospi_b.default_mem_read_dummy_cycles" value="0"/>
+      <property id="module.driver.ospi_b.spi_page_program_command" value="0x12"/>
+      <property id="module.driver.ospi_b.cmd_set.initial.program.dummy_cycles" value="0"/>
       <property id="module.driver.ospi_b.cmd_set.initial.row_load.command" value="0x00"/>
       <property id="module.driver.ospi_b.cmd_set.initial.row_load.dummy_cycles" value="0"/>
       <property id="module.driver.ospi_b.cmd_set.initial.row_store.command" value="0x00"/>
       <property id="module.driver.ospi_b.cmd_set.initial.row_store.dummy_cycles" value="0"/>
-      <property id="module.driver.ospi_b.spi_write_enable_command" value="0x0606"/>
-      <property id="module.driver.ospi_b.spi_status_command" value="0"/>
+      <property id="module.driver.ospi_b.spi_write_enable_command" value="0x06"/>
+      <property id="module.driver.ospi_b.spi_status_command" value="0x05"/>
       <property id="module.driver.ospi_b.default_status_read_dummy_cycles" value="0"/>
-      <property id="module.driver.ospi_b.sector_erase_command" value="0"/>
-      <property id="module.driver.ospi_b.block_erase_command" value="0"/>
-      <property id="module.driver.ospi_b.chip_erase_command" value="0"/>
+      <property id="module.driver.ospi_b.sector_erase_command" value="0x21"/>
+      <property id="module.driver.ospi_b.block_erase_command" value="0xDC"/>
+      <property id="module.driver.ospi_b.chip_erase_command" value="0x60"/>
       <property id="module.driver.ospi_b.high_speed_protocol" value="module.driver.ospi_b.protocol_mode.protocol_8D_8D_8D"/>
-      <property id="module.driver.ospi_b.cmd_set.high_speed.frame_format" value="module.driver.ospi_b.frame_format.xspi_profile2"/>
+      <property id="module.driver.ospi_b.cmd_set.high_speed.frame_format" value="module.driver.ospi_b.frame_format.xspi_profile1"/>
       <property id="module.driver.ospi_b.cmd_set.high_speed.latency_mode" value="module.driver.ospi_b.latency_mode.fixed"/>
       <property id="module.driver.ospi_b.cmd_set.high_speed.address_bytes" value="module.driver.ospi_b.address_bytes.address_bytes_4"/>
-      <property id="module.driver.ospi_b.cmd_set.high_speed.address_msb_mask" value="0"/>
+      <property id="module.driver.ospi_b.cmd_set.high_speed.address_msb_mask" value="0xF0"/>
       <property id="module.driver.ospi_b.high_speed_command_length" value="module.driver.ospi_b.command_bytes.2"/>
       <property id="module.driver.ospi_b.cmd_set.high_speed.status_address_bytes" value="module.driver.ospi_b.address_bytes.address_bytes_4"/>
       <property id="module.driver.ospi_b.cmd_set.high_speed.status_address" value="0x00"/>
       <property id="module.driver.ospi_b.high_speed_read_command" value="0xEEEE"/>
-      <property id="module.driver.ospi_b.mem_read_dummy_cycles" value="15"/>
-      <property id="module.driver.ospi_b.high_speed_page_program_command" value="0xDEDE"/>
-      <property id="module.driver.ospi_b.cmd_set.high_speed.program.dummy_cycles" value="15"/>
+      <property id="module.driver.ospi_b.mem_read_dummy_cycles" value="20"/>
+      <property id="module.driver.ospi_b.high_speed_page_program_command" value="0x1212"/>
+      <property id="module.driver.ospi_b.cmd_set.high_speed.program.dummy_cycles" value="0"/>
       <property id="module.driver.ospi_b.cmd_set.high_speed.row_load.command" value="0x00"/>
       <property id="module.driver.ospi_b.cmd_set.high_speed.row_load.dummy_cycles" value="0"/>
       <property id="module.driver.ospi_b.cmd_set.high_speed.row_store.command" value="0x00"/>
       <property id="module.driver.ospi_b.cmd_set.high_speed.row_store.dummy_cycles" value="0"/>
       <property id="module.driver.ospi_b.high_speed_write_enable_command" value="0x0606"/>
-      <property id="module.driver.ospi_b.high_speed_status_command" value="0"/>
-      <property id="module.driver.ospi_b.status_read_dummy_cycles" value="0"/>
-      <property id="module.driver.ospi_b.high_speed_sector_erase_command" value="0"/>
-      <property id="module.driver.ospi_b.high_speed_block_erase_command" value="0"/>
-      <property id="module.driver.ospi_b.high_speed_chip_erase_command" value="0"/>
-      <property id="module.driver.ospi_b.command_interval_clocks" value="module.driver.ospi_b.command_interval_clocks.clocks_1"/>
+      <property id="module.driver.ospi_b.high_speed_status_command" value="0x0505"/>
+      <property id="module.driver.ospi_b.status_read_dummy_cycles" value="3"/>
+      <property id="module.driver.ospi_b.high_speed_sector_erase_command" value="0x2121"/>
+      <property id="module.driver.ospi_b.high_speed_block_erase_command" value="0xDCDC"/>
+      <property id="module.driver.ospi_b.high_speed_chip_erase_command" value="0x6060"/>
+      <property id="module.driver.ospi_b.command_interval_clocks" value="module.driver.ospi_b.command_interval_clocks.clocks_2"/>
       <property id="module.driver.ospi_b.pull_up_timing" value="module.driver.ospi_b.pull_up_timing.clocks_5"/>
-      <property id="module.driver.ospi_b.pull_down_timing" value="module.driver.ospi_b.pull_down_timing.clocks_3"/>
+      <property id="module.driver.ospi_b.pull_down_timing" value="module.driver.ospi_b.pull_down_timing.clocks_4"/>
       <property id="module.driver.ospi_b.data_latch_delay_setting" value="module.driver.ospi_b.ds_timing.delay.none"/>
-      <property id="module.driver.ospi_b.sdr_timing.drive_timing" value="module.driver.ospi_b.sdr_timing.drive_timing.at_ck_rising"/>
+      <property id="module.driver.ospi_b.sdr_timing.drive_timing" value="module.driver.ospi_b.sdr_timing.drive_timing.before_ck_rising"/>
       <property id="module.driver.ospi_b.sdr_timing.ck_sampling_edge" value="module.driver.ospi_b.sdr_timing.ck_sampling_edge.falling"/>
       <property id="module.driver.ospi_b.sdr_timing.sampling_delay" value="module.driver.ospi_b.sdr_timing.sampling_delay.none"/>
       <property id="module.driver.ospi_b.ddr_timing.sampling_extension" value="module.driver.ospi_b.ddr_timing.sampling_extension.1"/>
@@ -645,7 +645,7 @@
       <property id="module.driver.ospi_b.dotf.end_address" value="0x90001FFF"/>
       <property id="module.driver.ospi_b.row_addressing.row_index_bytes" value="module.driver.ospi_b.address_bytes.none"/>
     </module>
-    <module id="module.driver.transfer_on_dmac.477303345">
+    <module id="module.driver.transfer_on_dmac.943202560">
       <property id="module.driver.transfer.name" value="g_transfer0"/>
       <property id="module.driver.transfer.channel" value="0"/>
       <property id="module.driver.transfer.mode" value="module.driver.transfer.mode.mode_normal"/>
@@ -688,8 +688,8 @@
       <stack module="module.driver.i2c_on_iic_master.994544474"/>
       <stack module="module.driver.timer_on_gpt.1622483141"/>
       <stack module="module.driver.timer_on_gpt.2107044541"/>
-      <stack module="module.driver.ospi_on_ospi_b.1029231815">
-        <stack module="module.driver.transfer_on_dmac.477303345" requires="module.driver.ospi_on_ospi_b.requires.transfer"/>
+      <stack module="module.driver.ospi_on_ospi_b.939546831">
+        <stack module="module.driver.transfer_on_dmac.943202560" requires="module.driver.ospi_on_ospi_b.requires.transfer"/>
       </stack>
     </context>
     <context id="rtos.awsfreertos.thread.415524792">
@@ -1297,8 +1297,7 @@
       <configSetting altId="jtag_fslash_swd.tdi.p208" configurationId="jtag_fslash_swd.tdi"/>
       <configSetting altId="jtag_fslash_swd.tdo.p209" configurationId="jtag_fslash_swd.tdo"/>
       <configSetting altId="jtag_fslash_swd.tms.p210" configurationId="jtag_fslash_swd.tms"/>
-      <configSetting altId="ospi.mode.octaram.free" configurationId="ospi.mode"/>
-      <configSetting altId="ospi.om_cs0.p107" configurationId="ospi.om_cs0"/>
+      <configSetting altId="ospi.mode.custom.free" configurationId="ospi.mode"/>
       <configSetting altId="ospi.om_cs1.p104" configurationId="ospi.om_cs1"/>
       <configSetting altId="ospi.om_dqs.p801" configurationId="ospi.om_dqs"/>
       <configSetting altId="ospi.om_reset.p106" configurationId="ospi.om_reset"/>
@@ -1352,9 +1351,6 @@
       <configSetting altId="p105.gpio_mode.gpio_mode_in" configurationId="p105.gpio_mode"/>
       <configSetting altId="p106.ospi.om_reset" configurationId="p106"/>
       <configSetting altId="p106.gpio_mode.gpio_mode_peripheral" configurationId="p106.gpio_mode"/>
-      <configSetting altId="p107.ospi.om_cs0" configurationId="p107"/>
-      <configSetting altId="p107.gpio_speed.gpio_speed_h" configurationId="p107.gpio_drivecapacity"/>
-      <configSetting altId="p107.gpio_mode.gpio_mode_peripheral" configurationId="p107.gpio_mode"/>
       <configSetting altId="p112.ether_rmii.rmii0_crs_dv" configurationId="p112"/>
       <configSetting altId="p112.gpio_speed.gpio_speed_h" configurationId="p112.gpio_drivecapacity"/>
       <configSetting altId="p112.gpio_mode.gpio_mode_peripheral" configurationId="p112.gpio_mode"/>
@@ -1470,6 +1466,7 @@
       <configSetting altId="p801.ospi.om_dqs" configurationId="p801"/>
       <configSetting altId="p801.gpio_speed.gpio_speed_hh" configurationId="p801.gpio_drivecapacity"/>
       <configSetting altId="p801.gpio_mode.gpio_mode_peripheral" configurationId="p801.gpio_mode"/>
+      <configSetting altId="p801.gpio_pupd.gpio_pupd_ip_up" configurationId="p801.gpio_pupd"/>
       <configSetting altId="p802.ospi.om_sio6" configurationId="p802"/>
       <configSetting altId="p802.gpio_speed.gpio_speed_hh" configurationId="p802.gpio_drivecapacity"/>
       <configSetting altId="p802.gpio_mode.gpio_mode_peripheral" configurationId="p802.gpio_mode"/>
@@ -1520,7 +1517,6 @@
       <lockSetting id="ether_rmii.rmii0_txd_en" lock="true"/>
       <lockSetting id="iic1.scl1" lock="true"/>
       <lockSetting id="iic1.sda1" lock="true"/>
-      <lockSetting id="ospi.om_cs0" lock="true"/>
       <lockSetting id="ospi.om_cs1" lock="true"/>
       <lockSetting id="ospi.om_dqs" lock="true"/>
       <lockSetting id="ospi.om_reset" lock="true"/>
