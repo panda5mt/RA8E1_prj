@@ -882,9 +882,9 @@
       <property id="config.middleware.lwip_tcpip.lwip_pbuf_ref_t" value="config.middleware.lwip_tcpip.lwip_pbuf_ref_t.u8_t"/>
       <property id="config.middleware.lwip_tcpip.lwip_pbuf_custom_data" value=""/>
       <property id="config.middleware.lwip_tcpip.lwip_pbuf_custom_data_init" value="config.middleware.lwip_tcpip.lwip_pbuf_custom_data_init.disabled"/>
-      <property id="config.middleware.lwip_tcpip.lwip_single_netif" value="config.middleware.lwip_tcpip.lwip_single_netif.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_single_netif" value="config.middleware.lwip_tcpip.lwip_single_netif.enabled"/>
       <property id="config.middleware.lwip_tcpip.lwip_netif_hostname" value="config.middleware.lwip_tcpip.lwip_netif_hostname.disabled"/>
-      <property id="config.middleware.lwip_tcpip.lwip_netif_api" value="config.middleware.lwip_tcpip.lwip_netif_api.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_netif_api" value="config.middleware.lwip_tcpip.lwip_netif_api.enabled"/>
       <property id="config.middleware.lwip_tcpip.lwip_netif_status_callback" value="config.middleware.lwip_tcpip.lwip_netif_status_callback.disabled"/>
       <property id="config.middleware.lwip_tcpip.lwip_netif_ext_status_callback" value="config.middleware.lwip_tcpip.lwip_netif_ext_status_callback.disabled"/>
       <property id="config.middleware.lwip_tcpip.lwip_netif_link_callback" value="config.middleware.lwip_tcpip.lwip_netif_link_callback.disabled"/>

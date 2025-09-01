@@ -8,6 +8,7 @@
 #include "lwip/udp.h"
 #include "lwip/dhcp.h"
 #include "lwip/autoip.h"
+
 #include "r_ospi_b.h"
 #include "r_spi_flash_api.h"
 #include "ra/fsp/src/bsp/mcu/all/bsp_io.h"
@@ -256,31 +257,37 @@ void main_thread1_entry(void *pvParameters)
     for (int i = 0; i < 2000; i++)
     {
         sys_check_timeouts();
-        if (netif.ip_addr.addr != 0)
+        /*        if (netif.ip_addr.addr != 0)
+                {
+                    xprintf("[LwIP] DHCP assigned IP: %s\n", ip4addr_ntoa(&netif.ip_addr));
+                    break;
+                }
+        */
+        if (!ip4_addr_isany_val(*netif_ip4_addr(&netif)))
         {
-            xprintf("[LwIP] DHCP assigned IP: %s\n", ip4addr_ntoa(&netif.ip_addr));
+            xprintf("[LwIP] DHCP assigned IP: %s\n", ip4addr_ntoa(netif_ip4_addr(&netif)));
             break;
         }
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 
-    // while (netif.ip_addr.addr == 0)
-    //     ;
-    // xprintf("[LwIP] DHCP assigned IP1: %s\n", ip4addr_ntoa(&netif.ip_addr));
-
     // if DHCP is not valid, AUTOIP will Start
-    if (netif.ip_addr.addr == 0)
+    if (ip4_addr_isany_val(*netif_ip4_addr(&netif)))
     {
         xprintf("[LwIP] DHCP failed. Using AutoIP.\n");
+#if LWIP_AUTOIP
         autoip_start(&netif);
-
-        while (netif.ip_addr.addr == 0)
+        for (int i = 0; i < 150; i++)
         {
             sys_check_timeouts();
+            if (!ip4_addr_isany_val(*netif_ip4_addr(&netif)))
+                break;
             vTaskDelay(pdMS_TO_TICKS(100));
         }
-
-        xprintf("[LwIP] AutoIP assigned IP: %s\n", ip4addr_ntoa(&netif.ip_addr));
+        xprintf("[LwIP] AutoIP assigned IP: %s\n", ip4addr_ntoa(netif_ip4_addr(&netif)));
+#else
+        xprintf("[LwIP] AUTOIP disabled\n");
+#endif
     }
 
     // UDP通信準備
@@ -292,11 +299,13 @@ void main_thread1_entry(void *pvParameters)
         return;
     }
 
-    // ip_addr_t dest_ip;
-    // IP4_ADDR(&dest_ip, 192, 168, 10, 123); // 送信先
+    // ip_addr_t broadcast_ip;
+    // broadcast_ip.addr = (netif.ip_addr.addr & netif.netmask.addr) | ~netif.netmask.addr;
 
-    ip_addr_t broadcast_ip;
-    broadcast_ip.addr = (netif.ip_addr.addr & netif.netmask.addr) | ~netif.netmask.addr;
+    ip4_addr_t broadcast_ip;
+    u32_t ip = ip4_addr_get_u32(netif_ip4_addr(&netif));
+    u32_t mask = ip4_addr_get_u32(netif_ip4_netmask(&netif));
+    ip4_addr_set_u32(&broadcast_ip, (ip & mask) | ~mask);
 
     for (int i = 0; i < 100; i++)
     {

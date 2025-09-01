@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<raConfiguration version="12">
+<raConfiguration version="11">
   <generalSettings>
     <option key="#Board#" value="board.ra8e1fpb"/>
     <option key="CPU" value="RA8E1"/>
@@ -41,7 +41,7 @@
     <node id="board.clock.pll2r.div" option="board.clock.pll2r.div.4"/>
     <node id="board.clock.pll2r.display" option="board.clock.pll2r.display.value"/>
     <node id="board.clock.clock.source" option="board.clock.clock.source.pll1p"/>
-    <node id="board.clock.clkout.source" option="board.clock.clkout.source.subclk"/>
+    <node id="board.clock.clkout.source" option="board.clock.clkout.source.moco"/>
     <node id="board.clock.sciclk.source" option="board.clock.sciclk.source.hoco"/>
     <node id="board.clock.spiclk.source" option="board.clock.spiclk.source.disabled"/>
     <node id="board.clock.canfdclk.source" option="board.clock.canfdclk.source.disabled"/>
@@ -114,6 +114,7 @@
       <configSetting altId="jtag_fslash_swd.tdi.p208" configurationId="jtag_fslash_swd.tdi" peripheral="JTAG/SWD"/>
       <configSetting altId="jtag_fslash_swd.tdo.p209" configurationId="jtag_fslash_swd.tdo" peripheral="JTAG/SWD"/>
       <configSetting altId="jtag_fslash_swd.tms.p210" configurationId="jtag_fslash_swd.tms" peripheral="JTAG/SWD"/>
+      <configSetting altId="ospi.om_cs0.p107" configurationId="ospi.om_cs0" isUsedByDriver="true" peripheral="OSPI"/>
       <configSetting altId="ospi.om_cs1.p104" configurationId="ospi.om_cs1" isUsedByDriver="true" peripheral="OSPI"/>
       <configSetting altId="ospi.om_dqs.p801" configurationId="ospi.om_dqs" isUsedByDriver="true" peripheral="OSPI"/>
       <configSetting altId="ospi.om_reset.p106" configurationId="ospi.om_reset" isUsedByDriver="true" peripheral="OSPI"/>
