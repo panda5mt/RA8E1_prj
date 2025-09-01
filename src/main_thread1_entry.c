@@ -307,6 +307,9 @@ void main_thread1_entry(void *pvParameters)
     u32_t mask = ip4_addr_get_u32(netif_ip4_netmask(&netif));
     ip4_addr_set_u32(&broadcast_ip, (ip & mask) | ~mask);
 
+    ip_addr_t dest_ip;
+    ip_addr_copy_from_ip4(dest_ip, broadcast_ip); // 安全な詰め替え
+
     for (int i = 0; i < 100; i++)
     {
         struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, strlen(message), PBUF_RAM);
@@ -318,7 +321,8 @@ void main_thread1_entry(void *pvParameters)
 
         memcpy(p->payload, message, strlen(message));
 
-        err_t err = udp_sendto(pcb, p, &broadcast_ip, UDP_PORT_DEST);
+        // err_t err = udp_sendto(pcb, p, &broadcast_ip, UDP_PORT_DEST);
+        err_t err = udp_sendto(pcb, p, &dest_ip, UDP_PORT_DEST);
         if (err == ERR_OK)
         {
             xprintf("[UDP] #%d sent OK\n", i + 1);
