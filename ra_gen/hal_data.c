@@ -47,10 +47,10 @@ ospi_b_instance_ctrl_t g_ospi0_ctrl;
 
 static ospi_b_timing_setting_t g_ospi0_timing_settings =
 {
-    .command_to_command_interval = OSPI_B_COMMAND_INTERVAL_CLOCKS_2,
+    .command_to_command_interval = OSPI_B_COMMAND_INTERVAL_CLOCKS_1,
     .cs_pullup_lag               = OSPI_B_COMMAND_CS_PULLUP_CLOCKS_NO_EXTENSION,
-    .cs_pulldown_lead            = OSPI_B_COMMAND_CS_PULLDOWN_CLOCKS_1,
-    .sdr_drive_timing            = OSPI_B_SDR_DRIVE_TIMING_BEFORE_CK,
+    .cs_pulldown_lead            = OSPI_B_COMMAND_CS_PULLDOWN_CLOCKS_NO_EXTENSION,
+    .sdr_drive_timing            = OSPI_B_SDR_DRIVE_TIMING_AT_CK,
     .sdr_sampling_edge           = OSPI_B_CK_EDGE_FALLING,
     .sdr_sampling_delay          = OSPI_B_SDR_SAMPLING_DELAY_NONE,
     .ddr_sampling_extension      = OSPI_B_DDR_SAMPLING_EXTENSION_1,
@@ -100,12 +100,12 @@ const spi_flash_cfg_t g_ospi0_cfg =
 {
     .spi_protocol                = SPI_FLASH_PROTOCOL_8D_8D_8D,
     .read_mode                   = SPI_FLASH_READ_MODE_STANDARD, /* Unused by OSPI_B */
-    .address_bytes               = SPI_FLASH_ADDRESS_BYTES_3,
+    .address_bytes               = SPI_FLASH_ADDRESS_BYTES_4,
     .dummy_clocks                = SPI_FLASH_DUMMY_CLOCKS_DEFAULT, /* Unused by OSPI_B */
     .page_program_address_lines  = (spi_flash_data_lines_t) 0U, /* Unused by OSPI_B */
     .page_size_bytes             = 64,
-    .write_status_bit            = 0,
-    .write_enable_bit            = 1,
+    .write_status_bit            = 7,
+    .write_enable_bit            = 7,
     .page_program_command        = 0, /* OSPI_B uses command sets. See g_ospi0_command_set. */
     .write_enable_command        = 0, /* OSPI_B uses command sets. See g_ospi0_command_set. */
     .status_command              = 0, /* OSPI_B uses command sets. See g_ospi0_command_set. */

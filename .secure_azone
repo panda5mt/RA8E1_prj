@@ -21,6 +21,7 @@
             <slot name="P104.CM85" secure="true"/>
             <slot name="P105.CM85" secure="true"/>
             <slot name="P106.CM85" secure="true"/>
+            <slot name="P107.CM85" secure="true"/>
             <slot name="P112.CM85" secure="true"/>
             <slot name="P113.CM85" secure="true"/>
             <slot name="P114.CM85" secure="true"/>
