@@ -59,10 +59,12 @@ uint8_t g_usb_pprn_bulk_in_pipe[USB_NUM_USBIP]  = {0};
 uint8_t g_usb_pprn_bulk_out_pipe[USB_NUM_USBIP] = {0};
 #endif                                 /* defined(USB_CFG_PPRN_USE) */
 
-#if defined(USB_CFG_PAUD_USE)
+#if (BSP_CFG_RTOS == 1)
+ #if defined(USB_CFG_PAUD_USE)
 uint8_t g_usb_paud_iso_in_pipe[USB_NUM_USBIP]  = {0};
 uint8_t g_usb_paud_iso_out_pipe[USB_NUM_USBIP] = {0};
-#endif                                 /* defined(USB_CFG_PAUD_USE) */
+ #endif                                /* defined(USB_CFG_PAUD_USE) */
+#endif /* #if (BSP_CFG_RTOS != 1) */
 #if ((USB_CFG_DTC == USB_CFG_ENABLE) || (USB_CFG_DMA == USB_CFG_ENABLE))
  #include "../hw/inc/r_usb_dmac.h"
 #endif                                 /* ((USB_CFG_DTC == USB_CFG_ENABLE) || (USB_CFG_DMA == USB_CFG_ENABLE)) */
@@ -1848,11 +1850,11 @@ uint16_t usb_pstd_get_pipe_buf_value (uint16_t pipe_no)
    #if defined(USB_CFG_PAUD_USE)
     if (g_usb_paud_iso_in_pipe[USB_IP1] == pipe_no)
     {
-        pipe_buf = (USB_BUF_SIZE(2048U) | USB_BUF_NUMB(8U));
+        pipe_buf = (USB_BUF_SIZE(2048u) | USB_BUF_NUMB(8u));
     }
     else if (g_usb_paud_iso_out_pipe[USB_IP1] == pipe_no)
     {
-        pipe_buf = (USB_BUF_SIZE(2048U) | USB_BUF_NUMB(72U));
+        pipe_buf = (USB_BUF_SIZE(2048u) | USB_BUF_NUMB(72u));
     }
     else
     {

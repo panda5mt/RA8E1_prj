@@ -728,7 +728,7 @@ SECTIONS
        __ddsc_OPTION_SETTING_OFS1_SEL_START = . ;
       
   }  > OPTION_SETTING_OFS1_SEL
-  /* OFS1 Security Attribution */
+  /* OFS1 Register Select */
   __option_setting_ofs1_sel_reg$$  : 
   {
       __option_setting_ofs1_sel_reg$$Base = . ;
@@ -747,7 +747,7 @@ SECTIONS
        __ddsc_OPTION_SETTING_BANKSEL_SEL_START = . ;
       
   }  > OPTION_SETTING_BANKSEL_SEL
-  /* Banksel Security Attribution */
+  /* Banksel Register Select */
   __option_setting_banksel_sel_reg$$  : 
   {
       __option_setting_banksel_sel_reg$$Base = . ;
@@ -766,7 +766,7 @@ SECTIONS
        __ddsc_OPTION_SETTING_BPS_SEL_START = . ;
       
   }  > OPTION_SETTING_BPS_SEL
-  /* BPS Security Attribution */
+  /* BPS Register Select */
   __option_setting_bps_sel_reg$$  : 
   {
       __option_setting_bps_sel_reg$$Base = . ;

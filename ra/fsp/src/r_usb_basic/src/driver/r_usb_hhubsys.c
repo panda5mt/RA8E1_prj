@@ -182,7 +182,6 @@ const uint16_t g_usb_hhub_tpl[4] =
  ******************************************************************************/
 void usb_hhub_open (usb_utr_t * ptr, uint16_t devaddr, uint16_t data2)
 {
-    FSP_PARAMETER_NOT_USED(data2);
     usb_er_t        err = USB_ERROR;
     usb_er_t        err2;
     usb_mh_t        p_blf;
@@ -268,7 +267,6 @@ void usb_hhub_open (usb_utr_t * ptr, uint16_t devaddr, uint16_t data2)
  ******************************************************************************/
 void usb_hhub_close (usb_utr_t * ptr, uint16_t hubaddr, uint16_t data2)
 {
-    FSP_PARAMETER_NOT_USED(data2);
     uint16_t       md, i;
     usb_hcdreg_t * driver;
     uint16_t       devaddr;
@@ -501,12 +499,11 @@ uint16_t usb_hhub_get_port_information (usb_utr_t * ptr, uint16_t hubaddr, uint1
 /******************************************************************************
  * Function Name   : usb_hhub_task
  * Description     : HUB task
- * Arguments       : void * stacd          : Start Code of Hub Task
+ * Arguments       : usb_vp_int_t stacd          : Start Code of Hub Task
  * Return value    : none
  ******************************************************************************/
-void usb_hhub_task (void * stacd)
+void usb_hhub_task (usb_vp_int_t stacd)
 {
-    FSP_PARAMETER_NOT_USED(stacd);
   #if (BSP_CFG_RTOS != 0)
     usb_utr_t * mess;
     usb_utr_t * ptr;
@@ -727,9 +724,6 @@ void usb_hhub_task (void * stacd)
                     }
                 }
 
-   #if (BSP_CFG_RTOS == 2)             /* #if (BSP_CFG_RTOS == 2) */
-                vPortFree(mess);
-   #endif                              /* #if (BSP_CFG_RTOS == 2) */
                 break;
             }
 
@@ -1140,7 +1134,6 @@ static void usb_hhub_enumeration (usb_clsinfo_t * ptr)
 static void usb_hhub_init_down_port (usb_utr_t * ptr, uint16_t hubaddr, usb_clsinfo_t * mess)
 {
   #if (BSP_CFG_RTOS != 0)
-    FSP_PARAMETER_NOT_USED(mess);
     uint16_t portnum;
     uint16_t retval;
     uint32_t port_status;
@@ -1718,7 +1711,7 @@ static void usb_hhub_event (usb_clsinfo_t * mess)
     usb_er_t    err;
     uint16_t    hubaddr, devaddr, retval;
     usb_utr_t * ptr;
-    uint32_t    port_status     = 0;
+    uint32_t    port_status;
     uint16_t    next_port_check = USB_FALSE;
     uint16_t    port_clr_feature_type;
 
@@ -2008,7 +2001,6 @@ static void usb_hhub_event (usb_clsinfo_t * mess)
 static void usb_hhub_port_reset (usb_utr_t * ptr, uint16_t hubaddr, uint16_t portnum, usb_clsinfo_t * mess)
 {
   #if (BSP_CFG_RTOS != 0)
-    FSP_PARAMETER_NOT_USED(mess);
     uint16_t retval;
     uint32_t port_status;
 
@@ -2669,38 +2661,21 @@ static uint16_t usb_hhub_request_result (uint16_t errcheck)
  ******************************************************************************/
 static void usb_hhub_trans_complete (usb_utr_t * mess, uint16_t data1, uint16_t data2)
 {
-    FSP_PARAMETER_NOT_USED(data1);
-    FSP_PARAMETER_NOT_USED(data2);
   #if (BSP_CFG_RTOS != 0)
     usb_er_t err;
     uint16_t pipenum, hubaddr;
 
-    usb_utr_t * ptr;
-
-   #if (BSP_CFG_RTOS == 2)             /* (BSP_CFG_RTOS == 2) */
-    ptr = (usb_utr_t *) pvPortMalloc(sizeof(usb_utr_t));
-    if (NULL == ptr)
-    {
-        USB_PRINTF0("### usb_hhub_trans_complete pvPortMalloc ERROR\n");
-
-        return;
-    }
-   #endif                              /* (BSP_CFG_RTOS == 2) */
-    *ptr = *mess;
-
     pipenum = mess->keyword;
-    hubaddr = usb_hhub_get_hubaddr(ptr, pipenum);
-    g_usb_shhub_hub_addr[ptr->ip] = hubaddr;
+    hubaddr = usb_hhub_get_hubaddr(mess, pipenum);
+    g_usb_shhub_hub_addr[mess->ip] = hubaddr;
 
     /* Set new message info */
-    ptr->msginfo = USB_MSG_HUB_SUBMITRESULT;
+    mess->msginfo = USB_MSG_HUB_SUBMITRESULT;
 
     /** Send message **/
-    err = USB_SND_MSG(USB_HUB_MBX, (usb_msg_t *) ptr);
+    err = USB_SND_MSG(USB_HUB_MBX, (usb_msg_t *) mess);
     if (USB_OK != err)
     {
-        vPortFree(ptr);
-
         /** Send Message failure **/
         USB_PRINTF1("### HUB snd_msg error (%ld)\n", err);
     }
@@ -2803,8 +2778,6 @@ static void usb_hhub_trans_complete (usb_utr_t * mess, uint16_t data1, uint16_t 
  ******************************************************************************/
 static void usb_hhub_class_request_complete (usb_utr_t * ptr, uint16_t data1, uint16_t data2)
 {
-    FSP_PARAMETER_NOT_USED(data1);
-    FSP_PARAMETER_NOT_USED(data2);
     usb_mh_t        p_blf;
     usb_er_t        err;
     usb_clsinfo_t * cp;
@@ -2856,8 +2829,6 @@ static void usb_hhub_class_request_complete (usb_utr_t * ptr, uint16_t data1, ui
  ******************************************************************************/
 static void usb_hhub_initial (usb_utr_t * ptr, uint16_t data1, uint16_t data2)
 {
-    FSP_PARAMETER_NOT_USED(data1);
-    FSP_PARAMETER_NOT_USED(data2);
     uint16_t i;
 
     /* WAIT_LOOP */
@@ -3198,7 +3169,6 @@ static uint16_t usb_hhub_chk_interface (uint16_t ** table, uint16_t spec)
 static void usb_hhub_new_connect (usb_utr_t * ptr, uint16_t hubaddr, uint16_t portnum, usb_clsinfo_t * mess)
 {
   #if (BSP_CFG_RTOS != 0)
-    FSP_PARAMETER_NOT_USED(mess);
     uint16_t devaddr;
     uint16_t result;
 
@@ -3393,9 +3363,7 @@ static void usb_hhub_selective_detach (usb_utr_t * ptr, uint16_t devaddr)
  ******************************************************************************/
 uint16_t usb_hhub_get_string_descriptor1 (usb_utr_t * ptr, uint16_t devaddr, uint16_t index, usb_cb_t complete)
 {
-    FSP_PARAMETER_NOT_USED(index);
   #if (BSP_CFG_RTOS != 0)
-    FSP_PARAMETER_NOT_USED(complete);
     usb_hstd_get_string_desc(ptr, devaddr, (uint16_t) 0);
   #else                                /* #if (BSP_CFG_RTOS != 0) */
     usb_hstd_get_string_desc(ptr, devaddr, (uint16_t) 0, complete);
@@ -3420,7 +3388,6 @@ uint16_t usb_hhub_get_string_descriptor1 (usb_utr_t * ptr, uint16_t devaddr, uin
 uint16_t usb_hhub_get_string_descriptor2 (usb_utr_t * ptr, uint16_t devaddr, uint16_t index, usb_cb_t complete)
 {
   #if (BSP_CFG_RTOS != 0)
-    FSP_PARAMETER_NOT_USED(complete);
     usb_hstd_get_string_desc(ptr, devaddr, index);
   #else                                /* #if (BSP_CFG_RTOS != 0) */
     usb_hstd_get_string_desc(ptr, devaddr, index, complete);
@@ -3652,7 +3619,7 @@ static void usb_hhub_specified_path (usb_clsinfo_t * ptr)
 static void usb_hhub_specified_path_wait (usb_clsinfo_t * ptr, uint16_t times)
 {
     usb_mh_t        p_blf;
-    fsp_err_t       err;
+    usb_er_t        err;
     usb_clsinfo_t * hp;
 
     /* Get memory pool blk */
@@ -3671,7 +3638,7 @@ static void usb_hhub_specified_path_wait (usb_clsinfo_t * ptr, uint16_t times)
         if (USB_OK != err)
         {
             /* Wait message failure */
-            USB_REL_BLK(USB_HUB_MPL, (usb_mh_t) p_blf);
+            err = USB_REL_BLK(USB_HUB_MPL, (usb_mh_t) p_blf);
             USB_PRINTF0("### SpecifiedPassWait function snd_msg error\n");
         }
     }

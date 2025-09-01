@@ -80,8 +80,8 @@
             (((1 > 0) ? 0U : 1U) << 8) /* IIC1 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 9) /* IIC0 */ | \
             (((1 > 0) ? 0U : 1U) << 11) /* USBFS */ | \
-            (((1 > 0) ? 0U : 1U) << 15) /* ETHERC */ | \
-            (((1 > 0) ? 0U : 1U) << 16) /* OSPI */ | \
+            (1 << 15) /* ETHERC/EDMAC */ | \
+            (1 << 16) /* OSPI */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 18) /* SPI1 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 19) /* SPI0 */ | \
             (((RA_NOT_DEFINED > 0) ? 0U : 1U) << 22) /* SCI9 */ | \

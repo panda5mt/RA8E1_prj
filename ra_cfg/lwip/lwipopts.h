@@ -180,8 +180,7 @@ extern "C" {
             #define PBUF_LINK_ENCAPSULATION_HLEN (0)
             #define PBUF_POOL_BUFSIZE (LWIP_MEM_ALIGN_SIZE(TCP_MSS+PBUF_IP_HLEN+PBUF_TRANSPORT_HLEN+PBUF_LINK_ENCAPSULATION_HLEN+PBUF_LINK_HLEN))
             #define LWIP_PBUF_REF_T u8_t
-            #define LWIP_PBUF_CUSTOM_DATA struct pbuf * p_next_tx_pbuf; \
-                                          
+            #define LWIP_PBUF_CUSTOM_DATA 
             #define LWIP_PBUF_CUSTOM_DATA_INIT ((0))
             #define LWIP_SINGLE_NETIF ((0))
             #define LWIP_NETIF_HOSTNAME ((0))

@@ -74,7 +74,7 @@
 #define IIC_MASTER_BUS_MODE_REGISTER_2_MASK         (0x04U)
 #define IIC_MASTER_SYSDIVCK_ICLK_MASK               (0x0F000000U)
 #define IIC_MASTER_SYSDIVCK_PCLKB_MASK              (0x00000F00U)
-#define IIC_MASTER_ICCR1_SCL_SDA_OUTPUT_MASK        (0x1FU)
+#define IIC_MASTER_PRV_SCL_SDA_NOT_DRIVEN           (0x1FU)
 #define IIC_MASTER_ICCR1_ICE_BIT_MASK               (0x80)
 #define IIC_MASTER_ICCR1_IICRST_BIT_MASK            (0x40)
 #define IIC_MASTER_ICCR2_SP_BIT_MASK                (0x08)
@@ -83,7 +83,7 @@
 
 /* Worst case ratio of (ICLK/PCLKB) = 64 bytes approximately.
  * 3 PCLKB cycles is the number of cycles to wait for IICn.
- * See Table "Access cycles" in the I/O Registers section of the relevant hardware manual.
+ * Refer "Table 3.2 Access cycles (1 of 2)" of the RA6M3 manual R01UH0886EJ0100)
  */
 #define IIC_MASTER_PERIPHERAL_REG_MAX_WAIT          (0x40U * 0x03U)
 
@@ -223,7 +223,7 @@ fsp_err_t R_IIC_MASTER_Open (i2c_master_ctrl_t * const p_api_ctrl, i2c_master_cf
     /* If rate is configured as Fast mode plus, check whether the channel supports it */
     if (I2C_MASTER_RATE_FASTPLUS == p_cfg->rate)
     {
-        FSP_ASSERT((BSP_FEATURE_IIC_FAST_MODE_PLUS_CHANNELS_MASK & (1U << p_cfg->channel)));
+        FSP_ASSERT((BSP_FEATURE_IIC_FAST_MODE_PLUS & (1U << p_cfg->channel)));
     }
 #endif
 
@@ -239,8 +239,8 @@ fsp_err_t R_IIC_MASTER_Open (i2c_master_ctrl_t * const p_api_ctrl, i2c_master_cf
 
     R_BSP_MODULE_START(FSP_IP_IIC, p_cfg->channel);
 
-    /* Open the hardware in master mode. Performs IIC initialization as described in hardware manual (see
-     * "Initial Settings" in the IIC Operation section of the relevant hardware manual). */
+    /* Open the hardware in master mode. Performs IIC initialization as described in hardware manual (see Section 36.3.2
+     * 'Initial Settings' of the RA6M3 manual R01UH0886EJ0100). */
     iic_master_open_hw_master(p_ctrl, p_cfg);
 
 #if IIC_MASTER_CFG_DTC_ENABLE
@@ -321,13 +321,16 @@ fsp_err_t R_IIC_MASTER_Write (i2c_master_ctrl_t * const p_api_ctrl,
 #if IIC_MASTER_CFG_PARAM_CHECKING_ENABLE
     FSP_ASSERT(p_api_ctrl != NULL);
 #endif
+    fsp_err_t err = FSP_SUCCESS;
 
     /* Record the restart information about this transfer.
      * This is done here to keep the parameter (argument) list of iic_master_read_write to 4. */
     ((iic_master_instance_ctrl_t *) p_api_ctrl)->restart = restart;
 
     /* Call the common helper function to perform I2C Write operation.*/
-    return iic_master_read_write(p_api_ctrl, p_src, bytes, IIC_MASTER_TRANSFER_DIR_WRITE);
+    err = iic_master_read_write(p_api_ctrl, p_src, bytes, IIC_MASTER_TRANSFER_DIR_WRITE);
+
+    return err;
 }
 
 /*******************************************************************************************************************//**
@@ -482,8 +485,8 @@ fsp_err_t R_IIC_MASTER_Close (i2c_master_ctrl_t * const p_api_ctrl)
     /* Abort an in-progress transfer with this device only */
     iic_master_abort_seq_master(p_ctrl, true);
 
-    /* Disable I2C interrupts. Described in hardware manual (see
-     * "I2C Bus Interrupt Enable Register (ICIER)" description in the IIC section of the relevant hardware manual). */
+    /* Disable I2C interrupts. Described in hardware manual (see Section 36.2.8
+     * 'I2C Bus Interrupt Enable Register (ICIER)' of the RA6M3 manual R01UH0886EJ0100). */
     p_ctrl->p_reg->ICIER = 0x00;
 
     /* The device is now considered closed */
@@ -556,6 +559,8 @@ static fsp_err_t iic_master_read_write (i2c_master_ctrl_t * const p_api_ctrl,
  #endif
 #endif
 
+    fsp_err_t err = FSP_SUCCESS;
+
     p_ctrl->p_buff = p_buffer;
     p_ctrl->total  = bytes;
 
@@ -576,7 +581,7 @@ static fsp_err_t iic_master_read_write (i2c_master_ctrl_t * const p_api_ctrl,
         p_ctrl->addr_low  = (uint8_t) p_ctrl->slave;
 
         /* Addr total = 3 for Read and 2 for Write.
-         * See "Communication Data Format" in the IIC section of the relevant hardware manual.
+         * See Section 36.3.1 "Communication Data Format" of the RA6M3 manual R01UH0886EJ0100
          */
         p_ctrl->addr_total = (uint8_t) ((uint8_t) direction + IIC_MASTER_SLAVE_10_BIT_ADDR_LEN_ADJUST);
     }
@@ -585,7 +590,11 @@ static fsp_err_t iic_master_read_write (i2c_master_ctrl_t * const p_api_ctrl,
     p_ctrl->read = (bool) direction;
 
     /* Kickoff the read operation as a master */
-    return iic_master_run_hw_master(p_ctrl);
+    err = iic_master_run_hw_master(p_ctrl);
+
+    FSP_ERROR_RETURN(FSP_SUCCESS == err, err);
+
+    return FSP_SUCCESS;
 }
 
 /*******************************************************************************************************************//**
@@ -696,14 +705,14 @@ static void iic_master_abort_seq_master (iic_master_instance_ctrl_t * const p_ct
 
     /* Enable Interrupts: TMOIE, ALIE, NAKIE, RIE, TIE.
      * Disable Interrupt: TEIE, STIE, SPIE
-     * (see "I2C Bus Interrupt Enable Register (ICIER)" description in the IIC section of the relevant hardware manual).
+     * (see Section 36.2.8 'I2C Bus Interrupt Enable Register (ICIER)' of the RA6M3 manual R01UH0886EJ0100).
      */
     p_ctrl->p_reg->ICIER = IIC_MASTER_INTERRUPT_ENABLE_INIT_MASK;
 }
 
 /*******************************************************************************************************************//**
- * Performs the hardware initialization sequence when operating as a master (see
- * "Initial Settings" in the IIC Operation section of the relevant hardware manual).
+ * Performs the hardware initialization sequence when operating as a master (see Section 36.3.2
+ * 'Initial Settings' of the RA6M3 manual R01UH0886EJ0100).
  *
  * @param[in]  p_ctrl                Pointer to IIC specific control structure
  * @param[in]  p_cfg                 Pointer to IIC specific configuration structure.
@@ -711,19 +720,15 @@ static void iic_master_abort_seq_master (iic_master_instance_ctrl_t * const p_ct
 static void iic_master_open_hw_master (iic_master_instance_ctrl_t * const p_ctrl, i2c_master_cfg_t const * const p_cfg)
 {
     /* Perform IIC reset */
-    /* S1. Set the ICCR1.ICE bit to 0 to set the SCLn and SDAn pins to the inactive state. */
-    p_ctrl->p_reg->ICCR1 = 0;
+    p_ctrl->p_reg->ICCR1 = (uint8_t) IIC_MASTER_PRV_SCL_SDA_NOT_DRIVEN;
 
-    /* S2. Set the ICCR1.IICRST bit to 1 to initiate IIC reset. */
-    p_ctrl->p_reg->ICCR1 = (uint8_t) (IIC_MASTER_ICCR1_IICRST_BIT_MASK);
+    /* Reset */
+    p_ctrl->p_reg->ICCR1 = (uint8_t) (IIC_MASTER_ICCR1_IICRST_BIT_MASK | IIC_MASTER_PRV_SCL_SDA_NOT_DRIVEN);
 
-    /* Wait for IICRST to be set. */
-    FSP_HARDWARE_REGISTER_WAIT(p_ctrl->p_reg->ICCR1_b.IICRST, 1U);
-
-    /* S3. Set the ICCR1.ICE bit to 1 to initiate internal reset. */
-    p_ctrl->p_reg->ICCR1 = (uint8_t) (IIC_MASTER_ICCR1_ICE_BIT_MASK | IIC_MASTER_ICCR1_IICRST_BIT_MASK);
-
-    /* S4. Set other registers as required. */
+    /* Come out of IIC reset to internal reset */
+    p_ctrl->p_reg->ICCR1 =
+        (uint8_t) (IIC_MASTER_ICCR1_ICE_BIT_MASK | IIC_MASTER_ICCR1_IICRST_BIT_MASK |
+                   IIC_MASTER_PRV_SCL_SDA_NOT_DRIVEN);
 
     /* Configure the clock settings. This is set in the configuration structure by the tooling. */
     /* Set the number of counts that the clock remains low, bit 7 to 5 should be written as 1 */
@@ -747,7 +752,7 @@ static void iic_master_open_hw_master (iic_master_instance_ctrl_t * const p_ctrl
     /* TMOL 'Timeout L Count Control' and TMOH 'Timeout H Count Control' will be set at the time of I2C reset.
      * This will enable time out detection for both SCLn high and low.
      * Only Set/Clear TMOS here to select long or short mode.
-     * (see "I2C Bus Mode Register 2 (ICMR2)" description in the IIC section of the relevant hardware manual).
+     * (see Section 36.2.4 'I2C Bus Mode Register 2 (ICMR2)' of the RA6M3 manual R01UH0886EJ0100).
      */
     p_ctrl->p_reg->ICMR2 = (uint8_t) (IIC_MASTER_BUS_MODE_REGISTER_2_MASK |
                                       (uint8_t) (IIC_MASTER_TIMEOUT_MODE_SHORT ==
@@ -764,10 +769,10 @@ static void iic_master_open_hw_master (iic_master_instance_ctrl_t * const p_ctrl
      * 5. Enable NACK reception transfer suspension.
      * 6. Use the digital noise filter circuit. Upon I2C reset, 'NF[1:0] Noise Filter Stage Select' will be set to 0x00
      * This would imply  'Filter out noise of up to 1 IIC cycle (single-stage filter)'
-     * (see "I2C Bus Mode Register 3 (ICMR3)" description in the IIC section of the relevant hardware manual).
+     * (see Section 36.2.5 'I2C Bus Mode Register 3 (ICMR3)' of the RA6M3 manual R01UH0886EJ0100)
      * 7. Do not use the SCL synchronous circuit.
      * 8. Enable FM+ slope circuit if fast mode plus is enabled.
-     * (see "I2C Bus Function Enable Register" description in the IIC section of the relevant hardware manual).
+     * (see Section 36.2.6 'I2C Bus Function Enable Register' of the RA6M3 manual R01UH0886EJ0100 for more details)
      */
     p_ctrl->p_reg->ICFER =
         (uint8_t) ((uint8_t) (I2C_MASTER_RATE_FASTPLUS ==
@@ -778,7 +783,7 @@ static void iic_master_open_hw_master (iic_master_instance_ctrl_t * const p_ctrl
 
     /* Enable Interrupts: TMOIE, ALIE, NAKIE, RIE, TIE.
      * Disable Interrupt: TEIE, STIE, SPIE
-     * (see "I2C Bus Interrupt Enable Register (ICIER)" description in the IIC section of the relevant hardware manual).
+     * (see Section 36.2.8 'I2C Bus Interrupt Enable Register (ICIER)' of the RA6M3 manual R01UH0886EJ0100).
      */
     p_ctrl->p_reg->ICIER = IIC_MASTER_INTERRUPT_ENABLE_INIT_MASK;
 
@@ -788,14 +793,16 @@ static void iic_master_open_hw_master (iic_master_instance_ctrl_t * const p_ctrl
     R_BSP_IrqCfgEnable(p_cfg->tei_irq, p_cfg->ipl, p_ctrl);
     R_BSP_IrqCfgEnable(p_cfg->rxi_irq, p_cfg->ipl, p_ctrl);
 
-    /* S5. Set the ICCR1.IICRST bit to 0 to release the IIC reset. */
-    p_ctrl->p_reg->ICCR1 = (uint8_t) (IIC_MASTER_ICCR1_ICE_BIT_MASK | IIC_MASTER_ICCR1_SCL_SDA_OUTPUT_MASK);
+    /* Release IIC from internal reset */
+
+    /* Reset */
+    p_ctrl->p_reg->ICCR1 = (uint8_t) (IIC_MASTER_ICCR1_ICE_BIT_MASK | IIC_MASTER_PRV_SCL_SDA_NOT_DRIVEN);
 }
 
 /*******************************************************************************************************************//**
  * Performs the data transfer described by the parameters when operating as a master.
- * See "Master Transmit Operation" and "Master Receive Operation"
- * in the IIC section of the relevant hardware manual.
+ * See 36.3.3 "Master Transmit Operation" and section 36.3.4 "Master Receive Operation"
+ * of the RA6M3 manual R01UH0886EJ0100
  *
  * @param[in]       p_ctrl  Pointer to control structure of specific device.
  *
@@ -819,7 +826,7 @@ static fsp_err_t iic_master_run_hw_master (iic_master_instance_ctrl_t * const p_
     /* Check if this is a new transaction or a continuation */
     if (!p_ctrl->restarted)
     {
-        /* As per BBSY clearing conditions in "I2C Bus Control Register 2" description in the IIC section of the relevant hardware manual,
+        /* As per BBSY clearing conditions in section 36.2.2 of the RA6M3 manual R01UH0886EJ0100,
          * the BBSY bit is 0 after the bus free time (ICBRL setting)
          * if a start condition is not detected after a stop condition detection.
          */
@@ -828,11 +835,12 @@ static fsp_err_t iic_master_run_hw_master (iic_master_instance_ctrl_t * const p_
         /* If bus is busy, return error */
         FSP_ERROR_RETURN((0U != timeout_count), FSP_ERR_IN_USE);
 
-        /* This is not a restarted transaction.
-         * Interrupt requests are not expected while control struct is being reinitialized,
-         * especially for multi-master use case, so they need to be disabled.
+        /* This is not a restarted transaction. Enable TXI for the next transfer.
+         * This had been disabled at the end of TXI interrupt.
+         * The intention is to only enable IIC_MASTER_TXI_EN_BIT.
+         * Writing the whole mask - IIC_MASTER_INTERRUPT_ENABLE_INIT_MASK saves cycles.
          */
-        p_ctrl->p_reg->ICIER = 0;
+        p_ctrl->p_reg->ICIER = IIC_MASTER_INTERRUPT_ENABLE_INIT_MASK;
     }
 
     /* Initialize fields used during transfer */
@@ -855,7 +863,7 @@ static fsp_err_t iic_master_run_hw_master (iic_master_instance_ctrl_t * const p_
      *
      * Register configuration:
      *  - Set/Clear TMOS here to select long or short mode.
-     * (see "I2C Bus Mode Register 2 (ICMR2)" description in the IIC section of the relevant hardware manual).
+     * (see Section 36.2.4 'I2C Bus Mode Register 2 (ICMR2)' of the RA6M3 manual R01UH0886EJ0100).
      *  - Set SDDL and DLCS. If SMBus is disabled, assign default value.
      */
     iic_master_extended_cfg_t * p_extend = (iic_master_extended_cfg_t *) p_ctrl->p_cfg->p_extend;
@@ -909,8 +917,8 @@ static fsp_err_t iic_master_run_hw_master (iic_master_instance_ctrl_t * const p_
     }
 
     /*
-     * The Flowchart under "Master Transmit Operation" and "Master Receive Operation"
-     * in the IIC section of the relevant hardware manual is covered in the interrupts:
+     * The Flowchart under 36.3.3 "Master Transmit Operation" and section 36.3.4 "Master Receive Operation"
+     * of the RA6M3 manual R01UH0886EJ0100 is covered in the interrupts:
      *
      * 1. NACKF processing is handled in the ERI interrupt.
      *    For receive, dummy reading ICDRR is not required because the NACK processing in this driver resets the IIC peripheral.
@@ -944,8 +952,7 @@ static void iic_master_rxi_master (iic_master_instance_ctrl_t * p_ctrl)
         if (1U == p_ctrl->remain)
         {
             /* Writes to be done separately.
-             * See Note 1 of "I2C Bus Mode Register 3 (ICMR3)" description in the IIC section of the relevant
-             * hardware manual.
+             * See Note 1 in Section 36.2.5 'I2C Bus Mode Register 3 (ICMR3)' of the RA6M3 manual R01UH0886EJ0100
              */
             p_ctrl->p_reg->ICMR3_b.ACKWP = 1; /* Write enable ACKBT */
             p_ctrl->p_reg->ICMR3_b.ACKBT = 1;
@@ -1068,7 +1075,7 @@ static void iic_master_txi_master (iic_master_instance_ctrl_t * p_ctrl)
             p_ctrl->p_reg->ICIER_b.TIE = 0U;
 
             /* Wait for the value to reflect at the peripheral.
-             * See 'Note' under Table "Interrupt sources" in the IIC section of the relevant hardware manual. */
+             * See 'Note' under Table 36.10 "Interrupt sources" of the RA6M3 manual R01UH0886EJ0100 */
             IIC_MASTER_HARDWARE_REGISTER_WAIT(p_ctrl->p_reg->ICIER_b.TIE, 0U, timeout_count);
 
             /* Enable the transmit end IRQ, to issue a STOP or RESTART */
@@ -1159,7 +1166,7 @@ static void iic_master_tei_master (iic_master_instance_ctrl_t * p_ctrl)
     p_ctrl->p_reg->ICIER_b.TEIE = 0U;
 
     /* Wait for the value to reflect at the peripheral.
-     * See 'Note' under the table "Interrupt sources" in the IIC section of the relevant hardware manual. */
+     * See 'Note' under Table 36.10 "Interrupt sources" of the RA6M3 manual R01UH0886EJ0100 */
     IIC_MASTER_HARDWARE_REGISTER_WAIT(p_ctrl->p_reg->ICIER_b.TEIE, 0U, timeout_count);
 }
 
@@ -1186,8 +1193,8 @@ static void iic_master_err_master (iic_master_instance_ctrl_t * p_ctrl)
          *     a. In case of an arbitration loss error.also occurs.
          *     b. If the slave timeout is lesser than master timeout and the slave releases
          *        the bus by performing an internal reset.
-         *        See clearing conditions of MST in "I2C Bus Control Register 2 (ICCR2)" description
-         *        in the IIC section of the relevant hardware manual.
+         *        Refer Section "I2C Bus Control Register 2 (ICCR2) - Clearing conditions for MST"
+         *        of the RA6M3 manual R01UH0886EJ0100
          * 3. This is a Timeout error after attempting to issue a stop after detecting a NACK previously.
          *//* Set the error flag when an error event occurred */
         p_ctrl->err = true;
@@ -1200,7 +1207,7 @@ static void iic_master_err_master (iic_master_instance_ctrl_t * p_ctrl)
     else if ((errs_events & (uint8_t) (IIC_MASTER_ERR_EVENT_NACK)) && (1U == p_ctrl->p_reg->ICCR2_b.MST))
     {
         /* MST bit must be set to issue a stop condition.
-         * See "Issuing a Stop Condition" in the IIC section of the relevant hardware manual.
+         * Refer Section "36.11.3 Issuing a Stop Condition" of the RA6M3 manual R01UH0886EJ0100
          */
 
         /* Set the error flag when an error event occurred
@@ -1208,7 +1215,7 @@ static void iic_master_err_master (iic_master_instance_ctrl_t * p_ctrl)
         p_ctrl->err = true;
 
         /* The sequence below is to handle a NACK received from slave in the middle of a write.
-         * See item '[4]' under the figure "Example master transmission flow" in the IIC section of the relevant hardware manual. */
+         * See item '[4]' under 'Figure 36.6 Example master transmission flow' of the RA6M3 manual R01UH0886EJ0100 */
 
         /* Request IIC to issue the stop condition */
         p_ctrl->p_reg->ICCR2 = (uint8_t) IIC_MASTER_ICCR2_SP_BIT_MASK; /* It is safe to write 0's to other bits. */
@@ -1288,7 +1295,7 @@ static void iic_master_rxi_read_data (iic_master_instance_ctrl_t * const p_ctrl)
     else if (2U == p_ctrl->remain)
     {
         /* Writes to be done separately.
-         * See Note 1 in "I2C Bus Mode Register 3 (ICMR3)" in the IIC section of the relevant hardware manual.
+         * See Note 1 in Section 36.2.5 'I2C Bus Mode Register 3 (ICMR3)' of the RA6M3 manual R01UH0886EJ0100
          */
         p_ctrl->p_reg->ICMR3_b.ACKWP = 1; /* Write enable ACKBT */
         p_ctrl->p_reg->ICMR3_b.ACKBT = 1;
@@ -1333,7 +1340,7 @@ static void iic_master_rxi_read_data (iic_master_instance_ctrl_t * const p_ctrl)
             p_ctrl->p_reg->ICCR2 = (uint8_t) IIC_MASTER_ICCR2_SP_BIT_MASK; /* It is safe to write 0's to other bits. */
 
             /* STOP flag will not be set just yet. STOP will be set only after reading the last byte from ICDRR and clearing the WAIT.
-             * See Point #7 under "Master Receive Operation" in the IIC section of the relevant hardware manual.
+             * See Point #7 under '36.3.4 Master Receive Operation' of the RA6M3 manual R01UH0886EJ0100.
              */
         }
     }
@@ -1381,7 +1388,7 @@ static void iic_master_txi_send_address (iic_master_instance_ctrl_t * const p_ct
         p_ctrl->p_reg->ICIER_b.TIE = 0U;
 
         /* Wait for the value to reflect at the peripheral.
-         * See 'Note' under table "Interrupt sources" in the IIC section of the relevant hardware manual. */
+         * See 'Note' under Table 36.10 "Interrupt sources" of the RA6M3 manual R01UH0886EJ0100 */
         IIC_MASTER_HARDWARE_REGISTER_WAIT(p_ctrl->p_reg->ICIER_b.TIE, 0U, timeout_count);
 
         /* Enable the transmit end IRQ, so that we can generate a RESTART condition */
