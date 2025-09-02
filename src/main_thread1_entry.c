@@ -367,7 +367,7 @@ void main_thread1_entry(void *pvParameters)
     else
     {
 #if LWIP_AUTOIP
-        xprintf("[LwIP] DHCP timeout → AutoIP\n");
+        xprintf("[LwIP] DHCP timeout: AutoIP start...\n");
         netifapi_autoip_start(&netif);
         (void)xSemaphoreTake(g_ip_ready_sem, pdMS_TO_TICKS(10000));
         if (!ip4_addr_isany_val(*netif_ip4_addr(&netif)))
