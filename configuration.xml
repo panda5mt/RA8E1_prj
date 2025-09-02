@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<raConfiguration version="11">
+<raConfiguration version="12">
   <generalSettings>
     <option key="#Board#" value="board.ra8e1fpb"/>
     <option key="CPU" value="RA8E1"/>
@@ -885,9 +885,9 @@
       <property id="config.middleware.lwip_tcpip.lwip_single_netif" value="config.middleware.lwip_tcpip.lwip_single_netif.enabled"/>
       <property id="config.middleware.lwip_tcpip.lwip_netif_hostname" value="config.middleware.lwip_tcpip.lwip_netif_hostname.disabled"/>
       <property id="config.middleware.lwip_tcpip.lwip_netif_api" value="config.middleware.lwip_tcpip.lwip_netif_api.enabled"/>
-      <property id="config.middleware.lwip_tcpip.lwip_netif_status_callback" value="config.middleware.lwip_tcpip.lwip_netif_status_callback.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_netif_status_callback" value="config.middleware.lwip_tcpip.lwip_netif_status_callback.enabled"/>
       <property id="config.middleware.lwip_tcpip.lwip_netif_ext_status_callback" value="config.middleware.lwip_tcpip.lwip_netif_ext_status_callback.disabled"/>
-      <property id="config.middleware.lwip_tcpip.lwip_netif_link_callback" value="config.middleware.lwip_tcpip.lwip_netif_link_callback.disabled"/>
+      <property id="config.middleware.lwip_tcpip.lwip_netif_link_callback" value="config.middleware.lwip_tcpip.lwip_netif_link_callback.enabled"/>
       <property id="config.middleware.lwip_tcpip.lwip_netif_remove_callback" value="config.middleware.lwip_tcpip.lwip_netif_remove_callback.enabled"/>
       <property id="config.middleware.lwip_tcpip.lwip_netif_hwaddrhint" value="config.middleware.lwip_tcpip.lwip_netif_hwaddrhint.disabled"/>
       <property id="config.middleware.lwip_tcpip.lwip_netif_tx_single_pbuf" value="config.middleware.lwip_tcpip.lwip_netif_tx_single_pbuf.enabled"/>
@@ -898,20 +898,20 @@
       <property id="config.middleware.lwip_tcpip.lwip_loopback_max_pbufs" value="0"/>
       <property id="config.middleware.lwip_tcpip.lwip_netif_loopback_multithreading" value="config.middleware.lwip_tcpip.lwip_netif_loopback_multithreading.no_sys"/>
       <property id="config.middleware.lwip_tcpip.tcpip_thread_name" value="tcpip_thread"/>
-      <property id="config.middleware.lwip_tcpip.tcpip_thread_stacksize" value="0"/>
+      <property id="config.middleware.lwip_tcpip.tcpip_thread_stacksize" value="2048"/>
       <property id="config.middleware.lwip_tcpip.tcpip_thread_prio" value="1"/>
-      <property id="config.middleware.lwip_tcpip.tcpip_mbox_size" value="0"/>
+      <property id="config.middleware.lwip_tcpip.tcpip_mbox_size" value="32"/>
       <property id="config.middleware.lwip_tcpip.lwip_tcpip_thread_alive" value=""/>
       <property id="config.middleware.lwip_tcpip.slipif_thread_name" value="slipif_loop"/>
       <property id="config.middleware.lwip_tcpip.slipif_thread_stacksize" value="0"/>
       <property id="config.middleware.lwip_tcpip.slipif_thread_prio" value="1"/>
       <property id="config.middleware.lwip_tcpip.default_thread_name" value="lwIP"/>
-      <property id="config.middleware.lwip_tcpip.default_thread_stacksize" value="0"/>
+      <property id="config.middleware.lwip_tcpip.default_thread_stacksize" value="1024"/>
       <property id="config.middleware.lwip_tcpip.default_thread_prio" value="1"/>
       <property id="config.middleware.lwip_tcpip.default_raw_recvmbox_size" value="0"/>
-      <property id="config.middleware.lwip_tcpip.default_udp_recvmbox_size" value="0"/>
-      <property id="config.middleware.lwip_tcpip.default_tcp_recvmbox_size" value="0"/>
-      <property id="config.middleware.lwip_tcpip.default_acceptmbox_size" value="0"/>
+      <property id="config.middleware.lwip_tcpip.default_udp_recvmbox_size" value="16"/>
+      <property id="config.middleware.lwip_tcpip.default_tcp_recvmbox_size" value="16"/>
+      <property id="config.middleware.lwip_tcpip.default_acceptmbox_size" value="16"/>
       <property id="config.middleware.lwip_tcpip.lwip_netconn" value="config.middleware.lwip_tcpip.lwip_netconn.enabled"/>
       <property id="config.middleware.lwip_tcpip.lwip_tcpip_timeout" value="config.middleware.lwip_tcpip.lwip_tcpip_timeout.disabled"/>
       <property id="config.middleware.lwip_tcpip.lwip_netconn_sem_per_thread" value="config.middleware.lwip_tcpip.lwip_netconn_sem_per_thread.disabled"/>

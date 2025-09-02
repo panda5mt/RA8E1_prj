@@ -639,9 +639,9 @@ FSP Configuration
     NETIF: LwIP single netif: Enabled
     NETIF: LwIP netif hostname: Disabled
     NETIF: LwIP netif api: Enabled
-    NETIF: LwIP netif status callback: Disabled
+    NETIF: LwIP netif status callback: Enabled
     NETIF: LwIP netif ext status callback: Disabled
-    NETIF: LwIP netif link callback: Disabled
+    NETIF: LwIP netif link callback: Enabled
     NETIF: LwIP netif remove callback: Enabled
     NETIF: LwIP netif hardware addr hint: Disabled
     NETIF: LwIP netif TX single pbuf: Enabled
@@ -652,20 +652,20 @@ FSP Configuration
     NETIF: Loopback interface: LwIP loopback max pbufs: 0
     NETIF: Loopback interface: LwIP netif loopback multithreading: (!NO_SYS)
     Infrastructure: Threading: TCPIP thread name: tcpip_thread
-    Infrastructure: Threading: TCPIP thread stacksize: 0
+    Infrastructure: Threading: TCPIP thread stacksize: 2048
     Infrastructure: Threading: TCPIP thread prio: 1
-    Infrastructure: Threading: TCPIP mbox size: 0
+    Infrastructure: Threading: TCPIP mbox size: 32
     Infrastructure: Threading: LwIP tcpip thread alive: 
     Infrastructure: Threading: Slipif thread name: slipif_loop
     Infrastructure: Threading: Slipif thread stacksize: 0
     Infrastructure: Threading: Slipif thread prio: 1
     Infrastructure: Threading: Default thread name: lwIP
-    Infrastructure: Threading: Default thread stacksize: 0
+    Infrastructure: Threading: Default thread stacksize: 1024
     Infrastructure: Threading: Default thread prio: 1
     Infrastructure: Threading: Default RAW recvmbox size: 0
-    Infrastructure: Threading: Default UDP recvmbox size: 0
-    Infrastructure: Threading: Default TCP recvmbox size: 0
-    Infrastructure: Threading: Default acceptmbox size: 0
+    Infrastructure: Threading: Default UDP recvmbox size: 16
+    Infrastructure: Threading: Default TCP recvmbox size: 16
+    Infrastructure: Threading: Default acceptmbox size: 16
     Thread-safe APIs: Netconn: LwIP netconn: Enabled
     Thread-safe APIs: Netconn: LwIP TCPIP timeout: Disabled
     Thread-safe APIs: Netconn: LwIP netconn sem per thread: Disabled

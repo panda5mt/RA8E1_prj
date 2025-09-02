@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<raConfiguration version="11">
+<raConfiguration version="12">
   <generalSettings>
     <option key="#Board#" value="board.ra8e1fpb"/>
     <option key="CPU" value="RA8E1"/>
