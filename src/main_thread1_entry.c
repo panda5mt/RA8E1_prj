@@ -437,7 +437,6 @@ void main_thread1_entry(void *pvParameters)
     }
 
 forever:
-    /* もう sys_check_timeouts() は不要。任意のアプリ処理だけ回す。 */
     while (1)
     {
         vTaskDelay(pdMS_TO_TICKS(1000));
