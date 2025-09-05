@@ -22,7 +22,7 @@
 #define UDP_PORT_DEST 9000
 
 #define HYPERRAM_BASE_ADDR ((void *)0x90000000U) /* Device on CS1 */
-#define TEST_DATA_LENGTH (256U)                  // テストデータ長
+#define TEST_DATA_LENGTH (64U)                   // テストデータ長
 
 // COMMAND SET(infineon S80KS5123)
 // #define  <COMMAND>               <CODE>     <CA-DATA> | <ADDRESS(bytes)>   | <Latency cycles>  | <Data (bytes)>
@@ -290,13 +290,14 @@ void ospi_hyperram_test(void)
                    (uint8_t *const)&hyperram_ptr[0],
                    TEST_DATA_LENGTH);
 
-    vTaskDelay(pdMS_TO_TICKS(100));
+    // 書き込み直後に読み出すとデータが不正になる場合があるので、バッファクリア
+    R_XSPI0->BMCTL1 = (uint32_t)(0x03u << R_XSPI0_BMCTL1_PBUFCLRCH_Pos);
+    __DSB();
+    __ISB();
 
+    vTaskDelay(pdMS_TO_TICKS(100));
     // 5. 読み出しバッファ
     memcpy(&read_data[0], &hyperram_ptr[0], TEST_DATA_LENGTH);
-    vTaskDelay(pdMS_TO_TICKS(100));
-
-    // memcpy(&read_data[0], &hyperram_ptr[0], TEST_DATA_LENGTH);
 
     // 6. 検証
     for (uint32_t i = 0; i < TEST_DATA_LENGTH; i++)
