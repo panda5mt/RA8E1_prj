@@ -276,7 +276,7 @@ void ospi_hyperram_test(void)
 
     for (uint32_t i = 0; i < TEST_DATA_LENGTH; i++)
     {
-        write_data[i] = 255 - (uint8_t)(i & 0xff);
+        write_data[i] = (uint8_t)(i & 0xff);
         read_data[i] = 0x00;
     }
 
@@ -296,7 +296,7 @@ void ospi_hyperram_test(void)
     memcpy(&read_data[0], &hyperram_ptr[0], TEST_DATA_LENGTH);
     vTaskDelay(pdMS_TO_TICKS(100));
 
-    memcpy(&read_data[0], &hyperram_ptr[0], TEST_DATA_LENGTH);
+    // memcpy(&read_data[0], &hyperram_ptr[0], TEST_DATA_LENGTH);
 
     // 6. 検証
     for (uint32_t i = 0; i < TEST_DATA_LENGTH; i++)
