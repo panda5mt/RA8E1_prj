@@ -290,6 +290,8 @@ void ospi_hyperram_test(void)
                    (uint8_t *const)&hyperram_ptr[0],
                    TEST_DATA_LENGTH);
 
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
     // 5. 読み出しバッファ
     // memcpy(&read_data[0], &hyperram_ptr[0], TEST_DATA_LENGTH);
     R_OSPI_B_Write(&g_ospi0_ctrl,
