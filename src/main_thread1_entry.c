@@ -22,7 +22,7 @@
 #define UDP_PORT_DEST 9000
 
 #define HYPERRAM_BASE_ADDR ((void *)0x90000000U) /* Device on CS1 */
-#define TEST_DATA_LENGTH (64U)                   // テストデータ長
+#define TEST_DATA_LENGTH (256U)                  // テストデータ長
 
 // COMMAND SET(infineon S80KS5123)
 // #define  <COMMAND>               <CODE>     <CA-DATA> | <ADDRESS(bytes)>   | <Latency cycles>  | <Data (bytes)>
@@ -193,82 +193,82 @@ void ospi_hyperram_test(void)
     }
     xprintf("[OSPI] init Ok\n");
 
-    spi_flash_direct_transfer_t g_ospi0_trans;
+    // spi_flash_direct_transfer_t g_ospi0_trans;
 
-    // write enable
-    err = ospi_raw_trans(&g_ospi0_trans,
-                         OSPI_B_COMMAND_WRITE_ENABLE, 2,
-                         0x00000000, 0,
-                         0, 0,
-                         0, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
-    if (FSP_SUCCESS != err)
-    {
-        xprintf("[OSPI] direct transfer error!\n");
-        return;
-    }
+    // // write enable
+    // err = ospi_raw_trans(&g_ospi0_trans,
+    //                      OSPI_B_COMMAND_WRITE_ENABLE, 2,
+    //                      0x00000000, 0,
+    //                      0, 0,
+    //                      0, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+    // if (FSP_SUCCESS != err)
+    // {
+    //     xprintf("[OSPI] direct transfer error!\n");
+    //     return;
+    // }
 
-    // write memory
-    err = ospi_raw_trans(&g_ospi0_trans,
-                         OSPI_B_COMMAND_WRITE, 2,
-                         0x00000080, 4,
-                         0xDEADBEEF, 4,
-                         15, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
-    if (FSP_SUCCESS != err)
-    {
-        xprintf("[OSPI] direct transfer error!\n");
-        return;
-    }
+    // // write memory
+    // err = ospi_raw_trans(&g_ospi0_trans,
+    //                      OSPI_B_COMMAND_WRITE, 2,
+    //                      0x00000080, 4,
+    //                      0xDEADBEEF, 4,
+    //                      15, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+    // if (FSP_SUCCESS != err)
+    // {
+    //     xprintf("[OSPI] direct transfer error!\n");
+    //     return;
+    // }
 
-    // read ID0/ID1
-    err = ospi_raw_trans(&g_ospi0_trans,
-                         OSPI_B_COMMAND_READ_ID, 2,
-                         0x00000000, 4,
-                         0, 4,
-                         15, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
-    if (FSP_SUCCESS != err)
-    {
-        xprintf("[OSPI] direct transfer error!\n");
-        return;
-    }
-    xprintf("ID0/ID1=0x%08x\n", g_ospi0_trans.data);
+    // // read ID0/ID1
+    // err = ospi_raw_trans(&g_ospi0_trans,
+    //                      OSPI_B_COMMAND_READ_ID, 2,
+    //                      0x00000000, 4,
+    //                      0, 4,
+    //                      15, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
+    // if (FSP_SUCCESS != err)
+    // {
+    //     xprintf("[OSPI] direct transfer error!\n");
+    //     return;
+    // }
+    // xprintf("ID0/ID1=0x%08x\n", g_ospi0_trans.data);
 
-    // read CR0
-    err = ospi_raw_trans(&g_ospi0_trans,
-                         OSPI_B_COMMAND_READ_REGISTER, 2,
-                         0x00000004, 4,
-                         0x00, 2,
-                         15, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
-    if (FSP_SUCCESS != err)
-    {
-        xprintf("[OSPI] direct transfer error!\n");
-        return;
-    }
-    xprintf("CR0=0x%04x\n", g_ospi0_trans.data);
+    // // read CR0
+    // err = ospi_raw_trans(&g_ospi0_trans,
+    //                      OSPI_B_COMMAND_READ_REGISTER, 2,
+    //                      0x00000004, 4,
+    //                      0x00, 2,
+    //                      15, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
+    // if (FSP_SUCCESS != err)
+    // {
+    //     xprintf("[OSPI] direct transfer error!\n");
+    //     return;
+    // }
+    // xprintf("CR0=0x%04x\n", g_ospi0_trans.data);
 
-    // read memory
-    err = ospi_raw_trans(&g_ospi0_trans,
-                         OSPI_B_COMMAND_READ, 2,
-                         0x00000080, 4,
-                         0x00, 4,
-                         15, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
-    if (FSP_SUCCESS != err)
-    {
-        xprintf("[OSPI] direct transfer error!\n");
-        return;
-    }
-    xprintf("Data=0x%08x\n", g_ospi0_trans.data);
+    // // read memory
+    // err = ospi_raw_trans(&g_ospi0_trans,
+    //                      OSPI_B_COMMAND_READ, 2,
+    //                      0x00000080, 4,
+    //                      0x00, 4,
+    //                      15, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
+    // if (FSP_SUCCESS != err)
+    // {
+    //     xprintf("[OSPI] direct transfer error!\n");
+    //     return;
+    // }
+    // xprintf("Data=0x%08x\n", g_ospi0_trans.data);
 
-    // write enable
-    err = ospi_raw_trans(&g_ospi0_trans,
-                         OSPI_B_COMMAND_WRITE_ENABLE, 2,
-                         0x00000000, 0,
-                         0, 0,
-                         0, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
-    if (FSP_SUCCESS != err)
-    {
-        xprintf("[OSPI] direct transfer error!\n");
-        return;
-    }
+    // // write enable
+    // err = ospi_raw_trans(&g_ospi0_trans,
+    //                      OSPI_B_COMMAND_WRITE_ENABLE, 2,
+    //                      0x00000000, 0,
+    //                      0, 0,
+    //                      0, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+    // if (FSP_SUCCESS != err)
+    // {
+    //     xprintf("[OSPI] direct transfer error!\n");
+    //     return;
+    // }
 
     // 2. 書き込みデータ作成
     uint8_t write_data[TEST_DATA_LENGTH];
@@ -293,18 +293,17 @@ void ospi_hyperram_test(void)
     vTaskDelay(pdMS_TO_TICKS(100));
 
     // 5. 読み出しバッファ
-    // memcpy(&read_data[0], &hyperram_ptr[0], TEST_DATA_LENGTH);
-    R_OSPI_B_Write(&g_ospi0_ctrl,
-                   (uint8_t const *const)&hyperram_ptr[0],
-                   (uint8_t *const)&read_data[0],
-                   TEST_DATA_LENGTH);
+    memcpy(&read_data[0], &hyperram_ptr[0], TEST_DATA_LENGTH);
+    vTaskDelay(pdMS_TO_TICKS(100));
+
+    memcpy(&read_data[0], &hyperram_ptr[0], TEST_DATA_LENGTH);
 
     // 6. 検証
     for (uint32_t i = 0; i < TEST_DATA_LENGTH; i++)
     {
         if (read_data[i] != write_data[i])
         {
-            xprintf("[OSPI] data error at %d: 0x%02x\n", i, read_data[i]);
+            xprintf("[OSPI] data error at %d: 0x%02x!=0x%02x\n", i, read_data[i], write_data[i]);
         }
     }
     // 正常終了

@@ -1123,7 +1123,7 @@ FSP Configuration
       Command Sets: High-speed Mode: Sector Erase: Command Code: 0
       Command Sets: High-speed Mode: Block Erase: Command Code: 0
       Command Sets: High-speed Mode: Chip Erase: Command Code: 0
-      Timing Settings: Chip Select: Command Interval: 1 cycle
+      Timing Settings: Chip Select: Command Interval: 2 cycles
       Timing Settings: Chip Select: Pull-up Timing: No Extension
       Timing Settings: Chip Select: Pull-down Timing: No Extension
       Timing Settings: DS Latching Delay: Auto-calibrate
