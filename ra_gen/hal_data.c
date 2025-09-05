@@ -25,7 +25,7 @@ const dmac_extended_cfg_t g_transfer0_extend =
 #else
     .irq                 = FSP_INVALID_VECTOR,
 #endif
-    .ipl                 = (BSP_IRQ_DISABLED),
+    .ipl                 = (9),
     .channel             = 0,
     .p_callback          = NULL,
     .p_context           = NULL,
