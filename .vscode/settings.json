@@ -30,6 +30,7 @@
   "editor.formatOnSave": true,
   "editor.formatOnType": true,
   "files.associations": {
+    ".fantomasignore": "ignore",
     "xprintf.h": "c",
     "main_thread0.h": "c",
     "xprintf_helper.h": "c",
@@ -38,6 +39,7 @@
     "picotls.h": "c",
     "r_usb_basic_api.h": "c",
     "freertosconfig.h": "c",
-    "string.h": "c"
+    "string.h": "c",
+    "r_dmac.h": "c"
   },
 }

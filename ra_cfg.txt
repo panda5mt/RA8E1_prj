@@ -836,7 +836,7 @@ FSP Configuration
     Row Addressing Support: Disable
     
   Module "Transfer (r_dmac)"
-    Parameter Checking: Default (BSP)
+    Parameter Checking: Enabled
     
   FreeRTOS
     General: Custom FreeRTOSConfig.h: 
@@ -1075,18 +1075,18 @@ FSP Configuration
       General: Write Status Bit: b7
       General: Write Enable Bit: b7
       General: DS Auto-calibration Pattern Address: 0
-      Command Sets: Custom Table: Table Pointer: g_command_sets
-      Command Sets: Custom Table: Table Length: 1
+      Command Sets: Custom Table: Table Pointer: 
+      Command Sets: Custom Table: Table Length: 0
       Command Sets: Erase Sizes: Sector Erase: 0
       Command Sets: Erase Sizes: Block Erase: 0
       Command Sets: Initial Mode: Protocol Mode: Dual data rate OPI (8D-8D-8D)
       Command Sets: Initial Mode: Frame Format: xSPI Profile 2.0
       Command Sets: Initial Mode: Latency Mode: Fixed
       Command Sets: Initial Mode: Address Length: 4 bytes
-      Command Sets: Initial Mode: Address MSB Mask: 0
+      Command Sets: Initial Mode: Address MSB Mask: 0x03
       Command Sets: Initial Mode: Command Code Length: 2 bytes
       Command Sets: Initial Mode: Status Register Address Length: 4 bytes
-      Command Sets: Initial Mode: Status Register Address: 0x00
+      Command Sets: Initial Mode: Status Register Address: 0
       Command Sets: Initial Mode: Read: Command Code: 0xEEEE
       Command Sets: Initial Mode: Read: Dummy Cycles: 15
       Command Sets: Initial Mode: Program: Command Code: 0xDEDE
@@ -1153,9 +1153,9 @@ FSP Configuration
         Number of Transfers: 64
         Number of Blocks (Valid only in Repeat,Block or Repeat-Block Mode): 1
         Activation Source: No ELC Trigger
-        Callback: NULL
+        Callback: ospi_dmac_cb
         Transfer End Interrupt Priority: Priority 9
-        Interrupt Frequency: Interrupt after all transfers have completed
+        Interrupt Frequency: Interrupt after each block, or repeat size is transferred
         Offset value (Valid only when address mode is \'Offset\'): 0
         Source Buffer Size: 0
         
