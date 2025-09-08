@@ -22,7 +22,7 @@
 #define UDP_PORT_DEST 9000
 
 #define HYPERRAM_BASE_ADDR ((void *)0x90000000U) /* Device on CS1 */
-#define TEST_DATA_LENGTH (1024U * 30U)           // テストデータ長
+#define TEST_DATA_LENGTH (1024U * 10)            // テストデータ長
 
 // COMMAND SET(infineon S80KS5123)
 // #define  <COMMAND>               <CODE>     <CA-DATA> | <ADDRESS(bytes)>   | <Latency cycles>  | <Data (bytes)>
@@ -153,6 +153,19 @@ ospi_b_xspi_command_set_t g_command_sets[] =
 
             .status_dummy_cycles = NULL,
             .p_erase_commands = NULL}};
+
+// アドレス→擬似乱数(1byte)。seed を変えるとパターンが変わる（再現性あり）
+static inline uint8_t addr_prng_byte(uint32_t addr, uint32_t seed)
+{
+    uint32_t x = addr ^ seed;
+    x += 0x9E3779B9u; // golden ratio
+    x ^= x >> 16;
+    x *= 0x85EBCA6Bu;
+    x ^= x >> 13;
+    x *= 0xC2B2AE35u;
+    x ^= x >> 16;
+    return (uint8_t)x;
+}
 
 fsp_err_t ospi_raw_trans(spi_flash_direct_transfer_t *p_trans,
                          uint32_t command, uint8_t cmd_len,
@@ -389,7 +402,7 @@ void ospi_hyperram_test(void)
 
     for (uint32_t i = 0; i < TEST_DATA_LENGTH; i++)
     {
-        write_data[i] = i;
+        write_data[i] = (addr_prng_byte(i, 0x12345678u) & 0xFF);
         read_data[i] = 0x00;
     }
 

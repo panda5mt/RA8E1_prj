@@ -47,9 +47,9 @@ ospi_b_instance_ctrl_t g_ospi0_ctrl;
 
 static ospi_b_timing_setting_t g_ospi0_timing_settings =
 {
-    .command_to_command_interval = OSPI_B_COMMAND_INTERVAL_CLOCKS_8,
-    .cs_pullup_lag               = OSPI_B_COMMAND_CS_PULLUP_CLOCKS_1,
-    .cs_pulldown_lead            = OSPI_B_COMMAND_CS_PULLDOWN_CLOCKS_1,
+    .command_to_command_interval = OSPI_B_COMMAND_INTERVAL_CLOCKS_16,
+    .cs_pullup_lag               = OSPI_B_COMMAND_CS_PULLUP_CLOCKS_NO_EXTENSION,
+    .cs_pulldown_lead            = OSPI_B_COMMAND_CS_PULLDOWN_CLOCKS_NO_EXTENSION,
     .sdr_drive_timing            = OSPI_B_SDR_DRIVE_TIMING_AT_CK,
     .sdr_sampling_edge           = OSPI_B_CK_EDGE_FALLING,
     .sdr_sampling_delay          = OSPI_B_SDR_SAMPLING_DELAY_NONE,
