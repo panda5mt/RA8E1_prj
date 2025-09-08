@@ -22,7 +22,7 @@
 #define UDP_PORT_DEST 9000
 
 #define HYPERRAM_BASE_ADDR ((void *)0x90000000U) /* Device on CS1 */
-#define TEST_DATA_LENGTH (1024U * 10)            // テストデータ長
+#define TEST_DATA_LENGTH (1024U * 10U)           // テストデータ長
 
 // COMMAND SET(infineon S80KS5123)
 // #define  <COMMAND>               <CODE>     <CA-DATA> | <ADDRESS(bytes)>   | <Latency cycles>  | <Data (bytes)>
@@ -400,6 +400,12 @@ void ospi_hyperram_test(void)
     uint8_t write_data[TEST_DATA_LENGTH];
     uint8_t read_data[TEST_DATA_LENGTH];
 
+    int za = 16;
+    R_XSPI0->WRAPCFG =
+        (R_XSPI0->WRAPCFG & ~R_XSPI0_WRAPCFG_DSSFTCS1_Msk) |
+        ((za << R_XSPI0_WRAPCFG_DSSFTCS1_Pos) & R_XSPI0_WRAPCFG_DSSFTCS1_Msk);
+    __DMB();
+
     for (uint32_t i = 0; i < TEST_DATA_LENGTH; i++)
     {
         write_data[i] = (addr_prng_byte(i, 0x12345678u) & 0xFF);
@@ -419,25 +425,41 @@ void ospi_hyperram_test(void)
 
     vTaskDelay(pdMS_TO_TICKS(1000));
 
-    // 5. 読み出しバッファ
-    memcpy(&read_data[0], &hyperram_ptr[0], TEST_DATA_LENGTH);
+    SCB_CleanDCache();   // 念のため
+    SCB_DisableDCache(); // 一時的にOFF
 
-    // err = R_OSPI_B_Write(&g_ospi0_ctrl,
-    //                      (uint8_t const *const)&hyperram_ptr[0],
-    //                      (uint8_t *const)&read_data[0],
-    //                      TEST_DATA_LENGTH);
-    // if (FSP_SUCCESS != err)
-    // {
-    //     xprintf("[OSPI] read error!\n");
-    // }
-
-    // 6. 検証
-    for (uint32_t i = 0; i < TEST_DATA_LENGTH; i++)
+    for (int z = 0; z < 32; z++)
     {
-        if (read_data[i] != write_data[i])
+        int rerror = 0;
+        R_XSPI0->WRAPCFG =
+            (R_XSPI0->WRAPCFG & ~R_XSPI0_WRAPCFG_DSSFTCS1_Msk) |
+            ((z << R_XSPI0_WRAPCFG_DSSFTCS1_Pos) & R_XSPI0_WRAPCFG_DSSFTCS1_Msk);
+        __DMB();
+        SCB_CleanDCache();   // 念のため
+        SCB_DisableDCache(); // 一時的にOFF
+
+        // 5. 読み出しバッファ
+        memcpy(&read_data[0], &hyperram_ptr[0], TEST_DATA_LENGTH);
+
+        // err = R_OSPI_B_Write(&g_ospi0_ctrl,
+        //                      (uint8_t const *const)&hyperram_ptr[0],
+        //                      (uint8_t *const)&read_data[0],
+        //                      TEST_DATA_LENGTH);
+        // if (FSP_SUCCESS != err)
+        // {
+        //     xprintf("[OSPI] read error!\n");
+        // }
+
+        // 6. 検証
+        for (uint32_t i = 0; i < TEST_DATA_LENGTH; i++)
         {
-            xprintf("[OSPI] data error at %d: 0x%02x!=0x%02x\n", i, read_data[i], write_data[i]);
+            if (read_data[i] != write_data[i])
+            {
+                // xprintf("[OSPI] data error at %d: 0x%02x!=0x%02x\n", i, read_data[i], write_data[i]);
+                rerror++;
+            }
         }
+        xprintf("[OSPI] margin z=%d,error = %d\n", z, rerror);
     }
     // 正常終了
     /*
