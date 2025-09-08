@@ -22,7 +22,7 @@
 #define UDP_PORT_DEST 9000
 
 #define HYPERRAM_BASE_ADDR ((void *)0x90000000U) /* Device on CS1 */
-#define TEST_DATA_LENGTH (1024U * 20U)           // テストデータ長
+#define TEST_DATA_LENGTH (1024U * 30U)           // テストデータ長
 
 // COMMAND SET(infineon S80KS5123)
 // #define  <COMMAND>               <CODE>     <CA-DATA> | <ADDRESS(bytes)>   | <Latency cycles>  | <Data (bytes)>
