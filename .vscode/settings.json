@@ -40,6 +40,7 @@
     "r_usb_basic_api.h": "c",
     "freertosconfig.h": "c",
     "string.h": "c",
-    "r_dmac.h": "c"
+    "r_dmac.h": "c",
+    "limits": "c"
   },
 }
