@@ -365,11 +365,7 @@ void ospi_hyperram_test(void)
     // 3. 書き込み先アドレス（HyperRAM内）
     uint8_t *hyperram_ptr = (uint8_t *)HYPERRAM_BASE_ADDR;
 
-    // 4. 書き込み（メモリマップドアクセス)
-    SCB_CleanDCache();   // 念のため
-    SCB_DisableDCache(); // 一時的にOFF
-
-    // 書き込みはR_OSPI_B_Write
+    // 4. 書き込み（R_OSPI_B_Write)
     err = R_OSPI_B_Write(&g_ospi0_ctrl, &write_data[0], &hyperram_ptr[0], TEST_DATA_LENGTH);
     if (FSP_SUCCESS != err)
     {
@@ -383,9 +379,6 @@ void ospi_hyperram_test(void)
         (R_XSPI0->WRAPCFG & ~R_XSPI0_WRAPCFG_DSSFTCS1_Msk) |
         ((z << R_XSPI0_WRAPCFG_DSSFTCS1_Pos) & R_XSPI0_WRAPCFG_DSSFTCS1_Msk);
     __DMB();
-
-    SCB_CleanDCache();   // 念のため
-    SCB_DisableDCache(); // 一時的にOFF
 
     vTaskDelay(pdMS_TO_TICKS(1000));
 
