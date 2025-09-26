@@ -1142,9 +1142,9 @@ FSP Configuration
       DOTF: Decryption end address: 0x90001FFF
       Row Addressing: Row Address Length: No address
       
-      Instance "g_transfer0 Transfer (r_dmac) No ELC Trigger"
-        Name: g_transfer0
-        Channel: 0
+      Instance "g_transfer1 Transfer (r_dmac) No ELC Trigger"
+        Name: g_transfer1
+        Channel: 1
         Mode: Block
         Transfer Size: 1 Byte
         Destination Address Mode: Incremented
@@ -1155,7 +1155,7 @@ FSP Configuration
         Activation Source: No ELC Trigger
         Callback: ospi_dmac_cb
         Transfer End Interrupt Priority: Priority 9
-        Interrupt Frequency: Interrupt after each block, or repeat size is transferred
+        Interrupt Frequency: Interrupt after all transfers have completed
         Offset value (Valid only when address mode is \'Offset\'): 0
         Source Buffer Size: 0
         

@@ -16,11 +16,11 @@
             #include "r_ceu.h"
 FSP_HEADER
 /* Transfer on DMAC Instance. */
-extern const transfer_instance_t g_transfer0;
+extern const transfer_instance_t g_transfer1;
 
 /** Access the DMAC instance using these structures when calling API functions directly (::p_api is not used). */
-extern dmac_instance_ctrl_t g_transfer0_ctrl;
-extern const transfer_cfg_t g_transfer0_cfg;
+extern dmac_instance_ctrl_t g_transfer1_ctrl;
+extern const transfer_cfg_t g_transfer1_cfg;
 
 #ifndef ospi_dmac_cb
 void ospi_dmac_cb(transfer_callback_args_t * p_args);

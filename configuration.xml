@@ -646,8 +646,8 @@
       <property id="module.driver.ospi_b.row_addressing.row_index_bytes" value="module.driver.ospi_b.address_bytes.none"/>
     </module>
     <module id="module.driver.transfer_on_dmac.477303345">
-      <property id="module.driver.transfer.name" value="g_transfer0"/>
-      <property id="module.driver.transfer.channel" value="0"/>
+      <property id="module.driver.transfer.name" value="g_transfer1"/>
+      <property id="module.driver.transfer.channel" value="1"/>
       <property id="module.driver.transfer.mode" value="module.driver.transfer.mode.mode_normal"/>
       <property id="module.driver.transfer.size" value="module.driver.transfer.size.size_2_byte"/>
       <property id="module.driver.transfer.dest_addr_mode" value="module.driver.transfer.dest_addr_mode.addr_mode_fixed"/>
@@ -658,7 +658,7 @@
       <property id="module.driver.transfer.activation_event" value="enum.elc_none.none"/>
       <property id="module.driver.transfer.p_callback" value="ospi_dmac_cb"/>
       <property id="module.driver.transfer.ipl" value="board.icu.common.irq.priority9"/>
-      <property id="module.driver.transfer.interrupt" value="module.driver.transfer.interrupt.interrupt_each"/>
+      <property id="module.driver.transfer.interrupt" value="module.driver.transfer.interrupt.interrupt_end"/>
       <property id="module.driver.transfer.offset" value="1"/>
       <property id="module.driver.transfer.src.buffer" value="1"/>
     </module>

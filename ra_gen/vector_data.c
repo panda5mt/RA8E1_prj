@@ -9,7 +9,7 @@
             [2] = iic_master_txi_isr, /* IIC1 TXI (Transmit data empty) */
             [3] = iic_master_tei_isr, /* IIC1 TEI (Transmit end) */
             [4] = iic_master_eri_isr, /* IIC1 ERI (Transfer error) */
-            [5] = dmac_int_isr, /* DMAC0 INT (DMAC0 transfer end) */
+            [5] = dmac_int_isr, /* DMAC1 INT (DMAC1 transfer end) */
             [6] = usbfs_interrupt_handler, /* USBFS INT (USBFS interrupt) */
             [7] = usbfs_resume_handler, /* USBFS RESUME (USBFS resume interrupt) */
             [8] = usbfs_d0fifo_handler, /* USBFS FIFO 0 (DMA/DTC transfer request 0) */
@@ -24,7 +24,7 @@
             [2] = BSP_PRV_VECT_ENUM(EVENT_IIC1_TXI,GROUP2), /* IIC1 TXI (Transmit data empty) */
             [3] = BSP_PRV_VECT_ENUM(EVENT_IIC1_TEI,GROUP3), /* IIC1 TEI (Transmit end) */
             [4] = BSP_PRV_VECT_ENUM(EVENT_IIC1_ERI,GROUP4), /* IIC1 ERI (Transfer error) */
-            [5] = BSP_PRV_VECT_ENUM(EVENT_DMAC0_INT,GROUP5), /* DMAC0 INT (DMAC0 transfer end) */
+            [5] = BSP_PRV_VECT_ENUM(EVENT_DMAC1_INT,GROUP5), /* DMAC1 INT (DMAC1 transfer end) */
             [6] = BSP_PRV_VECT_ENUM(EVENT_USBFS_INT,GROUP6), /* USBFS INT (USBFS interrupt) */
             [7] = BSP_PRV_VECT_ENUM(EVENT_USBFS_RESUME,GROUP7), /* USBFS RESUME (USBFS resume interrupt) */
             [8] = BSP_PRV_VECT_ENUM(EVENT_USBFS_FIFO_0,GROUP0), /* USBFS FIFO 0 (DMA/DTC transfer request 0) */
