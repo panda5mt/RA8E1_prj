@@ -187,68 +187,10 @@ fsp_err_t ospi_raw_trans(spi_flash_direct_transfer_t *p_trans,
     err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, p_trans, dir);
     return err;
 }
-fsp_err_t ospi_memcpy(uint8_t *p_dest, uint8_t *p_src, uint32_t length)
-{
-    uint32_t burst_size = 64; // in bytes
-    spi_flash_direct_transfer_t g_ospi0_trans;
-    fsp_err_t err = FSP_SUCCESS;
-    while (length >= 0)
-    {
 
-        if (length <= burst_size) // final write
-        {
-            err = R_OSPI_B_Write(
-                &g_ospi0_ctrl,
-                p_src,
-                p_dest,
-                length);
-            if (FSP_SUCCESS != err)
-            {
-                xprintf("[OSPI] write error!\n");
-                break;
-            }
+uint8_t write_data[TEST_DATA_LENGTH];
+// uint8_t read_data[TEST_DATA_LENGTH];
 
-            while (cb_flag == false) // wait for DMAC transfer done
-            {
-                vTaskDelay(pdMS_TO_TICKS(10));
-            }
-            // xprintf("[OSPI] CB!!!!!!!!\n");
-            cb_flag = false;
-            break;
-        }
-        else // burst write
-        {
-            // write enable
-            err = ospi_raw_trans(&g_ospi0_trans,
-                                 OSPI_B_COMMAND_WRITE_ENABLE, 2,
-                                 0x00000000, 0,
-                                 0, 0,
-                                 0, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
-            if (FSP_SUCCESS != err)
-            {
-                xprintf("[OSPI] direct transfer error!\n");
-                return err;
-            }
-            err = R_OSPI_B_Write(&g_ospi0_ctrl, p_src, p_dest, burst_size);
-            if (FSP_SUCCESS != err)
-            {
-                xprintf("[OSPI] write error!\n");
-                break;
-            }
-            while (cb_flag == false) // wait for DMAC transfer done
-            {
-                vTaskDelay(pdMS_TO_TICKS(10));
-            }
-            // xprintf("[OSPI] CB_!!!!!!!!\n");
-            cb_flag = false;
-            length -= burst_size;
-            p_dest += burst_size;
-            p_src += burst_size;
-        }
-    }
-
-    return err;
-}
 void ospi_hyperram_test(void)
 {
     fsp_err_t err = FSP_SUCCESS;
@@ -346,8 +288,6 @@ void ospi_hyperram_test(void)
     xprintf("CR1=0x%04x\n", g_ospi0_trans.data);
 
     // 2. 書き込みデータ作成
-    uint8_t write_data[TEST_DATA_LENGTH];
-    uint8_t read_data[TEST_DATA_LENGTH];
 
     int za = 16;
     R_XSPI0->WRAPCFG =
@@ -356,45 +296,61 @@ void ospi_hyperram_test(void)
     __DMB();
 
     // 書き込みデータ代入
-    for (uint32_t i = 0; i < TEST_DATA_LENGTH; i++)
-    {
-        write_data[i] = (addr_prng_byte(i, 0x12345678u) & 0xFF);
-        read_data[i] = 0x00;
-    }
+    // for (uint32_t i = 0; i < TEST_DATA_LENGTH; i++)
+    // {
+    //     write_data[i] = (addr_prng_byte(i, 0x12345678u) & 0xFF);
+    //     read_data[i] = 0x00;
+    // }
 
     // 3. 書き込み先アドレス（HyperRAM内）
     uint8_t *hyperram_ptr = (uint8_t *)HYPERRAM_BASE_ADDR;
 
-    // 4. 書き込み（R_OSPI_B_Write)
-    err = R_OSPI_B_Write(&g_ospi0_ctrl, &write_data[0], &hyperram_ptr[0], TEST_DATA_LENGTH);
-    if (FSP_SUCCESS != err)
+    for (int jj = 0; jj < (int)(64 * 1024 * 1024 / TEST_DATA_LENGTH); jj++)
     {
-        xprintf("[OSPI] direct transfer error!\n");
-        return;
-    }
+        xprintf("hyperram_ptr=0x%X\n", hyperram_ptr); // debug
 
-    int z = 1;
-    int rerror = 0;
-    R_XSPI0->WRAPCFG =
-        (R_XSPI0->WRAPCFG & ~R_XSPI0_WRAPCFG_DSSFTCS1_Msk) |
-        ((z << R_XSPI0_WRAPCFG_DSSFTCS1_Pos) & R_XSPI0_WRAPCFG_DSSFTCS1_Msk);
-    __DMB();
-
-    vTaskDelay(pdMS_TO_TICKS(1000));
-
-    // 5. 読み出しバッファ(プリフェッチがないとデータが取れないみたい)
-    memcpy(read_data, hyperram_ptr, TEST_DATA_LENGTH * sizeof(char));
-
-    // 6. 検証
-    for (uint32_t i = 0; i < TEST_DATA_LENGTH; i++)
-    {
-        if (read_data[i] != write_data[i])
+        // 書き込みデータ代入
+        for (uint32_t i = 0; i < TEST_DATA_LENGTH; i++)
         {
-            xprintf("[OSPI] data error at %d: 0x%02x!=0x%02x\n", i, read_data[i], write_data[i]);
-            rerror++;
+            write_data[i] = (addr_prng_byte(i + jj * TEST_DATA_LENGTH, 0x12345678u) & 0xFF);
+            // read_data[i] = 0x00;
         }
+
+        // 4. 書き込み（R_OSPI_B_Write)
+        err = R_OSPI_B_Write(&g_ospi0_ctrl, &write_data[0], &hyperram_ptr[0], TEST_DATA_LENGTH);
+        if (FSP_SUCCESS != err)
+        {
+            xprintf("[OSPI] direct transfer error!\n");
+            return;
+        }
+
+        int z = 6;
+        R_XSPI0->WRAPCFG =
+            (R_XSPI0->WRAPCFG & ~R_XSPI0_WRAPCFG_DSSFTCS1_Msk) |
+            ((z << R_XSPI0_WRAPCFG_DSSFTCS1_Pos) & R_XSPI0_WRAPCFG_DSSFTCS1_Msk);
+        __DMB();
+
+        vTaskDelay(pdMS_TO_TICKS(10));
+
+        // 5. 読み出しバッファ(プリフェッチがないとデータが取れないみたい)
+        if (memcmp(write_data, hyperram_ptr, TEST_DATA_LENGTH * sizeof(char)) != 0)
+        {
+            xprintf("[OSPI] prefetch error!\n");
+        }
+
+        // // 6. 検証
+        // for (uint32_t i = 0; i < TEST_DATA_LENGTH; i++)
+        // {
+        //     if (read_data[i] != write_data[i])
+        //     {
+        //         xprintf("[OSPI] data error at %d: 0x%02x!=0x%02x\n", i, read_data[i], write_data[i]);
+        //         rerror++;
+        //     }
+        // }
+        // xprintf("[OSPI] margin z=%d,error = %d\n", z, rerror);
+
+        hyperram_ptr += TEST_DATA_LENGTH; // 次のバッファへ
     }
-    xprintf("[OSPI] margin z=%d,error = %d\n", z, rerror);
 
     // read CR0
     err = ospi_raw_trans(&g_ospi0_trans,
