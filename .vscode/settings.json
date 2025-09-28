@@ -41,6 +41,7 @@
     "freertosconfig.h": "c",
     "string.h": "c",
     "r_dmac.h": "c",
-    "limits": "c"
+    "limits": "c",
+    "putchar_ra8usb.h": "c"
   },
 }
