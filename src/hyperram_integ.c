@@ -1,5 +1,11 @@
 #include "hyperram_integ.h"
 #include "putchar_ra8usb.h"
+#include "putchar_ra8usb.h"
+#include "hal_data.h"
+
+#include "r_ospi_b.h"
+#include "r_spi_flash_api.h"
+#include <string.h>
 
 #define HYPERRAM_BASE_ADDR ((void *)0x90000000U) /* Device on CS1 */
 
@@ -154,9 +160,7 @@ fsp_err_t hyperram_init(void)
     }
     xprintf("CR1=0x%04x\n", g_ospi0_trans.data);
 
-    // 2. 書き込みデータ作成
-
-    int z = 16;
+    int z = 6;
     R_XSPI0->WRAPCFG =
         (R_XSPI0->WRAPCFG & ~R_XSPI0_WRAPCFG_DSSFTCS1_Msk) |
         ((z << R_XSPI0_WRAPCFG_DSSFTCS1_Pos) & R_XSPI0_WRAPCFG_DSSFTCS1_Msk);

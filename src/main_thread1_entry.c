@@ -14,7 +14,6 @@
 #endif
 
 #include "r_ospi_b.h"
-#include "r_spi_flash_api.h"
 #include "ra/fsp/src/bsp/mcu/all/bsp_io.h"
 
 #include <string.h> // for memcpy
@@ -157,14 +156,6 @@ void ospi_hyperram_test(void)
             xprintf("[OSPI] direct transfer error!\n");
             return;
         }
-
-        int z = 6;
-        R_XSPI0->WRAPCFG =
-            (R_XSPI0->WRAPCFG & ~R_XSPI0_WRAPCFG_DSSFTCS1_Msk) |
-            ((z << R_XSPI0_WRAPCFG_DSSFTCS1_Pos) & R_XSPI0_WRAPCFG_DSSFTCS1_Msk);
-        __DMB();
-
-        vTaskDelay(pdMS_TO_TICKS(10));
 
         // 5. 読み出しバッファ(プリフェッチがないとデータが取れないみたい)
         if (memcmp(write_data, hyperram_ptr, TEST_DATA_LENGTH * sizeof(char)) != 0)
