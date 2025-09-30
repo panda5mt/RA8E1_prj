@@ -1,6 +1,5 @@
 #include "hyperram_integ.h"
 #include "putchar_ra8usb.h"
-#include "putchar_ra8usb.h"
 #include "hal_data.h"
 
 #include "r_ospi_b.h"
