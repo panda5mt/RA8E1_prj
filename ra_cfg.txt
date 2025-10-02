@@ -1083,7 +1083,7 @@ FSP Configuration
       Command Sets: Initial Mode: Frame Format: xSPI Profile 2.0
       Command Sets: Initial Mode: Latency Mode: Fixed
       Command Sets: Initial Mode: Address Length: 4 bytes
-      Command Sets: Initial Mode: Address MSB Mask: 0x01
+      Command Sets: Initial Mode: Address MSB Mask: 0xf
       Command Sets: Initial Mode: Command Code Length: 2 bytes
       Command Sets: Initial Mode: Status Register Address Length: 4 bytes
       Command Sets: Initial Mode: Status Register Address: 0
@@ -1154,7 +1154,7 @@ FSP Configuration
         Number of Blocks (Valid only in Repeat,Block or Repeat-Block Mode): 1
         Activation Source: No ELC Trigger
         Callback: ospi_dmac_cb
-        Transfer End Interrupt Priority: Priority 9
+        Transfer End Interrupt Priority: Priority 10
         Interrupt Frequency: Interrupt after all transfers have completed
         Offset value (Valid only when address mode is \'Offset\'): 0
         Source Buffer Size: 0

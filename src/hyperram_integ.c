@@ -6,20 +6,8 @@
 #include "r_spi_flash_api.h"
 #include <string.h>
 
-#define HYPERRAM_BASE_ADDR ((void *)0x90000000U) /* Device on CS1 */
-
-// COMMAND SET(infineon S80KS5123)
-// #define  <COMMAND>               <CODE>     <CA-DATA> | <ADDRESS(bytes)>   | <Latency cycles>  | <Data (bytes)>
-#define OSPI_B_COMMAND_RESET_ENABLE (0x6666)   // 8-0-0  |  0                 |  0                |  0
-#define OSPI_B_COMMAND_RESET (0x9999)          // 8-0-0  |  0                 |  0                |  0
-#define OSPI_B_COMMAND_READ_ID (0x9F9F)        // 8-8-8  |  0x00(4bytes)      |  3-7              |  (4bytes)
-#define OSPI_B_COMMAND_POWER_DOWN (0xB9B9)     // 8-0-0  |  0                 |  0                |  0
-#define OSPI_B_COMMAND_READ (0xEEEE)           // 8-8-8  |  (4bytes)          |  3-7              |  1 to \infty
-#define OSPI_B_COMMAND_WRITE (0xDEDE)          // 8-8-8  |  (4bytes)          |  3-7              |  1 to \infty
-#define OSPI_B_COMMAND_WRITE_ENABLE (0x0606)   // 8-0-0  |  0                 |  0                |  0
-#define OSPI_B_COMMAND_WRITE_DISABLE (0x0404)  // 8-0-0  |  0                 |  0                |  0
-#define OSPI_B_COMMAND_READ_REGISTER (0x6565)  // 8-8-8  |  (4bytes)          |  3-7              |  (2bytes)
-#define OSPI_B_COMMAND_WRITE_REGISTER (0x7171) // 8-8-8  |  (4bytes)          |  0                |  (2bytes)
+// #define HYPERRAM_BASE_ADDR ((void *)0x90000000U) /* Device on CS1 */
+spi_flash_direct_transfer_t g_ospi0_trans;
 
 /* Custom command sets. */
 ospi_b_xspi_command_set_t g_command_sets[] =
@@ -83,8 +71,6 @@ fsp_err_t hyperram_init(void)
     }
     xprintf("[OSPI] init Ok\n");
 
-    spi_flash_direct_transfer_t g_ospi0_trans;
-
     // write enable
     err = ospi_raw_trans(&g_ospi0_trans,
                          OSPI_B_COMMAND_WRITE_ENABLE, 2,
@@ -101,7 +87,7 @@ fsp_err_t hyperram_init(void)
     err = ospi_raw_trans(&g_ospi0_trans,
                          OSPI_B_COMMAND_WRITE_REGISTER, 2,
                          0x00000004, 4,
-                         0x2f8F, 2,
+                         0x2D8F, 2, // 64Byte burst, Latency 7
                          0, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
     if (FSP_SUCCESS != err)
     {
@@ -159,7 +145,7 @@ fsp_err_t hyperram_init(void)
     }
     xprintf("CR1=0x%04x\n", g_ospi0_trans.data);
 
-    int z = 6;
+    int z = 16;
     R_XSPI0->WRAPCFG =
         (R_XSPI0->WRAPCFG & ~R_XSPI0_WRAPCFG_DSSFTCS1_Msk) |
         ((z << R_XSPI0_WRAPCFG_DSSFTCS1_Pos) & R_XSPI0_WRAPCFG_DSSFTCS1_Msk);

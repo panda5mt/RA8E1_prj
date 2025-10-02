@@ -136,9 +136,20 @@ void ospi_hyperram_test(void)
         return;
     }
 
+    // write enable
+    err = ospi_raw_trans(&g_ospi0_trans,
+                         OSPI_B_COMMAND_WRITE_ENABLE, 2,
+                         0x00000000, 0,
+                         0, 0,
+                         0, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+    if (FSP_SUCCESS != err)
+    {
+        xprintf("[OSPI] direct transfer error!\n");
+    }
+
     // 3. 書き込み先アドレス（HyperRAM内）
     uint8_t *hyperram_ptr = (uint8_t *)HYPERRAM_BASE_ADDR;
-
+    cb_flag = true;
     for (int jj = 0; jj < (int)(64 * 1024 * 1024 / TEST_DATA_LENGTH); jj++)
     {
         xprintf("hyperram_ptr=0x%X\n", hyperram_ptr); // debug
@@ -150,29 +161,62 @@ void ospi_hyperram_test(void)
         }
 
         // 4. 書き込み（R_OSPI_B_Write)
+        // write enable
+        for (uint32_t z = 0; z < TEST_DATA_LENGTH; z += 4)
+        {
+            uint32_t data = (write_data[z] << 0) | (write_data[z + 1] << 8) | (write_data[z + 2] << 16) | (write_data[z + 3] << 24);
+            uint32_t adr = z + jj * TEST_DATA_LENGTH;
+            err = ospi_raw_trans(&g_ospi0_trans,
+                                 OSPI_B_COMMAND_WRITE, 2,
+                                 adr, 4,
+                                 data, 4,
+                                 0, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+            if (FSP_SUCCESS != err)
+            {
+                xprintf("[OSPI] direct transfer error!\n");
+            }
+        }
+        /*
         err = R_OSPI_B_Write(&g_ospi0_ctrl, &write_data[0], &hyperram_ptr[0], TEST_DATA_LENGTH);
         if (FSP_SUCCESS != err)
         {
             xprintf("[OSPI] direct transfer error!\n");
             return;
         }
+        */
+
+        hyperram_ptr += TEST_DATA_LENGTH; // 次のバッファへ
+    }
+
+    xprintf("hyperram_read\n"); // debug
+    hyperram_ptr = HYPERRAM_BASE_ADDR;
+    for (int jj = 0; jj < (int)(64 * 1024 * 1024 / TEST_DATA_LENGTH); jj++)
+    {
+        // xprintf("hyperram_ptr=0x%X\n", hyperram_ptr); // debug
+
+        // 書き込みデータ代入
+        for (uint32_t i = 0; i < TEST_DATA_LENGTH; i++)
+        {
+            write_data[i] = (addr_prng_byte(i + jj * TEST_DATA_LENGTH, 0x12345678u) & 0xFF);
+        }
 
         // 5. 読み出しバッファ(プリフェッチがないとデータが取れないみたい)
         if (memcmp(write_data, hyperram_ptr, TEST_DATA_LENGTH * sizeof(char)) != 0)
         {
-            xprintf("[OSPI] prefetch error!\n");
+            // xprintf("[OSPI] prefetch error!\n");
         }
 
-        // // 6. 検証
-        // for (uint32_t i = 0; i < TEST_DATA_LENGTH; i++)
-        // {
-        //     if (read_data[i] != write_data[i])
-        //     {
-        //         xprintf("[OSPI] data error at %d: 0x%02x!=0x%02x\n", i, read_data[i], write_data[i]);
-        //         rerror++;
-        //     }
-        // }
-        // xprintf("[OSPI] margin z=%d,error = %d\n", z, rerror);
+        int rerror = 0;
+        // 6. 検証
+        for (uint32_t i = 0; i < TEST_DATA_LENGTH; i++)
+        {
+            if (write_data[i] != hyperram_ptr[i])
+            {
+                xprintf("[OSPI] data error at %d: 0x%02x!=0x%02x\n", i, write_data[i], hyperram_ptr[i]);
+                rerror++;
+            }
+        }
+        xprintf("[OSPI] error = %d\n", rerror);
 
         hyperram_ptr += TEST_DATA_LENGTH; // 次のバッファへ
     }
