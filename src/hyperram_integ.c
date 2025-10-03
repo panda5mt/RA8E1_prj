@@ -18,20 +18,20 @@ ospi_b_xspi_command_set_t g_command_sets[] =
             .latency_mode = OSPI_B_LATENCY_MODE_FIXED,
             .frame_format = OSPI_B_FRAME_FORMAT_XSPI_PROFILE_2,
             .command_bytes = OSPI_B_COMMAND_BYTES_2,
-            .address_bytes = 4U,
+            .address_bytes = SPI_FLASH_ADDRESS_BYTES_4,
             .read_command = OSPI_B_COMMAND_READ,
             .program_command = OSPI_B_COMMAND_WRITE,
             .write_enable_command = OSPI_B_COMMAND_WRITE_ENABLE,
             .status_command = NULL,
-            .address_msb_mask = 0x01,
-            .read_dummy_cycles = 16U,
-            .program_dummy_cycles = 16U,
+            .address_msb_mask = 0xf0,
+            .read_dummy_cycles = 15U,
+            .program_dummy_cycles = 15U,
 
             .status_dummy_cycles = NULL,
             .p_erase_commands = NULL}};
 
 fsp_err_t ospi_raw_trans(spi_flash_direct_transfer_t *p_trans,
-                         uint32_t command, uint8_t cmd_len,
+                         uint16_t command, uint8_t cmd_len,
                          uint32_t address, uint8_t addr_len,
                          uint32_t data, uint8_t data_len,
                          uint8_t dummy_cycle, spi_flash_direct_transfer_dir_t dir)
@@ -69,7 +69,25 @@ fsp_err_t hyperram_init(void)
         xprintf("[OSPI] init error!\n");
         return err;
     }
+    // err = R_OSPI_B_SpiProtocolSet(&g_ospi0_ctrl, SPI_FLASH_PROTOCOL_8D_8D_8D);
+    // if (FSP_SUCCESS != err)
+    // {
+    //     xprintf("[OSPI] set protocol error!:%d\n", err);
+    //     return err;
+    // }
+
     xprintf("[OSPI] init Ok\n");
+
+    int wrap = 4;
+    R_XSPI0->WRAPCFG =
+        (R_XSPI0->WRAPCFG & ~R_XSPI0_WRAPCFG_DSSFTCS1_Msk) |
+        ((wrap << R_XSPI0_WRAPCFG_DSSFTCS1_Pos) & R_XSPI0_WRAPCFG_DSSFTCS1_Msk);
+
+    int ddrsmpex = 4;
+    R_XSPI0->LIOCFGCS[1] =
+        (R_XSPI0->LIOCFGCS[1] & ~R_XSPI0_LIOCFGCS_DDRSMPEX_Msk) |
+        ((ddrsmpex << R_XSPI0_LIOCFGCS_DDRSMPEX_Pos) & R_XSPI0_LIOCFGCS_DDRSMPEX_Msk);
+    __DMB();
 
     // write enable
     err = ospi_raw_trans(&g_ospi0_trans,
@@ -85,7 +103,7 @@ fsp_err_t hyperram_init(void)
 
     // write CR0
     err = ospi_raw_trans(&g_ospi0_trans,
-                         OSPI_B_COMMAND_WRITE_REGISTER, 2,
+                         OSPI_B_COMMAND_WRITE_REGISTER, OSPI_B_COMMAND_BYTES_2,
                          0x00000004, 4,
                          0x2D8F, 2, // 64Byte burst, Latency 7
                          0, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
@@ -144,12 +162,6 @@ fsp_err_t hyperram_init(void)
         return err;
     }
     xprintf("CR1=0x%04x\n", g_ospi0_trans.data);
-
-    int z = 16;
-    R_XSPI0->WRAPCFG =
-        (R_XSPI0->WRAPCFG & ~R_XSPI0_WRAPCFG_DSSFTCS1_Msk) |
-        ((z << R_XSPI0_WRAPCFG_DSSFTCS1_Pos) & R_XSPI0_WRAPCFG_DSSFTCS1_Msk);
-    __DMB();
 
     // 正常終了
     xprintf("[OSPI] RW end\n");

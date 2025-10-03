@@ -24,7 +24,7 @@ extern "C"
     extern ospi_b_xspi_command_set_t g_command_sets[];
     fsp_err_t hyperram_init(void);
     fsp_err_t ospi_raw_trans(spi_flash_direct_transfer_t *p_trans,
-                             uint32_t command, uint8_t cmd_len,
+                             uint16_t command, uint8_t cmd_len,
                              uint32_t address, uint8_t addr_len,
                              uint32_t data, uint8_t data_len,
                              uint8_t dummy_cycle, spi_flash_direct_transfer_dir_t dir);

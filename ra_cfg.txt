@@ -829,7 +829,7 @@ FSP Configuration
     Parameter Checking: Default (BSP)
     DMAC Support: Enable
     Autocalibration Support: Disable
-    Memory-mapping Support: Prefetch Function: Enable
+    Memory-mapping Support: Prefetch Function: Disable
     Memory-mapping Support: Combination Function: 64 Bytes
     Memory-mapping Support: XiP Support: Disable
     DOTF Support: Disable
@@ -1072,11 +1072,11 @@ FSP Configuration
       General: Name: g_ospi0
       General: Unit: OSPI_B0
       General: Chip Select: CS1
-      General: Write Status Bit: b7
-      General: Write Enable Bit: b7
+      General: Write Status Bit: b0
+      General: Write Enable Bit: b0
       General: DS Auto-calibration Pattern Address: 0
-      Command Sets: Custom Table: Table Pointer: 
-      Command Sets: Custom Table: Table Length: 0
+      Command Sets: Custom Table: Table Pointer: g_command_sets
+      Command Sets: Custom Table: Table Length: 1
       Command Sets: Erase Sizes: Sector Erase: 0
       Command Sets: Erase Sizes: Block Erase: 0
       Command Sets: Initial Mode: Protocol Mode: Dual data rate OPI (8D-8D-8D)
@@ -1088,9 +1088,9 @@ FSP Configuration
       Command Sets: Initial Mode: Status Register Address Length: 4 bytes
       Command Sets: Initial Mode: Status Register Address: 0
       Command Sets: Initial Mode: Read: Command Code: 0xEEEE
-      Command Sets: Initial Mode: Read: Dummy Cycles: 15
+      Command Sets: Initial Mode: Read: Dummy Cycles: 16
       Command Sets: Initial Mode: Program: Command Code: 0xDEDE
-      Command Sets: Initial Mode: Program: Dummy Cycles: 15
+      Command Sets: Initial Mode: Program: Dummy Cycles: 16
       Command Sets: Initial Mode: Row Load: Command Code: 0x00
       Command Sets: Initial Mode: Row Load: Dummy Cycles: 0
       Command Sets: Initial Mode: Row Store: Command Code: 0x00

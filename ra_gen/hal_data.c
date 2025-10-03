@@ -56,77 +56,11 @@ static ospi_b_timing_setting_t g_ospi0_timing_settings =
     .ddr_sampling_extension      = OSPI_B_DDR_SAMPLING_EXTENSION_1,
 };
 
-static const spi_flash_erase_command_t g_ospi0_command_set_initial_erase_commands[] =
-{
-};
-static const ospi_b_table_t g_ospi0_command_set_initial_erase_table =
-{
-    .p_table = (void *) g_ospi0_command_set_initial_erase_commands,
-    .length = sizeof(g_ospi0_command_set_initial_erase_commands)/sizeof(g_ospi0_command_set_initial_erase_commands[0]),
-};
-static const spi_flash_erase_command_t g_ospi0_command_set_high_speed_erase_commands[] =
-{
-};
-static const ospi_b_table_t g_ospi0_command_set_high_speed_erase_table =
-{
-    .p_table = (void *) g_ospi0_command_set_high_speed_erase_commands,
-    .length = sizeof(g_ospi0_command_set_high_speed_erase_commands)/sizeof(g_ospi0_command_set_high_speed_erase_commands[0]),
-};
-
-static const ospi_b_xspi_command_set_t g_ospi0_command_set_table[] =
-{
-    {
-        .protocol = SPI_FLASH_PROTOCOL_8D_8D_8D,
-        .frame_format = OSPI_B_FRAME_FORMAT_XSPI_PROFILE_2,
-        .latency_mode = OSPI_B_LATENCY_MODE_FIXED,
-        .command_bytes = OSPI_B_COMMAND_BYTES_2,
-        .address_bytes = SPI_FLASH_ADDRESS_BYTES_4,
-        .address_msb_mask = 0xf,
-        .status_needs_address =  true,
-        .status_address = 0,
-        .status_address_bytes = SPI_FLASH_ADDRESS_BYTES_4,
-        .p_erase_commands = &g_ospi0_command_set_initial_erase_table,
-        .read_command = 0xEEEE,
-        .read_dummy_cycles = 15,
-        .program_command = 0xDEDE,
-        .program_dummy_cycles = 15,
-        .row_load_command = 0x00,
-        .row_load_dummy_cycles = 0,
-        .row_store_command = 0x00,
-        .row_store_dummy_cycles = 0,
-        .write_enable_command = 0x0606,
-        .status_command = 0,
-        .status_dummy_cycles = 0,
-    },
-    {
-        .protocol = SPI_FLASH_PROTOCOL_8D_8D_8D,
-        .frame_format = OSPI_B_FRAME_FORMAT_XSPI_PROFILE_2,
-        .latency_mode = OSPI_B_LATENCY_MODE_FIXED,
-        .command_bytes = OSPI_B_COMMAND_BYTES_2,
-        .address_bytes = SPI_FLASH_ADDRESS_BYTES_4,
-        .address_msb_mask = 0,
-        .status_needs_address =  true,
-        .status_address = 0x00,
-        .status_address_bytes = SPI_FLASH_ADDRESS_BYTES_4,
-        .p_erase_commands = &g_ospi0_command_set_high_speed_erase_table,
-        .read_command = 0xEEEE,
-        .read_dummy_cycles = 15,
-        .program_command = 0xDEDE,
-        .program_dummy_cycles = 15,
-        .row_load_command = 0x00,
-        .row_load_dummy_cycles = 0,
-        .row_store_command = 0x00,
-        .row_store_dummy_cycles = 0,
-        .write_enable_command = 0x0606,
-        .status_command = 0,
-        .status_dummy_cycles = 0,
-    }
-};
-
+extern ospi_b_xspi_command_set_t g_command_sets[];
 static const ospi_b_table_t g_ospi0_command_set =
 {
-    .p_table = (void *) g_ospi0_command_set_table,
-    .length = 2
+    .p_table = (void *) g_command_sets,
+    .length = 1
 };
 
 #if OSPI_B_CFG_DOTF_SUPPORT_ENABLE
@@ -170,8 +104,8 @@ const spi_flash_cfg_t g_ospi0_cfg =
     .dummy_clocks                = SPI_FLASH_DUMMY_CLOCKS_DEFAULT, /* Unused by OSPI_B */
     .page_program_address_lines  = (spi_flash_data_lines_t) 0U, /* Unused by OSPI_B */
     .page_size_bytes             = 64,
-    .write_status_bit            = 7,
-    .write_enable_bit            = 7,
+    .write_status_bit            = 0,
+    .write_enable_bit            = 0,
     .page_program_command        = 0, /* OSPI_B uses command sets. See g_ospi0_command_set. */
     .write_enable_command        = 0, /* OSPI_B uses command sets. See g_ospi0_command_set. */
     .status_command              = 0, /* OSPI_B uses command sets. See g_ospi0_command_set. */
