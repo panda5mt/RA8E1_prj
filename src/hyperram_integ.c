@@ -6,7 +6,6 @@
 #include "r_spi_flash_api.h"
 #include <string.h>
 
-// #define HYPERRAM_BASE_ADDR ((void *)0x90000000U) /* Device on CS1 */
 spi_flash_direct_transfer_t g_ospi0_trans;
 
 /* Custom command sets. */
@@ -70,6 +69,7 @@ fsp_err_t hyperram_init(void)
         xprintf("[OSPI] init error!\n");
         return err;
     }
+
     err = R_OSPI_B_SpiProtocolSet(&g_ospi0_ctrl, SPI_FLASH_PROTOCOL_8D_8D_8D);
     if (FSP_SUCCESS != err)
     {
@@ -79,12 +79,12 @@ fsp_err_t hyperram_init(void)
 
     xprintf("[OSPI] init Ok\n");
 
-    int wrap = 4;
+    int wrap = 16;
     R_XSPI0->WRAPCFG =
         (R_XSPI0->WRAPCFG & ~R_XSPI0_WRAPCFG_DSSFTCS1_Msk) |
         ((wrap << R_XSPI0_WRAPCFG_DSSFTCS1_Pos) & R_XSPI0_WRAPCFG_DSSFTCS1_Msk);
 
-    int ddrsmpex = 4;
+    int ddrsmpex = 8;
     R_XSPI0->LIOCFGCS[1] =
         (R_XSPI0->LIOCFGCS[1] & ~R_XSPI0_LIOCFGCS_DDRSMPEX_Msk) |
         ((ddrsmpex << R_XSPI0_LIOCFGCS_DDRSMPEX_Pos) & R_XSPI0_LIOCFGCS_DDRSMPEX_Msk);
@@ -164,6 +164,81 @@ fsp_err_t hyperram_init(void)
     }
     xprintf("CR1=0x%04x\n", g_ospi0_trans.data);
 
+    // // write enable
+    // err = ospi_raw_trans(&g_ospi0_trans,
+    //                      OSPI_B_COMMAND_WRITE_ENABLE, 2,
+    //                      0x00000000, 0,
+    //                      0, 0,
+    //                      0, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+    // if (FSP_SUCCESS != err)
+    // {
+    //     xprintf("[OSPI] direct transfer error!\n");
+    //     return err;
+    // }
+
+    // // write Preamble
+    // //  #define OSPI_B_PRV_AUTOCALIBRATION_PREAMBLE_PATTERN_0 (0xFFFF0000U)
+    // // #define OSPI_B_PRV_AUTOCALIBRATION_PREAMBLE_PATTERN_1 (0x000800FFU)
+    // // #define OSPI_B_PRV_AUTOCALIBRATION_PREAMBLE_PATTERN_2 (0x00FFF700U)
+    // // #define OSPI_B_PRV_AUTOCALIBRATION_PREAMBLE_PATTERN_3 (0xF700F708U)
+
+    // err = ospi_raw_trans(&g_ospi0_trans,
+    //                      OSPI_B_COMMAND_WRITE, 2,
+    //                      0x00, 4,
+    //                      0xFFFF0000, 4, // CK+,CK-
+    //                      15, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+    // if (FSP_SUCCESS != err)
+    // {
+    //     xprintf("[OSPI] direct transfer error!\n");
+    //     return err;
+    // }
+
+    // err = ospi_raw_trans(&g_ospi0_trans,
+    //                      OSPI_B_COMMAND_WRITE, 2,
+    //                      0x04, 4,
+    //                      0x000800FF, 4, // CK+,CK-
+    //                      15, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+    // if (FSP_SUCCESS != err)
+    // {
+    //     xprintf("[OSPI] direct transfer error!\n");
+    //     return err;
+    // }
+
+    // err = ospi_raw_trans(&g_ospi0_trans,
+    //                      OSPI_B_COMMAND_WRITE, 2,
+    //                      0x08, 4,
+    //                      0x00FFF700U, 4, // CK+,CK-
+    //                      15, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+    // if (FSP_SUCCESS != err)
+    // {
+    //     xprintf("[OSPI] direct transfer error!\n");
+    //     return err;
+    // }
+
+    // err = ospi_raw_trans(&g_ospi0_trans,
+    //                      OSPI_B_COMMAND_WRITE, 2,
+    //                      0x0C, 4,
+    //                      0xF700F708, 4, // CK+,CK-
+    //                      15, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+    // if (FSP_SUCCESS != err)
+    // {
+    //     xprintf("[OSPI] direct transfer error!\n");
+    //     return err;
+    // }
+    // /////
+    // err = R_OSPI_B_AutoCalibrate(&g_ospi0_ctrl);
+    // if (FSP_SUCCESS != err)
+    // {
+    //     xprintf("[OSPI] AutoCalib error!\n");
+    //     return err;
+    // }
+    // AutoCal 実行後（FSP: R_OSPI_B_Open 内で data_latch_delay_clocks==0 の時に自動実行）
+    // wrap = R_XSPI0->WRAPCFG;
+
+    // // CS1 用（0x9000_0000 側）
+    // uint32_t dssft_cs1 = (wrap & R_XSPI0_WRAPCFG_DSSFTCS1_Msk) >> R_XSPI0_WRAPCFG_DSSFTCS1_Pos;
+
+    // xprintf("[AutoCal result] wrap=%d,DSSFT CS1=%d\n", wrap, dssft_cs1);
     // 正常終了
     xprintf("[OSPI] RW init end\n");
 
