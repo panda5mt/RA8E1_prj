@@ -1130,7 +1130,7 @@ FSP Configuration
       Timing Settings: SDR: Drive Timing: Drive at CK
       Timing Settings: SDR: CK Sampling Edge: Falling edge
       Timing Settings: SDR: Sampling Delay: None
-      Timing Settings: DDR: Sampling Window Extension: 1 cycle
+      Timing Settings: DDR: Sampling Window Extension: None
       XiP Mode: XiP Enter Code: 0
       XiP Mode: XiP Exit Code: 0
       DOTF: Name: g_ospi_dotf
@@ -1142,9 +1142,9 @@ FSP Configuration
       DOTF: Decryption end address: 0x90001FFF
       Row Addressing: Row Address Length: No address
       
-      Instance "g_transfer1 Transfer (r_dmac) No ELC Trigger"
-        Name: g_transfer1
-        Channel: 1
+      Instance "g_transfer0 Transfer (r_dmac) No ELC Trigger"
+        Name: g_transfer0
+        Channel: 0
         Mode: Block
         Transfer Size: 1 Byte
         Destination Address Mode: Incremented
@@ -1154,7 +1154,7 @@ FSP Configuration
         Number of Blocks (Valid only in Repeat,Block or Repeat-Block Mode): 1
         Activation Source: No ELC Trigger
         Callback: ospi_dmac_cb
-        Transfer End Interrupt Priority: Priority 10
+        Transfer End Interrupt Priority: Priority 9
         Interrupt Frequency: Interrupt after all transfers have completed
         Offset value (Valid only when address mode is \'Offset\'): 0
         Source Buffer Size: 0

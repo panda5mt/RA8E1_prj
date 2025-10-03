@@ -32,8 +32,8 @@
         #define IIC1_TEI_IRQn          ((IRQn_Type) 3) /* IIC1 TEI (Transmit end) */
         #define VECTOR_NUMBER_IIC1_ERI ((IRQn_Type) 4) /* IIC1 ERI (Transfer error) */
         #define IIC1_ERI_IRQn          ((IRQn_Type) 4) /* IIC1 ERI (Transfer error) */
-        #define VECTOR_NUMBER_DMAC1_INT ((IRQn_Type) 5) /* DMAC1 INT (DMAC1 transfer end) */
-        #define DMAC1_INT_IRQn          ((IRQn_Type) 5) /* DMAC1 INT (DMAC1 transfer end) */
+        #define VECTOR_NUMBER_DMAC0_INT ((IRQn_Type) 5) /* DMAC0 INT (DMAC0 transfer end) */
+        #define DMAC0_INT_IRQn          ((IRQn_Type) 5) /* DMAC0 INT (DMAC0 transfer end) */
         #define VECTOR_NUMBER_USBFS_INT ((IRQn_Type) 6) /* USBFS INT (USBFS interrupt) */
         #define USBFS_INT_IRQn          ((IRQn_Type) 6) /* USBFS INT (USBFS interrupt) */
         #define VECTOR_NUMBER_USBFS_RESUME ((IRQn_Type) 7) /* USBFS RESUME (USBFS resume interrupt) */

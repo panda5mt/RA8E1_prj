@@ -42,6 +42,7 @@
     "string.h": "c",
     "r_dmac.h": "c",
     "limits": "c",
-    "putchar_ra8usb.h": "c"
+    "putchar_ra8usb.h": "c",
+    "hyperram_integ.h": "c"
   },
 }

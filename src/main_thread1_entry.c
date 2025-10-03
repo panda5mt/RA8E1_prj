@@ -24,6 +24,22 @@
 
 bool cb_flag = false;
 
+#ifndef DCACHE_LINE_SIZE
+#define DCACHE_LINE_SIZE 32u
+#endif
+
+static inline void dcache_clean_range(const void *addr, size_t len)
+{
+#if (__DCACHE_PRESENT == 1U)
+    uintptr_t start = (uintptr_t)addr & ~(DCACHE_LINE_SIZE - 1u);
+    uintptr_t end = ((uintptr_t)addr + len + (DCACHE_LINE_SIZE - 1u)) & ~(DCACHE_LINE_SIZE - 1u);
+    SCB_CleanDCache_by_Addr((void *)start, (int32_t)(end - start));
+#else
+    (void)addr;
+    (void)len;
+#endif
+}
+
 static void netif_status_cb(struct netif *n);
 static void udp_rx_cb(void *arg, struct udp_pcb *upcb, struct pbuf *p,
                       const ip_addr_t *addr, u16_t port);
@@ -110,6 +126,35 @@ static void netif_status_cb(struct netif *n)
     }
 }
 
+// ★ OSPI レジスタの要点ダンプ（ch=0/1 の両方見ます）
+static void ospi_dump_regs(void)
+{
+    R_XSPI0_Type *p = R_XSPI0;
+
+    for (int ch = 0; ch < 2; ch++)
+    {
+        xprintf("\n[OSPI] ---- CH%d ----\n", ch);
+        xprintf("LIOCFGCS[%d] = 0x%08X\n", ch, p->LIOCFGCS[ch]);
+        xprintf("CMCFGCS[%d].CMCFG0= 0x%08X\n", ch, p->CMCFGCS[ch].CMCFG0);
+        xprintf("CMCFGCS[%d].CMCFG1= 0x%08X\n", ch, p->CMCFGCS[ch].CMCFG1); // RDCMD/RDLATE
+        xprintf("CMCFGCS[%d].CMCFG2= 0x%08X\n", ch, p->CMCFGCS[ch].CMCFG2); // WRCMD/WRLATE
+    }
+
+    xprintf("\n[OSPI] BMCTL0=0x%08X,BMCTL1=0x%08X,WRAPCFG=0x%08X\n",
+            R_XSPI0->BMCTL0, R_XSPI0->BMCTL1, R_XSPI0->WRAPCFG);
+    xprintf("\n[OSPI] COMSTT=0x%08X\n", R_XSPI0->COMSTT);
+    xprintf("[OSPI] BMCFGCH[0]=0x%08X,BMCFGCH[1]=0x%08X\n",
+            R_XSPI0->BMCFGCH[0], R_XSPI0->BMCFGCH[1]);
+}
+static inline void ospi_wait_mmap_idle(void)
+{
+    const uint32_t BUSY_MASK = (0x03u << R_XSPI0_COMSTT_MEMACCCH_Pos);
+    while (R_XSPI0->COMSTT & BUSY_MASK)
+    {
+        __NOP();
+    }
+}
+
 uint8_t write_data[TEST_DATA_LENGTH];
 uint8_t read_data[TEST_DATA_LENGTH];
 // アドレス→擬似乱数(1byte)。seed を変えるとパターンが変わる（再現性あり）
@@ -136,19 +181,22 @@ void ospi_hyperram_test(void)
         return;
     }
 
-    // write enable
-    err = ospi_raw_trans(&g_ospi0_trans,
-                         OSPI_B_COMMAND_WRITE_ENABLE, 2,
-                         0x00000000, 0,
-                         0, 0,
-                         0, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
-    if (FSP_SUCCESS != err)
-    {
-        xprintf("[OSPI] direct transfer error!\n");
-    }
+    // // write enable
+    // err = ospi_raw_trans(&g_ospi0_trans,
+    //                      OSPI_B_COMMAND_WRITE_ENABLE, 2,
+    //                      0x00000000, 0,
+    //                      0, 0,
+    //                      0, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+    // if (FSP_SUCCESS != err)
+    // {
+    //     xprintf("[OSPI] direct transfer error!\n");
+    // }
 
     // 3. 書き込み先アドレス（HyperRAM内）
     uint8_t *hyperram_ptr = (uint8_t *)HYPERRAM_BASE_ADDR;
+
+    ospi_dump_regs();
+
     cb_flag = true;
     for (int jj = 0; jj < /*(int)(64 * 1024 * 1024 / TEST_DATA_LENGTH)*/ 1; jj++)
     {
@@ -159,30 +207,40 @@ void ospi_hyperram_test(void)
         {
             write_data[i] = (addr_prng_byte(i + jj * TEST_DATA_LENGTH, 0x12345678u) & 0xFF);
         }
-
+        dcache_clean_range(write_data, TEST_DATA_LENGTH); //
         // 4. 書き込み（R_OSPI_B_Write)
         // write
-        for (uint32_t z = 0; z < TEST_DATA_LENGTH; z += 4)
-        {
-            uint32_t data = (write_data[z] << 0) | (write_data[z + 1] << 8) | (write_data[z + 2] << 16) | (write_data[z + 3] << 24);
-            uint32_t adr = z + jj * TEST_DATA_LENGTH;
-            err = ospi_raw_trans(&g_ospi0_trans,
-                                 OSPI_B_COMMAND_WRITE, 2,
-                                 adr, 4,
-                                 data, 4,
-                                 15, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
-            if (FSP_SUCCESS != err)
-            {
-                xprintf("[OSPI] direct transfer error!\n");
-            }
-        }
-
-        // err = R_OSPI_B_Write(&g_ospi0_ctrl, &write_data[0], &hyperram_ptr[0], TEST_DATA_LENGTH);
-        // if (FSP_SUCCESS != err)
+        // for (uint32_t z = 0; z < TEST_DATA_LENGTH; z += 4)
         // {
-        //     xprintf("[OSPI] direct transfer error!\n");
-        //     return;
+        //     uint32_t data = (write_data[z] << 0) | (write_data[z + 1] << 8) | (write_data[z + 2] << 16) | (write_data[z + 3] << 24);
+        //     uint32_t adr = z + jj * TEST_DATA_LENGTH;
+        //     err = ospi_raw_trans(&g_ospi0_trans,
+        //                          OSPI_B_COMMAND_WRITE, 2,
+        //                          adr, 4,
+        //                          data, 4,
+        //                          15, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+        //     if (FSP_SUCCESS != err)
+        //     {
+        //         xprintf("[OSPI] direct transfer error!\n");
+        //     }
         // }
+
+        err = R_OSPI_B_Write(&g_ospi0_ctrl, &write_data[0], &hyperram_ptr[0], TEST_DATA_LENGTH);
+        if (FSP_SUCCESS != err)
+        {
+            xprintf("[OSPI] direct transfer error!\n");
+            return;
+        }
+        // ospi_wait_mmap_idle();
+
+        // ★押し出し＆完了待ち（毎回）
+        __DMB();
+        R_XSPI0->BMCTL1 = (0x03u << R_XSPI0_BMCTL1_MWRPUSHCH_Pos); // MWRPUSH
+        const uint32_t BUSY_MASK = (0x03u << R_XSPI0_COMSTT_MEMACCCH_Pos);
+        while (R_XSPI0->COMSTT & BUSY_MASK)
+        {
+            __NOP();
+        }
 
         hyperram_ptr += TEST_DATA_LENGTH; // 次のバッファへ
     }

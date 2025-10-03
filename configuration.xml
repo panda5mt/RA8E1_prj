@@ -633,7 +633,7 @@
       <property id="module.driver.ospi_b.sdr_timing.drive_timing" value="module.driver.ospi_b.sdr_timing.drive_timing.at_ck_rising"/>
       <property id="module.driver.ospi_b.sdr_timing.ck_sampling_edge" value="module.driver.ospi_b.sdr_timing.ck_sampling_edge.falling"/>
       <property id="module.driver.ospi_b.sdr_timing.sampling_delay" value="module.driver.ospi_b.sdr_timing.sampling_delay.none"/>
-      <property id="module.driver.ospi_b.ddr_timing.sampling_extension" value="module.driver.ospi_b.ddr_timing.sampling_extension.1"/>
+      <property id="module.driver.ospi_b.ddr_timing.sampling_extension" value="module.driver.ospi_b.ddr_timing.sampling_extension.none"/>
       <property id="module.driver.ospi_b.xip.enter_code" value="0"/>
       <property id="module.driver.ospi_b.xip.exit_code" value="0"/>
       <property id="module.driver.ospi_b.dotf.name" value="g_ospi_dotf"/>
@@ -645,9 +645,9 @@
       <property id="module.driver.ospi_b.dotf.end_address" value="0x90001FFF"/>
       <property id="module.driver.ospi_b.row_addressing.row_index_bytes" value="module.driver.ospi_b.address_bytes.none"/>
     </module>
-    <module id="module.driver.transfer_on_dmac.477303345">
-      <property id="module.driver.transfer.name" value="g_transfer1"/>
-      <property id="module.driver.transfer.channel" value="1"/>
+    <module id="module.driver.transfer_on_dmac.1096524538">
+      <property id="module.driver.transfer.name" value="g_transfer0"/>
+      <property id="module.driver.transfer.channel" value="0"/>
       <property id="module.driver.transfer.mode" value="module.driver.transfer.mode.mode_normal"/>
       <property id="module.driver.transfer.size" value="module.driver.transfer.size.size_2_byte"/>
       <property id="module.driver.transfer.dest_addr_mode" value="module.driver.transfer.dest_addr_mode.addr_mode_fixed"/>
@@ -657,7 +657,7 @@
       <property id="module.driver.transfer.num_blocks" value="0"/>
       <property id="module.driver.transfer.activation_event" value="enum.elc_none.none"/>
       <property id="module.driver.transfer.p_callback" value="ospi_dmac_cb"/>
-      <property id="module.driver.transfer.ipl" value="board.icu.common.irq.priority10"/>
+      <property id="module.driver.transfer.ipl" value="board.icu.common.irq.priority9"/>
       <property id="module.driver.transfer.interrupt" value="module.driver.transfer.interrupt.interrupt_end"/>
       <property id="module.driver.transfer.offset" value="1"/>
       <property id="module.driver.transfer.src.buffer" value="1"/>
@@ -689,7 +689,7 @@
       <stack module="module.driver.timer_on_gpt.1622483141"/>
       <stack module="module.driver.timer_on_gpt.2107044541"/>
       <stack module="module.driver.ospi_on_ospi_b.1029231815">
-        <stack module="module.driver.transfer_on_dmac.477303345" requires="module.driver.ospi_on_ospi_b.requires.transfer"/>
+        <stack module="module.driver.transfer_on_dmac.1096524538" requires="module.driver.ospi_on_ospi_b.requires.transfer"/>
       </stack>
     </context>
     <context id="rtos.awsfreertos.thread.415524792">

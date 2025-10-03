@@ -1,8 +1,8 @@
 /* generated HAL source file - do not edit */
 #include "hal_data.h"
 
-dmac_instance_ctrl_t g_transfer1_ctrl;
-transfer_info_t g_transfer1_info =
+dmac_instance_ctrl_t g_transfer0_ctrl;
+transfer_info_t g_transfer0_info =
 {
     .transfer_settings_word_b.dest_addr_mode = TRANSFER_ADDR_MODE_INCREMENTED,
     .transfer_settings_word_b.repeat_area    = TRANSFER_REPEAT_AREA_SOURCE,
@@ -16,31 +16,31 @@ transfer_info_t g_transfer1_info =
     .num_blocks                              = 1,
     .length                                  = 64,
 };
-const dmac_extended_cfg_t g_transfer1_extend =
+const dmac_extended_cfg_t g_transfer0_extend =
 {
     .offset              = 0,
     .src_buffer_size     = 0,
-#if defined(VECTOR_NUMBER_DMAC1_INT)
-    .irq                 = VECTOR_NUMBER_DMAC1_INT,
+#if defined(VECTOR_NUMBER_DMAC0_INT)
+    .irq                 = VECTOR_NUMBER_DMAC0_INT,
 #else
     .irq                 = FSP_INVALID_VECTOR,
 #endif
-    .ipl                 = (10),
-    .channel             = 1,
+    .ipl                 = (9),
+    .channel             = 0,
     .p_callback          = ospi_dmac_cb,
     .p_context           = NULL,
     .activation_source   = ELC_EVENT_NONE,
 };
-const transfer_cfg_t g_transfer1_cfg =
+const transfer_cfg_t g_transfer0_cfg =
 {
-    .p_info              = &g_transfer1_info,
-    .p_extend            = &g_transfer1_extend,
+    .p_info              = &g_transfer0_info,
+    .p_extend            = &g_transfer0_extend,
 };
 /* Instance structure to use this module. */
-const transfer_instance_t g_transfer1 =
+const transfer_instance_t g_transfer0 =
 {
-    .p_ctrl        = &g_transfer1_ctrl,
-    .p_cfg         = &g_transfer1_cfg,
+    .p_ctrl        = &g_transfer0_ctrl,
+    .p_cfg         = &g_transfer0_cfg,
     .p_api         = &g_transfer_on_dmac
 };
 ospi_b_instance_ctrl_t g_ospi0_ctrl;
@@ -53,7 +53,7 @@ static ospi_b_timing_setting_t g_ospi0_timing_settings =
     .sdr_drive_timing            = OSPI_B_SDR_DRIVE_TIMING_AT_CK,
     .sdr_sampling_edge           = OSPI_B_CK_EDGE_FALLING,
     .sdr_sampling_delay          = OSPI_B_SDR_SAMPLING_DELAY_NONE,
-    .ddr_sampling_extension      = OSPI_B_DDR_SAMPLING_EXTENSION_1,
+    .ddr_sampling_extension      = OSPI_B_DDR_SAMPLING_EXTENSION_NONE,
 };
 
 extern ospi_b_xspi_command_set_t g_command_sets[];
@@ -87,7 +87,7 @@ static const ospi_b_extended_cfg_t g_ospi0_extended_cfg =
     .data_latch_delay_clocks                 = OSPI_B_DS_TIMING_DELAY_NONE,
     .p_autocalibration_preamble_pattern_addr = (uint8_t *) 0,
 #if OSPI_B_CFG_DMAC_SUPPORT_ENABLE
-    .p_lower_lvl_transfer                    = &g_transfer1,
+    .p_lower_lvl_transfer                    = &g_transfer0,
 #endif
 #if OSPI_B_CFG_DOTF_SUPPORT_ENABLE
     .p_dotf_cfg                              = &g_ospi_dotf_cfg,
