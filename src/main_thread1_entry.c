@@ -20,7 +20,7 @@
 #include "hyperram_integ.h"
 
 #define UDP_PORT_DEST 9000
-#define TEST_DATA_LENGTH (64U * 2U)
+#define TEST_DATA_LENGTH (64U * 1U)
 
 bool cb_flag = false;
 
