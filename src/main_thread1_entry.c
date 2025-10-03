@@ -20,7 +20,7 @@
 #include "hyperram_integ.h"
 
 #define UDP_PORT_DEST 9000
-#define TEST_DATA_LENGTH (64U * 256U)
+#define TEST_DATA_LENGTH (64U * 2U)
 
 bool cb_flag = false;
 
@@ -188,7 +188,8 @@ void ospi_hyperram_test(void)
     }
 
     // xprintf("hyperram_read\n"); // debug
-    hyperram_ptr = HYPERRAM_BASE_ADDR;
+    // hyperram_ptr = HYPERRAM_BASE_ADDR;
+
     // for (int jj = 0; jj < /*(int)(64 * 1024 * 1024 / TEST_DATA_LENGTH)*/ 1; jj++)
     // {
     //     // xprintf("hyperram_ptr=0x%X\n", hyperram_ptr); // debug
@@ -215,13 +216,12 @@ void ospi_hyperram_test(void)
     //             rerror++;
     //         }
     //     }
+
     //     xprintf("[OSPI] error = %d\n", rerror);
-    //     while (1)
-    //         ;
     //     hyperram_ptr += TEST_DATA_LENGTH; // 次のバッファへ
     // }
 
-    for (int jj = 0; jj < /*(int)(64 * 1024 * 1024 / TEST_DATA_LENGTH)*/ 1; jj++)
+    for (int jj = 0; jj < 1; jj++) // (int)(64 * 1024 * 1024 / TEST_DATA_LENGTH)
     {
         // xprintf("hyperram_ptr=0x%X\n", hyperram_ptr); // debug
 

@@ -22,7 +22,8 @@ ospi_b_xspi_command_set_t g_command_sets[] =
             .read_command = OSPI_B_COMMAND_READ,
             .program_command = OSPI_B_COMMAND_WRITE,
             .write_enable_command = OSPI_B_COMMAND_WRITE_ENABLE,
-            .status_command = NULL,
+            .status_command = 0x00,
+            .status_needs_address = false,
             .address_msb_mask = 0xf0,
             .read_dummy_cycles = 15U,
             .program_dummy_cycles = 15U,
@@ -164,7 +165,7 @@ fsp_err_t hyperram_init(void)
     xprintf("CR1=0x%04x\n", g_ospi0_trans.data);
 
     // 正常終了
-    xprintf("[OSPI] RW end\n");
+    xprintf("[OSPI] RW init end\n");
 
     return err;
 }
