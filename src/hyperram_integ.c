@@ -69,12 +69,12 @@ fsp_err_t hyperram_init(void)
         xprintf("[OSPI] init error!\n");
         return err;
     }
-    // err = R_OSPI_B_SpiProtocolSet(&g_ospi0_ctrl, SPI_FLASH_PROTOCOL_8D_8D_8D);
-    // if (FSP_SUCCESS != err)
-    // {
-    //     xprintf("[OSPI] set protocol error!:%d\n", err);
-    //     return err;
-    // }
+    err = R_OSPI_B_SpiProtocolSet(&g_ospi0_ctrl, SPI_FLASH_PROTOCOL_8D_8D_8D);
+    if (FSP_SUCCESS != err)
+    {
+        xprintf("[OSPI] set protocol error!:%d\n", err);
+        return err;
+    }
 
     xprintf("[OSPI] init Ok\n");
 
