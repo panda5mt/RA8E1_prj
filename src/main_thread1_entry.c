@@ -170,6 +170,37 @@ static inline uint8_t addr_prng_byte(uint32_t addr, uint32_t seed)
     return (uint8_t)x;
 }
 
+void dump_ospi_read_side(R_XSPI0_Type *r, int ch)
+{
+    uint32_t cm0 = r->CMCFGCS[ch].CMCFG0;
+    uint32_t cm1 = r->CMCFGCS[ch].CMCFG1;
+    uint32_t liocfg = r->LIOCFGCS[ch];
+    uint32_t wrap = r->WRAPCFG;
+
+    uint32_t rdcmd = (cm1 >> R_XSPI0_CMCFGCS_CMCFG1_RDCMD_Pos) & 0xFFFF;
+    uint32_t rdlate = (cm1 >> R_XSPI0_CMCFGCS_CMCFG1_RDLATE_Pos) & 0xFF;
+    uint32_t addsz = (cm0 >> R_XSPI0_CMCFGCS_CMCFG0_ADDSIZE_Pos) & 0x3;
+    uint32_t ffmt = (cm0 >> R_XSPI0_CMCFGCS_CMCFG0_FFMT_Pos) & 0x7;
+    uint32_t latemd = (liocfg >> R_XSPI0_LIOCFGCS_LATEMD_Pos) & 0x1;
+    uint32_t dssft0 = (wrap >> R_XSPI0_WRAPCFG_DSSFTCS0_Pos) & 0x1F;
+    uint32_t dssft1 = (wrap >> R_XSPI0_WRAPCFG_DSSFTCS1_Pos) & 0x1F;
+
+    xprintf("RDCMD=0x%04x RDLATE=%u ADDRSIZE=%u FFMT=%u\n",
+            (unsigned long)rdcmd, (unsigned long)rdlate, (unsigned long)addsz,
+            (unsigned long)ffmt);
+
+    xprintf("LATEMD=%u DSSFT0=%u DSSFT1=%u\n",
+            (unsigned long)latemd, (unsigned long)dssft0, (unsigned long)dssft1);
+
+    uint32_t cmcfg0 = r->CMCFGCS[ch].CMCFG0;
+    bool addr_replace_enabled =
+        (cmcfg0 & R_XSPI0_CMCFGCS_CMCFG0_ADDRPEN_Msk) != 0;
+
+    xprintf("CMCFG0[%d] = 0x%08X\n", ch, (unsigned long)cmcfg0);
+    xprintf("ADDRPEN (Address Replace) = %s\n",
+            addr_replace_enabled ? "ENABLED" : "DISABLED");
+}
+
 void ospi_hyperram_test(void)
 {
     fsp_err_t err = FSP_SUCCESS;
@@ -180,6 +211,8 @@ void ospi_hyperram_test(void)
         xprintf("[OSPI] HyperRAM init error!\n");
         return;
     }
+
+    dump_ospi_read_side(R_XSPI0, 1);
 
     // // write enable
     // err = ospi_raw_trans(&g_ospi0_trans,
@@ -232,13 +265,25 @@ void ospi_hyperram_test(void)
             xprintf("[OSPI] direct transfer error!\n");
         }
     }
-
-    // err = R_OSPI_B_Write(&g_ospi0_ctrl, &write_data[0], &hyperram_ptr[0], TEST_DATA_LENGTH);
-    // if (FSP_SUCCESS != err)
+    /*
+        err = R_OSPI_B_Write(&g_ospi0_ctrl, &write_data[0], &hyperram_ptr[0], TEST_DATA_LENGTH);
+        if (FSP_SUCCESS != err)
+        {
+            xprintf("[OSPI] direct transfer error!\n");
+            return;
+        }
+    */
+    // // DMAC 完了待ち
+    // while (cb_flag == false)
     // {
-    //     xprintf("[OSPI] direct transfer error!\n");
-    //     return;
+    //     vTaskDelay(pdMS_TO_TICKS(10));
     // }
+    // cb_flag = false;
+
+    // R_XSPI0_Type *p = g_ospi0_ctrl.p_reg;
+
+    // p->BMCTL1 = (0x03u << R_XSPI0_BMCTL1_PBUFCLRCH_Pos); // CH0/1 両方のバーストを即開始に
+
     // ospi_wait_mmap_idle();
 
     // ★押し出し＆完了待ち（毎回）
@@ -260,26 +305,31 @@ void ospi_hyperram_test(void)
 
     //  5. 読み込み（R_OSPI_B_Read)
 
-    for (uint32_t z = 0; z < TEST_DATA_LENGTH; z += 4)
-    {
-        uint32_t adr = z;
-        err = ospi_raw_trans(&g_ospi0_trans,
-                             OSPI_B_COMMAND_READ, 2,
-                             adr, 4,
-                             0, 4,
-                             15, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
-        if (FSP_SUCCESS != err)
-        {
-            xprintf("[OSPI] direct transfer error!\n");
-        }
+    // for (uint32_t z = 0; z < TEST_DATA_LENGTH; z += 4)
+    // {
+    //     uint32_t adr = z;
+    //     err = ospi_raw_trans(&g_ospi0_trans,
+    //                          OSPI_B_COMMAND_READ, 2,
+    //                          adr, 4,
+    //                          0, 4,
+    //                          15, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
+    //     if (FSP_SUCCESS != err)
+    //     {
+    //         xprintf("[OSPI] direct transfer error!\n");
+    //     }
 
-        read_data[z + 0] = (g_ospi0_trans.data) & 0xFF;
-        read_data[z + 1] = (g_ospi0_trans.data >> 8) & 0xFF;
-        read_data[z + 2] = (g_ospi0_trans.data >> 16) & 0xFF;
-        read_data[z + 3] = (g_ospi0_trans.data >> 24) & 0xFF;
-    }
+    //     read_data[z + 0] = (g_ospi0_trans.data) & 0xFF;
+    //     read_data[z + 1] = (g_ospi0_trans.data >> 8) & 0xFF;
+    //     read_data[z + 2] = (g_ospi0_trans.data >> 16) & 0xFF;
+    //     read_data[z + 3] = (g_ospi0_trans.data >> 24) & 0xFF;
+    // }
 
-    if (memcmp(write_data, read_data, TEST_DATA_LENGTH * sizeof(char)) != 0)
+    // vTaskDelay(pdMS_TO_TICKS(100)); // ← DMAC 完了待ち
+
+    // memcpy(read_data, hyperram_ptr, TEST_DATA_LENGTH);
+
+    // vTaskDelay(pdMS_TO_TICKS(100)); // ← DMAC 完了待ち
+    if (memcmp(write_data, hyperram_ptr, TEST_DATA_LENGTH * sizeof(char)) != 0)
     {
         xprintf("[OSPI] prefetch error!\n");
     }
@@ -287,9 +337,9 @@ void ospi_hyperram_test(void)
     rerror = 0;
     for (int ii = 0; ii < TEST_DATA_LENGTH; ii++)
     {
-        if (write_data[ii] != read_data[ii])
+        if (write_data[ii] != hyperram_ptr[ii])
         {
-            xprintf("[OSPI] data error at %d: 0x%02x!=0x%02x\n", ii, write_data[ii], read_data[ii]);
+            xprintf("[OSPI] data error at %d: 0x%02x!=0x%02x\n", ii, write_data[ii], hyperram_ptr[ii]);
             rerror++;
         }
     }

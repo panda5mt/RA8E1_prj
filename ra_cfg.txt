@@ -158,7 +158,7 @@ FSP Configuration
     SPICLK Div /4
     CANFDCLK Div /8
     USBCLK Div /5
-    OCTACLK Div /2
+    OCTACLK Div /8
     
   Pin Configurations
     RA8E1 FPB -> g_bsp_pin_cfg
@@ -829,7 +829,7 @@ FSP Configuration
     Parameter Checking: Default (BSP)
     DMAC Support: Enable
     Autocalibration Support: Disable
-    Memory-mapping Support: Prefetch Function: Disable
+    Memory-mapping Support: Prefetch Function: Enable
     Memory-mapping Support: Combination Function: 64 Bytes
     Memory-mapping Support: XiP Support: Disable
     DOTF Support: Disable
@@ -1126,11 +1126,11 @@ FSP Configuration
       Timing Settings: Chip Select: Command Interval: 16 cycles
       Timing Settings: Chip Select: Pull-up Timing: No Extension
       Timing Settings: Chip Select: Pull-down Timing: No Extension
-      Timing Settings: DS Latching Delay: Auto-calibrate
+      Timing Settings: DS Latching Delay: 16 cells
       Timing Settings: SDR: Drive Timing: Drive at CK
       Timing Settings: SDR: CK Sampling Edge: Falling edge
       Timing Settings: SDR: Sampling Delay: None
-      Timing Settings: DDR: Sampling Window Extension: None
+      Timing Settings: DDR: Sampling Window Extension: 1 cycle
       XiP Mode: XiP Enter Code: 0
       XiP Mode: XiP Exit Code: 0
       DOTF: Name: g_ospi_dotf
