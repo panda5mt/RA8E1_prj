@@ -658,7 +658,7 @@
       <property id="module.driver.transfer.activation_event" value="enum.elc_none.none"/>
       <property id="module.driver.transfer.p_callback" value="ospi_dmac_cb"/>
       <property id="module.driver.transfer.ipl" value="board.icu.common.irq.priority9"/>
-      <property id="module.driver.transfer.interrupt" value="module.driver.transfer.interrupt.interrupt_end"/>
+      <property id="module.driver.transfer.interrupt" value="module.driver.transfer.interrupt.interrupt_each"/>
       <property id="module.driver.transfer.offset" value="1"/>
       <property id="module.driver.transfer.src.buffer" value="1"/>
     </module>

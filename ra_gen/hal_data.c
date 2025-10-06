@@ -6,7 +6,7 @@ transfer_info_t g_transfer0_info =
 {
     .transfer_settings_word_b.dest_addr_mode = TRANSFER_ADDR_MODE_INCREMENTED,
     .transfer_settings_word_b.repeat_area    = TRANSFER_REPEAT_AREA_SOURCE,
-    .transfer_settings_word_b.irq            = TRANSFER_IRQ_END,
+    .transfer_settings_word_b.irq            = TRANSFER_IRQ_EACH,
     .transfer_settings_word_b.chain_mode     = TRANSFER_CHAIN_MODE_DISABLED,
     .transfer_settings_word_b.src_addr_mode  = TRANSFER_ADDR_MODE_INCREMENTED,
     .transfer_settings_word_b.size           = TRANSFER_SIZE_1_BYTE,

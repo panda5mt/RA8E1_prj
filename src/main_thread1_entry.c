@@ -20,9 +20,10 @@
 #include "hyperram_integ.h"
 
 #define UDP_PORT_DEST 9000
-#define TEST_DATA_LENGTH (64U * 1U)
+#define TEST_DATA_LENGTH (64U * 128U) // HyperRAMへの読み込み(書き込みは不明)は1度に送信できるのはこれが上限の模様
 
 bool cb_flag = false;
+int32_t counter = 0;
 
 #ifndef DCACHE_LINE_SIZE
 #define DCACHE_LINE_SIZE 32u
@@ -239,57 +240,57 @@ void ospi_hyperram_test(void)
     //  4. 書き込み（R_OSPI_B_Write)
 
     // write enable
-    err = ospi_raw_trans(&g_ospi0_trans,
-                         OSPI_B_COMMAND_WRITE_ENABLE, 2,
-                         0x00000000, 0,
-                         0, 0,
-                         0, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+    // err = ospi_raw_trans(&g_ospi0_trans,
+    //                      OSPI_B_COMMAND_WRITE_ENABLE, 2,
+    //                      0x00000000, 0,
+    //                      0, 0,
+    //                      0, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+    // if (FSP_SUCCESS != err)
+    // {
+    //     xprintf("[OSPI] direct transfer error!\n");
+    //     //    return err;
+    // }
+    //  write
+    // for (uint32_t z = 0; z < TEST_DATA_LENGTH; z += 4)
+    // {
+    //     uint32_t data = (write_data[z] << 0) | (write_data[z + 1] << 8) | (write_data[z + 2] << 16) | (write_data[z + 3] << 24);
+    //     uint32_t adr = z;
+    //     ;
+    //     err = ospi_raw_trans(&g_ospi0_trans,
+    //                          OSPI_B_COMMAND_WRITE, 2,
+    //                          adr, 4,
+    //                          data, 4,
+    //                          15, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+    //     if (FSP_SUCCESS != err)
+    //     {
+    //         xprintf("[OSPI] direct transfer error!\n");
+    //     }
+    // }
+
+    err = R_OSPI_B_Write(&g_ospi0_ctrl, &write_data[0], &hyperram_ptr[0], TEST_DATA_LENGTH);
     if (FSP_SUCCESS != err)
     {
         xprintf("[OSPI] direct transfer error!\n");
-        //    return err;
+        return;
     }
-    //  write
-    for (uint32_t z = 0; z < TEST_DATA_LENGTH; z += 4)
+
+    // DMAC 完了待ち
+    while (cb_flag == false)
     {
-        uint32_t data = (write_data[z] << 0) | (write_data[z + 1] << 8) | (write_data[z + 2] << 16) | (write_data[z + 3] << 24);
-        uint32_t adr = z;
-        ;
-        err = ospi_raw_trans(&g_ospi0_trans,
-                             OSPI_B_COMMAND_WRITE, 2,
-                             adr, 4,
-                             data, 4,
-                             15, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
-        if (FSP_SUCCESS != err)
-        {
-            xprintf("[OSPI] direct transfer error!\n");
-        }
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
-    /*
-        err = R_OSPI_B_Write(&g_ospi0_ctrl, &write_data[0], &hyperram_ptr[0], TEST_DATA_LENGTH);
-        if (FSP_SUCCESS != err)
-        {
-            xprintf("[OSPI] direct transfer error!\n");
-            return;
-        }
-    */
-    // // DMAC 完了待ち
-    // while (cb_flag == false)
-    // {
-    //     vTaskDelay(pdMS_TO_TICKS(10));
-    // }
-    // cb_flag = false;
 
-    // R_XSPI0_Type *p = g_ospi0_ctrl.p_reg;
-
-    // p->BMCTL1 = (0x03u << R_XSPI0_BMCTL1_PBUFCLRCH_Pos); // CH0/1 両方のバーストを即開始に
-
-    // ospi_wait_mmap_idle();
-
-    // ★押し出し＆完了待ち（毎回）
+    ospi_wait_mmap_idle();                                            // プリフェッチクリア＆ビジー待ち
+    dcache_clean_range((void *)HYPERRAM_BASE_ADDR, TEST_DATA_LENGTH); // キャッシュクリア
 
     // xprintf("hyperram_read\n"); // debug
     hyperram_ptr = HYPERRAM_BASE_ADDR;
+
+    // 書き込みデータ作成
+    for (uint32_t i = 0; i < TEST_DATA_LENGTH; i++)
+    {
+        write_data[i] = (addr_prng_byte(i, 0x12345678u) & 0xFF);
+    }
 
     // for (int jj = 0; jj < /*(int)(64 * 1024 * 1024 / TEST_DATA_LENGTH)*/ 1; jj++)
     // {
@@ -343,9 +344,9 @@ void ospi_hyperram_test(void)
             rerror++;
         }
     }
-
+    vTaskDelay(pdMS_TO_TICKS(1000)); // ← DMAC 完了待ち
     // 正常終了
-    xprintf("[OSPI] RW end, error=%d\n", rerror);
+    xprintf("[OSPI] RW end, error=%d, dma counter=%d\n", rerror, counter);
 }
 
 void main_thread1_entry(void *pvParameters)
@@ -484,5 +485,6 @@ void ospi_dmac_cb(transfer_callback_args_t *p_args)
 {
     FSP_PARAMETER_NOT_USED(p_args);
     cb_flag = true;
+    counter++;
     // xprintf("OSPI DMAC transfer done.\n");
 }

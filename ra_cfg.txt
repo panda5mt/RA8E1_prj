@@ -1155,7 +1155,7 @@ FSP Configuration
         Activation Source: No ELC Trigger
         Callback: ospi_dmac_cb
         Transfer End Interrupt Priority: Priority 9
-        Interrupt Frequency: Interrupt after all transfers have completed
+        Interrupt Frequency: Interrupt after each block, or repeat size is transferred
         Offset value (Valid only when address mode is \'Offset\'): 0
         Source Buffer Size: 0
         
