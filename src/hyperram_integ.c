@@ -339,7 +339,7 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
                              OSPI_B_COMMAND_WRITE, 2,
                              adr, 4,
                              data, 4,
-                             15, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+                             16, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
         if (FSP_SUCCESS != err)
         {
             xprintf("[OSPI] direct transfer error!\n");

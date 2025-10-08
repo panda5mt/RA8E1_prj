@@ -78,7 +78,7 @@ void main_thread0_entry(void *pvParameters)
                              OSPI_B_COMMAND_READ, 2,
                              adr, 4,
                              0, 4,
-                             15, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
+                             16, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
         if (FSP_SUCCESS != err)
         {
             xprintf("[OSPI] direct transfer error!\n");
