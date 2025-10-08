@@ -23,9 +23,9 @@ ospi_b_xspi_command_set_t g_command_sets[] =
             .write_enable_command = OSPI_B_COMMAND_WRITE_ENABLE,
             .status_command = 0x00,
             .status_needs_address = false,
-            //.address_msb_mask = 0xf0,
-            .read_dummy_cycles = 15U,
-            .program_dummy_cycles = 15U,
+            .address_msb_mask = 0xf0,
+            .read_dummy_cycles = 16U,
+            .program_dummy_cycles = 16U,
 
             .status_dummy_cycles = NULL,
             .p_erase_commands = NULL}};
@@ -333,7 +333,7 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
     for (uint32_t z = 0; z < total_length / 4; z++)
     {
         uint32_t data = src_p32[z];
-        uint32_t adr = dest_p8 + z * 4; // 8bit length address
+        uint32_t adr = (dest_p8) + z * 4; // 8bit length address
 
         err = ospi_raw_trans(&g_ospi0_trans,
                              OSPI_B_COMMAND_WRITE, 2,

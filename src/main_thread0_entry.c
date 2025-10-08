@@ -35,11 +35,11 @@ void main_thread0_entry(void *pvParameters)
 
     xprintf("!srt\n");
     // cast pointer
-    uint32_t *image_p32 = (uint32_t *)g_image_qvga_sram;
+    // uint32_t *image_p32 = (uint32_t *)g_image_qvga_sram;
     uint8_t *image_p8 = (uint8_t *)g_image_qvga_sram;
     uint8_t *hyperram_ptr = (uint8_t *)HYPERRAM_BASE_ADDR;
-    uint32_t *hyperram_ptr32 = (uint32_t *)HYPERRAM_BASE_ADDR;
-    uint8_t read_data[RAM_DATA_LENGTH] = {0};
+    // uint32_t *hyperram_ptr32 = (uint32_t *)HYPERRAM_BASE_ADDR;
+
     fsp_err_t err = FSP_SUCCESS;
     err = hyperram_init();
     if (FSP_SUCCESS != err)
@@ -50,7 +50,7 @@ void main_thread0_entry(void *pvParameters)
 
     ////////////////////////////
     // write to HyperRAM
-    err = hyperram_b_write(image_p8, hyperram_ptr, VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL);
+    err = hyperram_b_write(image_p8, 0x00, VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL);
     if (FSP_SUCCESS != err)
     {
         xprintf("[OSPI] HyperRAM write error!\n");
@@ -68,8 +68,22 @@ void main_thread0_entry(void *pvParameters)
     ////////////////////////////
     xprintf("[OSPI] write end\n");
     hyperram_ptr = HYPERRAM_BASE_ADDR;
-    hyperram_ptr32 = HYPERRAM_BASE_ADDR;
+    // hyperram_ptr32 = HYPERRAM_BASE_ADDR;
 
+    for (int i = 0; i < VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL; i += RAM_DATA_LENGTH)
+    {
+
+        if (memcmp(image_p8, hyperram_ptr, RAM_DATA_LENGTH) != 0)
+        {
+            xprintf("[OSPI] HyperRAM verify error!\n");
+        }
+        else
+        {
+            xprintf("[OSPI] HyperRAM verify OK!\n");
+        }
+        hyperram_ptr += RAM_DATA_LENGTH;
+        image_p8 += RAM_DATA_LENGTH;
+    }
     for (uint32_t z = 0; z < VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL / 4; z++)
     {
 
