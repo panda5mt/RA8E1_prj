@@ -7,7 +7,7 @@
 #include <string.h>
 
 spi_flash_direct_transfer_t g_ospi0_trans;
-
+bool ospi_b_dma_sent = false;
 /* Custom command sets. */
 ospi_b_xspi_command_set_t g_command_sets[] =
     {
@@ -23,7 +23,7 @@ ospi_b_xspi_command_set_t g_command_sets[] =
             .write_enable_command = OSPI_B_COMMAND_WRITE_ENABLE,
             .status_command = 0x00,
             .status_needs_address = false,
-            .address_msb_mask = 0xf0,
+            //.address_msb_mask = 0xf0,
             .read_dummy_cycles = 15U,
             .program_dummy_cycles = 15U,
 
@@ -49,6 +49,67 @@ fsp_err_t ospi_raw_trans(spi_flash_direct_transfer_t *p_trans,
 
     err = R_OSPI_B_DirectTransfer(&g_ospi0_ctrl, p_trans, dir);
     return err;
+}
+
+// ★ OSPI レジスタの要点ダンプ（ch=0/1 の両方見ます）
+void ospi_dump_regs(void)
+{
+    R_XSPI0_Type *p = R_XSPI0;
+
+    for (int ch = 0; ch < 2; ch++)
+    {
+        xprintf("\n[OSPI] ---- CH%d ----\n", ch);
+        xprintf("LIOCFGCS[%d] = 0x%08X\n", ch, p->LIOCFGCS[ch]);
+        xprintf("CMCFGCS[%d].CMCFG0= 0x%08X\n", ch, p->CMCFGCS[ch].CMCFG0);
+        xprintf("CMCFGCS[%d].CMCFG1= 0x%08X\n", ch, p->CMCFGCS[ch].CMCFG1); // RDCMD/RDLATE
+        xprintf("CMCFGCS[%d].CMCFG2= 0x%08X\n", ch, p->CMCFGCS[ch].CMCFG2); // WRCMD/WRLATE
+    }
+
+    xprintf("\n[OSPI] BMCTL0=0x%08X,BMCTL1=0x%08X,WRAPCFG=0x%08X\n",
+            R_XSPI0->BMCTL0, R_XSPI0->BMCTL1, R_XSPI0->WRAPCFG);
+    xprintf("\n[OSPI] COMSTT=0x%08X\n", R_XSPI0->COMSTT);
+    xprintf("[OSPI] BMCFGCH[0]=0x%08X,BMCFGCH[1]=0x%08X\n",
+            R_XSPI0->BMCFGCH[0], R_XSPI0->BMCFGCH[1]);
+}
+
+void ospi_wait_mmap_idle(void)
+{
+    const uint32_t BUSY_MASK = (0x03u << R_XSPI0_COMSTT_MEMACCCH_Pos);
+    while (R_XSPI0->COMSTT & BUSY_MASK)
+    {
+        __NOP();
+    }
+}
+
+void dump_ospi_read_side(R_XSPI0_Type *r, int ch)
+{
+    uint32_t cm0 = r->CMCFGCS[ch].CMCFG0;
+    uint32_t cm1 = r->CMCFGCS[ch].CMCFG1;
+    uint32_t liocfg = r->LIOCFGCS[ch];
+    uint32_t wrap = r->WRAPCFG;
+
+    uint32_t rdcmd = (cm1 >> R_XSPI0_CMCFGCS_CMCFG1_RDCMD_Pos) & 0xFFFF;
+    uint32_t rdlate = (cm1 >> R_XSPI0_CMCFGCS_CMCFG1_RDLATE_Pos) & 0xFF;
+    uint32_t addsz = (cm0 >> R_XSPI0_CMCFGCS_CMCFG0_ADDSIZE_Pos) & 0x3;
+    uint32_t ffmt = (cm0 >> R_XSPI0_CMCFGCS_CMCFG0_FFMT_Pos) & 0x7;
+    uint32_t latemd = (liocfg >> R_XSPI0_LIOCFGCS_LATEMD_Pos) & 0x1;
+    uint32_t dssft0 = (wrap >> R_XSPI0_WRAPCFG_DSSFTCS0_Pos) & 0x1F;
+    uint32_t dssft1 = (wrap >> R_XSPI0_WRAPCFG_DSSFTCS1_Pos) & 0x1F;
+
+    xprintf("RDCMD=0x%04x RDLATE=%u ADDRSIZE=%u FFMT=%u\n",
+            (unsigned long)rdcmd, (unsigned long)rdlate, (unsigned long)addsz,
+            (unsigned long)ffmt);
+
+    xprintf("LATEMD=%u DSSFT0=%u DSSFT1=%u\n",
+            (unsigned long)latemd, (unsigned long)dssft0, (unsigned long)dssft1);
+
+    uint32_t cmcfg0 = r->CMCFGCS[ch].CMCFG0;
+    bool addr_replace_enabled =
+        (cmcfg0 & R_XSPI0_CMCFGCS_CMCFG0_ADDRPEN_Msk) != 0;
+
+    xprintf("CMCFG0[%d] = 0x%08X\n", ch, (unsigned long)cmcfg0);
+    xprintf("ADDRPEN (Address Replace) = %s\n",
+            addr_replace_enabled ? "ENABLED" : "DISABLED");
 }
 
 fsp_err_t hyperram_init(void)
@@ -243,4 +304,53 @@ fsp_err_t hyperram_init(void)
     xprintf("[OSPI] RW init end\n");
 
     return err;
+}
+
+fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_length)
+{
+    fsp_err_t err = FSP_SUCCESS;
+
+    const uint8_t *src_p8 = (const uint8_t *)p_src;
+    const uint32_t *src_p32 = (const uint32_t *)p_src;
+
+    uint8_t *dest_p8 = (uint8_t *)p_dest;
+    uint32_t *dest_p32 = (uint32_t *)p_dest;
+
+    // write to HyperRAM
+    // Send write-enable command
+    err = ospi_raw_trans(&g_ospi0_trans,
+                         OSPI_B_COMMAND_WRITE_ENABLE, 2,
+                         0x00000000, 0,
+                         0, 0,
+                         0, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+    if (FSP_SUCCESS != err)
+    {
+        xprintf("[OSPI] direct transfer error!\n");
+        return err;
+    }
+
+    // write
+    for (uint32_t z = 0; z < total_length / 4; z++)
+    {
+        uint32_t data = src_p32[z];
+        uint32_t adr = dest_p8 + z * 4; // 8bit length address
+
+        err = ospi_raw_trans(&g_ospi0_trans,
+                             OSPI_B_COMMAND_WRITE, 2,
+                             adr, 4,
+                             data, 4,
+                             15, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+        if (FSP_SUCCESS != err)
+        {
+            xprintf("[OSPI] direct transfer error!\n");
+        }
+    }
+    return err;
+}
+
+void ospi_dmac_cb(transfer_callback_args_t *p_args)
+{
+    FSP_PARAMETER_NOT_USED(p_args);
+    ospi_b_dma_sent = true;
+    // xprintf("OSPI DMAC transfer done.\n");
 }

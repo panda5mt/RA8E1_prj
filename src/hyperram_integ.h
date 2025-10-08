@@ -19,7 +19,7 @@ extern "C"
 #define OSPI_B_COMMAND_WRITE_DISABLE (0x0404)  // 8-0-0  |  0                 |  0                |  0
 #define OSPI_B_COMMAND_READ_REGISTER (0x6565)  // 8-8-8  |  (4bytes)          |  3-7              |  (2bytes)
 #define OSPI_B_COMMAND_WRITE_REGISTER (0x7171) // 8-8-8  |  (4bytes)          |  0                |  (2bytes)
-
+    extern bool ospi_b_dma_sent;
     extern spi_flash_direct_transfer_t g_ospi0_trans;
     extern ospi_b_xspi_command_set_t g_command_sets[];
     fsp_err_t hyperram_init(void);
@@ -28,6 +28,11 @@ extern "C"
                              uint32_t address, uint8_t addr_len,
                              uint32_t data, uint8_t data_len,
                              uint8_t dummy_cycle, spi_flash_direct_transfer_dir_t dir);
+
+    void ospi_dump_regs(void);
+    void ospi_wait_mmap_idle(void);
+    void dump_ospi_read_side(R_XSPI0_Type *r, int ch);
+    fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_length);
 
 #ifdef __cplusplus
 }
