@@ -1075,8 +1075,8 @@ FSP Configuration
       General: Write Status Bit: b0
       General: Write Enable Bit: b0
       General: DS Auto-calibration Pattern Address: 0x90000000
-      Command Sets: Custom Table: Table Pointer: 
-      Command Sets: Custom Table: Table Length: 0
+      Command Sets: Custom Table: Table Pointer: g_command_sets
+      Command Sets: Custom Table: Table Length: 1
       Command Sets: Erase Sizes: Sector Erase: 1024
       Command Sets: Erase Sizes: Block Erase: 1024
       Command Sets: Initial Mode: Protocol Mode: Dual data rate OPI (8D-8D-8D)

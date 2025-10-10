@@ -17,15 +17,16 @@
 /* Main Thread entry function */
 /* pvParameters contains TaskHandle_t */
 // dst: メモリマップドHyperRAM先頭, src: 書き込み元, size: バイト数(2の倍数)
-static inline void ospi_write_mmap(void *dst, const void *src, size_t size)
+static inline fsp_err_t ospi_write_mmap(void *dst, const void *src, size_t size)
 {
+    fsp_err_t err;
     // 2バイト整列＆サイズ偶数を保証
     configASSERT(((uintptr_t)dst % 2) == 0);
     configASSERT((size % 2) == 0);
 
     // 書き込み前：順序＆キャッシュを外へ押し出す
-    __DSB();
-    __DMB();
+    // 2) 送信元を必ずクリーン＋バリア（コントローラが読む側）
+    SCB_InvalidateDCache_by_Addr((uint32_t *)dst, size);
     SCB_CleanDCache_by_Addr((uint32_t *)dst, size);
     __DSB();
     __DMB();
@@ -40,7 +41,13 @@ static inline void ospi_write_mmap(void *dst, const void *src, size_t size)
         size_t n = rem > CHUNK ? CHUNK : rem;
         n &= ~((size_t)1); // 偶数に丸める
                            // memcpy(d, s, n);
-        R_OSPI_B_Write(&g_ospi0_ctrl, s, d, n);
+        err = R_OSPI_B_Write(&g_ospi0_ctrl, s, d, n);
+        if (FSP_SUCCESS != err)
+        {
+            xprintf("[OSPI] HyperRAM write error!:%d\n", err);
+            return err;
+        }
+        // DMA完了待ち
         while (ospi_b_dma_sent != true)
         {
             vTaskDelay(pdMS_TO_TICKS(10));
@@ -56,8 +63,8 @@ static inline void ospi_write_mmap(void *dst, const void *src, size_t size)
         rem -= n;
     }
 
-    // 必要ならISB（設定変更直後など）
-    // __ISB();
+    // 必要ならISB
+    __ISB();
 }
 
 static inline bool ospi_verify_mmap(const void *dst, const void *src, size_t size)
@@ -123,8 +130,7 @@ void main_thread0_entry(void *pvParameters)
         xprintf("[OSPI] HyperRAM write error!\n");
     }
 
-    // R_OSPI_B_Write(&g_ospi0_ctrl, image_p8, hyperram_ptr, VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL);
-    //  ospi_write_mmap(hyperram_ptr, image_p8, VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL);
+    // ospi_write_mmap(hyperram_ptr, image_p8, VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL);
     ////////////////////////////
 
     xprintf("[OSPI] write end\n");
