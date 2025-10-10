@@ -39,9 +39,15 @@ static inline void ospi_write_mmap(void *dst, const void *src, size_t size)
     {
         size_t n = rem > CHUNK ? CHUNK : rem;
         n &= ~((size_t)1); // 偶数に丸める
-        // memcpy(d, s, n);
+                           // memcpy(d, s, n);
         R_OSPI_B_Write(&g_ospi0_ctrl, s, d, n);
-        // 各チャンクを確実に外へ
+        while (ospi_b_dma_sent != true)
+        {
+            vTaskDelay(pdMS_TO_TICKS(10));
+        }
+        ospi_b_dma_sent = false;
+
+        //  各チャンクを確実に外へ
         SCB_CleanDCache_by_Addr((uint32_t *)d, n);
         __DSB();
         __DMB();
@@ -92,6 +98,7 @@ void main_thread0_entry(void *pvParameters)
     cam_capture();
     cam_close();
 
+    ospi_b_dma_sent = false;
     xprintf("!srt\n");
     // cast pointer
     uint8_t *image_p8 = (uint8_t *)g_image_qvga_sram;
@@ -116,12 +123,14 @@ void main_thread0_entry(void *pvParameters)
         xprintf("[OSPI] HyperRAM write error!\n");
     }
 
-    // ospi_write_mmap(hyperram_ptr, image_p8, VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL);
+    // R_OSPI_B_Write(&g_ospi0_ctrl, image_p8, hyperram_ptr, VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL);
+    //  ospi_write_mmap(hyperram_ptr, image_p8, VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL);
     ////////////////////////////
 
     xprintf("[OSPI] write end\n");
     hyperram_ptr = HYPERRAM_BASE_ADDR;
     hyperram_ptr32 = HYPERRAM_BASE_ADDR;
+    image_p32 = (uint32_t *)g_image_qvga_sram;
 
     for (int i = 0; i < VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL; i += RAM_DATA_LENGTH)
     {
