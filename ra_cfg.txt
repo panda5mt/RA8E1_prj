@@ -828,7 +828,7 @@ FSP Configuration
   Module "OSPI (r_ospi_b)"
     Parameter Checking: Default (BSP)
     DMAC Support: Enable
-    Autocalibration Support: Disable
+    Autocalibration Support: Enable
     Memory-mapping Support: Prefetch Function: Enable
     Memory-mapping Support: Combination Function: 64 Bytes
     Memory-mapping Support: XiP Support: Disable
@@ -1074,11 +1074,11 @@ FSP Configuration
       General: Chip Select: CS1
       General: Write Status Bit: b0
       General: Write Enable Bit: b0
-      General: DS Auto-calibration Pattern Address: 0
-      Command Sets: Custom Table: Table Pointer: g_command_sets
-      Command Sets: Custom Table: Table Length: 1
-      Command Sets: Erase Sizes: Sector Erase: 0
-      Command Sets: Erase Sizes: Block Erase: 0
+      General: DS Auto-calibration Pattern Address: 0x90000000
+      Command Sets: Custom Table: Table Pointer: 
+      Command Sets: Custom Table: Table Length: 0
+      Command Sets: Erase Sizes: Sector Erase: 1024
+      Command Sets: Erase Sizes: Block Erase: 1024
       Command Sets: Initial Mode: Protocol Mode: Dual data rate OPI (8D-8D-8D)
       Command Sets: Initial Mode: Frame Format: xSPI Profile 2.0
       Command Sets: Initial Mode: Latency Mode: Fixed
@@ -1153,9 +1153,9 @@ FSP Configuration
         Number of Transfers: 64
         Number of Blocks (Valid only in Repeat,Block or Repeat-Block Mode): 1
         Activation Source: No ELC Trigger
-        Callback: ospi_dmac_cb
-        Transfer End Interrupt Priority: Priority 9
-        Interrupt Frequency: Interrupt after each block, or repeat size is transferred
+        Callback: NULL
+        Transfer End Interrupt Priority: Disabled
+        Interrupt Frequency: Interrupt after all transfers have completed
         Offset value (Valid only when address mode is \'Offset\'): 0
         Source Buffer Size: 0
         

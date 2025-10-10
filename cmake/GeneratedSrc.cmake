@@ -63,7 +63,16 @@ target_include_directories(${PROJECT_NAME}.elf
     ${CMAKE_CURRENT_SOURCE_DIR}/ra_gen
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/xprintf/src
-    ${CMAKE_CURRENT_SOURCE_DIR}
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/ra/fsp/inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/ra/fsp/inc/api
+    ${CMAKE_CURRENT_SOURCE_DIR}/ra/fsp/inc/instances
+    ${CMAKE_CURRENT_SOURCE_DIR}/ra/arm/CMSIS_6/CMSIS/Core/Include
+    ${CMAKE_CURRENT_SOURCE_DIR}/ra_gen
+    ${CMAKE_CURRENT_SOURCE_DIR}/ra_cfg/fsp_cfg/bsp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ra_cfg/fsp_cfg
 )
 
 target_link_directories(${PROJECT_NAME}.elf

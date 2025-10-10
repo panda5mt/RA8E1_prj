@@ -6,7 +6,7 @@ transfer_info_t g_transfer0_info =
 {
     .transfer_settings_word_b.dest_addr_mode = TRANSFER_ADDR_MODE_INCREMENTED,
     .transfer_settings_word_b.repeat_area    = TRANSFER_REPEAT_AREA_SOURCE,
-    .transfer_settings_word_b.irq            = TRANSFER_IRQ_EACH,
+    .transfer_settings_word_b.irq            = TRANSFER_IRQ_END,
     .transfer_settings_word_b.chain_mode     = TRANSFER_CHAIN_MODE_DISABLED,
     .transfer_settings_word_b.src_addr_mode  = TRANSFER_ADDR_MODE_INCREMENTED,
     .transfer_settings_word_b.size           = TRANSFER_SIZE_1_BYTE,
@@ -25,9 +25,9 @@ const dmac_extended_cfg_t g_transfer0_extend =
 #else
     .irq                 = FSP_INVALID_VECTOR,
 #endif
-    .ipl                 = (9),
+    .ipl                 = (BSP_IRQ_DISABLED),
     .channel             = 0,
-    .p_callback          = ospi_dmac_cb,
+    .p_callback          = NULL,
     .p_context           = NULL,
     .activation_source   = ELC_EVENT_NONE,
 };
@@ -56,11 +56,77 @@ static ospi_b_timing_setting_t g_ospi0_timing_settings =
     .ddr_sampling_extension      = OSPI_B_DDR_SAMPLING_EXTENSION_1,
 };
 
-extern ospi_b_xspi_command_set_t g_command_sets[];
+static const spi_flash_erase_command_t g_ospi0_command_set_initial_erase_commands[] =
+{
+};
+static const ospi_b_table_t g_ospi0_command_set_initial_erase_table =
+{
+    .p_table = (void *) g_ospi0_command_set_initial_erase_commands,
+    .length = sizeof(g_ospi0_command_set_initial_erase_commands)/sizeof(g_ospi0_command_set_initial_erase_commands[0]),
+};
+static const spi_flash_erase_command_t g_ospi0_command_set_high_speed_erase_commands[] =
+{
+};
+static const ospi_b_table_t g_ospi0_command_set_high_speed_erase_table =
+{
+    .p_table = (void *) g_ospi0_command_set_high_speed_erase_commands,
+    .length = sizeof(g_ospi0_command_set_high_speed_erase_commands)/sizeof(g_ospi0_command_set_high_speed_erase_commands[0]),
+};
+
+static const ospi_b_xspi_command_set_t g_ospi0_command_set_table[] =
+{
+    {
+        .protocol = SPI_FLASH_PROTOCOL_8D_8D_8D,
+        .frame_format = OSPI_B_FRAME_FORMAT_XSPI_PROFILE_2,
+        .latency_mode = OSPI_B_LATENCY_MODE_FIXED,
+        .command_bytes = OSPI_B_COMMAND_BYTES_2,
+        .address_bytes = SPI_FLASH_ADDRESS_BYTES_4,
+        .address_msb_mask = 0xf,
+        .status_needs_address =  true,
+        .status_address = 0,
+        .status_address_bytes = SPI_FLASH_ADDRESS_BYTES_4,
+        .p_erase_commands = &g_ospi0_command_set_initial_erase_table,
+        .read_command = 0xEEEE,
+        .read_dummy_cycles = 16,
+        .program_command = 0xDEDE,
+        .program_dummy_cycles = 16,
+        .row_load_command = 0x00,
+        .row_load_dummy_cycles = 0,
+        .row_store_command = 0x00,
+        .row_store_dummy_cycles = 0,
+        .write_enable_command = 0x0606,
+        .status_command = 0,
+        .status_dummy_cycles = 0,
+    },
+    {
+        .protocol = SPI_FLASH_PROTOCOL_8D_8D_8D,
+        .frame_format = OSPI_B_FRAME_FORMAT_XSPI_PROFILE_2,
+        .latency_mode = OSPI_B_LATENCY_MODE_FIXED,
+        .command_bytes = OSPI_B_COMMAND_BYTES_2,
+        .address_bytes = SPI_FLASH_ADDRESS_BYTES_4,
+        .address_msb_mask = 0,
+        .status_needs_address =  true,
+        .status_address = 0x00,
+        .status_address_bytes = SPI_FLASH_ADDRESS_BYTES_4,
+        .p_erase_commands = &g_ospi0_command_set_high_speed_erase_table,
+        .read_command = 0xEEEE,
+        .read_dummy_cycles = 15,
+        .program_command = 0xDEDE,
+        .program_dummy_cycles = 15,
+        .row_load_command = 0x00,
+        .row_load_dummy_cycles = 0,
+        .row_store_command = 0x00,
+        .row_store_dummy_cycles = 0,
+        .write_enable_command = 0x0606,
+        .status_command = 0,
+        .status_dummy_cycles = 0,
+    }
+};
+
 static const ospi_b_table_t g_ospi0_command_set =
 {
-    .p_table = (void *) g_command_sets,
-    .length = 1
+    .p_table = (void *) g_ospi0_command_set_table,
+    .length = 2
 };
 
 #if OSPI_B_CFG_DOTF_SUPPORT_ENABLE
@@ -85,7 +151,7 @@ static const ospi_b_extended_cfg_t g_ospi0_extended_cfg =
     .p_timing_settings                       = &g_ospi0_timing_settings,
     .p_xspi_command_set                      = &g_ospi0_command_set,
     .data_latch_delay_clocks                 = OSPI_B_DS_TIMING_DELAY_16,
-    .p_autocalibration_preamble_pattern_addr = (uint8_t *) 0,
+    .p_autocalibration_preamble_pattern_addr = (uint8_t *) 0x90000000,
 #if OSPI_B_CFG_DMAC_SUPPORT_ENABLE
     .p_lower_lvl_transfer                    = &g_transfer0,
 #endif
