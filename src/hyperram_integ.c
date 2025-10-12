@@ -119,7 +119,7 @@ void dump_ospi_read_side(R_XSPI0_Type *r, int ch)
 fsp_err_t hyperram_init(void)
 {
     fsp_err_t err = FSP_SUCCESS;
-
+    R_BSP_MODULE_START(FSP_IP_OSPI, 0);
     // 0. VCCによるHW設定 VCC2 = 1.8VなのでLVOCR.LVO1E=1にする
     uint32_t *lvocr_ptr = (uint32_t *)0x4001E000;
     xprintf("[SYSTEM] LVOCR = 0x%02x\n", *lvocr_ptr);
@@ -151,16 +151,10 @@ fsp_err_t hyperram_init(void)
 
     xprintf("[OSPI] init Ok\n");
 
-    int wrap = 16;
-    R_XSPI0->WRAPCFG =
-        (R_XSPI0->WRAPCFG & ~R_XSPI0_WRAPCFG_DSSFTCS1_Msk) |
-        ((wrap << R_XSPI0_WRAPCFG_DSSFTCS1_Pos) & R_XSPI0_WRAPCFG_DSSFTCS1_Msk);
+    R_XSPI0->WRAPCFG_b.DSSFTCS1 = 16;
 
-    int ddrsmpex = 8;
-    R_XSPI0->LIOCFGCS[1] =
-        (R_XSPI0->LIOCFGCS[1] & ~R_XSPI0_LIOCFGCS_DDRSMPEX_Msk) |
-        ((ddrsmpex << R_XSPI0_LIOCFGCS_DDRSMPEX_Pos) & R_XSPI0_LIOCFGCS_DDRSMPEX_Msk);
-    __DMB();
+    /* Configure DDR sampling window extend */
+    R_XSPI0->LIOCFGCS_b[1].DDRSMPEX = 0x7;
 
     // write enable
     err = ospi_raw_trans(&g_ospi0_trans,

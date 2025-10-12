@@ -158,7 +158,7 @@ FSP Configuration
     SPICLK Div /4
     CANFDCLK Div /8
     USBCLK Div /5
-    OCTACLK Div /8
+    OCTACLK Div /2
     
   Pin Configurations
     RA8E1 FPB -> g_bsp_pin_cfg
@@ -1123,10 +1123,10 @@ FSP Configuration
       Command Sets: High-speed Mode: Sector Erase: Command Code: 0
       Command Sets: High-speed Mode: Block Erase: Command Code: 0
       Command Sets: High-speed Mode: Chip Erase: Command Code: 0
-      Timing Settings: Chip Select: Command Interval: 16 cycles
+      Timing Settings: Chip Select: Command Interval: 2 cycles
       Timing Settings: Chip Select: Pull-up Timing: No Extension
       Timing Settings: Chip Select: Pull-down Timing: No Extension
-      Timing Settings: DS Latching Delay: 16 cells
+      Timing Settings: DS Latching Delay: 1 cell
       Timing Settings: SDR: Drive Timing: Drive at CK
       Timing Settings: SDR: CK Sampling Edge: Falling edge
       Timing Settings: SDR: Sampling Delay: None

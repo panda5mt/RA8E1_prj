@@ -7,6 +7,7 @@
 #include "cam.h"
 #include "hyperram_integ.h"
 #include "r_ospi_b.h"
+#include <arm_acle.h>
 
 // #define VGA_WIDTH (256)
 // #define VGA_HEIGHT (256)
@@ -26,8 +27,6 @@ static inline fsp_err_t ospi_write_mmap(void *dst, const void *src, size_t size)
 
     // 書き込み前：順序＆キャッシュを外へ押し出す
     // 2) 送信元を必ずクリーン＋バリア（コントローラが読む側）
-    SCB_InvalidateDCache_by_Addr((uint32_t *)dst, size);
-    SCB_CleanDCache_by_Addr((uint32_t *)dst, size);
     __DSB();
     __DMB();
 
@@ -40,8 +39,13 @@ static inline fsp_err_t ospi_write_mmap(void *dst, const void *src, size_t size)
     {
         size_t n = rem > CHUNK ? CHUNK : rem;
         n &= ~((size_t)1); // 偶数に丸める
-                           // memcpy(d, s, n);
+        // memcpy(d, s, n);
         err = R_OSPI_B_Write(&g_ospi0_ctrl, s, d, n);
+        // 書いた直後
+        SCB_CleanDCache_by_Addr(dst, n);
+        __DSB();
+        __DMB();
+
         if (FSP_SUCCESS != err)
         {
             xprintf("[OSPI] HyperRAM write error!:%d\n", err);
@@ -73,12 +77,14 @@ static inline bool ospi_verify_mmap(const void *dst, const void *src, size_t siz
     configASSERT((size % 2) == 0);
 
     // 読み戻し前：必ずキャッシュ無効化
-    SCB_InvalidateDCache_by_Addr((uint32_t *)dst, size);
     __DSB();
     __DMB();
 
     const uint16_t *a = (const uint16_t *)dst;
     const uint16_t *b = (const uint16_t *)src;
+    // 読み戻し直前：
+    SCB_InvalidateDCache_by_Addr(dst, size);
+
     for (size_t i = 0; i < size / 2; ++i)
     {
         if (a[i] != b[i])
@@ -138,20 +144,6 @@ void main_thread0_entry(void *pvParameters)
     hyperram_ptr32 = HYPERRAM_BASE_ADDR;
     image_p32 = (uint32_t *)g_image_qvga_sram;
 
-    for (int i = 0; i < VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL; i += RAM_DATA_LENGTH)
-    {
-        // if (memcmp(image_p8, hyperram_ptr, RAM_DATA_LENGTH) != 0)
-        if (ospi_verify_mmap(hyperram_ptr32, image_p32, RAM_DATA_LENGTH) == false)
-        {
-            xprintf("[OSPI] HyperRAM verify error!\n");
-        }
-        else
-        {
-            xprintf("[OSPI] HyperRAM verify OK!\n");
-        }
-        hyperram_ptr += RAM_DATA_LENGTH;
-        image_p8 += RAM_DATA_LENGTH;
-    }
     for (uint32_t z = 0; z < VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL / 4; z++)
     {
         uint32_t adr = z * 4;
@@ -165,6 +157,22 @@ void main_thread0_entry(void *pvParameters)
             xprintf("[OSPI] direct transfer error!\n");
         }
         xprintf("0x%08X\n", g_ospi0_trans.data);
+    }
+
+    for (int i = 0; i < VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL; i += RAM_DATA_LENGTH)
+    {
+        // if (memcmp(image_p8, hyperram_ptr, RAM_DATA_LENGTH) != 0)
+        if (ospi_verify_mmap(hyperram_ptr, image_p8, RAM_DATA_LENGTH) == false)
+        {
+            xprintf("[OSPI] HyperRAM verify error!\n");
+        }
+        else
+        {
+            xprintf("[OSPI] HyperRAM verify OK!\n");
+        }
+        vTaskDelay(pdMS_TO_TICKS(1));
+        hyperram_ptr += RAM_DATA_LENGTH;
+        image_p8 += RAM_DATA_LENGTH;
     }
 
     /* TODO: add your own code here */
