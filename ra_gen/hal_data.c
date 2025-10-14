@@ -47,9 +47,9 @@ ospi_b_instance_ctrl_t g_ospi0_ctrl;
 
 static ospi_b_timing_setting_t g_ospi0_timing_settings =
 {
-    .command_to_command_interval = OSPI_B_COMMAND_INTERVAL_CLOCKS_2,
+    .command_to_command_interval = OSPI_B_COMMAND_INTERVAL_CLOCKS_10,
     .cs_pullup_lag               = OSPI_B_COMMAND_CS_PULLUP_CLOCKS_NO_EXTENSION,
-    .cs_pulldown_lead            = OSPI_B_COMMAND_CS_PULLDOWN_CLOCKS_NO_EXTENSION,
+    .cs_pulldown_lead            = OSPI_B_COMMAND_CS_PULLDOWN_CLOCKS_1,
     .sdr_drive_timing            = OSPI_B_SDR_DRIVE_TIMING_AT_CK,
     .sdr_sampling_edge           = OSPI_B_CK_EDGE_FALLING,
     .sdr_sampling_delay          = OSPI_B_SDR_SAMPLING_DELAY_NONE,
@@ -84,7 +84,7 @@ static const ospi_b_extended_cfg_t g_ospi0_extended_cfg =
     .channel                                 = (ospi_b_device_number_t) 1,
     .p_timing_settings                       = &g_ospi0_timing_settings,
     .p_xspi_command_set                      = &g_ospi0_command_set,
-    .data_latch_delay_clocks                 = OSPI_B_DS_TIMING_DELAY_1,
+    .data_latch_delay_clocks                 = OSPI_B_DS_TIMING_DELAY_NONE,
     .p_autocalibration_preamble_pattern_addr = (uint8_t *) 0x90000000,
 #if OSPI_B_CFG_DMAC_SUPPORT_ENABLE
     .p_lower_lvl_transfer                    = &g_transfer0,

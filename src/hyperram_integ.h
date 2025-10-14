@@ -9,16 +9,16 @@ extern "C"
 #define HYPERRAM_BASE_ADDR ((void *)0x90000000U) /* Device on CS1 */
 // COMMAND SET(infineon S80KS5123)
 // #define  <COMMAND>               <CODE>     <CA-DATA> | <ADDRESS(bytes)>   | <Latency cycles>  | <Data (bytes)>
-#define OSPI_B_COMMAND_RESET_ENABLE (0x6666)   // 8-0-0  |  0                 |  0                |  0
-#define OSPI_B_COMMAND_RESET (0x9999)          // 8-0-0  |  0                 |  0                |  0
-#define OSPI_B_COMMAND_READ_ID (0x9F9F)        // 8-8-8  |  0x00(4bytes)      |  3-7              |  (4bytes)
-#define OSPI_B_COMMAND_POWER_DOWN (0xB9B9)     // 8-0-0  |  0                 |  0                |  0
-#define OSPI_B_COMMAND_READ (0xEEEE)           // 8-8-8  |  (4bytes)          |  3-7              |  1 to \infty
-#define OSPI_B_COMMAND_WRITE (0xDEDE)          // 8-8-8  |  (4bytes)          |  3-7              |  1 to \infty
-#define OSPI_B_COMMAND_WRITE_ENABLE (0x0606)   // 8-0-0  |  0                 |  0                |  0
-#define OSPI_B_COMMAND_WRITE_DISABLE (0x0404)  // 8-0-0  |  0                 |  0                |  0
-#define OSPI_B_COMMAND_READ_REGISTER (0x6565)  // 8-8-8  |  (4bytes)          |  3-7              |  (2bytes)
-#define OSPI_B_COMMAND_WRITE_REGISTER (0x7171) // 8-8-8  |  (4bytes)          |  0                |  (2bytes)
+#define OSPI_B_COMMAND_RESET_ENABLE (0x6600)   // 8-0-0  |  0                 |  0                |  0
+#define OSPI_B_COMMAND_RESET (0x9900)          // 8-0-0  |  0                 |  0                |  0
+#define OSPI_B_COMMAND_READ_ID (0x9F00)        // 8-8-8  |  0x00(4bytes)      |  3-7              |  (4bytes)
+#define OSPI_B_COMMAND_POWER_DOWN (0xB900)     // 8-0-0  |  0                 |  0                |  0
+#define OSPI_B_COMMAND_READ (0xEE00)           // 8-8-8  |  (4bytes)          |  3-7              |  1 to \infty
+#define OSPI_B_COMMAND_WRITE (0xDE00)          // 8-8-8  |  (4bytes)          |  3-7              |  1 to \infty
+#define OSPI_B_COMMAND_WRITE_ENABLE (0x0600)   // 8-0-0  |  0                 |  0                |  0
+#define OSPI_B_COMMAND_WRITE_DISABLE (0x0400)  // 8-0-0  |  0                 |  0                |  0
+#define OSPI_B_COMMAND_READ_REGISTER (0x6500)  // 8-8-8  |  (4bytes)          |  3-7              |  (2bytes)
+#define OSPI_B_COMMAND_WRITE_REGISTER (0x7100) // 8-8-8  |  (4bytes)          |  0                |  (2bytes)
     extern bool ospi_b_dma_sent;
     extern spi_flash_direct_transfer_t g_ospi0_trans;
     extern ospi_b_xspi_command_set_t g_command_sets[];

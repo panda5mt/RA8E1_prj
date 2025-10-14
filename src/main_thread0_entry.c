@@ -1,4 +1,5 @@
 #include "cmsis_clang.h"
+#include "common_data.h"
 #include "main_thread0.h"
 #include "hal_data.h"
 #include "projdefs.h"
@@ -40,23 +41,24 @@ static inline fsp_err_t ospi_write_mmap(void *dst, const void *src, size_t size)
         size_t n = rem > CHUNK ? CHUNK : rem;
         n &= ~((size_t)1); // 偶数に丸める
         // memcpy(d, s, n);
+        taskENTER_CRITICAL();
         err = R_OSPI_B_Write(&g_ospi0_ctrl, s, d, n);
-        // 書いた直後
+        taskEXIT_CRITICAL();
         SCB_CleanDCache_by_Addr(dst, n);
         __DSB();
         __DMB();
 
-        if (FSP_SUCCESS != err)
-        {
-            xprintf("[OSPI] HyperRAM write error!:%d\n", err);
-            return err;
-        }
+        // if (FSP_SUCCESS != err)
+        // {
+        //     xprintf("[OSPI] HyperRAM write error!:%d\n", err);
+        //     return err;
+        // }
         // DMA完了待ち
-        while (ospi_b_dma_sent != true)
-        {
-            vTaskDelay(pdMS_TO_TICKS(10));
-        }
-        ospi_b_dma_sent = false;
+        // while (ospi_b_dma_sent != true)
+        // {
+        //     vTaskDelay(pdMS_TO_TICKS(10));
+        // }
+        // ospi_b_dma_sent = false;
 
         //  各チャンクを確実に外へ
         SCB_CleanDCache_by_Addr((uint32_t *)d, n);
@@ -76,19 +78,22 @@ static inline bool ospi_verify_mmap(const void *dst, const void *src, size_t siz
     configASSERT(((uintptr_t)dst % 2) == 0);
     configASSERT((size % 2) == 0);
 
-    // 読み戻し前：必ずキャッシュ無効化
+    //  読み戻し前：必ずキャッシュ無効化
     __DSB();
     __DMB();
-
     const uint16_t *a = (const uint16_t *)dst;
     const uint16_t *b = (const uint16_t *)src;
     // 読み戻し直前：
     SCB_InvalidateDCache_by_Addr(dst, size);
+    SCB_DisableDCache();
 
     for (size_t i = 0; i < size / 2; ++i)
     {
         if (a[i] != b[i])
+        {
+
             return false;
+        }
     }
     return true;
 }
@@ -129,7 +134,6 @@ void main_thread0_entry(void *pvParameters)
 
     ////////////////////////////
     // write to HyperRAM
-
     err = hyperram_b_write(image_p8, 0x00, VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL);
     if (FSP_SUCCESS != err)
     {
@@ -161,8 +165,18 @@ void main_thread0_entry(void *pvParameters)
 
     for (int i = 0; i < VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL; i += RAM_DATA_LENGTH)
     {
-        // if (memcmp(image_p8, hyperram_ptr, RAM_DATA_LENGTH) != 0)
-        if (ospi_verify_mmap(hyperram_ptr, image_p8, RAM_DATA_LENGTH) == false)
+        bool cm;
+        taskENTER_CRITICAL();
+        __DSB();
+        __DMB();
+        // 読み戻し直前：
+        SCB_InvalidateDCache_by_Addr(hyperram_ptr, RAM_DATA_LENGTH);
+        // cm = memcmp(image_p8, hyperram_ptr, RAM_DATA_LENGTH);
+        cm = ospi_verify_mmap(hyperram_ptr, image_p8, RAM_DATA_LENGTH);
+        taskEXIT_CRITICAL();
+
+        // if (ospi_verify_mmap(hyperram_ptr, image_p8, RAM_DATA_LENGTH) == false)
+        if (cm == false)
         {
             xprintf("[OSPI] HyperRAM verify error!\n");
         }
