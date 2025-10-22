@@ -226,10 +226,10 @@ void main_thread0_entry(void *pvParameters)
     {
         uint32_t adr = z * 4;
         err = ospi_raw_trans(&g_ospi0_trans,
-                             OSPI_B_COMMAND_READ, 1,
+                             OSPI_B_COMMAND_READ, OSPI_RAM_COMMAND_BYTES,
                              adr, 4,
                              0, 4,
-                             8, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
+                             OSPI_RAM_LATENCY_CYCLES, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
         if (FSP_SUCCESS != err)
         {
             xprintf("[OSPI] direct transfer error!\n");
