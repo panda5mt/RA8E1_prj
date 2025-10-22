@@ -31,6 +31,9 @@
             #if (RA_NOT_DEFINED != RA_NOT_DEFINED)
             #define USB_CFG_HPRN_USE
             #endif
+            #if (RA_NOT_DEFINED != RA_NOT_DEFINED)
+            #define USB_CFG_HAUD_USE
+            #endif
             #if ((1 != RA_NOT_DEFINED) || (RA_NOT_DEFINED != RA_NOT_DEFINED))
             #define USB_CFG_PCDC_USE
             #endif

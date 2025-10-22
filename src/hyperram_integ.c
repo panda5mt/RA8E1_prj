@@ -15,24 +15,28 @@ bool ospi_b_dma_sent = false;
 /* Custom command sets. */
 ospi_b_xspi_command_set_t g_command_sets[] =
     {
-        /* 8D-8D-8D example with inverted lower command byte. */
         [0] = {
-            .protocol = SPI_FLASH_PROTOCOL_8D_8D_8D,
-            .latency_mode = OSPI_B_LATENCY_MODE_FIXED,
-            .frame_format = OSPI_B_FRAME_FORMAT_XSPI_PROFILE_2,
-            .command_bytes = OSPI_B_COMMAND_BYTES_2,
-            .address_bytes = SPI_FLASH_ADDRESS_BYTES_4,
-            .read_command = OSPI_B_COMMAND_READ,
-            .program_command = OSPI_B_COMMAND_WRITE,
-            .write_enable_command = OSPI_B_COMMAND_WRITE_ENABLE,
-            .status_command = 0x00,
-            .status_needs_address = false,
-            .address_msb_mask = 0xf0,
-            .read_dummy_cycles = 16U,
-            .program_dummy_cycles = 16U,
+            .protocol = SPI_FLASH_PROTOCOL_1S_1S_1S,
+            .frame_format = OSPI_B_FRAME_FORMAT_STANDARD,
+            .command_bytes = 1U},
+        /* 8D-8D-8D example with inverted lower command byte. */
+        [1] = {.protocol = SPI_FLASH_PROTOCOL_8D_8D_8D,
+               .latency_mode = OSPI_B_LATENCY_MODE_VARIABLE, // 可変
+               .frame_format = OSPI_B_FRAME_FORMAT_XSPI_PROFILE_2,
+               .command_bytes = OSPI_B_COMMAND_BYTES_1,
+               .address_bytes = SPI_FLASH_ADDRESS_BYTES_4,
+               .read_command = OSPI_B_COMMAND_READ,
+               .program_command = OSPI_B_COMMAND_WRITE,
+               .write_enable_command = OSPI_B_COMMAND_WRITE_ENABLE,
+               .status_command = 0x00,
+               .status_needs_address = false,
+               .status_address_bytes = 0,
+               .address_msb_mask = 0x00,
+               .read_dummy_cycles = 8U,
+               .program_dummy_cycles = 8U,
 
-            .status_dummy_cycles = NULL,
-            .p_erase_commands = NULL}};
+               .status_dummy_cycles = NULL,
+               .p_erase_commands = NULL}};
 
 fsp_err_t ospi_raw_trans(spi_flash_direct_transfer_t *p_trans,
                          uint16_t command, uint8_t cmd_len,
@@ -128,16 +132,17 @@ fsp_err_t hyperram_init(void)
 
     // 1. OSPI 初期化
     /* Reset flash device by driving OM_RESET pin */
-    // R_XSPI0->LIOCTL_b.RSTCS0 = 0;
-    // R_BSP_SoftwareDelay(OSPI_B_TIME_RESET_PULSE, OSPI_B_TIME_UNIT);
-    // R_XSPI0->LIOCTL_b.RSTCS0 = 1;
-    // R_BSP_SoftwareDelay(OSPI_B_TIME_RESET_SETUP, OSPI_B_TIME_UNIT);
+    R_XSPI0->LIOCTL_b.RSTCS0 = 0;
+    R_BSP_SoftwareDelay(OSPI_B_TIME_RESET_PULSE, OSPI_B_TIME_UNIT);
+    R_XSPI0->LIOCTL_b.RSTCS0 = 1;
+    R_BSP_SoftwareDelay(OSPI_B_TIME_RESET_SETUP, OSPI_B_TIME_UNIT);
+    SCB_InvalidateDCache_by_Addr((uint8_t *)HYPERRAM_BASE_ADDR, 256 * 256 * 2);
 
     err = R_OSPI_B_Open(&g_ospi0_ctrl, &g_ospi0_cfg);
     if (FSP_SUCCESS != err)
     {
         //__BKPT(); // 初期化失敗
-        xprintf("[OSPI] init error!\n");
+        xprintf("[OSPI] init error!%d\n", err);
         return err;
     }
 
@@ -153,7 +158,7 @@ fsp_err_t hyperram_init(void)
     R_XSPI0->WRAPCFG_b.DSSFTCS1 = 16;
 
     // /* Configure DDR sampling window extend */
-    R_XSPI0->LIOCFGCS_b[1].DDRSMPEX = 9;
+    R_XSPI0->LIOCFGCS_b[1].DDRSMPEX = 2;
 
     // write enable
     err = ospi_raw_trans(&g_ospi0_trans,
@@ -208,7 +213,7 @@ fsp_err_t hyperram_init(void)
                          OSPI_B_COMMAND_READ_REGISTER, 2,
                          0x00000004, 4,
                          0x00, 2,
-                         16U, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
+                         8U, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
     if (FSP_SUCCESS != err)
     {
         xprintf("[OSPI] direct transfer error!\n");
@@ -221,7 +226,7 @@ fsp_err_t hyperram_init(void)
                          OSPI_B_COMMAND_READ_REGISTER, 2,
                          0x00000006, 4,
                          0x00, 2,
-                         16U, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
+                         8U, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
     if (FSP_SUCCESS != err)
     {
         xprintf("[OSPI] direct transfer error!\n");
@@ -251,7 +256,7 @@ fsp_err_t hyperram_init(void)
     //                      OSPI_B_COMMAND_WRITE, 2,
     //                      0x00, 4,
     //                      0xFFFF0000, 4, // CK+,CK-
-    //                      16U, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+    //                      8U, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
     // if (FSP_SUCCESS != err)
     // {
     //     xprintf("[OSPI] direct transfer error!\n");
@@ -262,7 +267,7 @@ fsp_err_t hyperram_init(void)
     //                      OSPI_B_COMMAND_WRITE, 2,
     //                      0x04, 4,
     //                      0x000800FF, 4, // CK+,CK-
-    //                      16U, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+    //                      8U, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
     // if (FSP_SUCCESS != err)
     // {
     //     xprintf("[OSPI] direct transfer error!\n");
@@ -273,7 +278,7 @@ fsp_err_t hyperram_init(void)
     //                      OSPI_B_COMMAND_WRITE, 2,
     //                      0x08, 4,
     //                      0x00FFF700U, 4, // CK+,CK-
-    //                      16U, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+    //                      8U, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
     // if (FSP_SUCCESS != err)
     // {
     //     xprintf("[OSPI] direct transfer error!\n");
@@ -284,7 +289,7 @@ fsp_err_t hyperram_init(void)
     //                      OSPI_B_COMMAND_WRITE, 2,
     //                      0x0C, 4,
     //                      0xF700F708, 4, // CK+,CK-
-    //                      16U, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+    //                      8U, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
     // if (FSP_SUCCESS != err)
     // {
     //     xprintf("[OSPI] direct transfer error!\n");
@@ -325,7 +330,7 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
     // write to HyperRAM
     // Send write-enable command
     err = ospi_raw_trans(&g_ospi0_trans,
-                         OSPI_B_COMMAND_WRITE_ENABLE, 2,
+                         OSPI_B_COMMAND_WRITE_ENABLE, 1,
                          0x00000000, 0,
                          0, 0,
                          0, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
@@ -342,10 +347,10 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
         uint32_t adr = (dest_p8) + z * 4; // 8bit length address
 
         err = ospi_raw_trans(&g_ospi0_trans,
-                             OSPI_B_COMMAND_WRITE, 2,
+                             OSPI_B_COMMAND_WRITE, 1,
                              adr, 4,
                              data, 4,
-                             16U, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+                             8U, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
         if (FSP_SUCCESS != err)
         {
             xprintf("[OSPI] direct transfer error!\n");

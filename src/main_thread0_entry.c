@@ -14,10 +14,56 @@
 // #define VGA_HEIGHT (256)
 // #define BYTE_PER_PIXEL (2)
 
-#define RAM_DATA_LENGTH (64U * 1U)
+#define RAM_DATA_LENGTH (16U * 1U) //
 // void putchar_ra8usb(uint8_t c);
+
+// ---- D-Cache を無効化（安全手順）----
+static inline void dcache_disable_global(void)
+{
+    __DSB();
+    __DMB();
+    SCB_CleanDCache();      // ① ダーティラインを外へ書き戻す
+    SCB_InvalidateDCache(); // ② すべて無効化（古い行を破棄）
+    SCB_DisableDCache();    // ③ D-CacheをOFF
+    __DSB();
+    __ISB();
+}
+
+// ---- D-Cache を有効化 ----
+static inline void dcache_enable_global(void)
+{
+    __DSB();
+    __DMB();
+    SCB_InvalidateDCache(); // 有効化前に中身を空に
+    SCB_EnableDCache();     // ON
+    __DSB();
+    __ISB();
+}
+
+// ---- I-Cache を無効化／有効化（必要な場合）----
+static inline void icache_disable_global(void)
+{
+    __DSB();
+    __DMB();
+    SCB_InvalidateICache(); // 中身を空に
+    SCB_DisableICache();    // OFF
+    __DSB();
+    __ISB();
+}
+
+static inline void icache_enable_global(void)
+{
+    __DSB();
+    __DMB();
+    SCB_InvalidateICache();
+    SCB_EnableICache(); // ON
+    __DSB();
+    __ISB();
+}
+
 /* Main Thread entry function */
 /* pvParameters contains TaskHandle_t */
+
 // dst: メモリマップドHyperRAM先頭, src: 書き込み元, size: バイト数(2の倍数)
 static inline fsp_err_t ospi_write_mmap(void *dst, const void *src, size_t size)
 {
@@ -43,11 +89,10 @@ static inline fsp_err_t ospi_write_mmap(void *dst, const void *src, size_t size)
         // memcpy(d, s, n);
         taskENTER_CRITICAL();
         err = R_OSPI_B_Write(&g_ospi0_ctrl, s, d, n);
-        taskEXIT_CRITICAL();
-        SCB_CleanDCache_by_Addr(dst, n);
+
         __DSB();
         __DMB();
-
+        taskEXIT_CRITICAL();
         // if (FSP_SUCCESS != err)
         // {
         //     xprintf("[OSPI] HyperRAM write error!:%d\n", err);
@@ -60,10 +105,6 @@ static inline fsp_err_t ospi_write_mmap(void *dst, const void *src, size_t size)
         // }
         // ospi_b_dma_sent = false;
 
-        //  各チャンクを確実に外へ
-        SCB_CleanDCache_by_Addr((uint32_t *)d, n);
-        __DSB();
-        __DMB();
         d += n;
         s += n;
         rem -= n;
@@ -73,28 +114,51 @@ static inline fsp_err_t ospi_write_mmap(void *dst, const void *src, size_t size)
     __ISB();
 }
 
-static inline bool ospi_verify_mmap(const void *dst, const void *src, size_t size)
+// 32Bラインに合わせて範囲を丸める（M85想定）
+static inline void cache_inv_32B_aligned(const void *addr, size_t size)
 {
-    configASSERT(((uintptr_t)dst % 2) == 0);
+    uintptr_t a = (uintptr_t)addr & ~(uintptr_t)31u;
+    size_t n = (size + ((uintptr_t)addr - a) + 31u) & ~31u;
+    SCB_InvalidateDCache_by_Addr((void *)a, n);
+}
+
+static inline bool ospi_verify_mmap_memcpy_chunked(const void *dst_dev, const void *src_golden, size_t size)
+{
+    configASSERT(((uintptr_t)dst_dev % 2) == 0);
     configASSERT((size % 2) == 0);
 
-    //  読み戻し前：必ずキャッシュ無効化
-    __DSB();
-    __DMB();
-    const uint16_t *a = (const uint16_t *)dst;
-    const uint16_t *b = (const uint16_t *)src;
-    // 読み戻し直前：
-    SCB_InvalidateDCache_by_Addr(dst, size);
-    SCB_DisableDCache();
+    const size_t CHUNK = RAM_DATA_LENGTH; // 256~1024あたりで調整
+    const uint8_t *d = (const uint8_t *)dst_dev;
+    const uint8_t *g = (const uint8_t *)src_golden;
 
-    for (size_t i = 0; i < size / 2; ++i)
+    uint8_t *buf = (uint8_t *)pvPortMalloc(CHUNK);
+    if (!buf)
+        return false;
+
+    size_t rem = size;
+    while (rem)
     {
-        if (a[i] != b[i])
-        {
+        size_t n = rem > CHUNK ? CHUNK : rem;
 
+        __DSB();
+        __DMB();
+        cache_inv_32B_aligned(d, n); // 各チャンク前にInvalidate
+        __DSB();
+        __DMB();
+
+        memcpy(buf, d, n);
+        if (memcmp(buf, g, n) != 0)
+        {
+            vPortFree(buf);
             return false;
         }
+
+        d += n;
+        g += n;
+        rem -= n;
     }
+
+    vPortFree(buf);
     return true;
 }
 
@@ -132,6 +196,16 @@ void main_thread0_entry(void *pvParameters)
         return;
     }
 
+    R_XSPI0->CMCFGCS[1].CMCFG0_b.WPBSTMD = 0; // 0:WRAP, 1:LINEAR
+
+    uint32_t cmg = R_XSPI0->CMCFGCS[1].CMCFG0;
+    uint32_t wp = (cmg & R_XSPI0_CMCFGCS_CMCFG0_WPBSTMD_Msk) >> R_XSPI0_CMCFGCS_CMCFG0_WPBSTMD_Pos;
+
+    xprintf("-------------------WPBSTMD = 0x%08X-----------------------\n", wp);
+
+    // dcache_disable_global();
+    // icache_disable_global();
+
     ////////////////////////////
     // write to HyperRAM
     err = hyperram_b_write(image_p8, 0x00, VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL);
@@ -152,10 +226,10 @@ void main_thread0_entry(void *pvParameters)
     {
         uint32_t adr = z * 4;
         err = ospi_raw_trans(&g_ospi0_trans,
-                             OSPI_B_COMMAND_READ, 2,
+                             OSPI_B_COMMAND_READ, 1,
                              adr, 4,
                              0, 4,
-                             16, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
+                             8, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
         if (FSP_SUCCESS != err)
         {
             xprintf("[OSPI] direct transfer error!\n");
@@ -166,15 +240,11 @@ void main_thread0_entry(void *pvParameters)
     for (int i = 0; i < VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL; i += RAM_DATA_LENGTH)
     {
         bool cm;
-        taskENTER_CRITICAL();
-        __DSB();
-        __DMB();
         // 読み戻し直前：
-        SCB_InvalidateDCache_by_Addr(hyperram_ptr, RAM_DATA_LENGTH);
         // cm = memcmp(image_p8, hyperram_ptr, RAM_DATA_LENGTH);
-        cm = ospi_verify_mmap(hyperram_ptr, image_p8, RAM_DATA_LENGTH);
-        taskEXIT_CRITICAL();
-
+        // cm = ospi_verify_mmap(hyperram_ptr, image_p8, RAM_DATA_LENGTH);
+        cm = ospi_verify_mmap_memcpy_chunked(hyperram_ptr, image_p8, RAM_DATA_LENGTH);
+        SCB_CleanDCache_by_Addr((uint32_t *)hyperram_ptr, RAM_DATA_LENGTH);
         // if (ospi_verify_mmap(hyperram_ptr, image_p8, RAM_DATA_LENGTH) == false)
         if (cm == false)
         {
@@ -182,7 +252,7 @@ void main_thread0_entry(void *pvParameters)
         }
         else
         {
-            xprintf("[OSPI] HyperRAM verify OK!\n");
+            xprintf("[OSPI] HyperRAM verify OK.\n");
         }
         vTaskDelay(pdMS_TO_TICKS(1));
         hyperram_ptr += RAM_DATA_LENGTH;

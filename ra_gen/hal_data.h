@@ -31,6 +31,7 @@ void ospi_dmac_cb(transfer_callback_args_t * p_args);
 #if OSPI_CFG_DOTF_SUPPORT_ENABLE
     #include "r_sce_if.h"
 #endif
+
 extern const spi_flash_instance_t g_ospi0;
 extern ospi_b_instance_ctrl_t g_ospi0_ctrl;
 extern const spi_flash_cfg_t g_ospi0_cfg;

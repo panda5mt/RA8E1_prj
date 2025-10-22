@@ -9,7 +9,7 @@
     <option key="#DeviceCommand#" value="R7FA8E1AF"/>
     <option key="#RTOS#" value="rtos.awsfreertos"/>
     <option key="#pinconfiguration#" value="R7FA8E1AFDCFB.pincfg"/>
-    <option key="#FSPVersion#" value="6.1.0"/>
+    <option key="#FSPVersion#" value="6.2.0"/>
     <option key="#ConfigurationFragments#" value="Renesas##BSP##Board##ra8e1_fpb##"/>
     <option key="#SELECTED_TOOLCHAIN#" value="com.renesas.cdt.managedbuild.llvm.arm."/>
   </generalSettings>
@@ -77,6 +77,7 @@
     <node id="board.clock.canfdclk.display" option="board.clock.canfdclk.display.value"/>
     <node id="board.clock.uck.display" option="board.clock.uck.display.value"/>
     <node id="board.clock.octaspiclk.display" option="board.clock.octaspiclk.display.value"/>
+    <node id="board.clock.octaspiclk.om_sclk.display" option="board.clock.octaspiclk.om_sclk.display.value"/>
   </raClockConfiguration>
   <raPinConfiguration>
     <pincfg active="true" name="" symbol="">

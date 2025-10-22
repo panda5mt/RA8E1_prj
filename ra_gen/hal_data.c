@@ -1,6 +1,7 @@
 /* generated HAL source file - do not edit */
 #include "hal_data.h"
 
+
 dmac_instance_ctrl_t g_transfer0_ctrl;
 transfer_info_t g_transfer0_info =
 {
@@ -43,6 +44,7 @@ const transfer_instance_t g_transfer0 =
     .p_cfg         = &g_transfer0_cfg,
     .p_api         = &g_transfer_on_dmac
 };
+
 ospi_b_instance_ctrl_t g_ospi0_ctrl;
 
 static ospi_b_timing_setting_t g_ospi0_timing_settings =
@@ -55,12 +57,11 @@ static ospi_b_timing_setting_t g_ospi0_timing_settings =
     .sdr_sampling_delay          = OSPI_B_SDR_SAMPLING_DELAY_NONE,
     .ddr_sampling_extension      = OSPI_B_DDR_SAMPLING_EXTENSION_1,
 };
-
 extern ospi_b_xspi_command_set_t g_command_sets[];
 static const ospi_b_table_t g_ospi0_command_set =
 {
     .p_table = (void *) g_command_sets,
-    .length = 1
+    .length = 2
 };
 
 #if OSPI_B_CFG_DOTF_SUPPORT_ENABLE
@@ -93,7 +94,7 @@ static const ospi_b_extended_cfg_t g_ospi0_extended_cfg =
     .p_dotf_cfg                              = &g_ospi_dotf_cfg,
 #endif
 #if OSPI_B_CFG_ROW_ADDRESSING_SUPPORT_ENABLE
-    .row_index_bytes                         = 0xFF
+    .row_index_bytes                         = 0xFF,
 #endif
 };
 const spi_flash_cfg_t g_ospi0_cfg =
