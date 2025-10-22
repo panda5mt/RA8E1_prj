@@ -14,7 +14,7 @@
 // #define VGA_HEIGHT (256)
 // #define BYTE_PER_PIXEL (2)
 
-#define RAM_DATA_LENGTH (16U * 1U) //
+#define RAM_DATA_LENGTH (64U * 1U) //
 // void putchar_ra8usb(uint8_t c);
 
 // ---- D-Cache を無効化（安全手順）----
@@ -241,12 +241,13 @@ void main_thread0_entry(void *pvParameters)
     {
         bool cm;
         // 読み戻し直前：
-        // cm = memcmp(image_p8, hyperram_ptr, RAM_DATA_LENGTH);
+        cm = memcmp(image_p8, hyperram_ptr, RAM_DATA_LENGTH);
         // cm = ospi_verify_mmap(hyperram_ptr, image_p8, RAM_DATA_LENGTH);
-        cm = ospi_verify_mmap_memcpy_chunked(hyperram_ptr, image_p8, RAM_DATA_LENGTH);
         SCB_CleanDCache_by_Addr((uint32_t *)hyperram_ptr, RAM_DATA_LENGTH);
+        // cm = ospi_verify_mmap_memcpy_chunked(hyperram_ptr, image_p8, RAM_DATA_LENGTH);
+
         // if (ospi_verify_mmap(hyperram_ptr, image_p8, RAM_DATA_LENGTH) == false)
-        if (cm == false)
+        if (cm != 0)
         {
             xprintf("[OSPI] HyperRAM verify error!\n");
         }

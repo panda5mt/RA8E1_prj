@@ -1086,8 +1086,8 @@ FSP Configuration
       Command Sets: Custom Table: Table Length: 2
       Command Sets: Erase Sizes: Sector Erase: 0
       Command Sets: Erase Sizes: Block Erase: 0
-      Command Sets: Initial Mode: Protocol Mode: Dual data rate OPI (8D-8D-8D)
-      Command Sets: Initial Mode: Frame Format: xSPI Profile 2.0
+      Command Sets: Initial Mode: Protocol Mode: SPI (1S-1S-1S)
+      Command Sets: Initial Mode: Frame Format: Standard
       Command Sets: Initial Mode: Latency Mode: Fixed
       Command Sets: Initial Mode: Address Length: 4 bytes
       Command Sets: Initial Mode: Address MSB Mask: 0xf
@@ -1108,9 +1108,9 @@ FSP Configuration
       Command Sets: Initial Mode: Sector Erase: Command Code: 0
       Command Sets: Initial Mode: Block Erase: Command Code: 0
       Command Sets: Initial Mode: Chip Erase: Command Code: 0
-      Command Sets: High-speed Mode: Protocol Mode: Dual data rate OPI (8D-8D-8D)
-      Command Sets: High-speed Mode: Frame Format: xSPI Profile 1.0
-      Command Sets: High-speed Mode: Latency Mode: Variable (DQS)
+      Command Sets: High-speed Mode: Protocol Mode: SPI (1S-1S-1S)
+      Command Sets: High-speed Mode: Frame Format: Standard
+      Command Sets: High-speed Mode: Latency Mode: Fixed
       Command Sets: High-speed Mode: Address Length: 4 bytes
       Command Sets: High-speed Mode: Address MSB Mask: 0
       Command Sets: High-speed Mode: Command Code Length: 2 bytes
@@ -1132,7 +1132,7 @@ FSP Configuration
       Command Sets: High-speed Mode: Chip Erase: Command Code: 0
       Timing Settings: Chip Select: Command Interval: 1 cycle
       Timing Settings: Chip Select: Assertion Extension: No extension
-      Timing Settings: Chip Select: Negation Extension: 1 cycle extension
+      Timing Settings: Chip Select: Negation Extension: No extension
       Timing Settings: DS Latching Delay: Auto-calibrate
       Timing Settings: SDR: Drive Timing: Drive at CK
       Timing Settings: SDR: CK Sampling Edge: Falling edge

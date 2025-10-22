@@ -51,7 +51,7 @@ static ospi_b_timing_setting_t g_ospi0_timing_settings =
 {
     .command_to_command_interval = OSPI_B_COMMAND_INTERVAL_CLOCKS_1,
     .cs_pullup_lag               = OSPI_B_COMMAND_CS_PULLUP_CLOCKS_NO_EXTENSION,
-    .cs_pulldown_lead            = OSPI_B_COMMAND_CS_PULLDOWN_CLOCKS_1,
+    .cs_pulldown_lead            = OSPI_B_COMMAND_CS_PULLDOWN_CLOCKS_NO_EXTENSION,
     .sdr_drive_timing            = OSPI_B_SDR_DRIVE_TIMING_AT_CK,
     .sdr_sampling_edge           = OSPI_B_CK_EDGE_FALLING,
     .sdr_sampling_delay          = OSPI_B_SDR_SAMPLING_DELAY_NONE,
@@ -99,7 +99,7 @@ static const ospi_b_extended_cfg_t g_ospi0_extended_cfg =
 };
 const spi_flash_cfg_t g_ospi0_cfg =
 {
-    .spi_protocol                = SPI_FLASH_PROTOCOL_8D_8D_8D,
+    .spi_protocol                = SPI_FLASH_PROTOCOL_1S_1S_1S,
     .read_mode                   = SPI_FLASH_READ_MODE_STANDARD, /* Unused by OSPI_B */
     .address_bytes               = SPI_FLASH_ADDRESS_BYTES_4,
     .dummy_clocks                = SPI_FLASH_DUMMY_CLOCKS_DEFAULT, /* Unused by OSPI_B */
