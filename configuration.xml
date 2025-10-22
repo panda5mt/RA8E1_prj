@@ -634,14 +634,14 @@
       <property id="module.driver.ospi_b.high_speed_sector_erase_command" value="0"/>
       <property id="module.driver.ospi_b.high_speed_block_erase_command" value="0"/>
       <property id="module.driver.ospi_b.high_speed_chip_erase_command" value="0"/>
-      <property id="module.driver.ospi_b.command_interval_clocks" value="module.driver.ospi_b.command_interval_clocks.clocks_10"/>
+      <property id="module.driver.ospi_b.command_interval_clocks" value="module.driver.ospi_b.command_interval_clocks.clocks_1"/>
       <property id="module.driver.ospi_b.pull_up_timing" value="module.driver.ospi_b.pull_up_timing.clocks_5"/>
       <property id="module.driver.ospi_b.pull_down_timing" value="module.driver.ospi_b.pull_down_timing.clocks_4"/>
       <property id="module.driver.ospi_b.data_latch_delay_setting" value="module.driver.ospi_b.ds_timing.delay.none"/>
       <property id="module.driver.ospi_b.sdr_timing.drive_timing" value="module.driver.ospi_b.sdr_timing.drive_timing.at_ck_rising"/>
       <property id="module.driver.ospi_b.sdr_timing.ck_sampling_edge" value="module.driver.ospi_b.sdr_timing.ck_sampling_edge.falling"/>
       <property id="module.driver.ospi_b.sdr_timing.sampling_delay" value="module.driver.ospi_b.sdr_timing.sampling_delay.none"/>
-      <property id="module.driver.ospi_b.ddr_timing.sampling_extension" value="module.driver.ospi_b.ddr_timing.sampling_extension.1"/>
+      <property id="module.driver.ospi_b.ddr_timing.sampling_extension" value="module.driver.ospi_b.ddr_timing.sampling_extension.none"/>
       <property id="module.driver.ospi_b.xip.enter_code" value="0"/>
       <property id="module.driver.ospi_b.xip.exit_code" value="0"/>
       <property id="module.driver.ospi_b.dotf.name" value="g_ospi_dotf"/>

@@ -31,7 +31,7 @@ ospi_b_xspi_command_set_t g_command_sets[] =
                .status_command = 0x00,
                .status_needs_address = false,
                .status_address_bytes = 0,
-               .address_msb_mask = 0x00,
+               .address_msb_mask = 0xf0,
                .read_dummy_cycles = 8U,
                .program_dummy_cycles = 8U,
 
@@ -162,7 +162,7 @@ fsp_err_t hyperram_init(void)
 
     // write enable
     err = ospi_raw_trans(&g_ospi0_trans,
-                         OSPI_B_COMMAND_WRITE_ENABLE, 2,
+                         OSPI_B_COMMAND_WRITE_ENABLE, 1,
                          0x00000000, 0,
                          0, 0,
                          0, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
@@ -174,7 +174,7 @@ fsp_err_t hyperram_init(void)
 
     // write CR0
     err = ospi_raw_trans(&g_ospi0_trans,
-                         OSPI_B_COMMAND_WRITE_REGISTER, OSPI_B_COMMAND_BYTES_2,
+                         OSPI_B_COMMAND_WRITE_REGISTER, OSPI_B_COMMAND_BYTES_1,
                          0x00000004, 4,
                          0x2D8F, 2, // 64Byte burst, Latency 7
                          0, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
@@ -186,7 +186,7 @@ fsp_err_t hyperram_init(void)
 
     // write enable
     err = ospi_raw_trans(&g_ospi0_trans,
-                         OSPI_B_COMMAND_WRITE_ENABLE, 2,
+                         OSPI_B_COMMAND_WRITE_ENABLE, 1,
                          0x00000000, 0,
                          0, 0,
                          0, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
@@ -236,7 +236,7 @@ fsp_err_t hyperram_init(void)
 
     // write enable
     err = ospi_raw_trans(&g_ospi0_trans,
-                         OSPI_B_COMMAND_WRITE_ENABLE, 2,
+                         OSPI_B_COMMAND_WRITE_ENABLE, 1,
                          0x00000000, 0,
                          0, 0,
                          0, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
@@ -253,7 +253,7 @@ fsp_err_t hyperram_init(void)
     // // #define OSPI_B_PRV_AUTOCALIBRATION_PREAMBLE_PATTERN_3 (0xF700F708U)
 
     // err = ospi_raw_trans(&g_ospi0_trans,
-    //                      OSPI_B_COMMAND_WRITE, 2,
+    //                      OSPI_B_COMMAND_WRITE, 1,
     //                      0x00, 4,
     //                      0xFFFF0000, 4, // CK+,CK-
     //                      8U, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
@@ -264,7 +264,7 @@ fsp_err_t hyperram_init(void)
     // }
 
     // err = ospi_raw_trans(&g_ospi0_trans,
-    //                      OSPI_B_COMMAND_WRITE, 2,
+    //                      OSPI_B_COMMAND_WRITE, 1,
     //                      0x04, 4,
     //                      0x000800FF, 4, // CK+,CK-
     //                      8U, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
@@ -275,7 +275,7 @@ fsp_err_t hyperram_init(void)
     // }
 
     // err = ospi_raw_trans(&g_ospi0_trans,
-    //                      OSPI_B_COMMAND_WRITE, 2,
+    //                      OSPI_B_COMMAND_WRITE, 1,
     //                      0x08, 4,
     //                      0x00FFF700U, 4, // CK+,CK-
     //                      8U, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
@@ -286,7 +286,7 @@ fsp_err_t hyperram_init(void)
     // }
 
     // err = ospi_raw_trans(&g_ospi0_trans,
-    //                      OSPI_B_COMMAND_WRITE, 2,
+    //                      OSPI_B_COMMAND_WRITE, 1,
     //                      0x0C, 4,
     //                      0xF700F708, 4, // CK+,CK-
     //                      8U, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);

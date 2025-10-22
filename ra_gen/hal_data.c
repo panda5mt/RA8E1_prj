@@ -49,13 +49,13 @@ ospi_b_instance_ctrl_t g_ospi0_ctrl;
 
 static ospi_b_timing_setting_t g_ospi0_timing_settings =
 {
-    .command_to_command_interval = OSPI_B_COMMAND_INTERVAL_CLOCKS_10,
+    .command_to_command_interval = OSPI_B_COMMAND_INTERVAL_CLOCKS_1,
     .cs_pullup_lag               = OSPI_B_COMMAND_CS_PULLUP_CLOCKS_NO_EXTENSION,
     .cs_pulldown_lead            = OSPI_B_COMMAND_CS_PULLDOWN_CLOCKS_1,
     .sdr_drive_timing            = OSPI_B_SDR_DRIVE_TIMING_AT_CK,
     .sdr_sampling_edge           = OSPI_B_CK_EDGE_FALLING,
     .sdr_sampling_delay          = OSPI_B_SDR_SAMPLING_DELAY_NONE,
-    .ddr_sampling_extension      = OSPI_B_DDR_SAMPLING_EXTENSION_1,
+    .ddr_sampling_extension      = OSPI_B_DDR_SAMPLING_EXTENSION_NONE,
 };
 extern ospi_b_xspi_command_set_t g_command_sets[];
 static const ospi_b_table_t g_ospi0_command_set =

@@ -1130,14 +1130,14 @@ FSP Configuration
       Command Sets: High-speed Mode: Sector Erase: Command Code: 0
       Command Sets: High-speed Mode: Block Erase: Command Code: 0
       Command Sets: High-speed Mode: Chip Erase: Command Code: 0
-      Timing Settings: Chip Select: Command Interval: 10 cycles
+      Timing Settings: Chip Select: Command Interval: 1 cycle
       Timing Settings: Chip Select: Assertion Extension: No extension
       Timing Settings: Chip Select: Negation Extension: 1 cycle extension
       Timing Settings: DS Latching Delay: Auto-calibrate
       Timing Settings: SDR: Drive Timing: Drive at CK
       Timing Settings: SDR: CK Sampling Edge: Falling edge
       Timing Settings: SDR: Sampling Delay: None
-      Timing Settings: DDR: Sampling Window Extension: 1 cycle
+      Timing Settings: DDR: Sampling Window Extension: None
       XiP Mode: XiP Enter Code: 0
       XiP Mode: XiP Exit Code: 0
       DOTF: Name: g_ospi_dotf
