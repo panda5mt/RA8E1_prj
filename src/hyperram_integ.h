@@ -8,7 +8,7 @@ extern "C"
 
 #define HYPERRAM_BASE_ADDR ((void *)0x90000000U) /* Device on CS1 */
 // COMMAND SET(infineon S80KS5123)
-// #define  <COMMAND>               <CODE>   <CA-DATA> | <ADDRESS(bytes)>   | <Latency cycles>  | <Data (bytes)>
+// #define  <COMMAND>               <CODE>     <CA-DATA> | <ADDRESS(bytes)>   | <Latency cycles>  | <Data (bytes)>
 #define OSPI_B_COMMAND_RESET_ENABLE (0x6611)   // 8-0-0  |  0                 |  0                |  0
 #define OSPI_B_COMMAND_RESET (0x9911)          // 8-0-0  |  0                 |  0                |  0
 #define OSPI_B_COMMAND_READ_ID (0x9F11)        // 8-8-8  |  0x00(4bytes)      |  3-7              |  (4bytes)

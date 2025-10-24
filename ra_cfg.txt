@@ -833,7 +833,7 @@ FSP Configuration
     Automatic PHY-LSI Initialization: Enabled
     
   Module "OSPI (r_ospi_b)"
-    Parameter Checking: Default (BSP)
+    Parameter Checking: Enable
     DMAC Support: Enable
     Autocalibration Support: Disable
     Memory-mapping Support: Prefetch Function: Enable
@@ -1081,7 +1081,7 @@ FSP Configuration
       General: Chip Select: CS1
       General: Write Status Bit: b0
       General: Write Enable Bit: b1
-      General: DS Auto-calibration Pattern Address: 0
+      General: DS Auto-calibration Pattern Address: 0x90000000
       Command Sets: Custom Table: Table Pointer: g_command_sets
       Command Sets: Custom Table: Table Length: 2
       Command Sets: Erase Sizes: Sector Erase: 4096

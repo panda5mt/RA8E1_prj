@@ -86,7 +86,7 @@ static const ospi_b_extended_cfg_t g_ospi0_extended_cfg =
     .p_timing_settings                       = &g_ospi0_timing_settings,
     .p_xspi_command_set                      = &g_ospi0_command_set,
     .data_latch_delay_clocks                 = OSPI_B_DS_TIMING_DELAY_NONE,
-    .p_autocalibration_preamble_pattern_addr = (uint8_t *) 0,
+    .p_autocalibration_preamble_pattern_addr = (uint8_t *) 0x90000000,
 #if OSPI_B_CFG_DMAC_SUPPORT_ENABLE
     .p_lower_lvl_transfer                    = &g_transfer0,
 #endif
