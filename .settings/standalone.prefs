@@ -1,4 +1,4 @@
-#Wed Oct 22 22:11:01 JST 2025
+#Fri Oct 24 15:01:32 JST 2025
 com.renesas.cdt.ddsc.content/com.renesas.cdt.ddsc.content.defaultlinkerscript=script/fsp.lld
 com.renesas.cdt.ddsc.contentgen.options/options/suppresswarningspaths=ra/arm,ra/aws,ra/lwip-tcpip
 com.renesas.cdt.ddsc.packs.componentfiles/AWS\#\#Heaps\#\#FreeRTOS\#\#heap_4\#\#\#\#11.1.0+fsp.6.2.0/all=271572837,ra/aws/FreeRTOS/FreeRTOS/Source/portable/MemMang/heap_4.c
@@ -13,8 +13,8 @@ com.renesas.cdt.ddsc.packs.componentfiles/LwIP_TCPIP\#\#LwIP\#\#Common\#\#Source
 com.renesas.cdt.ddsc.packs.componentfiles/LwIP_TCPIP\#\#LwIP\#\#Common\#\#Source\#\#\#\#2.2.0+renesas.0.fsp.6.2.0/libraries=
 com.renesas.cdt.ddsc.packs.componentfiles/LwIP_TCPIP\#\#LwIP\#\#Port\#\#FreeRTOS\#\#\#\#2.2.0+renesas.0.fsp.6.2.0/all=3865159709,ra/lwip-tcpip/lwip/contrib/ports/freertos/sys_arch.c|1860420661,ra/lwip-tcpip/lwip/contrib/ports/freertos/include/arch/sys_arch.h
 com.renesas.cdt.ddsc.packs.componentfiles/LwIP_TCPIP\#\#LwIP\#\#Port\#\#FreeRTOS\#\#\#\#2.2.0+renesas.0.fsp.6.2.0/libraries=
-com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#BSP\#\#Board\#\#ra8e1_fpb\#\#\#\#6.2.0/all=3618959429,ra/board/ra8e1_fpb/board.h|2217661224,ra/board/ra8e1_fpb/board_ethernet_phy.h|2657009638,ra/board/ra8e1_fpb/board_init.c|295839449,ra/board/ra8e1_fpb/board_init.h|314757994,ra/board/ra8e1_fpb/board_leds.c|2621680578,ra/board/ra8e1_fpb/board_leds.h
-com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#BSP\#\#Board\#\#ra8e1_fpb\#\#\#\#6.2.0/libraries=
+com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#BSP\#\#Board\#\#custom\#\#\#\#6.2.0/all=
+com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#BSP\#\#Board\#\#custom\#\#\#\#6.2.0/libraries=
 com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#BSP\#\#ra8e1\#\#device\#\#\#\#6.2.0/all=1110603551,ra/fsp/src/bsp/cmsis/Device/RENESAS/Include/R7FA8E1AF.h
 com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#BSP\#\#ra8e1\#\#device\#\#\#\#6.2.0/libraries=
 com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#BSP\#\#ra8e1\#\#device\#\#R7FA8E1AFDCFB\#\#6.2.0/all=
@@ -86,8 +86,10 @@ com.renesas.cdt.ddsc.threads.configurator/collapse/module.driver.i2c_on_iic_mast
 com.renesas.cdt.ddsc.threads.configurator/collapse/module.driver.ospi_on_ospi_b.1029231815=false
 com.renesas.cdt.ddsc.threads.configurator/collapse/module.driver.ospi_on_ospi_b.1441875450=false
 com.renesas.cdt.ddsc.threads.configurator/collapse/module.driver.ospi_on_ospi_b.1536128153=false
+com.renesas.cdt.ddsc.threads.configurator/collapse/module.driver.ospi_on_ospi_b.736753688=false
 com.renesas.cdt.ddsc.threads.configurator/collapse/module.driver.ospi_on_ospi_b.821567523=false
 com.renesas.cdt.ddsc.threads.configurator/collapse/module.driver.ospi_on_ospi_b.939546831=false
+com.renesas.cdt.ddsc.threads.configurator/collapse/module.driver.ospi_w95_on_ospi_b.548216254=false
 com.renesas.cdt.ddsc.threads.configurator/collapse/module.driver.pcdc_on_usb.1518160873=false
 com.renesas.cdt.ddsc.threads.configurator/collapse/module.driver.pcdc_on_usb.1631381931=false
 com.renesas.cdt.ddsc.threads.configurator/collapse/module.driver.pcdc_on_usb.1632009866=false

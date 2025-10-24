@@ -6,7 +6,7 @@
         #endif
                 /* Number of interrupts allocated */
         #ifndef VECTOR_DATA_IRQ_COUNT
-        #define VECTOR_DATA_IRQ_COUNT    (11)
+        #define VECTOR_DATA_IRQ_COUNT    (10)
         #endif
         /* ISR prototypes */
         void ceu_isr(void);
@@ -14,7 +14,6 @@
         void iic_master_txi_isr(void);
         void iic_master_tei_isr(void);
         void iic_master_eri_isr(void);
-        void dmac_int_isr(void);
         void usbfs_interrupt_handler(void);
         void usbfs_resume_handler(void);
         void usbfs_d0fifo_handler(void);
@@ -32,20 +31,18 @@
         #define IIC1_TEI_IRQn          ((IRQn_Type) 3) /* IIC1 TEI (Transmit end) */
         #define VECTOR_NUMBER_IIC1_ERI ((IRQn_Type) 4) /* IIC1 ERI (Transfer error) */
         #define IIC1_ERI_IRQn          ((IRQn_Type) 4) /* IIC1 ERI (Transfer error) */
-        #define VECTOR_NUMBER_DMAC0_INT ((IRQn_Type) 5) /* DMAC0 INT (DMAC0 transfer end) */
-        #define DMAC0_INT_IRQn          ((IRQn_Type) 5) /* DMAC0 INT (DMAC0 transfer end) */
-        #define VECTOR_NUMBER_USBFS_INT ((IRQn_Type) 6) /* USBFS INT (USBFS interrupt) */
-        #define USBFS_INT_IRQn          ((IRQn_Type) 6) /* USBFS INT (USBFS interrupt) */
-        #define VECTOR_NUMBER_USBFS_RESUME ((IRQn_Type) 7) /* USBFS RESUME (USBFS resume interrupt) */
-        #define USBFS_RESUME_IRQn          ((IRQn_Type) 7) /* USBFS RESUME (USBFS resume interrupt) */
-        #define VECTOR_NUMBER_USBFS_FIFO_0 ((IRQn_Type) 8) /* USBFS FIFO 0 (DMA/DTC transfer request 0) */
-        #define USBFS_FIFO_0_IRQn          ((IRQn_Type) 8) /* USBFS FIFO 0 (DMA/DTC transfer request 0) */
-        #define VECTOR_NUMBER_USBFS_FIFO_1 ((IRQn_Type) 9) /* USBFS FIFO 1 (DMA/DTC transfer request 1) */
-        #define USBFS_FIFO_1_IRQn          ((IRQn_Type) 9) /* USBFS FIFO 1 (DMA/DTC transfer request 1) */
-        #define VECTOR_NUMBER_EDMAC0_EINT ((IRQn_Type) 10) /* EDMAC0 EINT (EDMAC 0 interrupt) */
-        #define EDMAC0_EINT_IRQn          ((IRQn_Type) 10) /* EDMAC0 EINT (EDMAC 0 interrupt) */
+        #define VECTOR_NUMBER_USBFS_INT ((IRQn_Type) 5) /* USBFS INT (USBFS interrupt) */
+        #define USBFS_INT_IRQn          ((IRQn_Type) 5) /* USBFS INT (USBFS interrupt) */
+        #define VECTOR_NUMBER_USBFS_RESUME ((IRQn_Type) 6) /* USBFS RESUME (USBFS resume interrupt) */
+        #define USBFS_RESUME_IRQn          ((IRQn_Type) 6) /* USBFS RESUME (USBFS resume interrupt) */
+        #define VECTOR_NUMBER_USBFS_FIFO_0 ((IRQn_Type) 7) /* USBFS FIFO 0 (DMA/DTC transfer request 0) */
+        #define USBFS_FIFO_0_IRQn          ((IRQn_Type) 7) /* USBFS FIFO 0 (DMA/DTC transfer request 0) */
+        #define VECTOR_NUMBER_USBFS_FIFO_1 ((IRQn_Type) 8) /* USBFS FIFO 1 (DMA/DTC transfer request 1) */
+        #define USBFS_FIFO_1_IRQn          ((IRQn_Type) 8) /* USBFS FIFO 1 (DMA/DTC transfer request 1) */
+        #define VECTOR_NUMBER_EDMAC0_EINT ((IRQn_Type) 9) /* EDMAC0 EINT (EDMAC 0 interrupt) */
+        #define EDMAC0_EINT_IRQn          ((IRQn_Type) 9) /* EDMAC0 EINT (EDMAC 0 interrupt) */
         /* The number of entries required for the ICU vector table. */
-        #define BSP_ICU_VECTOR_NUM_ENTRIES (11)
+        #define BSP_ICU_VECTOR_NUM_ENTRIES (10)
 
         #ifdef __cplusplus
         }

@@ -26,9 +26,9 @@ const dmac_extended_cfg_t g_transfer0_extend =
 #else
     .irq                 = FSP_INVALID_VECTOR,
 #endif
-    .ipl                 = (9),
+    .ipl                 = (BSP_IRQ_DISABLED),
     .channel             = 0,
-    .p_callback          = ospi_dmac_cb,
+    .p_callback          = NULL,
     .p_context           = NULL,
     .activation_source   = ELC_EVENT_NONE,
 };
@@ -49,10 +49,10 @@ ospi_b_instance_ctrl_t g_ospi0_ctrl;
 
 static ospi_b_timing_setting_t g_ospi0_timing_settings =
 {
-    .command_to_command_interval = OSPI_B_COMMAND_INTERVAL_CLOCKS_1,
+    .command_to_command_interval = OSPI_B_COMMAND_INTERVAL_CLOCKS_2,
     .cs_pullup_lag               = OSPI_B_COMMAND_CS_PULLUP_CLOCKS_NO_EXTENSION,
     .cs_pulldown_lead            = OSPI_B_COMMAND_CS_PULLDOWN_CLOCKS_NO_EXTENSION,
-    .sdr_drive_timing            = OSPI_B_SDR_DRIVE_TIMING_AT_CK,
+    .sdr_drive_timing            = OSPI_B_SDR_DRIVE_TIMING_BEFORE_CK,
     .sdr_sampling_edge           = OSPI_B_CK_EDGE_FALLING,
     .sdr_sampling_delay          = OSPI_B_SDR_SAMPLING_DELAY_NONE,
     .ddr_sampling_extension      = OSPI_B_DDR_SAMPLING_EXTENSION_NONE,
@@ -86,7 +86,7 @@ static const ospi_b_extended_cfg_t g_ospi0_extended_cfg =
     .p_timing_settings                       = &g_ospi0_timing_settings,
     .p_xspi_command_set                      = &g_ospi0_command_set,
     .data_latch_delay_clocks                 = OSPI_B_DS_TIMING_DELAY_NONE,
-    .p_autocalibration_preamble_pattern_addr = (uint8_t *) 0x90000000,
+    .p_autocalibration_preamble_pattern_addr = (uint8_t *) 0,
 #if OSPI_B_CFG_DMAC_SUPPORT_ENABLE
     .p_lower_lvl_transfer                    = &g_transfer0,
 #endif
@@ -101,12 +101,12 @@ const spi_flash_cfg_t g_ospi0_cfg =
 {
     .spi_protocol                = SPI_FLASH_PROTOCOL_1S_1S_1S,
     .read_mode                   = SPI_FLASH_READ_MODE_STANDARD, /* Unused by OSPI_B */
-    .address_bytes               = SPI_FLASH_ADDRESS_BYTES_4,
+    .address_bytes               = SPI_FLASH_ADDRESS_BYTES_3,
     .dummy_clocks                = SPI_FLASH_DUMMY_CLOCKS_DEFAULT, /* Unused by OSPI_B */
     .page_program_address_lines  = (spi_flash_data_lines_t) 0U, /* Unused by OSPI_B */
     .page_size_bytes             = 64,
     .write_status_bit            = 0,
-    .write_enable_bit            = 0,
+    .write_enable_bit            = 1,
     .page_program_command        = 0, /* OSPI_B uses command sets. See g_ospi0_command_set. */
     .write_enable_command        = 0, /* OSPI_B uses command sets. See g_ospi0_command_set. */
     .status_command              = 0, /* OSPI_B uses command sets. See g_ospi0_command_set. */

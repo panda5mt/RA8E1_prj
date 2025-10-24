@@ -22,8 +22,8 @@ extern const transfer_instance_t g_transfer0;
 extern dmac_instance_ctrl_t g_transfer0_ctrl;
 extern const transfer_cfg_t g_transfer0_cfg;
 
-#ifndef ospi_dmac_cb
-void ospi_dmac_cb(transfer_callback_args_t * p_args);
+#ifndef NULL
+void NULL(transfer_callback_args_t * p_args);
 #endif
 #if OSPI_B_CFG_DMAC_SUPPORT_ENABLE
     #include "r_dmac.h"

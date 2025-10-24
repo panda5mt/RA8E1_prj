@@ -111,7 +111,6 @@
             <slot name="IRQ7.CM85" secure="true"/>
             <slot name="IRQ8.CM85" secure="true"/>
             <slot name="IRQ9.CM85" secure="true"/>
-            <slot name="IRQ10.CM85" secure="true"/>
         </peripheral>
     </partition>
 </azone>

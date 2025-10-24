@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <raConfiguration version="12">
   <generalSettings>
-    <option key="#Board#" value="board.ra8e1fpb"/>
+    <option key="#Board#" value="board.custom"/>
     <option key="CPU" value="RA8E1"/>
     <option key="Core" value="CM85"/>
     <option key="#TargetName#" value="R7FA8E1AFDCFB"/>
@@ -43,7 +43,7 @@
     <node id="board.clock.clock.source" option="board.clock.clock.source.pll1p"/>
     <node id="board.clock.clkout.source" option="board.clock.clkout.source.moco"/>
     <node id="board.clock.sciclk.source" option="board.clock.sciclk.source.hoco"/>
-    <node id="board.clock.spiclk.source" option="board.clock.spiclk.source.disabled"/>
+    <node id="board.clock.spiclk.source" option="board.clock.spiclk.source.subclk"/>
     <node id="board.clock.canfdclk.source" option="board.clock.canfdclk.source.disabled"/>
     <node id="board.clock.uck.source" option="board.clock.uck.source.pll2p"/>
     <node id="board.clock.octaspiclk.source" option="board.clock.octaspiclk.source.pll1p"/>

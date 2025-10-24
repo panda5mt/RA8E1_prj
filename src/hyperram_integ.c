@@ -20,7 +20,20 @@ ospi_b_xspi_command_set_t g_command_sets[] =
             .frame_format = OSPI_B_FRAME_FORMAT_STANDARD,
             .command_bytes = 1U},
         /* 8D-8D-8D example with inverted lower command byte. */
-        [1] = {.protocol = SPI_FLASH_PROTOCOL_8D_8D_8D, .latency_mode = OSPI_B_LATENCY_MODE_VARIABLE, .frame_format = OSPI_B_FRAME_FORMAT_XSPI_PROFILE_2, .command_bytes = OSPI_RAM_COMMAND_BYTES, .address_bytes = SPI_FLASH_ADDRESS_BYTES_4, .read_command = OSPI_B_COMMAND_READ, .program_command = OSPI_B_COMMAND_WRITE, .write_enable_command = OSPI_B_COMMAND_WRITE_ENABLE, .status_command = 0x00, .status_needs_address = false, .status_address_bytes = 0, .address_msb_mask = 0xff, .read_dummy_cycles = OSPI_RAM_LATENCY_CYCLES, .program_dummy_cycles = OSPI_RAM_LATENCY_CYCLES,
+        [1] = {.protocol = SPI_FLASH_PROTOCOL_8D_8D_8D, //
+               .latency_mode = OSPI_B_LATENCY_MODE_VARIABLE,
+               .frame_format = OSPI_B_FRAME_FORMAT_XSPI_PROFILE_2,
+               .command_bytes = OSPI_RAM_COMMAND_BYTES,
+               .address_bytes = SPI_FLASH_ADDRESS_BYTES_4,
+               .read_command = OSPI_B_COMMAND_READ,
+               .program_command = OSPI_B_COMMAND_WRITE,
+               .write_enable_command = OSPI_B_COMMAND_WRITE_ENABLE,
+               .status_command = 0x00,
+               //.status_needs_address = false,
+               //.status_address_bytes = 0,
+               .address_msb_mask = 0xf0,
+               .read_dummy_cycles = OSPI_RAM_LATENCY_CYCLES,
+               .program_dummy_cycles = OSPI_RAM_LATENCY_CYCLES,
 
                .status_dummy_cycles = NULL,
                .p_erase_commands = NULL}};
@@ -119,10 +132,10 @@ fsp_err_t hyperram_init(void)
 
     // 1. OSPI 初期化
     /* Reset flash device by driving OM_RESET pin */
-    R_XSPI0->LIOCTL_b.RSTCS0 = 0;
-    R_BSP_SoftwareDelay(OSPI_B_TIME_RESET_PULSE, OSPI_B_TIME_UNIT);
-    R_XSPI0->LIOCTL_b.RSTCS0 = 1;
-    R_BSP_SoftwareDelay(OSPI_B_TIME_RESET_SETUP, OSPI_B_TIME_UNIT);
+    // R_XSPI0->LIOCTL_b.RSTCS0 = 0;
+    // R_BSP_SoftwareDelay(OSPI_B_TIME_RESET_PULSE, OSPI_B_TIME_UNIT);
+    // R_XSPI0->LIOCTL_b.RSTCS0 = 1;
+    // R_BSP_SoftwareDelay(OSPI_B_TIME_RESET_SETUP, OSPI_B_TIME_UNIT);
     SCB_InvalidateDCache_by_Addr((uint8_t *)HYPERRAM_BASE_ADDR, 256 * 256 * 2);
 
     err = R_OSPI_B_Open(&g_ospi0_ctrl, &g_ospi0_cfg);
@@ -142,10 +155,10 @@ fsp_err_t hyperram_init(void)
 
     xprintf("[OSPI] init Ok\n");
 
-    // R_XSPI0->WRAPCFG_b.DSSFTCS1 = 16;
+    R_XSPI0->WRAPCFG_b.DSSFTCS1 = 16;
 
-    // // /* Configure DDR sampling window extend */
-    // R_XSPI0->LIOCFGCS_b[1].DDRSMPEX = 2;
+    // /* Configure DDR sampling window extend */
+    R_XSPI0->LIOCFGCS_b[1].DDRSMPEX = 10;
 
     // write enable
     err = ospi_raw_trans(&g_ospi0_trans,
