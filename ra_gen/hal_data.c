@@ -99,9 +99,9 @@ static const ospi_b_extended_cfg_t g_ospi0_extended_cfg =
 };
 const spi_flash_cfg_t g_ospi0_cfg =
 {
-    .spi_protocol                = SPI_FLASH_PROTOCOL_1S_1S_1S,
+    .spi_protocol                = SPI_FLASH_PROTOCOL_8D_8D_8D,
     .read_mode                   = SPI_FLASH_READ_MODE_STANDARD, /* Unused by OSPI_B */
-    .address_bytes               = SPI_FLASH_ADDRESS_BYTES_3,
+    .address_bytes               = SPI_FLASH_ADDRESS_BYTES_4,
     .dummy_clocks                = SPI_FLASH_DUMMY_CLOCKS_DEFAULT, /* Unused by OSPI_B */
     .page_program_address_lines  = (spi_flash_data_lines_t) 0U, /* Unused by OSPI_B */
     .page_size_bytes             = 64,

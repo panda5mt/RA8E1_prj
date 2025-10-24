@@ -165,7 +165,7 @@ FSP Configuration
     SPICLK Div /4
     CANFDCLK Div /8
     USBCLK Div /5
-    OCTACLK Div /4
+    OCTACLK Div /2
     
   Pin Configurations
     RA8E1 FPB -> g_bsp_pin_cfg
@@ -833,9 +833,9 @@ FSP Configuration
     Automatic PHY-LSI Initialization: Enabled
     
   Module "OSPI (r_ospi_b)"
-    Parameter Checking: Enable
+    Parameter Checking: Default (BSP)
     DMAC Support: Enable
-    Autocalibration Support: Disable
+    Autocalibration Support: Enable
     Memory-mapping Support: Prefetch Function: Enable
     Memory-mapping Support: Combination Function: 64 Bytes
     Memory-mapping Support: XiP Support: Disable
@@ -1086,29 +1086,29 @@ FSP Configuration
       Command Sets: Custom Table: Table Length: 2
       Command Sets: Erase Sizes: Sector Erase: 4096
       Command Sets: Erase Sizes: Block Erase: 262144
-      Command Sets: Initial Mode: Protocol Mode: SPI (1S-1S-1S)
-      Command Sets: Initial Mode: Frame Format: Standard
-      Command Sets: Initial Mode: Latency Mode: Fixed
-      Command Sets: Initial Mode: Address Length: 3 bytes
+      Command Sets: Initial Mode: Protocol Mode: Dual data rate OPI (8D-8D-8D)
+      Command Sets: Initial Mode: Frame Format: xSPI Profile 2.0
+      Command Sets: Initial Mode: Latency Mode: Variable (DQS)
+      Command Sets: Initial Mode: Address Length: 4 bytes
       Command Sets: Initial Mode: Address MSB Mask: 0xF0
-      Command Sets: Initial Mode: Command Code Length: 1 byte
+      Command Sets: Initial Mode: Command Code Length: 2 bytes
       Command Sets: Initial Mode: Status Register: No address
       Command Sets: Initial Mode: Status Register Address: 0x0
-      Command Sets: Initial Mode: Read: Command Code: 0x13
-      Command Sets: Initial Mode: Read: Dummy Cycles: 0
-      Command Sets: Initial Mode: Program: Command Code: 0x12
-      Command Sets: Initial Mode: Program: Dummy Cycles: 0
+      Command Sets: Initial Mode: Read: Command Code: 0xEE11
+      Command Sets: Initial Mode: Read: Dummy Cycles: 8
+      Command Sets: Initial Mode: Program: Command Code: 0xDE11
+      Command Sets: Initial Mode: Program: Dummy Cycles: 10
       Command Sets: Initial Mode: Row Load: Command Code: 0x0
       Command Sets: Initial Mode: Row Load: Dummy Cycles: 0
       Command Sets: Initial Mode: Row Store: Command Code: 0x0
       Command Sets: Initial Mode: Row Store: Dummy Cycles: 0
-      Command Sets: Initial Mode: Write Enable: Command Code: 0x06
-      Command Sets: Initial Mode: Status Read: Command Code: 0x05
+      Command Sets: Initial Mode: Write Enable: Command Code: 0x0611
+      Command Sets: Initial Mode: Status Read: Command Code: 0x0
       Command Sets: Initial Mode: Status Read: Dummy Cycles: 0
-      Command Sets: Initial Mode: Sector Erase: Command Code: 0x21
-      Command Sets: Initial Mode: Block Erase: Command Code: 0xDC
-      Command Sets: Initial Mode: Chip Erase: Command Code: 0x60
-      Command Sets: High-speed Mode: Protocol Mode: Dual data rate OPI (8D-8D-8D)
+      Command Sets: Initial Mode: Sector Erase: Command Code: 0
+      Command Sets: Initial Mode: Block Erase: Command Code: 0x0
+      Command Sets: Initial Mode: Chip Erase: Command Code: 0x0
+      Command Sets: High-speed Mode: Protocol Mode: SPI (1S-1S-1S)
       Command Sets: High-speed Mode: Frame Format: xSPI Profile 1.0
       Command Sets: High-speed Mode: Latency Mode: Fixed
       Command Sets: High-speed Mode: Address Length: 4 bytes

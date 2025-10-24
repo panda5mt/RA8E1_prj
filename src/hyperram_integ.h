@@ -20,7 +20,7 @@ extern "C"
 #define OSPI_B_COMMAND_READ_REGISTER (0x6511)  // 8-8-8  |  (4bytes)          |  3-7              |  (2bytes)
 #define OSPI_B_COMMAND_WRITE_REGISTER (0x7111) // 8-8-8  |  (4bytes)          |  0                |  (2bytes)
 
-#define OSPI_RAM_LATENCY_CYCLES (10U)
+#define OSPI_RAM_LATENCY_CYCLES (8U)
 #define OSPI_RAM_COMMAND_BYTES (2U)
 
     extern bool ospi_b_dma_sent;
