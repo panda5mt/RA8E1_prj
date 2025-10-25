@@ -95,35 +95,35 @@ add_custom_target(obj_copy ALL
 
 add_dependencies(obj_copy ${PROJECT_NAME}.elf)
 
-# # Pre-build step: run RASC to generate project content if configuration.xml is changed
-# add_custom_command(
-#     OUTPUT
-#         configuration.xml.stamp
-#     COMMAND
-#         ${RASC_EXE_PATH}  -nosplash --launcher.suppressErrors --generate --devicefamily ra --compiler LLVMARM --toolchainversion ${CMAKE_C_COMPILER_VERSION} ${CMAKE_CURRENT_SOURCE_DIR}/configuration.xml
-#     COMMAND
-#         ${CMAKE_COMMAND} -E touch configuration.xml.stamp
-#     COMMENT
-#         "RASC pre-build to generate project content"
-#     DEPENDS
-#         ${CMAKE_CURRENT_SOURCE_DIR}/configuration.xml
-# )
+# Pre-build step: run RASC to generate project content if configuration.xml is changed
+add_custom_command(
+    OUTPUT
+        configuration.xml.stamp
+    COMMAND
+        ${RASC_EXE_PATH}  -nosplash --launcher.suppressErrors --generate --devicefamily ra --compiler LLVMARM --toolchainversion ${CMAKE_C_COMPILER_VERSION} ${CMAKE_CURRENT_SOURCE_DIR}/configuration.xml
+    COMMAND
+        ${CMAKE_COMMAND} -E touch configuration.xml.stamp
+    COMMENT
+        "RASC pre-build to generate project content"
+    DEPENDS
+        ${CMAKE_CURRENT_SOURCE_DIR}/configuration.xml
+)
 
-# add_custom_target(generate_content ALL
-#   DEPENDS configuration.xml.stamp
-# )
+add_custom_target(generate_content ALL
+  DEPENDS configuration.xml.stamp
+)
 
-# add_dependencies(${PROJECT_NAME}.elf generate_content)
+add_dependencies(${PROJECT_NAME}.elf generate_content)
 
 
-# # Post-build step: run RASC to generate the SmartBundle file
-# add_custom_command(
-#     TARGET
-#         ${PROJECT_NAME}.elf
-#     POST_BUILD
-#     COMMAND
-#         echo Running RASC post-build to generate Smart Bundle (.sbd) file
-#     COMMAND
-#         ${RASC_EXE_PATH} -nosplash --launcher.suppressErrors --gensmartbundle --devicefamily ra --compiler LLVMARM --toolchainversion ${CMAKE_C_COMPILER_VERSION}  ${CMAKE_CURRENT_SOURCE_DIR}/configuration.xml ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.elf 
-#     VERBATIM
-# )
+# Post-build step: run RASC to generate the SmartBundle file
+add_custom_command(
+    TARGET
+        ${PROJECT_NAME}.elf
+    POST_BUILD
+    COMMAND
+        echo Running RASC post-build to generate Smart Bundle (.sbd) file
+    COMMAND
+        ${RASC_EXE_PATH} -nosplash --launcher.suppressErrors --gensmartbundle --devicefamily ra --compiler LLVMARM --toolchainversion ${CMAKE_C_COMPILER_VERSION}  ${CMAKE_CURRENT_SOURCE_DIR}/configuration.xml ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.elf 
+    VERBATIM
+)
