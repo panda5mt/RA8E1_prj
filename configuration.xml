@@ -586,8 +586,8 @@
       <property id="module.driver.ospi_b.write_status_bit" value="module.driver.ospi_b.bit_index.0"/>
       <property id="module.driver.ospi_b.write_enable_bit" value="module.driver.ospi_b.bit_index.1"/>
       <property id="module.driver.ospi_b.auto_callibration_address" value="0x90000000"/>
-      <property id="module.driver.ospi_b.command_set_table" value="g_command_sets"/>
-      <property id="module.driver.ospi_b.command_set_table_length" value="2"/>
+      <property id="module.driver.ospi_b.command_set_table" value=""/>
+      <property id="module.driver.ospi_b.command_set_table_length" value="0"/>
       <property id="module.driver.ospi_b.sector_erase_size" value="4096"/>
       <property id="module.driver.ospi_b.block_erase_size" value="262144"/>
       <property id="module.driver.ospi_b.spi_protocol" value="module.driver.ospi_b.protocol_mode.protocol_8D_8D_8D"/>
@@ -601,7 +601,7 @@
       <property id="module.driver.ospi_b.spi_read_command" value="0xEE11"/>
       <property id="module.driver.ospi_b.default_mem_read_dummy_cycles" value="8"/>
       <property id="module.driver.ospi_b.spi_page_program_command" value="0xDE11"/>
-      <property id="module.driver.ospi_b.cmd_set.initial.program.dummy_cycles" value="10"/>
+      <property id="module.driver.ospi_b.cmd_set.initial.program.dummy_cycles" value="8"/>
       <property id="module.driver.ospi_b.cmd_set.initial.row_load.command" value="0x0"/>
       <property id="module.driver.ospi_b.cmd_set.initial.row_load.dummy_cycles" value="0"/>
       <property id="module.driver.ospi_b.cmd_set.initial.row_store.command" value="0x0"/>
@@ -745,7 +745,7 @@
     <config id="config.driver.ospi_b">
       <property id="config.driver.ospi_b.param_checking_enable" value="config.driver.ospi_b.param_checking_enable.bsp"/>
       <property id="config.driver.ospi_b.dmac_support" value="config.driver.ospi_b.dmac_support.enabled"/>
-      <property id="config.driver.ospi_b.autocalibration_support" value="config.driver.ospi_b.autocalibration_support.enabled"/>
+      <property id="config.driver.ospi_b.autocalibration_support" value="config.driver.ospi_b.autocalibration_support.disabled"/>
       <property id="config.driver.ospi_b.prefetch_function" value="config.driver.ospi_b.prefetch_function.enabled"/>
       <property id="config.driver.ospi_b.combination_function" value="config.driver.ospi_b.combination_function.64_BYTE"/>
       <property id="config.driver.ospi_b.xip_support" value="config.driver.ospi_b.xip_support.disabled"/>

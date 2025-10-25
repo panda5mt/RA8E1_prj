@@ -835,7 +835,7 @@ FSP Configuration
   Module "OSPI (r_ospi_b)"
     Parameter Checking: Default (BSP)
     DMAC Support: Enable
-    Autocalibration Support: Enable
+    Autocalibration Support: Disable
     Memory-mapping Support: Prefetch Function: Enable
     Memory-mapping Support: Combination Function: 64 Bytes
     Memory-mapping Support: XiP Support: Disable
@@ -1082,8 +1082,8 @@ FSP Configuration
       General: Write Status Bit: b0
       General: Write Enable Bit: b1
       General: DS Auto-calibration Pattern Address: 0x90000000
-      Command Sets: Custom Table: Table Pointer: g_command_sets
-      Command Sets: Custom Table: Table Length: 2
+      Command Sets: Custom Table: Table Pointer: 
+      Command Sets: Custom Table: Table Length: 0
       Command Sets: Erase Sizes: Sector Erase: 4096
       Command Sets: Erase Sizes: Block Erase: 262144
       Command Sets: Initial Mode: Protocol Mode: Dual data rate OPI (8D-8D-8D)
@@ -1097,7 +1097,7 @@ FSP Configuration
       Command Sets: Initial Mode: Read: Command Code: 0xEE11
       Command Sets: Initial Mode: Read: Dummy Cycles: 8
       Command Sets: Initial Mode: Program: Command Code: 0xDE11
-      Command Sets: Initial Mode: Program: Dummy Cycles: 10
+      Command Sets: Initial Mode: Program: Dummy Cycles: 8
       Command Sets: Initial Mode: Row Load: Command Code: 0x0
       Command Sets: Initial Mode: Row Load: Dummy Cycles: 0
       Command Sets: Initial Mode: Row Store: Command Code: 0x0
