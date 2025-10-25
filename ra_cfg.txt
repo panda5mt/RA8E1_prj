@@ -833,7 +833,7 @@ FSP Configuration
     Automatic PHY-LSI Initialization: Enabled
     
   Module "OSPI (r_ospi_b)"
-    Parameter Checking: Default (BSP)
+    Parameter Checking: Enable
     DMAC Support: Enable
     Autocalibration Support: Disable
     Memory-mapping Support: Prefetch Function: Enable

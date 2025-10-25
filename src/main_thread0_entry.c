@@ -64,56 +64,6 @@ static inline void icache_enable_global(void)
 /* Main Thread entry function */
 /* pvParameters contains TaskHandle_t */
 
-// dst: メモリマップドHyperRAM先頭, src: 書き込み元, size: バイト数(2の倍数)
-static inline fsp_err_t ospi_write_mmap(void *dst, const void *src, size_t size)
-{
-    fsp_err_t err;
-    // 2バイト整列＆サイズ偶数を保証
-    configASSERT(((uintptr_t)dst % 2) == 0);
-    configASSERT((size % 2) == 0);
-
-    // 書き込み前：順序＆キャッシュを外へ押し出す
-    // 2) 送信元を必ずクリーン＋バリア（コントローラが読む側）
-    __DSB();
-    __DMB();
-
-    // 分割コピー（必要に応じて）
-    const size_t CHUNK = 64; // 32〜64Bあたりを推奨
-    const uint8_t *s = (const uint8_t *)src;
-    uint8_t *d = (uint8_t *)dst;
-    size_t rem = size;
-    while (rem)
-    {
-        size_t n = rem > CHUNK ? CHUNK : rem;
-        n &= ~((size_t)1); // 偶数に丸める
-        // memcpy(d, s, n);
-        taskENTER_CRITICAL();
-        err = R_OSPI_B_Write(&g_ospi0_ctrl, s, d, n);
-
-        __DSB();
-        __DMB();
-        taskEXIT_CRITICAL();
-        // if (FSP_SUCCESS != err)
-        // {
-        //     xprintf("[OSPI] HyperRAM write error!:%d\n", err);
-        //     return err;
-        // }
-        // DMA完了待ち
-        // while (ospi_b_dma_sent != true)
-        // {
-        //     vTaskDelay(pdMS_TO_TICKS(10));
-        // }
-        // ospi_b_dma_sent = false;
-
-        d += n;
-        s += n;
-        rem -= n;
-    }
-
-    // 必要ならISB
-    __ISB();
-}
-
 // 32Bラインに合わせて範囲を丸める（M85想定）
 static inline void cache_inv_32B_aligned(const void *addr, size_t size)
 {
@@ -195,16 +145,6 @@ void main_thread0_entry(void *pvParameters)
         xprintf("[OSPI] HyperRAM init error!\n");
         return;
     }
-
-    R_XSPI0->CMCFGCS[1].CMCFG0_b.WPBSTMD = 0; // 0:WRAP, 1:LINEAR
-
-    uint32_t cmg = R_XSPI0->CMCFGCS[1].CMCFG0;
-    uint32_t wp = (cmg & R_XSPI0_CMCFGCS_CMCFG0_WPBSTMD_Msk) >> R_XSPI0_CMCFGCS_CMCFG0_WPBSTMD_Pos;
-
-    xprintf("-------------------WPBSTMD = 0x%08X-----------------------\n", wp);
-
-    // dcache_disable_global();
-    // icache_disable_global();
 
     ////////////////////////////
     // write to HyperRAM

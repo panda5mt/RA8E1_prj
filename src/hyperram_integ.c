@@ -15,12 +15,9 @@ bool ospi_b_dma_sent = false;
 /* Custom command sets. */
 ospi_b_xspi_command_set_t g_command_sets[] =
     {
-        [0] = {
-            .protocol = SPI_FLASH_PROTOCOL_1S_1S_1S,
-            .frame_format = OSPI_B_FRAME_FORMAT_STANDARD,
-            .command_bytes = 1U},
+
         /* 8D-8D-8D example with inverted lower command byte. */
-        [1] = {.protocol = SPI_FLASH_PROTOCOL_8D_8D_8D, //
+        [0] = {.protocol = SPI_FLASH_PROTOCOL_8D_8D_8D, //
                .latency_mode = OSPI_B_LATENCY_MODE_VARIABLE,
                .frame_format = OSPI_B_FRAME_FORMAT_XSPI_PROFILE_2,
                .command_bytes = OSPI_RAM_COMMAND_BYTES,
