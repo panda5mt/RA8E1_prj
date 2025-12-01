@@ -156,24 +156,12 @@ fsp_err_t hyperram_init(void)
 
     // /* Configure DDR sampling window extend */
     R_XSPI0->LIOCFGCS_b[1].DDRSMPEX = 10;
-
-    // write enable
-    err = ospi_raw_trans(&g_ospi0_trans,
-                         OSPI_B_COMMAND_WRITE_ENABLE, OSPI_RAM_COMMAND_BYTES,
-                         0x00000000, 0,
-                         0, 0,
-                         0, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
-    if (FSP_SUCCESS != err)
-    {
-        xprintf("[OSPI] direct transfer error!\n");
-        return err;
-    }
-
-    // write CR0
+    // default CR = 0x52F0(LE) -> 0xF052(BE) (Normal Operation, 24ohm, no DQSM pre-cycle, 8-clock latency, variable latency, 32bytes burst)
+    // write CR = 0xC05A(BE) -> 0x5AC0(LE) (Normal Operation, 34ohm, no DQSM pre-cycle, 8-clock latency, fixed latency, 32bytes burst)
     err = ospi_raw_trans(&g_ospi0_trans,
                          OSPI_B_COMMAND_WRITE_REGISTER, OSPI_RAM_COMMAND_BYTES,
-                         0x00000004, 4,
-                         0x2D8F, 2, // 64Byte burst, Latency 7
+                         0x00040000, 4,
+                         0x5AC0, 2, // 64Byte burst, Latency 7
                          0, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
     if (FSP_SUCCESS != err)
     {
@@ -181,34 +169,10 @@ fsp_err_t hyperram_init(void)
         return err;
     }
 
-    // write enable
+    // read ID
     err = ospi_raw_trans(&g_ospi0_trans,
-                         OSPI_B_COMMAND_WRITE_ENABLE, OSPI_RAM_COMMAND_BYTES,
-                         0x00000000, 0,
-                         0, 0,
-                         0, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
-    if (FSP_SUCCESS != err)
-    {
-        xprintf("[OSPI] direct transfer error!\n");
-        return err;
-    }
-
-    // write CR1
-    err = ospi_raw_trans(&g_ospi0_trans,
-                         OSPI_B_COMMAND_WRITE_REGISTER, OSPI_RAM_COMMAND_BYTES,
-                         0x00000006, 4,
-                         0xC1FF, 2, // CK+,CK-
-                         0, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
-    if (FSP_SUCCESS != err)
-    {
-        xprintf("[OSPI] direct transfer error!\n");
-        return err;
-    }
-
-    // read CR0
-    err = ospi_raw_trans(&g_ospi0_trans,
-                         OSPI_B_COMMAND_READ_REGISTER, OSPI_RAM_COMMAND_BYTES,
-                         0x00000004, 4,
+                         OSPI_B_COMMAND_READ_ID, OSPI_RAM_COMMAND_BYTES,
+                         0x00000000, 4,
                          0x00, 2,
                          OSPI_RAM_LATENCY_CYCLES, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
     if (FSP_SUCCESS != err)
@@ -216,12 +180,12 @@ fsp_err_t hyperram_init(void)
         xprintf("[OSPI] direct transfer error!\n");
         return err;
     }
-    xprintf("CR0=0x%04x\n", g_ospi0_trans.data);
+    xprintf("ID=0x%04x\n", g_ospi0_trans.data);
 
-    // read CR1
+    // read CR
     err = ospi_raw_trans(&g_ospi0_trans,
                          OSPI_B_COMMAND_READ_REGISTER, OSPI_RAM_COMMAND_BYTES,
-                         0x00000006, 4,
+                         0x00040000, 4,
                          0x00, 2,
                          OSPI_RAM_LATENCY_CYCLES, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
     if (FSP_SUCCESS != err)
@@ -229,20 +193,10 @@ fsp_err_t hyperram_init(void)
         xprintf("[OSPI] direct transfer error!\n");
         return err;
     }
-    xprintf("CR1=0x%04x\n", g_ospi0_trans.data);
+    xprintf("CR=0x%04x\n", g_ospi0_trans.data);
 
-    // write enable
-    err = ospi_raw_trans(&g_ospi0_trans,
-                         OSPI_B_COMMAND_WRITE_ENABLE, OSPI_RAM_COMMAND_BYTES,
-                         0x00000000, 0,
-                         0, 0,
-                         0, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
-    if (FSP_SUCCESS != err)
-    {
-        xprintf("[OSPI] direct transfer error!\n");
-        return err;
-    }
-
+    while (1)
+        ;
     // // write Preamble
     // // #define OSPI_B_PRV_AUTOCALIBRATION_PREAMBLE_PATTERN_0 (0xFFFF0000U)
     // // #define OSPI_B_PRV_AUTOCALIBRATION_PREAMBLE_PATTERN_1 (0x000800FFU)

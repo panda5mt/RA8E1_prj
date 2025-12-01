@@ -7,20 +7,17 @@ extern "C"
 #endif
 
 #define HYPERRAM_BASE_ADDR ((void *)0x90000000U) /* Device on CS1 */
-// COMMAND SET(infineon S80KS5123)
-// #define  <COMMAND>               <CODE>     <CA-DATA> | <ADDRESS(bytes)>   | <Latency cycles>  | <Data (bytes)>
-#define OSPI_B_COMMAND_RESET_ENABLE (0x6611)   // 8-0-0  |  0                 |  0                |  0
-#define OSPI_B_COMMAND_RESET (0x9911)          // 8-0-0  |  0                 |  0                |  0
-#define OSPI_B_COMMAND_READ_ID (0x9F11)        // 8-8-8  |  0x00(4bytes)      |  3-7              |  (4bytes)
-#define OSPI_B_COMMAND_POWER_DOWN (0xB911)     // 8-0-0  |  0                 |  0                |  0
-#define OSPI_B_COMMAND_READ (0xEE11)           // 8-8-8  |  (4bytes)          |  3-7              |  1 to \infty
-#define OSPI_B_COMMAND_WRITE (0xDE11)          // 8-8-8  |  (4bytes)          |  3-7              |  1 to \infty
-#define OSPI_B_COMMAND_WRITE_ENABLE (0x0611)   // 8-0-0  |  0                 |  0                |  0
-#define OSPI_B_COMMAND_WRITE_DISABLE (0x0411)  // 8-0-0  |  0                 |  0                |  0
-#define OSPI_B_COMMAND_READ_REGISTER (0x6511)  // 8-8-8  |  (4bytes)          |  3-7              |  (2bytes)
-#define OSPI_B_COMMAND_WRITE_REGISTER (0x7111) // 8-8-8  |  (4bytes)          |  0                |  (2bytes)
+// COMMAND SET(ISSI IS66WVO8M8DALL)
+// #define  <COMMAND>               <CODE>     <CA-DATA> | <ADDRESS(bytes)>     | <Latency cycles>  | <Data (bytes)>
+#define OSPI_B_COMMAND_READ (0xA000)           // 8-8-8  |  (4bytes)            |  3-7              |  1 to \infty
+#define OSPI_B_COMMAND_WRITE (0x2000)          // 8-8-8  |  (4bytes)            |  3-7              |  1 to \infty
+#define OSPI_B_COMMAND_READ_REGISTER (0xC000)  // 8-8-8  |  0x0004_0000(4bytes) |  3-7              |  (2bytes)
+#define OSPI_B_COMMAND_WRITE_REGISTER (0x4000) // 8-8-8  |  0x0004_0000(4bytes) |  0                |  (2bytes)
+#define OSPI_B_COMMAND_READ_ID (0xC000)        // 8-8-8  |  0x0000_0000(4bytes) |  3-7              |  (2bytes)
+#define OSPI_B_COMMAND_WRITE_ENABLE (0x00)     // NONE
+#define OSPI_B_COMMAND_WRITE_DISABLE (0x00)    // NONE
 
-#define OSPI_RAM_LATENCY_CYCLES (8U)
+#define OSPI_RAM_LATENCY_CYCLES (16U)
 #define OSPI_RAM_COMMAND_BYTES (2U)
 
     extern bool ospi_b_dma_sent;
