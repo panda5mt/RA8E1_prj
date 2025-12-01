@@ -165,7 +165,7 @@ FSP Configuration
     SPICLK Div /4
     CANFDCLK Div /8
     USBCLK Div /5
-    OCTACLK Div /2
+    OCTACLK Div /4
     
   Pin Configurations
     RA8E1 FPB -> g_bsp_pin_cfg
@@ -836,7 +836,7 @@ FSP Configuration
     Parameter Checking: Enable
     DMAC Support: Enable
     Autocalibration Support: Disable
-    Memory-mapping Support: Prefetch Function: Enable
+    Memory-mapping Support: Prefetch Function: Disable
     Memory-mapping Support: Combination Function: 64 Bytes
     Memory-mapping Support: XiP Support: Disable
     DOTF Support: Disable
@@ -1081,9 +1081,9 @@ FSP Configuration
       General: Chip Select: CS1
       General: Write Status Bit: b0
       General: Write Enable Bit: b1
-      General: DS Auto-calibration Pattern Address: 0x90000000
-      Command Sets: Custom Table: Table Pointer: 
-      Command Sets: Custom Table: Table Length: 0
+      General: DS Auto-calibration Pattern Address: 0
+      Command Sets: Custom Table: Table Pointer: g_command_sets
+      Command Sets: Custom Table: Table Length: 1
       Command Sets: Erase Sizes: Sector Erase: 4096
       Command Sets: Erase Sizes: Block Erase: 262144
       Command Sets: Initial Mode: Protocol Mode: Dual data rate OPI (8D-8D-8D)
@@ -1132,7 +1132,7 @@ FSP Configuration
       Command Sets: High-speed Mode: Chip Erase: Command Code: 0x6060
       Timing Settings: Chip Select: Command Interval: 2 cycles
       Timing Settings: Chip Select: Assertion Extension: No extension
-      Timing Settings: Chip Select: Negation Extension: No extension
+      Timing Settings: Chip Select: Negation Extension: 1 cycle extension
       Timing Settings: DS Latching Delay: Auto-calibrate
       Timing Settings: SDR: Drive Timing: Drive 1/2 cycle before CK
       Timing Settings: SDR: CK Sampling Edge: Falling edge

@@ -17,7 +17,7 @@ extern "C"
 #define OSPI_B_COMMAND_WRITE_ENABLE (0x00)     // NONE
 #define OSPI_B_COMMAND_WRITE_DISABLE (0x00)    // NONE
 
-#define OSPI_RAM_LATENCY_CYCLES (16U)
+#define OSPI_RAM_LATENCY_CYCLES (8U)
 #define OSPI_RAM_COMMAND_BYTES (2U)
 
     extern bool ospi_b_dma_sent;

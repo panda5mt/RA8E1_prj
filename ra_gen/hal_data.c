@@ -51,88 +51,17 @@ static ospi_b_timing_setting_t g_ospi0_timing_settings =
 {
     .command_to_command_interval = OSPI_B_COMMAND_INTERVAL_CLOCKS_2,
     .cs_pullup_lag               = OSPI_B_COMMAND_CS_PULLUP_CLOCKS_NO_EXTENSION,
-    .cs_pulldown_lead            = OSPI_B_COMMAND_CS_PULLDOWN_CLOCKS_NO_EXTENSION,
+    .cs_pulldown_lead            = OSPI_B_COMMAND_CS_PULLDOWN_CLOCKS_1,
     .sdr_drive_timing            = OSPI_B_SDR_DRIVE_TIMING_BEFORE_CK,
     .sdr_sampling_edge           = OSPI_B_CK_EDGE_FALLING,
     .sdr_sampling_delay          = OSPI_B_SDR_SAMPLING_DELAY_NONE,
     .ddr_sampling_extension      = OSPI_B_DDR_SAMPLING_EXTENSION_NONE,
 };
-
-static const spi_flash_erase_command_t g_ospi0_command_set_initial_erase_commands[] =
-{
-};
-static const ospi_b_table_t g_ospi0_command_set_initial_erase_table =
-{
-    .p_table = (void *) g_ospi0_command_set_initial_erase_commands,
-    .length = sizeof(g_ospi0_command_set_initial_erase_commands)/sizeof(g_ospi0_command_set_initial_erase_commands[0]),
-};
-
-static const spi_flash_erase_command_t g_ospi0_command_set_high_speed_erase_commands[] =
-{
-    { .command = 0x2121, .size = 4096 },
-    { .command = 0xDCDC, .size = 262144 },
-    { .command = 0x6060, .size = SPI_FLASH_ERASE_SIZE_CHIP_ERASE },
-};
-static const ospi_b_table_t g_ospi0_command_set_high_speed_erase_table =
-{
-    .p_table = (void *) g_ospi0_command_set_high_speed_erase_commands,
-    .length = sizeof(g_ospi0_command_set_high_speed_erase_commands)/sizeof(g_ospi0_command_set_high_speed_erase_commands[0]),
-};
-
-static const ospi_b_xspi_command_set_t g_ospi0_command_set_table[] =
-{
-    {
-        .protocol = SPI_FLASH_PROTOCOL_8D_8D_8D,
-        .frame_format = OSPI_B_FRAME_FORMAT_XSPI_PROFILE_2,
-        .latency_mode = OSPI_B_LATENCY_MODE_VARIABLE,
-        .command_bytes = OSPI_B_COMMAND_BYTES_2,
-        .address_bytes = SPI_FLASH_ADDRESS_BYTES_4,
-        .address_msb_mask = 0xF0,
-        .status_needs_address =  false,
-        .status_address = 0U,
-        .status_address_bytes = (spi_flash_address_bytes_t) 0U,
-        .p_erase_commands = &g_ospi0_command_set_initial_erase_table,
-        .read_command = 0xEE11,
-        .read_dummy_cycles = 8,
-        .program_command = 0xDE11,
-        .program_dummy_cycles = 8,
-        .row_load_command = 0x0,
-        .row_load_dummy_cycles = 0,
-        .row_store_command = 0x0,
-        .row_store_dummy_cycles = 0,
-        .write_enable_command = 0x0611,
-        .status_command = 0x0,
-        .status_dummy_cycles = 0,
-    },
-    {
-        .protocol = SPI_FLASH_PROTOCOL_1S_1S_1S,
-        .frame_format = OSPI_B_FRAME_FORMAT_XSPI_PROFILE_1,
-        .latency_mode = OSPI_B_LATENCY_MODE_FIXED,
-        .command_bytes = OSPI_B_COMMAND_BYTES_2,
-        .address_bytes = SPI_FLASH_ADDRESS_BYTES_4,
-        .address_msb_mask = 0xF0,
-        .status_needs_address =  true,
-        .status_address = 0x00,
-        .status_address_bytes = SPI_FLASH_ADDRESS_BYTES_4,
-        .p_erase_commands = &g_ospi0_command_set_high_speed_erase_table,
-        .read_command = 0xEEEE,
-        .read_dummy_cycles = 20,
-        .program_command = 0x1212,
-        .program_dummy_cycles = 0,
-        .row_load_command = 0x0,
-        .row_load_dummy_cycles = 0,
-        .row_store_command = 0x0,
-        .row_store_dummy_cycles = 0,
-        .write_enable_command = 0x0606,
-        .status_command = 0x0505,
-        .status_dummy_cycles = 3,
-    }
-};
-
+extern ospi_b_xspi_command_set_t g_command_sets[];
 static const ospi_b_table_t g_ospi0_command_set =
 {
-    .p_table = (void *) g_ospi0_command_set_table,
-    .length = 2
+    .p_table = (void *) g_command_sets,
+    .length = 1
 };
 
 #if OSPI_B_CFG_DOTF_SUPPORT_ENABLE
@@ -157,7 +86,7 @@ static const ospi_b_extended_cfg_t g_ospi0_extended_cfg =
     .p_timing_settings                       = &g_ospi0_timing_settings,
     .p_xspi_command_set                      = &g_ospi0_command_set,
     .data_latch_delay_clocks                 = OSPI_B_DS_TIMING_DELAY_NONE,
-    .p_autocalibration_preamble_pattern_addr = (uint8_t *) 0x90000000,
+    .p_autocalibration_preamble_pattern_addr = (uint8_t *) 0,
 #if OSPI_B_CFG_DMAC_SUPPORT_ENABLE
     .p_lower_lvl_transfer                    = &g_transfer0,
 #endif
