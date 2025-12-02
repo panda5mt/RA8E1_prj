@@ -28,7 +28,7 @@ ospi_b_xspi_command_set_t g_command_sets[] =
                .status_command = 0x00,
                //.status_needs_address = false,
                //.status_address_bytes = 0,
-               .address_msb_mask = 0xf0,
+               .address_msb_mask = 0xE0,
                .read_dummy_cycles = OSPI_RAM_LATENCY_CYCLES,
                .program_dummy_cycles = OSPI_RAM_LATENCY_CYCLES,
 
