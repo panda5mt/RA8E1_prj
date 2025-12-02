@@ -49,7 +49,7 @@ ospi_b_instance_ctrl_t g_ospi0_ctrl;
 
 static ospi_b_timing_setting_t g_ospi0_timing_settings =
 {
-    .command_to_command_interval = OSPI_B_COMMAND_INTERVAL_CLOCKS_2,
+    .command_to_command_interval = OSPI_B_COMMAND_INTERVAL_CLOCKS_8,
     .cs_pullup_lag               = OSPI_B_COMMAND_CS_PULLUP_CLOCKS_NO_EXTENSION,
     .cs_pulldown_lead            = OSPI_B_COMMAND_CS_PULLDOWN_CLOCKS_1,
     .sdr_drive_timing            = OSPI_B_SDR_DRIVE_TIMING_BEFORE_CK,

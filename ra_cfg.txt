@@ -165,7 +165,7 @@ FSP Configuration
     SPICLK Div /4
     CANFDCLK Div /8
     USBCLK Div /5
-    OCTACLK Div /4
+    OCTACLK Div /2
     
   Pin Configurations
     RA8E1 FPB -> g_bsp_pin_cfg
@@ -1130,7 +1130,7 @@ FSP Configuration
       Command Sets: High-speed Mode: Sector Erase: Command Code: 0x2121
       Command Sets: High-speed Mode: Block Erase: Command Code: 0xDCDC
       Command Sets: High-speed Mode: Chip Erase: Command Code: 0x6060
-      Timing Settings: Chip Select: Command Interval: 2 cycles
+      Timing Settings: Chip Select: Command Interval: 8 cycles
       Timing Settings: Chip Select: Assertion Extension: No extension
       Timing Settings: Chip Select: Negation Extension: 1 cycle extension
       Timing Settings: DS Latching Delay: Auto-calibrate
