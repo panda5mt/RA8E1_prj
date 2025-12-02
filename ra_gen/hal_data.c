@@ -94,7 +94,7 @@ static const ospi_b_extended_cfg_t g_ospi0_extended_cfg =
     .p_dotf_cfg                              = &g_ospi_dotf_cfg,
 #endif
 #if OSPI_B_CFG_ROW_ADDRESSING_SUPPORT_ENABLE
-    .row_index_bytes                         = 0xFF,
+    .row_index_bytes                         = SPI_FLASH_ADDRESS_BYTES_2,
 #endif
 };
 const spi_flash_cfg_t g_ospi0_cfg =

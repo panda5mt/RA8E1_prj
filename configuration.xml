@@ -651,7 +651,7 @@
       <property id="module.driver.ospi_b.dotf.key_format" value="config.driver.dotf.key_format.plaintext"/>
       <property id="module.driver.ospi_b.dotf.start_address" value="0x90000000"/>
       <property id="module.driver.ospi_b.dotf.end_address" value="0x90001FFF"/>
-      <property id="module.driver.ospi_b.row_addressing.row_index_bytes" value="module.driver.ospi_b.address_bytes.none"/>
+      <property id="module.driver.ospi_b.row_addressing.row_index_bytes" value="module.driver.ospi_b.address_bytes.address_bytes_2"/>
     </module>
     <module id="module.driver.transfer_on_dmac.1489570490">
       <property id="module.driver.transfer.name" value="g_transfer0"/>
@@ -750,7 +750,7 @@
       <property id="config.driver.ospi_b.combination_function" value="config.driver.ospi_b.combination_function.64_BYTE"/>
       <property id="config.driver.ospi_b.xip_support" value="config.driver.ospi_b.xip_support.disabled"/>
       <property id="config.driver.ospi_b.dotf_support" value="config.driver.ospi_b.dotf_support.disabled"/>
-      <property id="config.driver.ospi_b.row_addressing_support" value="config.driver.ospi_b.row_addressing_support.disabled"/>
+      <property id="config.driver.ospi_b.row_addressing_support" value="config.driver.ospi_b.row_addressing_support.enabled"/>
     </config>
     <config id="config.middleware.lwip_tcpip">
       <property id="config.middleware.lwip_tcpip.no_sys" value="config.middleware.lwip_tcpip.no_sys.disabled"/>

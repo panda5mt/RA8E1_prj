@@ -840,7 +840,7 @@ FSP Configuration
     Memory-mapping Support: Combination Function: 64 Bytes
     Memory-mapping Support: XiP Support: Disable
     DOTF Support: Disable
-    Row Addressing Support: Disable
+    Row Addressing Support: Enable
     
   Module "Transfer (r_dmac)"
     Parameter Checking: Enabled
@@ -1147,7 +1147,7 @@ FSP Configuration
       DOTF: Key Format: Plaintext
       DOTF: Decryption Start Address: 0x90000000
       DOTF: Decryption End Address: 0x90001FFF
-      Row Addressing: Row Address Length: No address
+      Row Addressing: Row Address Length: 2 bytes
       
       Instance "g_transfer0 Transfer (r_dmac) No ELC Trigger"
         Name: g_transfer0
