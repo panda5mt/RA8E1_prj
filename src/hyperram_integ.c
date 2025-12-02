@@ -239,8 +239,9 @@ fsp_err_t hyperram_init(void)
         xprintf("mapped read[%d]=0x%08X\n", i, *((volatile uint32_t *)((uint8_t *)HYPERRAM_BASE_ADDR + adr)));
     }
 
-    while (1)
-        ;
+    // while (1)
+    //     ;
+
     // err = ospi_raw_trans(&g_ospi0_trans,
     //                      OSPI_B_COMMAND_WRITE, OSPI_RAM_COMMAND_BYTES,
     //                      0x00, 4,
@@ -320,7 +321,8 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
     for (uint32_t z = 0; z < total_length / 4; z++)
     {
         uint32_t data = src_p32[z];
-        uint32_t adr = (dest_p8) + z * 4; // 8bit length address
+        uint32_t adr = (dest_p8) + z * 4;               // 8bit length address
+        adr = ((adr & 0xfffffff0) << 6) | (adr & 0x0f); // Octal ram address format
 
         err = ospi_raw_trans(&g_ospi0_trans,
                              OSPI_B_COMMAND_WRITE, OSPI_RAM_COMMAND_BYTES,
