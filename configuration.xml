@@ -591,22 +591,22 @@
       <property id="module.driver.ospi_b.sector_erase_size" value="4096"/>
       <property id="module.driver.ospi_b.block_erase_size" value="262144"/>
       <property id="module.driver.ospi_b.spi_protocol" value="module.driver.ospi_b.protocol_mode.protocol_8D_8D_8D"/>
-      <property id="module.driver.ospi_b.cmd_set.initial.frame_format" value="module.driver.ospi_b.frame_format.xspi_profile2"/>
+      <property id="module.driver.ospi_b.cmd_set.initial.frame_format" value="module.driver.ospi_b.frame_format.xspi_profile1"/>
       <property id="module.driver.ospi_b.cmd_set.initial.latency_mode" value="module.driver.ospi_b.latency_mode.variable"/>
       <property id="module.driver.ospi_b.address_bytes" value="module.driver.ospi_b.address_bytes.address_bytes_4"/>
-      <property id="module.driver.ospi_b.cmd_set.initial.address_msb_mask" value="0xF0"/>
+      <property id="module.driver.ospi_b.cmd_set.initial.address_msb_mask" value="0xE0"/>
       <property id="module.driver.ospi_b.command_bytes" value="module.driver.ospi_b.command_bytes.2"/>
       <property id="module.driver.ospi_b.cmd_set.initial.status_address_bytes" value="module.driver.ospi_b.address_bytes.none"/>
       <property id="module.driver.ospi_b.cmd_set.initial.status_address" value="0x0"/>
-      <property id="module.driver.ospi_b.spi_read_command" value="0xEE11"/>
+      <property id="module.driver.ospi_b.spi_read_command" value="0xA000"/>
       <property id="module.driver.ospi_b.default_mem_read_dummy_cycles" value="8"/>
-      <property id="module.driver.ospi_b.spi_page_program_command" value="0xDE11"/>
+      <property id="module.driver.ospi_b.spi_page_program_command" value="0x2000"/>
       <property id="module.driver.ospi_b.cmd_set.initial.program.dummy_cycles" value="8"/>
       <property id="module.driver.ospi_b.cmd_set.initial.row_load.command" value="0x0"/>
       <property id="module.driver.ospi_b.cmd_set.initial.row_load.dummy_cycles" value="0"/>
       <property id="module.driver.ospi_b.cmd_set.initial.row_store.command" value="0x0"/>
       <property id="module.driver.ospi_b.cmd_set.initial.row_store.dummy_cycles" value="0"/>
-      <property id="module.driver.ospi_b.spi_write_enable_command" value="0x0611"/>
+      <property id="module.driver.ospi_b.spi_write_enable_command" value="0x00"/>
       <property id="module.driver.ospi_b.spi_status_command" value="0x0"/>
       <property id="module.driver.ospi_b.default_status_read_dummy_cycles" value="0"/>
       <property id="module.driver.ospi_b.sector_erase_command" value="0"/>
@@ -636,7 +636,7 @@
       <property id="module.driver.ospi_b.high_speed_chip_erase_command" value="0x6060"/>
       <property id="module.driver.ospi_b.command_interval_clocks" value="module.driver.ospi_b.command_interval_clocks.clocks_8"/>
       <property id="module.driver.ospi_b.pull_up_timing" value="module.driver.ospi_b.pull_up_timing.clocks_5"/>
-      <property id="module.driver.ospi_b.pull_down_timing" value="module.driver.ospi_b.pull_down_timing.clocks_4"/>
+      <property id="module.driver.ospi_b.pull_down_timing" value="module.driver.ospi_b.pull_down_timing.clocks_3"/>
       <property id="module.driver.ospi_b.data_latch_delay_setting" value="module.driver.ospi_b.ds_timing.delay.none"/>
       <property id="module.driver.ospi_b.sdr_timing.drive_timing" value="module.driver.ospi_b.sdr_timing.drive_timing.before_ck_rising"/>
       <property id="module.driver.ospi_b.sdr_timing.ck_sampling_edge" value="module.driver.ospi_b.sdr_timing.ck_sampling_edge.falling"/>
@@ -746,7 +746,7 @@
       <property id="config.driver.ospi_b.param_checking_enable" value="config.driver.ospi_b.param_checking_enable.enabled"/>
       <property id="config.driver.ospi_b.dmac_support" value="config.driver.ospi_b.dmac_support.enabled"/>
       <property id="config.driver.ospi_b.autocalibration_support" value="config.driver.ospi_b.autocalibration_support.disabled"/>
-      <property id="config.driver.ospi_b.prefetch_function" value="config.driver.ospi_b.prefetch_function.disabled"/>
+      <property id="config.driver.ospi_b.prefetch_function" value="config.driver.ospi_b.prefetch_function.enabled"/>
       <property id="config.driver.ospi_b.combination_function" value="config.driver.ospi_b.combination_function.64_BYTE"/>
       <property id="config.driver.ospi_b.xip_support" value="config.driver.ospi_b.xip_support.disabled"/>
       <property id="config.driver.ospi_b.dotf_support" value="config.driver.ospi_b.dotf_support.disabled"/>

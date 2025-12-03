@@ -836,7 +836,7 @@ FSP Configuration
     Parameter Checking: Enable
     DMAC Support: Enable
     Autocalibration Support: Disable
-    Memory-mapping Support: Prefetch Function: Disable
+    Memory-mapping Support: Prefetch Function: Enable
     Memory-mapping Support: Combination Function: 64 Bytes
     Memory-mapping Support: XiP Support: Disable
     DOTF Support: Disable
@@ -1087,22 +1087,22 @@ FSP Configuration
       Command Sets: Erase Sizes: Sector Erase: 4096
       Command Sets: Erase Sizes: Block Erase: 262144
       Command Sets: Initial Mode: Protocol Mode: Dual data rate OPI (8D-8D-8D)
-      Command Sets: Initial Mode: Frame Format: xSPI Profile 2.0
+      Command Sets: Initial Mode: Frame Format: xSPI Profile 1.0
       Command Sets: Initial Mode: Latency Mode: Variable (DQS)
       Command Sets: Initial Mode: Address Length: 4 bytes
-      Command Sets: Initial Mode: Address MSB Mask: 0xF0
+      Command Sets: Initial Mode: Address MSB Mask: 0xE0
       Command Sets: Initial Mode: Command Code Length: 2 bytes
       Command Sets: Initial Mode: Status Register: No address
       Command Sets: Initial Mode: Status Register Address: 0x0
-      Command Sets: Initial Mode: Read: Command Code: 0xEE11
+      Command Sets: Initial Mode: Read: Command Code: 0xA000
       Command Sets: Initial Mode: Read: Dummy Cycles: 8
-      Command Sets: Initial Mode: Program: Command Code: 0xDE11
+      Command Sets: Initial Mode: Program: Command Code: 0x2000
       Command Sets: Initial Mode: Program: Dummy Cycles: 8
       Command Sets: Initial Mode: Row Load: Command Code: 0x0
       Command Sets: Initial Mode: Row Load: Dummy Cycles: 0
       Command Sets: Initial Mode: Row Store: Command Code: 0x0
       Command Sets: Initial Mode: Row Store: Dummy Cycles: 0
-      Command Sets: Initial Mode: Write Enable: Command Code: 0x0611
+      Command Sets: Initial Mode: Write Enable: Command Code: 0x00
       Command Sets: Initial Mode: Status Read: Command Code: 0x0
       Command Sets: Initial Mode: Status Read: Dummy Cycles: 0
       Command Sets: Initial Mode: Sector Erase: Command Code: 0
@@ -1132,7 +1132,7 @@ FSP Configuration
       Command Sets: High-speed Mode: Chip Erase: Command Code: 0x6060
       Timing Settings: Chip Select: Command Interval: 8 cycles
       Timing Settings: Chip Select: Assertion Extension: No extension
-      Timing Settings: Chip Select: Negation Extension: 1 cycle extension
+      Timing Settings: Chip Select: Negation Extension: No extension
       Timing Settings: DS Latching Delay: Auto-calibrate
       Timing Settings: SDR: Drive Timing: Drive 1/2 cycle before CK
       Timing Settings: SDR: CK Sampling Edge: Falling edge
