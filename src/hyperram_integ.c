@@ -153,10 +153,11 @@ fsp_err_t hyperram_init(void)
 
     xprintf("[OSPI] init Ok\n");
 
-    R_XSPI0->WRAPCFG_b.DSSFTCS1 = 2U;
+    R_XSPI0->WRAPCFG_b.DSSFTCS1 = 4U;
 
     // /* Configure DDR sampling window extend */
-    R_XSPI0->LIOCFGCS_b[1].DDRSMPEX = 1U;
+    R_XSPI0->LIOCFGCS_b[1].DDRSMPEX = 5U;
+
     // default CR = 0x52F0(LE) -> 0xF052(BE) (Normal Operation, 24ohm, no DQSM pre-cycle, 8-clock latency, variable latency, 32bytes burst)
     // write CR = 0xC051(BE) -> 0x51C0(LE) (Normal Operation, 34ohm, no DQSM pre-cycle, 8-clock latency, variable latency, 64bytes burst)
     err = ospi_raw_trans(&g_ospi0_trans,
