@@ -129,10 +129,11 @@ fsp_err_t hyperram_init(void)
 
     // 1. OSPI 初期化
     /* Reset flash device by driving OM_RESET pin */
-    // R_XSPI0->LIOCTL_b.RSTCS0 = 0;
-    // R_BSP_SoftwareDelay(OSPI_B_TIME_RESET_PULSE, OSPI_B_TIME_UNIT);
-    // R_XSPI0->LIOCTL_b.RSTCS0 = 1;
-    // R_BSP_SoftwareDelay(OSPI_B_TIME_RESET_SETUP, OSPI_B_TIME_UNIT);
+    R_XSPI0->LIOCTL_b.RSTCS1 = 0;
+    R_BSP_SoftwareDelay(OSPI_B_TIME_RESET_PULSE, OSPI_B_TIME_UNIT);
+    R_XSPI0->LIOCTL_b.RSTCS1 = 1;
+    R_BSP_SoftwareDelay(OSPI_B_TIME_RESET_SETUP, OSPI_B_TIME_UNIT);
+
     SCB_InvalidateDCache_by_Addr((uint8_t *)HYPERRAM_BASE_ADDR, 256 * 256 * 2);
 
     err = R_OSPI_B_Open(&g_ospi0_ctrl, &g_ospi0_cfg);
