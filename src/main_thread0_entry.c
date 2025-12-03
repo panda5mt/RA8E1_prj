@@ -121,7 +121,7 @@ void main_thread0_entry(void *pvParameters)
     xprintf("START\n");
     // init DVP camera
 
-    cam_init(DEV_OV5642);
+    cam_init(DEV_OV3640);
     xprintf("Camera Ready\n");
     // capture from camera
     vTaskDelay(pdMS_TO_TICKS(200));
