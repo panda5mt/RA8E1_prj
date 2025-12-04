@@ -145,8 +145,8 @@ void main_thread0_entry(void *pvParameters)
         xprintf("[OSPI] HyperRAM init error!\n");
         return;
     }
-    icache_enable_global();
-    dcache_enable_global();
+    // icache_enable_global();
+    dcache_disable_global();
     ////////////////////////////
     // write to HyperRAM
     err = hyperram_b_write(image_p8, 0x00, VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL);
@@ -167,16 +167,6 @@ void main_thread0_entry(void *pvParameters)
     {
         uint32_t adr = z * 4;
         adr = ((adr & 0xfffffff0) << 6) | (adr & 0x0f); // Octal ram address format
-        // err = ospi_raw_trans(&g_ospi0_trans,
-        //                      OSPI_B_COMMAND_READ, OSPI_RAM_COMMAND_BYTES,
-        //                      adr, 4,
-        //                      0, 4,
-        //                      OSPI_RAM_LATENCY_CYCLES, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
-        // if (FSP_SUCCESS != err)
-        // {
-        //     xprintf("[OSPI] direct transfer error!\n");
-        // }
-        // xprintf("0x%08X\n", g_ospi0_trans.data);
         xprintf("0x%08X\n", *((volatile uint32_t *)((uint8_t *)HYPERRAM_BASE_ADDR + adr)));
     }
 
