@@ -64,54 +64,6 @@ static inline void icache_enable_global(void)
 /* Main Thread entry function */
 /* pvParameters contains TaskHandle_t */
 
-// 32Bラインに合わせて範囲を丸める（M85想定）
-static inline void cache_inv_32B_aligned(const void *addr, size_t size)
-{
-    uintptr_t a = (uintptr_t)addr & ~(uintptr_t)31u;
-    size_t n = (size + ((uintptr_t)addr - a) + 31u) & ~31u;
-    SCB_InvalidateDCache_by_Addr((void *)a, n);
-}
-
-static inline bool ospi_verify_mmap_memcpy_chunked(const void *dst_dev, const void *src_golden, size_t size)
-{
-    configASSERT(((uintptr_t)dst_dev % 2) == 0);
-    configASSERT((size % 2) == 0);
-
-    const size_t CHUNK = RAM_DATA_LENGTH; // 256~1024あたりで調整
-    const uint8_t *d = (const uint8_t *)dst_dev;
-    const uint8_t *g = (const uint8_t *)src_golden;
-
-    uint8_t *buf = (uint8_t *)pvPortMalloc(CHUNK);
-    if (!buf)
-        return false;
-
-    size_t rem = size;
-    while (rem)
-    {
-        size_t n = rem > CHUNK ? CHUNK : rem;
-
-        __DSB();
-        __DMB();
-        cache_inv_32B_aligned(d, n); // 各チャンク前にInvalidate
-        __DSB();
-        __DMB();
-
-        memcpy(buf, d, n);
-        if (memcmp(buf, g, n) != 0)
-        {
-            vPortFree(buf);
-            return false;
-        }
-
-        d += n;
-        g += n;
-        rem -= n;
-    }
-
-    vPortFree(buf);
-    return true;
-}
-
 void main_thread0_entry(void *pvParameters)
 {
     FSP_PARAMETER_NOT_USED(pvParameters);
@@ -168,29 +120,6 @@ void main_thread0_entry(void *pvParameters)
         uint32_t adr = z * 4;
         adr = ((adr & 0xfffffff0) << 6) | (adr & 0x0f); // Octal ram address format
         xprintf("0x%08X\n", *((volatile uint32_t *)((uint8_t *)HYPERRAM_BASE_ADDR + adr)));
-    }
-
-    for (int i = 0; i < VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL; i += RAM_DATA_LENGTH)
-    {
-        bool cm;
-        // 読み戻し直前：
-        // cm = memcmp(image_p8, hyperram_ptr, RAM_DATA_LENGTH);
-        // cm = ospi_verify_mmap(hyperram_ptr, image_p8, RAM_DATA_LENGTH);
-        SCB_CleanDCache_by_Addr((uint32_t *)hyperram_ptr, RAM_DATA_LENGTH);
-        cm = ospi_verify_mmap_memcpy_chunked(hyperram_ptr, image_p8, RAM_DATA_LENGTH);
-
-        // if (ospi_verify_mmap(hyperram_ptr, image_p8, RAM_DATA_LENGTH) == false)
-        if (cm == false)
-        {
-            xprintf("[OSPI] HyperRAM verify error!\n");
-        }
-        else
-        {
-            xprintf("[OSPI] HyperRAM verify OK.\n");
-        }
-        vTaskDelay(pdMS_TO_TICKS(1));
-        hyperram_ptr += RAM_DATA_LENGTH;
-        image_p8 += RAM_DATA_LENGTH;
     }
 
     /* TODO: add your own code here */
