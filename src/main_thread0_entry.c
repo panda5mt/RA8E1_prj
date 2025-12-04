@@ -145,7 +145,8 @@ void main_thread0_entry(void *pvParameters)
         xprintf("[OSPI] HyperRAM init error!\n");
         return;
     }
-
+    icache_enable_global();
+    dcache_enable_global();
     ////////////////////////////
     // write to HyperRAM
     err = hyperram_b_write(image_p8, 0x00, VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL);

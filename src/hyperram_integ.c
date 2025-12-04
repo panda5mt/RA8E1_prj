@@ -153,10 +153,10 @@ fsp_err_t hyperram_init(void)
 
     xprintf("[OSPI] init Ok\n");
 
-    R_XSPI0->WRAPCFG_b.DSSFTCS1 = 4U;
+    R_XSPI0->WRAPCFG_b.DSSFTCS1 = 16U;
 
     // /* Configure DDR sampling window extend */
-    R_XSPI0->LIOCFGCS_b[1].DDRSMPEX = 5U;
+    R_XSPI0->LIOCFGCS_b[1].DDRSMPEX = 7U;
 
     // default CR = 0x52F0(LE) -> 0xF052(BE) (Normal Operation, 24ohm, no DQSM pre-cycle, 8-clock latency, variable latency, 32bytes burst)
     // write CR = 0xC051(BE) -> 0x51C0(LE) (Normal Operation, 34ohm, no DQSM pre-cycle, 8-clock latency, variable latency, 64bytes burst)
@@ -255,21 +255,44 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
     fsp_err_t err = FSP_SUCCESS;
 
     const uint8_t *src_p8 = (const uint8_t *)p_src;
-    const uint32_t *src_p32 = (const uint32_t *)p_src;
-
     uint8_t *dest_p8 = (uint8_t *)p_dest;
-    uint32_t *dest_p32 = (uint32_t *)p_dest;
 
-    // write
-    for (uint32_t z = 0; z < total_length / 4; z++)
+    const uint32_t batch_size = 64; // 64バイトずつ書き込み
+    uint32_t offset = 0;
+
+    // 64バイトごとのバッチ処理
+    while (offset + batch_size <= total_length)
     {
-        uint32_t data = src_p32[z];
-        uint32_t adr = (dest_p8) + z * 4;               // 8bit length address
+        uint32_t adr = (uint32_t)dest_p8 + offset;      // 8bit length address
         adr = ((adr & 0xfffffff0) << 6) | (adr & 0x0f); // Octal ram address format
         adr += (uint32_t)HYPERRAM_BASE_ADDR;
 
-        *((volatile uint32_t *)adr) = data;
+        err = R_OSPI_B_Write(&g_ospi0_ctrl,
+                             (uint8_t const *const)(src_p8 + offset),
+                             (uint8_t *const)adr,
+                             batch_size);
+        if (FSP_SUCCESS != err)
+        {
+            return err;
+        }
+
+        offset += batch_size;
     }
+
+    // 残りのバイト数を処理
+    uint32_t remaining = total_length - offset;
+    if (remaining > 0)
+    {
+        uint32_t adr = (uint32_t)dest_p8 + offset;      // 8bit length address
+        adr = ((adr & 0xfffffff0) << 6) | (adr & 0x0f); // Octal ram address format
+        adr += (uint32_t)HYPERRAM_BASE_ADDR;
+
+        err = R_OSPI_B_Write(&g_ospi0_ctrl,
+                             (uint8_t const *const)(src_p8 + offset),
+                             (uint8_t *const)adr,
+                             remaining);
+    }
+
     return err;
 }
 
