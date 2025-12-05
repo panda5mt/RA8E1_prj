@@ -1,6 +1,7 @@
 #include "main_thread1.h"
 #include "putchar_ra8usb.h"
 #include "hal_data.h"
+#include "hyperram_integ.h"
 
 #include "lwip/tcpip.h"
 #include "lwip/netif.h"
@@ -28,6 +29,12 @@ typedef struct
     uint16_t port;
     int remaining;
     uint32_t interval_ms;
+    // 写真データ送信用の追加フィールド
+    uint8_t *photo_data; // 写真データのポインタ
+    uint32_t photo_size; // 写真データの総サイズ
+    uint32_t sent_bytes; // 送信済みバイト数
+    uint32_t chunk_size; // 1回の送信サイズ（512バイト）
+    bool is_photo_mode;  // 写真モードかどうか
 } udp_send_ctx_t;
 static void udp_send_timer_cb(void *arg);
 
@@ -63,37 +70,87 @@ static void udp_send_timer_cb(void *arg)
     if (!ctx || !ctx->pcb)
         return;
 
-    // 動的に文字列を生成
-    static char dynamic_msg[128];
-    uint32_t timestamp = xTaskGetTickCount();
-    snprintf(dynamic_msg, sizeof(dynamic_msg),
-             "RA8E1 UDP Message #%d at %u ms",
-             101 - ctx->remaining, (unsigned int)(timestamp * portTICK_PERIOD_MS));
+    struct pbuf *p;
+    size_t send_size;
 
-    const size_t len = strlen(dynamic_msg);
-    struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, (u16_t)len, PBUF_RAM);
-    if (p)
+    if (ctx->is_photo_mode)
     {
-        memcpy(p->payload, dynamic_msg, len);
-        err_t e = udp_sendto(ctx->pcb, p, &ctx->dest_ip, ctx->port);
-        pbuf_free(p);
-        xprintf("[UDP] send %s, remain=%d\n", (e == ERR_OK) ? "OK" : "NG", ctx->remaining - 1);
+        // 写真データモード：512バイトずつ送信
+        uint32_t remaining_bytes = ctx->photo_size - ctx->sent_bytes;
+        send_size = (remaining_bytes < ctx->chunk_size) ? remaining_bytes : ctx->chunk_size;
+
+        p = pbuf_alloc(PBUF_TRANSPORT, (u16_t)send_size, PBUF_RAM);
+        if (p)
+        {
+            // OctalRAMから写真データをコピー
+            memcpy(p->payload, ctx->photo_data + ctx->sent_bytes, send_size);
+            err_t e = udp_sendto(ctx->pcb, p, &ctx->dest_ip, ctx->port);
+            pbuf_free(p);
+
+            if (e == ERR_OK)
+            {
+                ctx->sent_bytes += send_size;
+                // 10チャンクごとに進行状況を表示
+                if ((ctx->sent_bytes / ctx->chunk_size) % 10 == 0)
+                {
+                    xprintf("[PHOTO] %u/%u bytes\n", ctx->sent_bytes, ctx->photo_size);
+                }
+            }
+            xprintf("[UDP] photo chunk %s, %u/%u bytes\n",
+                    (e == ERR_OK) ? "OK" : "NG", ctx->sent_bytes, ctx->photo_size);
+        }
     }
     else
     {
-        xprintf("[UDP] pbuf_alloc failed\n");
+        // 従来のテキストメッセージモード
+        static char dynamic_msg[128];
+        uint32_t timestamp = xTaskGetTickCount();
+        snprintf(dynamic_msg, sizeof(dynamic_msg),
+                 "RA8E1 UDP Message #%d at %u ms",
+                 101 - ctx->remaining, (unsigned int)(timestamp * portTICK_PERIOD_MS));
+
+        send_size = strlen(dynamic_msg);
+        p = pbuf_alloc(PBUF_TRANSPORT, (u16_t)send_size, PBUF_RAM);
+        if (p)
+        {
+            memcpy(p->payload, dynamic_msg, send_size);
+            err_t e = udp_sendto(ctx->pcb, p, &ctx->dest_ip, ctx->port);
+            pbuf_free(p);
+            xprintf("[UDP] send %s, remain=%d\n", (e == ERR_OK) ? "OK" : "NG", ctx->remaining - 1);
+        }
     }
 
-    if (--ctx->remaining > 0)
+    if (!p)
+    {
+        xprintf("[UDP] pbuf_alloc failed\n");
+    } // 継続条件の判定
+    bool should_continue;
+    if (ctx->is_photo_mode)
+    {
+        should_continue = (ctx->sent_bytes < ctx->photo_size);
+    }
+    else
+    {
+        should_continue = (--ctx->remaining > 0);
+    }
+
+    if (should_continue)
     {
         /* 次回も tcpip_thread のタイマで */
         sys_timeout(ctx->interval_ms, udp_send_timer_cb, ctx);
     }
     else
     {
+        if (ctx->is_photo_mode)
+        {
+            xprintf("[PHOTO] transmission complete: %u bytes\n", ctx->sent_bytes);
+        }
+        else
+        {
+            xprintf("[UDP] done\n");
+        }
         udp_remove(ctx->pcb);
         ctx->pcb = NULL;
-        xprintf("[UDP] done\n");
         vPortFree(ctx);
     }
 }
@@ -214,7 +271,6 @@ void main_thread1_entry(void *pvParameters)
         udp_recv(pcb, udp_rx_cb, NULL);
 
         /* 送信用コンテキストを確保し、tcpip_thread のタイマで駆動 */
-        static const char *message = "Hello from RA8E1 UDP!! Hello World!!";
         udp_send_ctx_t *ctx = (udp_send_ctx_t *)pvPortMalloc(sizeof(*ctx));
         if (!ctx)
         {
@@ -225,10 +281,18 @@ void main_thread1_entry(void *pvParameters)
         memset(ctx, 0, sizeof(*ctx));
         ctx->pcb = pcb;
         ctx->dest_ip = dest_ip;
-        ctx->msg = message;
         ctx->port = UDP_PORT_DEST;
-        ctx->remaining = 100;  /* 100回 */
         ctx->interval_ms = 20; /* 20ms 間隔 */
+
+        // 写真データ送信モードの設定
+        ctx->is_photo_mode = true;
+        ctx->photo_data = (uint8_t *)HYPERRAM_BASE_ADDR; // HyperRAMベースアドレス
+        ctx->photo_size = 320 * 240 * 2;                 // 320x240x2 = 153600 bytes
+        ctx->sent_bytes = 0;
+        ctx->chunk_size = 512; // 512バイトずつ送信
+
+        xprintf("[PHOTO] Starting transmission: %u bytes in %u chunks\n",
+                ctx->photo_size, (ctx->photo_size + ctx->chunk_size - 1) / ctx->chunk_size);
 
         /* 1発目をスケジュール（以降は udp_send_timer_cb 内で再スケジュール） */
         sys_timeout(1, udp_send_timer_cb, ctx);
