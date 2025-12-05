@@ -63,11 +63,18 @@ static void udp_send_timer_cb(void *arg)
     if (!ctx || !ctx->pcb)
         return;
 
-    const size_t len = strlen(ctx->msg);
+    // 動的に文字列を生成
+    static char dynamic_msg[128];
+    uint32_t timestamp = xTaskGetTickCount();
+    snprintf(dynamic_msg, sizeof(dynamic_msg),
+             "RA8E1 UDP Message #%d at %u ms",
+             101 - ctx->remaining, (unsigned int)(timestamp * portTICK_PERIOD_MS));
+
+    const size_t len = strlen(dynamic_msg);
     struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, (u16_t)len, PBUF_RAM);
     if (p)
     {
-        memcpy(p->payload, ctx->msg, len);
+        memcpy(p->payload, dynamic_msg, len);
         err_t e = udp_sendto(ctx->pcb, p, &ctx->dest_ip, ctx->port);
         pbuf_free(p);
         xprintf("[UDP] send %s, remain=%d\n", (e == ERR_OK) ? "OK" : "NG", ctx->remaining - 1);
