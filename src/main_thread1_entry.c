@@ -18,6 +18,18 @@
 
 #define UDP_PORT_DEST 9000
 
+// UDP写真データチャンクヘッダー
+typedef struct __attribute__((packed))
+{
+    uint32_t magic_number;    // マジックナンバー (0x12345678)
+    uint32_t total_size;      // 写真データの総サイズ
+    uint32_t chunk_index;     // 現在のチャンクインデックス (0から開始)
+    uint32_t total_chunks;    // 総チャンク数
+    uint32_t chunk_offset;    // このチャンクのオフセット（バイト）
+    uint16_t chunk_data_size; // このチャンクのデータサイズ
+    uint16_t checksum;        // ヘッダーのチェックサム
+} udp_photo_header_t;
+
 static void netif_status_cb(struct netif *n);
 static void udp_rx_cb(void *arg, struct udp_pcb *upcb, struct pbuf *p,
                       const ip_addr_t *addr, u16_t port);
@@ -37,6 +49,26 @@ typedef struct
     bool is_photo_mode;  // 写真モードかどうか
 } udp_send_ctx_t;
 static void udp_send_timer_cb(void *arg);
+
+// ヘッダーチェックサム計算
+static uint16_t calc_header_checksum(udp_photo_header_t *header)
+{
+    uint16_t *data = (uint16_t *)header;
+    uint32_t sum = 0;
+    size_t len = (sizeof(udp_photo_header_t) - sizeof(uint16_t)) / sizeof(uint16_t); // checksumフィールド除く
+
+    for (size_t i = 0; i < len; i++)
+    {
+        sum += data[i];
+    }
+
+    while (sum >> 16)
+    {
+        sum = (sum & 0xFFFF) + (sum >> 16);
+    }
+
+    return (uint16_t)(~sum);
+}
 
 /* DHCP完了待ち用セマフォ */
 static SemaphoreHandle_t g_ip_ready_sem = NULL;
@@ -79,15 +111,42 @@ static void udp_send_timer_cb(void *arg)
         uint32_t remaining_bytes = ctx->photo_size - ctx->sent_bytes;
         send_size = (remaining_bytes < ctx->chunk_size) ? remaining_bytes : ctx->chunk_size;
 
-        p = pbuf_alloc(PBUF_TRANSPORT, (u16_t)send_size, PBUF_RAM);
+        // ヘッダー + データのサイズでバッファを確保
+        size_t total_packet_size = sizeof(udp_photo_header_t) + send_size;
+        p = pbuf_alloc(PBUF_TRANSPORT, (u16_t)total_packet_size, PBUF_RAM);
         if (p)
         {
-            // HyperRAMアドレス変換: Octal ram address format
-            uint32_t base_addr = ctx->sent_bytes;
-            uint32_t converted_addr = ((base_addr & 0xfffffff0) << 6) | (base_addr & 0x0f);
-            
-            // 変換されたアドレスからHyperRAMデータをコピー
-            memcpy(p->payload, (uint8_t *)HYPERRAM_BASE_ADDR + converted_addr, send_size);
+            // ヘッダーを作成
+            udp_photo_header_t header;
+            header.magic_number = 0x12345678;
+            header.total_size = ctx->photo_size;
+            header.chunk_index = ctx->sent_bytes / ctx->chunk_size;
+            header.total_chunks = (ctx->photo_size + ctx->chunk_size - 1) / ctx->chunk_size;
+            header.chunk_offset = ctx->sent_bytes;
+            header.chunk_data_size = (uint16_t)send_size;
+            header.checksum = calc_header_checksum(&header);
+
+            // パケットにヘッダーをコピー
+            memcpy(p->payload, &header, sizeof(udp_photo_header_t));
+
+            // HyperRAMから64バイト単位で読み込み（制限対応）
+            uint8_t *dest_ptr = (uint8_t *)p->payload + sizeof(udp_photo_header_t);
+            uint32_t remaining_size = send_size;
+            uint32_t current_offset = 0;
+
+            while (remaining_size > 0)
+            {
+                uint32_t read_size = (remaining_size > 64) ? 64 : remaining_size;
+                uint32_t base_addr = ctx->sent_bytes + current_offset;
+                uint32_t converted_addr = ((base_addr & 0xfffffff0) << 6) | (base_addr & 0x0f);
+
+                // 64バイト以下の単位でコピー
+                memcpy(dest_ptr + current_offset,
+                       (uint8_t *)HYPERRAM_BASE_ADDR + converted_addr, read_size);
+
+                current_offset += read_size;
+                remaining_size -= read_size;
+            }
             err_t e = udp_sendto(ctx->pcb, p, &ctx->dest_ip, ctx->port);
             pbuf_free(p);
 
