@@ -82,8 +82,12 @@ static void udp_send_timer_cb(void *arg)
         p = pbuf_alloc(PBUF_TRANSPORT, (u16_t)send_size, PBUF_RAM);
         if (p)
         {
-            // OctalRAMから写真データをコピー
-            memcpy(p->payload, ctx->photo_data + ctx->sent_bytes, send_size);
+            // HyperRAMアドレス変換: Octal ram address format
+            uint32_t base_addr = ctx->sent_bytes;
+            uint32_t converted_addr = ((base_addr & 0xfffffff0) << 6) | (base_addr & 0x0f);
+            
+            // 変換されたアドレスからHyperRAMデータをコピー
+            memcpy(p->payload, (uint8_t *)HYPERRAM_BASE_ADDR + converted_addr, send_size);
             err_t e = udp_sendto(ctx->pcb, p, &ctx->dest_ip, ctx->port);
             pbuf_free(p);
 
