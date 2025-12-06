@@ -1,6 +1,6 @@
 # RA8E1 Real-time Image Transmission System
 
-RA8E1マイコンを使用したリアルタイム画像伝送システム。カメラからキャプチャした画像をHyperRAMに保存し、UDP通信でMATLABに送信してリアルタイム表示するプロジェクト。
+RA8E1マイコンを使用したリアルタイム画像伝送システム。カメラからキャプチャした画像をOctalRAMに保存し、UDP通信でMATLABに送信してリアルタイム表示するプロジェクト。
 
 ## システム概要
 
