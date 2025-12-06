@@ -67,7 +67,7 @@ function photo_data = receive_photo_packets(udp_obj)
     
     % タイムアウト設定
     start_time = tic;
-    timeout_sec = 300; % 30秒タイムアウト
+    timeout_sec = 300; % 300秒タイムアウト
     
     while toc(start_time) < timeout_sec
         try
