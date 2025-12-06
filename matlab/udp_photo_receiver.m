@@ -229,17 +229,18 @@ function rgb_image = yuv422_to_rgb(yuv_data, width, height)
     U_ch = zeros(nPixels, 1, 'uint8');
     V_ch = zeros(nPixels, 1, 'uint8');
     
-    % 4バイト（2ピクセル）ずつ処理
+    % 4バイト（2ピクセル）ずつ処理（リトルエンディアン対応）
     for i = 1:4:length(yuv_data)
         if i+3 > length(yuv_data)
             break;
         end
         
-        % 4バイトを取得: Y0 U0 Y1 V0 (YUYV フォーマット)
-        Y0 = yuv_data(i);
-        U0 = yuv_data(i+1);
-        Y1 = yuv_data(i+2);
-        V0 = yuv_data(i+3);
+        % 4バイトを取得してリトルエンディアンから変換
+        % リトルエンディアン: [V0 Y1 U0 Y0] -> YUYV フォーマット: [Y0 U0 Y1 V0]
+        Y0 = yuv_data(i+3);  % 4バイト目がY0
+        U0 = yuv_data(i+2);  % 3バイト目がU0
+        Y1 = yuv_data(i+1);  % 2バイト目がY1
+        V0 = yuv_data(i);    % 1バイト目がV0
         
         % ピクセルインデックス（2ピクセル分）
         pix_idx = ((i-1)/4) * 2;
