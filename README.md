@@ -7,7 +7,7 @@ RA8E1マイコンを使用したリアルタイム画像伝送システム。カ
 ### ハードウェア構成
 - **マイコン**: Renesas RA8E1 (R7FA8AFDCFB)
 - **メモリ**: OctalRAM IS66WVO8M8DALL (64Mbit, 8MB)
-- **カメラ**: YUV422(YUYV)形式対応カメラセンサー
+- **カメラ**: YUV422(YUYV)形式対応DVPカメラ(OV5642)
 - **通信**: Ethernet UDP (ポート9000)
 - **解像度**: QVGA (320×240ピクセル)
 
