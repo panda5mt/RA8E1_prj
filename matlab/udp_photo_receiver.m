@@ -1,6 +1,6 @@
 function udp_photo_receiver()
     % UDP写真データ受信・復元・表示
-    
+    close all;
     % UDP設定
     udp_port = 9000;
     
@@ -229,31 +229,49 @@ function rgb_image = yuv422_to_rgb(yuv_data, width, height)
     U_ch = zeros(nPixels, 1, 'uint8');
     V_ch = zeros(nPixels, 1, 'uint8');
     
-    % 4バイト（2ピクセル）ずつ処理（リトルエンディアン対応）
-    for i = 1:4:length(yuv_data)
-        if i+3 > length(yuv_data)
+    % 8バイト（4ピクセル）ずつ処理（リトルエンディアン対応）
+    for i = 1:8:length(yuv_data)
+        if i+7 > length(yuv_data)
             break;
         end
         
-        % 4バイトを取得してリトルエンディアンから変換
-        % リトルエンディアン: [V0 Y1 U0 Y0] -> YUYV フォーマット: [Y0 U0 Y1 V0]
-        Y0 = yuv_data(i+3);  % 4バイト目がY0
-        U0 = yuv_data(i+2);  % 3バイト目がU0
-        Y1 = yuv_data(i+1);  % 2バイト目がY1
-        V0 = yuv_data(i);    % 1バイト目がV0
+        % 1つ目の4バイト（2ピクセル分）
+        % リトルエンディアン: [V0 Y1 U0 Y0]
+        Y0 = yuv_data(i+3);   % 4バイト目がY0
+        U0 = yuv_data(i+2);   % 3バイト目がU0  
+        Y1 = yuv_data(i+1);   % 2バイト目がY1
+        V0 = yuv_data(i);     % 1バイト目がV0
         
-        % ピクセルインデックス（2ピクセル分）
-        pix_idx = ((i-1)/4) * 2;
-        if pix_idx + 2 <= nPixels
-            % ピクセル1: (Y0, U0, V0)
-            Y_ch(pix_idx + 1) = Y0;
-            U_ch(pix_idx + 1) = U0;
-            V_ch(pix_idx + 1) = V0;
+        % 2つ目の4バイト（2ピクセル分）
+        % リトルエンディアン: [V1 Y3 U1 Y2]
+        Y2 = yuv_data(i+7);   % 8バイト目がY2
+        U1 = yuv_data(i+6);   % 7バイト目がU1
+        Y3 = yuv_data(i+5);   % 6バイト目がY3
+        V1 = yuv_data(i+4);   % 5バイト目がV1
+        
+        % ピクセルインデックス（4ピクセル分）
+        pix_base = ((i-1)/8) * 4;
+        if pix_base + 4 <= nPixels
+            % 順序を逆転: 1番→4ピクセル目、2番→3ピクセル目、3番→2ピクセル目、4番→1ピクセル目
+            % ピクセル4 (元の2番データ)
+            Y_ch(pix_base + 4) = Y1;
+            U_ch(pix_base + 4) = U0;
+            V_ch(pix_base + 4) = V0;
             
-            % ピクセル2: (Y1, U0, V0) - 同じU,V値を使用
-            Y_ch(pix_idx + 2) = Y1;
-            U_ch(pix_idx + 2) = U0;
-            V_ch(pix_idx + 2) = V0;
+            % ピクセル3 (元の1番データ)  
+            Y_ch(pix_base + 3) = Y0;
+            U_ch(pix_base + 3) = U0;
+            V_ch(pix_base + 3) = V0;
+            
+            % ピクセル2 (元の3番データ)
+            Y_ch(pix_base + 2) = Y3;
+            U_ch(pix_base + 2) = U1;
+            V_ch(pix_base + 2) = V1;
+            
+            % ピクセル1 (元の4番データ)
+            Y_ch(pix_base + 1) = Y2;
+            U_ch(pix_base + 1) = U1;
+            V_ch(pix_base + 1) = V1;
         end
     end
     
