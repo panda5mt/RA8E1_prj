@@ -5,7 +5,7 @@ function udp_photo_receiver()
     udp_port = 9000;
     
     try
-        % UDP受信オブジェクト作成（DSP System Toolbox使用）
+        % UDP受信オブジェクト作成(DSP System Toolbox使用)
         udp_obj = dsp.UDPReceiver( ...
             'LocalIPPort', udp_port, ...
             'MessageDataType', 'uint8', ...
@@ -82,7 +82,7 @@ function photo_data = receive_photo_packets(udp_obj)
                     
                     % マジックナンバーチェック
                     if header.magic_number == uint32(hex2dec('12345678'))
-                    % チェックサム検証（一時的に無効化）
+                    % チェックサム検証(一時的に無効化)
                     if true % verify_checksum(data(1:header_size))
                         chunk_data = data(header_size+1:end);
                         
@@ -91,7 +91,7 @@ function photo_data = receive_photo_packets(udp_obj)
                                 double(header.chunk_index)+1, double(header.total_chunks), ...
                                 double(header.chunk_data_size));
                         
-                        % 総情報更新（初回のみ）
+                        % 総情報更新(初回のみ)
                         if total_chunks == 0
                             total_chunks = double(header.total_chunks);
                             total_size = double(header.total_size);
@@ -212,7 +212,7 @@ function photo_data = reconstruct_photo(packets, total_chunks, total_size)
 end
 
 function rgb_image = yuv422_to_rgb(yuv_data, width, height)
-    % YUV422(YUYV)をRGBに変換（viewQVGA_YUV.mの処理を参考）
+    % YUV422(YUYV)をRGBに変換(viewQVGA_YUV.mの処理を参考)
     
     % データが十分な長さか確認
     expected_bytes = width * height * 2;
@@ -229,27 +229,27 @@ function rgb_image = yuv422_to_rgb(yuv_data, width, height)
     U_ch = zeros(nPixels, 1, 'uint8');
     V_ch = zeros(nPixels, 1, 'uint8');
     
-    % 8バイト（4ピクセル）ずつ処理（リトルエンディアン対応）
+    % 8バイト(4ピクセル)ずつ処理(リトルエンディアン対応)
     for i = 1:8:length(yuv_data)
         if i+7 > length(yuv_data)
             break;
         end
         
-        % 1つ目の4バイト（2ピクセル分）
+        % 1つ目の4バイト(2ピクセル分)
         % リトルエンディアン: [V0 Y1 U0 Y0]
         Y0 = yuv_data(i+3);   % 4バイト目がY0
         U0 = yuv_data(i+2);   % 3バイト目がU0  
         Y1 = yuv_data(i+1);   % 2バイト目がY1
         V0 = yuv_data(i);     % 1バイト目がV0
         
-        % 2つ目の4バイト（2ピクセル分）
+        % 2つ目の4バイト(2ピクセル分)
         % リトルエンディアン: [V1 Y3 U1 Y2]
         Y2 = yuv_data(i+7);   % 8バイト目がY2
         U1 = yuv_data(i+6);   % 7バイト目がU1
         Y3 = yuv_data(i+5);   % 6バイト目がY3
         V1 = yuv_data(i+4);   % 5バイト目がV1
         
-        % ピクセルインデックス（4ピクセル分）
+        % ピクセルインデックス(4ピクセル分)
         pix_base = ((i-1)/8) * 4;
         if pix_base + 4 <= nPixels
             % 順序を逆転: 1番→4ピクセル目、2番→3ピクセル目、3番→2ピクセル目、4番→1ピクセル目
