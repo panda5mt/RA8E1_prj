@@ -19,7 +19,7 @@ ospi_b_xspi_command_set_t g_command_sets[] =
         /* 8D-8D-8D example with inverted lower command byte. */
         [0] = {.protocol = SPI_FLASH_PROTOCOL_8D_8D_8D,
                .latency_mode = OSPI_B_LATENCY_MODE_VARIABLE,
-               .frame_format = OSPI_B_FRAME_FORMAT_XSPI_PROFILE_1,
+               .frame_format = OSPI_B_FRAME_FORMAT_STANDARD,
                .command_bytes = OSPI_RAM_COMMAND_BYTES,
                .address_bytes = SPI_FLASH_ADDRESS_BYTES_4,
                .read_command = OSPI_B_COMMAND_READ,
@@ -134,7 +134,7 @@ fsp_err_t hyperram_init(void)
     R_XSPI0->LIOCTL_b.RSTCS1 = 1;
     R_BSP_SoftwareDelay(OSPI_B_TIME_RESET_SETUP, OSPI_B_TIME_UNIT);
 
-    SCB_InvalidateDCache_by_Addr((uint8_t *)HYPERRAM_BASE_ADDR, 256 * 256 * 2);
+    // SCB_InvalidateDCache_by_Addr((uint8_t *)HYPERRAM_BASE_ADDR, 256 * 256 * 2);
 
     err = R_OSPI_B_Open(&g_ospi0_ctrl, &g_ospi0_cfg);
     if (FSP_SUCCESS != err)
