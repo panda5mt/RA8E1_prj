@@ -18,7 +18,7 @@ ospi_b_xspi_command_set_t g_command_sets[] =
 
         /* 8D-8D-8D example with inverted lower command byte. */
         [0] = {.protocol = SPI_FLASH_PROTOCOL_8D_8D_8D,
-               .latency_mode = OSPI_B_LATENCY_MODE_VARIABLE,
+               //.latency_mode = OSPI_B_LATENCY_MODE_FIXED,
                .frame_format = OSPI_B_FRAME_FORMAT_STANDARD,
                .command_bytes = OSPI_RAM_COMMAND_BYTES,
                .address_bytes = SPI_FLASH_ADDRESS_BYTES_4,
@@ -196,54 +196,7 @@ fsp_err_t hyperram_init(void)
         return err;
     }
     xprintf("CR=0x%04x\n", g_ospi0_trans.data);
-    /*
-        uint32_t arr32[8] = {0xdeadbeef,
-                             0x11223344, 0x55667788, 0x99AABBCC,
-                             0xDDEEFF00,
-                             0x12345678, 0x9ABCDEF0, 0x0FEDCBA9};
 
-        for (int i = 0; i < 8; i++)
-        {
-            int adr = i * 4;
-            adr = ((adr & 0xfffffff0) << 6) | (adr & 0x0f); // Octal ram address format
-            // xprintf("Write 0x%08X \n", adr);
-            err = ospi_raw_trans(&g_ospi0_trans,
-                                 OSPI_B_COMMAND_WRITE, OSPI_RAM_COMMAND_BYTES,
-                                 adr, 4,
-                                 arr32[i], 4,
-                                 OSPI_RAM_LATENCY_CYCLES, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
-            if (FSP_SUCCESS != err)
-            {
-                xprintf("[OSPI] direct transfer error!\n");
-            }
-        }
-
-        for (int i = 0; i < 8; i++)
-        {
-            int adr = i * 4;
-            adr = ((adr & 0xfffffff0) << 6) | (adr & 0x0f); // Octal ram address format
-            err = ospi_raw_trans(&g_ospi0_trans,
-                                 OSPI_B_COMMAND_READ, OSPI_RAM_COMMAND_BYTES,
-                                 adr, 4,
-                                 0x00, 4,
-                                 OSPI_RAM_LATENCY_CYCLES, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
-            if (FSP_SUCCESS != err)
-            {
-                xprintf("[OSPI] direct transfer error!\n");
-            }
-            xprintf("0x%08X\n", g_ospi0_trans.data);
-        }
-
-        for (int i = 0; i < 8; i++)
-        {
-            int adr = i * 4;
-            adr = ((adr & 0xfffffff0) << 6) | (adr & 0x0f); // Octal ram address format
-            xprintf("mapped read[%d]=0x%08X\n", i, *((volatile uint32_t *)((uint8_t *)HYPERRAM_BASE_ADDR + adr)));
-        }
-
-        while (1)
-            ;
-    */
     // 正常終了
     xprintf("[OSPI] RW init end\n");
 

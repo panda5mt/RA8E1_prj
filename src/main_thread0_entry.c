@@ -115,12 +115,12 @@ void main_thread0_entry(void *pvParameters)
     hyperram_ptr32 = HYPERRAM_BASE_ADDR;
     image_p32 = (uint32_t *)g_image_qvga_sram;
 
-    for (uint32_t z = 0; z < VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL / 4; z++)
-    {
-        uint32_t adr = z * 4;
-        adr = ((adr & 0xfffffff0) << 6) | (adr & 0x0f); // Octal ram address format
-        xprintf("0x%08X\n", *((volatile uint32_t *)((uint8_t *)HYPERRAM_BASE_ADDR + adr)));
-    }
+    // for (uint32_t z = 0; z < VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL / 4; z++)
+    // {
+    //     uint32_t adr = z * 4;
+    //     adr = ((adr & 0xfffffff0) << 6) | (adr & 0x0f); // Octal ram address format
+    //     xprintf("0x%08X\n", *((volatile uint32_t *)((uint8_t *)HYPERRAM_BASE_ADDR + adr)));
+    // }
 
     /* TODO: add your own code here */
     while (1)
