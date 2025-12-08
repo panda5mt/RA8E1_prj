@@ -160,34 +160,17 @@ static void udp_send_timer_cb(void *arg)
             if (e == ERR_OK)
             {
                 ctx->sent_bytes += send_size;
-                // 10チャンクごとに進行状況を表示
-                if ((ctx->sent_bytes / ctx->chunk_size) % 10 == 0)
+                // ログ出力を大幅に削減（パフォーマンス向上）
+                if ((ctx->sent_bytes / ctx->chunk_size) % 100 == 0)
                 {
                     if (ctx->is_video_mode)
                     {
-                        xprintf("[VIDEO] Frame %u: %u/%u bytes\n", ctx->current_frame + 1, ctx->sent_bytes, ctx->photo_size);
-                    }
-                    else
-                    {
-                        xprintf("[PHOTO] %u/%u bytes\n", ctx->sent_bytes, ctx->photo_size);
+                        xprintf("[VIDEO] F%u: %u/%u\n", ctx->current_frame + 1, ctx->sent_bytes, ctx->photo_size);
                     }
                 }
             }
-            // ログ出力を動画モード用に修正
-            if (ctx->is_video_mode)
-            {
-                // 動画モードでは詳細ログを抑制（パフォーマンス向上）
-                if ((ctx->sent_bytes / ctx->chunk_size) % 50 == 0) // 50チャンクごと
-                {
-                    xprintf("[VIDEO] chunk %s, frame %u: %u/%u bytes\n",
-                            (e == ERR_OK) ? "OK" : "NG", ctx->current_frame + 1, ctx->sent_bytes, ctx->photo_size);
-                }
-            }
-            else
-            {
-                xprintf("[UDP] photo chunk %s, %u/%u bytes\n",
-                        (e == ERR_OK) ? "OK" : "NG", ctx->sent_bytes, ctx->photo_size);
-            }
+            // ログ出力を最小限に抑制（高速化）
+            // 動画モードではログをほぼ出力しない
         }
     }
     else
@@ -239,8 +222,11 @@ static void udp_send_timer_cb(void *arg)
                 ctx->sent_bytes = 0; // 次フレーム用にリセット
                 should_continue = true;
                 next_interval = ctx->frame_interval_ms; // フレーム間は長めの間隔
-                xprintf("[VIDEO] Frame %u/%u complete, next in %u ms\n",
-                        ctx->current_frame, ctx->total_frames, next_interval);
+                // ログ出力を削減（10フレームごと）
+                if (ctx->current_frame % 10 == 0)
+                {
+                    xprintf("[VIDEO] F%u/%u done\n", ctx->current_frame, ctx->total_frames);
+                }
             }
             else
             {
@@ -410,7 +396,7 @@ void main_thread1_entry(void *pvParameters)
         ctx->pcb = pcb;
         ctx->dest_ip = dest_ip;
         ctx->port = UDP_PORT_DEST;
-        ctx->interval_ms = 20; /* 20ms 間隔 */
+        ctx->interval_ms = 5; /* 5ms間隔（lwIPタスクに余裕を持たせる） */
 
         // 動画データ送信モードの設定（シングルフレームパターンを継承）
         ctx->is_video_mode = true;
@@ -422,15 +408,15 @@ void main_thread1_entry(void *pvParameters)
 
         // マルチフレーム設定
         ctx->current_frame = 0;
-        ctx->total_frames = 100;       // 100フレーム送信
-        ctx->frame_interval_ms = 1000; // フレーム間1秒待機（thread0と同期）
+        ctx->total_frames = 100;      // 100フレーム送信
+        ctx->frame_interval_ms = 200; // フレーム間2005ms待機（thread0と同期、高速化）
         ctx->is_frame_complete = false;
 
         xprintf("[VIDEO] Starting %u frame transmission: %u bytes/frame, %u chunks/frame\n",
                 ctx->total_frames, ctx->photo_size, (ctx->photo_size + ctx->chunk_size - 1) / ctx->chunk_size);
 
-        /* 1発目をスケジュール（以降は udp_send_timer_cb 内で再スケジュール） */
-        sys_timeout(1, udp_send_timer_cb, ctx);
+        /* 1発目をスケジュール（ネットワーク安定化のため500ms待機） */
+        sys_timeout(500, udp_send_timer_cb, ctx);
     }
 
 forever:
