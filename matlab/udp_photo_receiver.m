@@ -66,47 +66,57 @@ function receive_video_stream(udp_obj, ax)
     
     while toc(total_start_time) < total_timeout_sec
         try
-            % パケット受信チェック
-            data = udp_obj();
-            if ~isempty(data)
+            % 高速パケット連続受信（バッファ蓄積対応）
+            packet_count = 0;
+            while packet_count < 10  % 最大10パケット連続処理
+                data = udp_obj();
+                if isempty(data)
+                    break;
+                end
+                packet_count = packet_count + 1;
+                
                 if length(data) >= header_size
-                    % ヘッダー解析
-                    header = parse_header(data(1:header_size));
+                    % 高速ヘッダー解析（関数コール削減）
+                    header_bytes = data(1:header_size);
+                    magic_number = typecast(header_bytes(1:4), 'uint32');
                     
                     % マジックナンバーチェック
-                    if header.magic_number == uint32(hex2dec('12345678'))
+                    if magic_number == uint32(hex2dec('12345678'))
+                        total_size_val = typecast(header_bytes(5:8), 'uint32');
+                        chunk_index_val = typecast(header_bytes(9:12), 'uint32');
+                        total_chunks_val = typecast(header_bytes(13:16), 'uint32');
+                        chunk_data_size_val = typecast(header_bytes(21:22), 'uint16');
+                        
                         chunk_data = data(header_size+1:end);
                         
                         % 新しいフレーム開始チェック
-                        if header.chunk_index == 0
-                            % 前のフレームが残っていれば処理
-                            if ~isempty(packets) && check_frame_complete(packets)
-                                img_handle = process_complete_frame(packets, total_chunks, total_size, ax, img_handle);
+                        if chunk_index_val == 0
+                            % 前のフレーム処理（完了チェック省略で高速化）
+                            if ~isempty(packets)
+                                img_handle = process_complete_frame_fast(packets, total_chunks, total_size, ax, img_handle);
                                 frames_displayed = frames_displayed + 1;
                             end
                             
                             % 新フレーム初期化
                             current_frame_num = current_frame_num + 1;
-                            total_chunks = double(header.total_chunks);
-                            total_size = double(header.total_size);
+                            total_chunks = double(total_chunks_val);
+                            total_size = double(total_size_val);
                             packets = cell(total_chunks, 1);
                             frame_start_time = tic;
-                            
-                            % ログ出力を大幅に削減（50フレームごと）
-                            if mod(current_frame_num, 50) == 1
-                                fprintf('Frame %d started\n', current_frame_num);
+                        end
+                        
+                        % パケット保存（境界チェック最小化）
+                        chunk_idx = double(chunk_index_val) + 1;
+                        if chunk_idx <= total_chunks && chunk_idx > 0
+                            actual_size = min(double(chunk_data_size_val), length(chunk_data));
+                            if actual_size > 0
+                                packets{chunk_idx} = chunk_data(1:actual_size);
                             end
                         end
                         
-                        % パケット保存
-                        chunk_idx = double(header.chunk_index) + 1;  % MATLABは1-indexed
-                        if chunk_idx <= length(packets) && chunk_idx > 0
-                            packets{chunk_idx} = chunk_data(1:double(header.chunk_data_size));
-                        end
-                        
-                        % 高速フレーム完了チェック（最後のチャンクで判定）
+                        % フレーム完了チェック（最後のチャンクで判定）
                         if chunk_idx == total_chunks
-                            img_handle = process_complete_frame(packets, total_chunks, total_size, ax, img_handle);
+                            img_handle = process_complete_frame_fast(packets, total_chunks, total_size, ax, img_handle);
                             frames_received = frames_received + 1;
                             frames_displayed = frames_displayed + 1;
                             
@@ -114,9 +124,6 @@ function receive_video_stream(udp_obj, ax)
                             packets = {};
                             frame_start_time = tic;
                         end
-                        
-                    else
-                        % 無効なマジックナンバーは無視（デバッグ出力は少なめに）
                     end
                 end
             end
@@ -128,10 +135,10 @@ function receive_video_stream(udp_obj, ax)
                 frame_start_time = tic;
             end
             
-            % 統計表示（30秒ごとに削減）
-            if toc(last_stats_time) > 30
-                fprintf('Stats: %d frames (%.1f fps)\n', ...
-                        frames_displayed, frames_displayed/toc(total_start_time));
+            % 統計表示（10秒ごと＋簡略化）
+            if toc(last_stats_time) > 10
+                fps = frames_displayed/toc(total_start_time);
+                fprintf('Frames: %d (%.2f fps)\n', frames_displayed, fps);
                 last_stats_time = tic;
             end
             
@@ -170,30 +177,28 @@ function is_complete = check_frame_complete(packets)
     end
 end
 
-function img_handle = process_complete_frame(packets, total_chunks, total_size, ax, img_handle)
-    % 完了したフレームを処理・表示（高速化版）
+function img_handle = process_complete_frame_fast(packets, total_chunks, total_size, ax, img_handle)
+    % 高速フレーム処理（元の正しいYUV変換使用）
     
-    % エラーハンドリングを簡素化
     % フレームデータ復元（高速版）
-    frame_data = reconstruct_frame_fast(packets, total_chunks, total_size);
+    frame_data = reconstruct_frame_ultra_fast(packets, total_chunks, total_size);
     
-    if ~isempty(frame_data)
-        % YUV422をRGBに変換（高速版）
-        rgb_image = yuv422_to_rgb_fast(frame_data, 320, 240);
-        
-        % 画像表示更新（最適化）
-        if isempty(img_handle) || ~isvalid(img_handle)
-            img_handle = imshow(rgb_image, 'Parent', ax);
-            title(ax, 'Real-time Video Stream (QVGA YUV422)');
-        else
-            set(img_handle, 'CData', rgb_image);
-        end
-        drawnow;  % limitrateを削除して高速化
+    % 元の正しく動作するYUV変換を使用
+    rgb_image = yuv422_to_rgb_fast(frame_data, 320, 240);
+    
+    % 画像表示更新（最小限の処理）
+    if isempty(img_handle) || ~ishandle(img_handle)
+        img_handle = imshow(rgb_image, 'Parent', ax);
+        set(ax, 'Title', text('String', 'RA8E1 Video', 'FontSize', 10));
+    else
+        img_handle.CData = rgb_image;  % 直接プロパティアクセス
     end
+    
+    drawnow limitrate;  % 描画レート制限で効率化
 end
 
-function frame_data = reconstruct_frame_fast(packets, total_chunks, total_size)
-    % 高速フレームデータ復元（エラーチェック最小化）
+function frame_data = reconstruct_frame_ultra_fast(packets, total_chunks, total_size)
+    % 元の安全なフレーム復元（速度重視版）
     
     frame_data = zeros(total_size, 1, 'uint8');
     
@@ -413,3 +418,4 @@ function rgb_image = yuv422_to_rgb(yuv_data, width, height)
     % RGB画像を結合
     rgb_image = cat(3, R, G, B);
 end
+
