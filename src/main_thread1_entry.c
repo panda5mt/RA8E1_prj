@@ -47,6 +47,13 @@ typedef struct
     uint32_t sent_bytes; // 送信済みバイト数
     uint32_t chunk_size; // 1回の送信サイズ（512バイト）
     bool is_photo_mode;  // 写真モードかどうか
+
+    // マルチフレーム動画送信用
+    bool is_video_mode;
+    uint32_t current_frame;
+    uint32_t total_frames;
+    uint32_t frame_interval_ms; // フレーム間の待機時間
+    bool is_frame_complete;
 } udp_send_ctx_t;
 static void udp_send_timer_cb(void *arg);
 
@@ -105,9 +112,9 @@ static void udp_send_timer_cb(void *arg)
     struct pbuf *p;
     size_t send_size;
 
-    if (ctx->is_photo_mode)
+    if (ctx->is_video_mode || ctx->is_photo_mode)
     {
-        // 写真データモード：512バイトずつ送信
+        // 動画・写真データモード：512バイトずつ送信
         uint32_t remaining_bytes = ctx->photo_size - ctx->sent_bytes;
         send_size = (remaining_bytes < ctx->chunk_size) ? remaining_bytes : ctx->chunk_size;
 
@@ -156,11 +163,31 @@ static void udp_send_timer_cb(void *arg)
                 // 10チャンクごとに進行状況を表示
                 if ((ctx->sent_bytes / ctx->chunk_size) % 10 == 0)
                 {
-                    xprintf("[PHOTO] %u/%u bytes\n", ctx->sent_bytes, ctx->photo_size);
+                    if (ctx->is_video_mode)
+                    {
+                        xprintf("[VIDEO] Frame %u: %u/%u bytes\n", ctx->current_frame + 1, ctx->sent_bytes, ctx->photo_size);
+                    }
+                    else
+                    {
+                        xprintf("[PHOTO] %u/%u bytes\n", ctx->sent_bytes, ctx->photo_size);
+                    }
                 }
             }
-            xprintf("[UDP] photo chunk %s, %u/%u bytes\n",
-                    (e == ERR_OK) ? "OK" : "NG", ctx->sent_bytes, ctx->photo_size);
+            // ログ出力を動画モード用に修正
+            if (ctx->is_video_mode)
+            {
+                // 動画モードでは詳細ログを抑制（パフォーマンス向上）
+                if ((ctx->sent_bytes / ctx->chunk_size) % 50 == 0) // 50チャンクごと
+                {
+                    xprintf("[VIDEO] chunk %s, frame %u: %u/%u bytes\n",
+                            (e == ERR_OK) ? "OK" : "NG", ctx->current_frame + 1, ctx->sent_bytes, ctx->photo_size);
+                }
+            }
+            else
+            {
+                xprintf("[UDP] photo chunk %s, %u/%u bytes\n",
+                        (e == ERR_OK) ? "OK" : "NG", ctx->sent_bytes, ctx->photo_size);
+            }
         }
     }
     else
@@ -186,9 +213,43 @@ static void udp_send_timer_cb(void *arg)
     if (!p)
     {
         xprintf("[UDP] pbuf_alloc failed\n");
-    } // 継続条件の判定
-    bool should_continue;
-    if (ctx->is_photo_mode)
+    }
+
+    // 継続条件の判定
+    bool should_continue = false;
+    uint32_t next_interval = ctx->interval_ms;
+
+    if (ctx->is_video_mode)
+    {
+        if (ctx->sent_bytes < ctx->photo_size)
+        {
+            // 現在のフレーム内でパケット送信継続
+            should_continue = true;
+            ctx->is_frame_complete = false;
+        }
+        else
+        {
+            // 現在のフレーム完了
+            ctx->current_frame++;
+            ctx->is_frame_complete = true;
+
+            if (ctx->current_frame < ctx->total_frames)
+            {
+                // 次のフレームがある：フレーム間インターバルで待機
+                ctx->sent_bytes = 0; // 次フレーム用にリセット
+                should_continue = true;
+                next_interval = ctx->frame_interval_ms; // フレーム間は長めの間隔
+                xprintf("[VIDEO] Frame %u/%u complete, next in %u ms\n",
+                        ctx->current_frame, ctx->total_frames, next_interval);
+            }
+            else
+            {
+                // 全フレーム完了
+                xprintf("[VIDEO] All %u frames transmitted\n", ctx->total_frames);
+            }
+        }
+    }
+    else if (ctx->is_photo_mode)
     {
         should_continue = (ctx->sent_bytes < ctx->photo_size);
     }
@@ -200,11 +261,15 @@ static void udp_send_timer_cb(void *arg)
     if (should_continue)
     {
         /* 次回も tcpip_thread のタイマで */
-        sys_timeout(ctx->interval_ms, udp_send_timer_cb, ctx);
+        sys_timeout(next_interval, udp_send_timer_cb, ctx);
     }
     else
     {
-        if (ctx->is_photo_mode)
+        if (ctx->is_video_mode)
+        {
+            xprintf("[VIDEO] transmission complete: %u frames\n", ctx->total_frames);
+        }
+        else if (ctx->is_photo_mode)
         {
             xprintf("[PHOTO] transmission complete: %u bytes\n", ctx->sent_bytes);
         }
@@ -347,15 +412,22 @@ void main_thread1_entry(void *pvParameters)
         ctx->port = UDP_PORT_DEST;
         ctx->interval_ms = 20; /* 20ms 間隔 */
 
-        // 写真データ送信モードの設定
-        ctx->is_photo_mode = true;
+        // 動画データ送信モードの設定（シングルフレームパターンを継承）
+        ctx->is_video_mode = true;
+        ctx->is_photo_mode = false;
         ctx->photo_data = (uint8_t *)HYPERRAM_BASE_ADDR; // HyperRAMベースアドレス
         ctx->photo_size = 320 * 240 * 2;                 // 320x240x2 = 153600 bytes
         ctx->sent_bytes = 0;
         ctx->chunk_size = 512; // 512バイトずつ送信
 
-        xprintf("[PHOTO] Starting transmission: %u bytes in %u chunks\n",
-                ctx->photo_size, (ctx->photo_size + ctx->chunk_size - 1) / ctx->chunk_size);
+        // マルチフレーム設定
+        ctx->current_frame = 0;
+        ctx->total_frames = 100;       // 100フレーム送信
+        ctx->frame_interval_ms = 1000; // フレーム間1秒待機（thread0と同期）
+        ctx->is_frame_complete = false;
+
+        xprintf("[VIDEO] Starting %u frame transmission: %u bytes/frame, %u chunks/frame\n",
+                ctx->total_frames, ctx->photo_size, (ctx->photo_size + ctx->chunk_size - 1) / ctx->chunk_size);
 
         /* 1発目をスケジュール（以降は udp_send_timer_cb 内で再スケジュール） */
         sys_timeout(1, udp_send_timer_cb, ctx);

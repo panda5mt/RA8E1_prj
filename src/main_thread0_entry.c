@@ -78,37 +78,42 @@ void main_thread0_entry(void *pvParameters)
     // capture from camera
     vTaskDelay(pdMS_TO_TICKS(200));
     cam_capture();
+    // cam_close();
+
+    ospi_b_dma_sent = false;
+    // xprintf("!srt\n");
+    //  cast pointer
+    uint8_t *image_p8 = (uint8_t *)g_image_qvga_sram;
+    uint32_t *image_p32 = (uint32_t *)g_image_qvga_sram;
+    uint8_t *hyperram_ptr = (uint8_t *)HYPERRAM_BASE_ADDR;
+    uint32_t *hyperram_ptr32 = (uint32_t *)HYPERRAM_BASE_ADDR;
+
+    fsp_err_t err = FSP_SUCCESS;
+    err = hyperram_init();
+    if (FSP_SUCCESS != err)
+    {
+        xprintf("[OSPI] HyperRAM init error!\n");
+        return;
+    }
+
+    // icache_enable_global();
+    dcache_disable_global();
+
     while (1)
     {
-        vTaskDelay(pdMS_TO_TICKS(200));
+        // カメラキャプチャ実行
         cam_capture();
-        // cam_close();
 
-        ospi_b_dma_sent = false;
-        // xprintf("!srt\n");
-        //  cast pointer
-        uint8_t *image_p8 = (uint8_t *)g_image_qvga_sram;
-        uint32_t *image_p32 = (uint32_t *)g_image_qvga_sram;
-        uint8_t *hyperram_ptr = (uint8_t *)HYPERRAM_BASE_ADDR;
-        uint32_t *hyperram_ptr32 = (uint32_t *)HYPERRAM_BASE_ADDR;
-
-        fsp_err_t err = FSP_SUCCESS;
-        err = hyperram_init();
-        if (FSP_SUCCESS != err)
-        {
-            xprintf("[OSPI] HyperRAM init error!\n");
-            return;
-        }
-        // icache_enable_global();
-        dcache_disable_global();
-        ////////////////////////////
-        // write to HyperRAM
+        // HyperRAMに書き込み（動画ストリーミング用）
         err = hyperram_b_write(image_p8, 0x00, VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL);
         if (FSP_SUCCESS != err)
         {
             xprintf("[OSPI] HyperRAM write error!\n");
         }
-        vTaskDelay(pdMS_TO_TICKS(500));
+
+        // フレーム間隔：動画ストリーミングのフレームレートに合わせる
+        // 1秒間隔はUDPストリーミングのフレーム間隔と同期
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 
     ////////////////////////////
