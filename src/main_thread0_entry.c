@@ -78,42 +78,45 @@ void main_thread0_entry(void *pvParameters)
     // capture from camera
     vTaskDelay(pdMS_TO_TICKS(200));
     cam_capture();
-    vTaskDelay(pdMS_TO_TICKS(200));
-    cam_capture();
-    cam_close();
-
-    ospi_b_dma_sent = false;
-    xprintf("!srt\n");
-    // cast pointer
-    uint8_t *image_p8 = (uint8_t *)g_image_qvga_sram;
-    uint32_t *image_p32 = (uint32_t *)g_image_qvga_sram;
-    uint8_t *hyperram_ptr = (uint8_t *)HYPERRAM_BASE_ADDR;
-    uint32_t *hyperram_ptr32 = (uint32_t *)HYPERRAM_BASE_ADDR;
-
-    fsp_err_t err = FSP_SUCCESS;
-    err = hyperram_init();
-    if (FSP_SUCCESS != err)
+    while (1)
     {
-        xprintf("[OSPI] HyperRAM init error!\n");
-        return;
-    }
-    // icache_enable_global();
-    dcache_disable_global();
-    ////////////////////////////
-    // write to HyperRAM
-    err = hyperram_b_write(image_p8, 0x00, VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL);
-    if (FSP_SUCCESS != err)
-    {
-        xprintf("[OSPI] HyperRAM write error!\n");
+        vTaskDelay(pdMS_TO_TICKS(200));
+        cam_capture();
+        // cam_close();
+
+        ospi_b_dma_sent = false;
+        // xprintf("!srt\n");
+        //  cast pointer
+        uint8_t *image_p8 = (uint8_t *)g_image_qvga_sram;
+        uint32_t *image_p32 = (uint32_t *)g_image_qvga_sram;
+        uint8_t *hyperram_ptr = (uint8_t *)HYPERRAM_BASE_ADDR;
+        uint32_t *hyperram_ptr32 = (uint32_t *)HYPERRAM_BASE_ADDR;
+
+        fsp_err_t err = FSP_SUCCESS;
+        err = hyperram_init();
+        if (FSP_SUCCESS != err)
+        {
+            xprintf("[OSPI] HyperRAM init error!\n");
+            return;
+        }
+        // icache_enable_global();
+        dcache_disable_global();
+        ////////////////////////////
+        // write to HyperRAM
+        err = hyperram_b_write(image_p8, 0x00, VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL);
+        if (FSP_SUCCESS != err)
+        {
+            xprintf("[OSPI] HyperRAM write error!\n");
+        }
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
 
-    // ospi_write_mmap(hyperram_ptr, image_p8, VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL);
     ////////////////////////////
 
-    xprintf("[OSPI] write end\n");
-    hyperram_ptr = HYPERRAM_BASE_ADDR;
-    hyperram_ptr32 = HYPERRAM_BASE_ADDR;
-    image_p32 = (uint32_t *)g_image_qvga_sram;
+    // xprintf("[OSPI] write end\n");
+    // hyperram_ptr = HYPERRAM_BASE_ADDR;
+    // hyperram_ptr32 = HYPERRAM_BASE_ADDR;
+    // image_p32 = (uint32_t *)g_image_qvga_sram;
 
     // for (uint32_t z = 0; z < VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL / 4; z++)
     // {
