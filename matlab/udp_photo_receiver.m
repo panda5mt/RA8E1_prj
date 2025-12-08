@@ -32,11 +32,11 @@ function udp_photo_receiver()
             title('Received Photo Data (QVGA YUV422)');
             
             % データ保存
-            save_filename = sprintf('received_photo_%s.bin', datestr(now, 'yyyymmdd_HHMMSS'));
-            fid = fopen(save_filename, 'wb');
-            fwrite(fid, photo_data, 'uint8');
-            fclose(fid);
-            fprintf('Saved photo data to: %s\n', save_filename);
+            % save_filename = sprintf('received_photo_%s.bin', datestr(now, 'yyyymmdd_HHMMSS'));
+            % fid = fopen(save_filename, 'wb');
+            % fwrite(fid, photo_data, 'uint8');
+            % fclose(fid);
+            % fprintf('Saved photo data to: %s\n', save_filename);
         else
             fprintf('No complete photo data received.\n');
         end
