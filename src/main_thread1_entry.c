@@ -121,6 +121,14 @@ static void udp_send_timer_cb(void *arg)
         // ヘッダー + データのサイズでバッファを確保
         size_t total_packet_size = sizeof(udp_photo_header_t) + send_size;
         p = pbuf_alloc(PBUF_TRANSPORT, (u16_t)total_packet_size, PBUF_RAM);
+
+        if (!p)
+        {
+            // pbuf確保失敗時は短い間隔でリトライ（間隔0でも安全）
+            sys_timeout((ctx->interval_ms > 0) ? ctx->interval_ms : 1, udp_send_timer_cb, ctx);
+            return;
+        }
+
         if (p)
         {
             // ヘッダーを作成
@@ -396,7 +404,7 @@ void main_thread1_entry(void *pvParameters)
         ctx->pcb = pcb;
         ctx->dest_ip = dest_ip;
         ctx->port = UDP_PORT_DEST;
-        ctx->interval_ms = 1; /* 0ms間隔（lwIPタスクに余裕を持たせたい場合は3ms） */
+        ctx->interval_ms = 0; /* 0ms間隔（lwIPタスクに余裕を持たせたい場合は3ms） */
 
         // 動画データ送信モードの設定（シングルフレームパターンを継承）
         ctx->is_video_mode = true;
