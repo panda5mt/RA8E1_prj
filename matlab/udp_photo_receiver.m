@@ -56,7 +56,7 @@ function receive_video_stream(udp_obj, ax)
     % タイムアウト・統計設定
     frame_start_time = tic;
     frame_timeout_sec = 10;     % フレームタイムアウト10秒
-    total_timeout_sec = 600;    % 全体タイムアウト10分
+    total_timeout_sec = inf;    % 無制限受信（Ctrl+Cまたはウィンドウを閉じるまで）
     total_start_time = tic;
     
     % 統計情報
