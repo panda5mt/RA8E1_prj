@@ -396,7 +396,7 @@ void main_thread1_entry(void *pvParameters)
         ctx->pcb = pcb;
         ctx->dest_ip = dest_ip;
         ctx->port = UDP_PORT_DEST;
-        ctx->interval_ms = 5; /* 5ms間隔（lwIPタスクに余裕を持たせる） */
+        ctx->interval_ms = 1; /* 0ms間隔（lwIPタスクに余裕を持たせたい場合は3ms） */
 
         // 動画データ送信モードの設定（シングルフレームパターンを継承）
         ctx->is_video_mode = true;
@@ -408,8 +408,8 @@ void main_thread1_entry(void *pvParameters)
 
         // マルチフレーム設定
         ctx->current_frame = 0;
-        ctx->total_frames = 1000;    // 1000フレーム送信
-        ctx->frame_interval_ms = 10; // フレーム間10ms待機（thread0と同期、高速化）
+        ctx->total_frames = 1000;   // 1000フレーム送信
+        ctx->frame_interval_ms = 2; // フレーム間2ms待機（thread0と同期、高速化）
         ctx->is_frame_complete = false;
 
         xprintf("[VIDEO] Starting %d frame transmission: %d bytes/frame, %d chunks/frame\n",
