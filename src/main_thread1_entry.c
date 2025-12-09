@@ -408,11 +408,11 @@ void main_thread1_entry(void *pvParameters)
 
         // マルチフレーム設定
         ctx->current_frame = 0;
-        ctx->total_frames = 100;      // 100フレーム送信
-        ctx->frame_interval_ms = 200; // フレーム間2005ms待機（thread0と同期、高速化）
+        ctx->total_frames = 1000;    // 1000フレーム送信
+        ctx->frame_interval_ms = 10; // フレーム間10ms待機（thread0と同期、高速化）
         ctx->is_frame_complete = false;
 
-        xprintf("[VIDEO] Starting %u frame transmission: %u bytes/frame, %u chunks/frame\n",
+        xprintf("[VIDEO] Starting %d frame transmission: %d bytes/frame, %d chunks/frame\n",
                 ctx->total_frames, ctx->photo_size, (ctx->photo_size + ctx->chunk_size - 1) / ctx->chunk_size);
 
         /* 1発目をスケジュール（ネットワーク安定化のため500ms待機） */

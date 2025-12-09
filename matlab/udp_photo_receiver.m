@@ -194,7 +194,7 @@ function img_handle = process_complete_frame_fast(packets, total_chunks, total_s
         img_handle.CData = rgb_image;  % 直接プロパティアクセス
     end
     
-    drawnow limitrate;  % 描画レート制限で効率化
+    drawnow;% limitrate;  % 描画レート制限で効率化
 end
 
 function frame_data = reconstruct_frame_ultra_fast(packets, total_chunks, total_size)

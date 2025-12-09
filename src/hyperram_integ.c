@@ -159,7 +159,7 @@ fsp_err_t hyperram_init(void)
     R_XSPI0->LIOCFGCS_b[1].DDRSMPEX = 4U;
 
     // default CR = 0x52F0(LE) -> 0xF052(BE) (Normal Operation, 24ohm, no DQSM pre-cycle, 8-clock latency, variable latency, 32bytes burst)
-    // write CR = 0xC051(BE) -> 0x51C0(LE) (Normal Operation, 34ohm, no DQSM pre-cycle, 8-clock latency, variable latency, 64bytes burst)
+    // write   CR = 0xC051(BE) -> 0x51C0(LE) (Normal Operation, 34ohm, no DQSM pre-cycle, 8-clock latency, variable latency, 64bytes burst)
     err = ospi_raw_trans(&g_ospi0_trans,
                          OSPI_B_COMMAND_WRITE_REGISTER, OSPI_RAM_COMMAND_BYTES,
                          0x00040000, 4,
