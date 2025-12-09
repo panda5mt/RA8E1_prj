@@ -224,16 +224,26 @@ static void udp_send_timer_cb(void *arg)
             ctx->current_frame++;
             ctx->is_frame_complete = true;
 
-            if (ctx->current_frame < ctx->total_frames)
+            // total_frames == -1 (0xFFFFFFFF) なら無制限ループ
+            bool is_unlimited = (ctx->total_frames == (uint32_t)-1);
+
+            if (is_unlimited || ctx->current_frame < ctx->total_frames)
             {
                 // 次のフレームがある：フレーム間インターバルで待機
                 ctx->sent_bytes = 0; // 次フレーム用にリセット
                 should_continue = true;
                 next_interval = ctx->frame_interval_ms; // フレーム間は長めの間隔
-                // ログ出力を削減（10フレームごと）
-                if (ctx->current_frame % 10 == 0)
+                // ログ出力を削減（100フレームごと）
+                if (ctx->current_frame % 100 == 0)
                 {
-                    xprintf("[VIDEO] F%u/%u done\n", ctx->current_frame, ctx->total_frames);
+                    if (is_unlimited)
+                    {
+                        xprintf("[VIDEO] F%u (unlimited) done\n", ctx->current_frame);
+                    }
+                    else
+                    {
+                        xprintf("[VIDEO] F%u/%u done\n", ctx->current_frame, ctx->total_frames);
+                    }
                 }
             }
             else
@@ -416,7 +426,7 @@ void main_thread1_entry(void *pvParameters)
 
         // マルチフレーム設定
         ctx->current_frame = 0;
-        ctx->total_frames = 1000;   // 1000フレーム送信
+        ctx->total_frames = -1;     // 無制限フレーム送信
         ctx->frame_interval_ms = 2; // フレーム間2ms待機（thread0と同期、高速化）
         ctx->is_frame_complete = false;
 
