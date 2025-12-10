@@ -41,17 +41,22 @@ RA8E1_prj/
 
 ### MATLAB受信側
 ```matlab
-% UDP受信開始
+% UDP受信開始（無制限受信モード）
 udp_photo_receiver
 
-% 受信完了後、QVGA (320x240) RGB画像が自動表示されます
+% リアルタイムで動画ストリーミング表示
+% 停止: Ctrl+C または画像ウィンドウを閉じる
 ```
 
 ### 通信プロトコル
-- **送信間隔**: 20ms/パケット
-- **チャンクサイズ**: 512バイト
-- **総パケット数**: 300パケット
-- **パケット構造**: 24バイトヘッダー + データ
+- **動作モード**: マルチフレーム動画送信
+- **チャンク送信間隔**: 0ms（最速、pbuf確保失敗時は1msリトライ）
+- **フレーム間隔**: 2ms（設定可変）
+- **フレーム数**: 無制限（total_frames = -1）または指定数
+- **チャンクサイズ**: 512バイト/パケット
+- **総パケット数**: 300パケット/フレーム
+- **パケット構造**: 24バイトヘッダー + 512バイトデータ
+- **実効フレームレート**: 約1-2 fps（ネットワーク環境依存）
 
 ##  Building via CLI:
 Configure: ```cmake -DARM_TOOLCHAIN_PATH="/your/toolchain/path" -DCMAKE_TOOLCHAIN_FILE=cmake/gcc.cmake  -G Ninja -B build/Debug```
@@ -100,9 +105,26 @@ typedef struct {
 } udp_photo_header_t;        // 24バイト
 ```
 
+## 設定のカスタマイズ
+
+### C側設定（main_thread1_entry.c）
+```c
+ctx->interval_ms = 0;           // チャンク間隔 (0=最速, 推奨3-5ms)
+ctx->frame_interval_ms = 2;     // フレーム間隔 (ms)
+ctx->total_frames = -1;         // -1=無制限, 数値=指定フレーム数
+```
+
+### MATLAB側設定（udp_photo_receiver.m）
+```matlab
+total_timeout_sec = inf;        % inf=無制限, 数値=秒数制限
+frame_timeout_sec = 10;         % フレームタイムアウト
+```
+
 ## トラブルシューティング
 
 ### よくある問題
 1. **UDP受信エラー**: MATLABのDSP System Toolbox確認
 2. **画像表示なし**: ポート9000のファイアウォール設定確認
 3. **色彩異常**: YUV422フォーマット・エンディアン設定確認
+4. **pbuf allocエラー**: `interval_ms`を3-5msに増やす（lwIPメモリプール不足）
+5. **フレームレート低下**: ネットワーク帯域、MATLAB処理速度を確認
