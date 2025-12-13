@@ -2,7 +2,11 @@
 
 RA8E1マイコンを使用したリアルタイム画像伝送システム。カメラからキャプチャした画像をOctalRAMに保存し、UDP通信でMATLABに送信してリアルタイム表示するプロジェクト。
 
-![RA8E1 Board](src/RA8E1Board_1.jpeg)
+<p align="center">
+  <img src="src/RA8E1Board_1.jpeg" alt="RA8E1 Board" width="600">
+  <br>
+  <em>RA8E1開発基板 - OV5642カメラモジュール、LAN8720A Ethernet PHY、IS66WVO8M8DALL OctalRAM搭載</em>
+</p>
 
 ## システム概要
 
