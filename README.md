@@ -1,11 +1,11 @@
 # RA8E1 Real-time Image Transmission System
 
-RA8E1マイコンを使用したリアルタイム画像伝送システム。カメラからキャプチャした画像をOctalRAMに保存し、UDP通信でMATLABに送信してリアルタイム表示するプロジェクト。
+RA8E1マイコンを使用したリアルタイム画像伝送システム．カメラからキャプチャした画像をOctalRAMに保存し，UDP通信でMATLABに送信してリアルタイム表示するプロジェクト．
 
 <p align="center">
   <img src="src/RA8E1Board_1.jpeg" alt="RA8E1 Board" width="600">
   <br>
-  <em>RA8E1開発基板 - OV5642カメラモジュール、LAN8720A Ethernet PHY、IS66WVO8M8DALL OctalRAM搭載</em>
+  <em>RA8E1開発基板 - OV5642カメラモジュール，LAN8720A Ethernet PHY，IS66WVO8M8DALL OctalRAM搭載</em>
 </p>
 
 ## システム概要
@@ -24,7 +24,7 @@ RA8E1マイコンを使用したリアルタイム画像伝送システム。カ
 - **インターフェース**: RMII (Reduced Media Independent Interface)
 - **リセットピン**: LAN8720_nRST (Low active)
 - **リセットシーケンス**: LOW 300ms → HIGH 300ms
-- **動作確認**: DHCP自動IP取得、AutoIP対応
+- **動作確認**: DHCP自動IP取得，AutoIP対応
 
 #### OctalRAM接続
 - **IC**: IS66WVO8M8DALL
@@ -50,7 +50,7 @@ RA8E1マイコンを使用したリアルタイム画像伝送システム。カ
 #### FreeRTOS構成
 - **Thread0**: カメラキャプチャ → HyperRAM書き込み (200ms周期)
 - **Thread1**: UDP動画ストリーミング送信
-- **Thread2**: 予約（未使用）
+- **Thread2**: 予約(未使用)
 
 ### 主要機能
 - CEUペリフェラルによるYUV422画像キャプチャ
@@ -82,7 +82,7 @@ RA8E1_prj/
 
 ### MATLAB受信側
 ```matlab
-% UDP受信開始（無制限受信モード）
+% UDP受信開始(無制限受信モード)
 udp_photo_receiver
 
 % リアルタイムで動画ストリーミング表示
@@ -91,13 +91,13 @@ udp_photo_receiver
 
 ### 通信プロトコル
 - **動作モード**: マルチフレーム動画送信
-- **チャンク送信間隔**: 0ms（最速、pbuf確保失敗時は1msリトライ）
-- **フレーム間隔**: 2ms（設定可変）
-- **フレーム数**: 無制限（total_frames = -1）または指定数
+- **チャンク送信間隔**: 0ms(最速，pbuf確保失敗時は1msリトライ)
+- **フレーム間隔**: 2ms(設定可変)
+- **フレーム数**: 無制限(total_frames = -1)または指定数
 - **チャンクサイズ**: 512バイト/パケット
 - **総パケット数**: 300パケット/フレーム
 - **パケット構造**: 24バイトヘッダー + 512バイトデータ
-- **実効フレームレート**: 約1-2 fps（ネットワーク環境依存）
+- **実効フレームレート**: 約1-2 fps(ネットワーク環境依存)
 
 ## マイコンへの書き込み方法
 
@@ -108,8 +108,8 @@ udp_photo_receiver
 </p>
 
 ### ブートモードへの移行
-1. **CON1をショート**: ショートプラグでCON1の2ピンを短絡（※シルク印刷は写真では上下反転）
-2. **SW1を押す**: リセットボタン（SW1）を押してブートモードに入る
+1. **CON1をショート**: ショートプラグでCON1の2ピンを短絡(※シルク印刷は写真では上下反転)
+2. **SW1を押す**: リセットボタン(SW1)を押してブートモードに入る
 3. **書き込み準備完了**: マイコンがプログラミングモードで起動
 
 ### Renesas Flash Programmerでの書き込み
@@ -120,7 +120,7 @@ udp_photo_receiver
 3. 接続設定:
    - **インターフェース**: USB CDC
    - **デバイス**: RA8E1 (R7FA8AFDCFB)
-4. 書き込み実行後、**CON1のショートを外してからSW1を押す**（通常起動）
+4. 書き込み実行後，**CON1のショートを外してからSW1を押す**(通常起動)
 
 ##  Building via CLI:
 Configure: ```cmake -DARM_TOOLCHAIN_PATH="/your/toolchain/path" -DCMAKE_TOOLCHAIN_FILE=cmake/gcc.cmake  -G Ninja -B build/Debug```
@@ -171,14 +171,14 @@ typedef struct {
 
 ## 設定のカスタマイズ
 
-### C側設定（main_thread1_entry.c）
+### C側設定(main_thread1_entry.c)
 ```c
 ctx->interval_ms = 0;           // チャンク間隔 (0=最速, 推奨3-5ms)
 ctx->frame_interval_ms = 2;     // フレーム間隔 (ms)
 ctx->total_frames = -1;         // -1=無制限, 数値=指定フレーム数
 ```
 
-### MATLAB側設定（udp_photo_receiver.m）
+### MATLAB側設定(udp_photo_receiver.m)
 ```matlab
 total_timeout_sec = inf;        % inf=無制限, 数値=秒数制限
 frame_timeout_sec = 10;         % フレームタイムアウト
@@ -190,5 +190,5 @@ frame_timeout_sec = 10;         % フレームタイムアウト
 1. **UDP受信エラー**: MATLABのDSP System Toolbox確認
 2. **画像表示なし**: ポート9000のファイアウォール設定確認
 3. **色彩異常**: YUV422フォーマット・エンディアン設定確認
-4. **pbuf allocエラー**: `interval_ms`を3-5msに増やす（lwIPメモリプール不足）
-5. **フレームレート低下**: ネットワーク帯域、MATLAB処理速度を確認
+4. **pbuf allocエラー**: `interval_ms`を3-5msに増やす(lwIPメモリプール不足)
+5. **フレームレート低下**: ネットワーク帯域，MATLAB処理速度を確認
