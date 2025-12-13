@@ -99,6 +99,29 @@ udp_photo_receiver
 - **パケット構造**: 24バイトヘッダー + 512バイトデータ
 - **実効フレームレート**: 約1-2 fps（ネットワーク環境依存）
 
+## マイコンへの書き込み方法
+
+<p align="center">
+  <img src="RA8E1Board_2.jpeg" alt="RA8E1 Boot Mode" width="600">
+  <br>
+  <em>ブートモード設定 - CON1ショートとSW1ボタン位置</em>
+</p>
+
+### ブートモードへの移行
+1. **CON1をショート**: ショートプラグでCON1の2ピンを短絡（※シルク印刷は上下反転）
+2. **SW1を押す**: リセットボタン（SW1）を押してブートモードに入る
+3. **書き込み準備完了**: マイコンがプログラミングモードで起動
+
+### Renesas Flash Programmerでの書き込み
+1. [Renesas Flash Programmer](https://www.renesas.com/ja/software-tool/renesas-flash-programmer-programming-gui)をダウンロード・インストール
+2. ビルドで生成されたHEXファイルを指定:
+   - デバッグビルド: `build/Debug/RA8E1_prj.hex`
+   - リリースビルド: `build/Release/RA8E1_prj.hex`
+3. 接続設定:
+   - **インターフェース**: USB CDC
+   - **デバイス**: RA8E1 (R7FA8AFDCFB)
+4. 書き込み実行後、CON1のショートを外して通常起動
+
 ##  Building via CLI:
 Configure: ```cmake -DARM_TOOLCHAIN_PATH="/your/toolchain/path" -DCMAKE_TOOLCHAIN_FILE=cmake/gcc.cmake  -G Ninja -B build/Debug```
 
