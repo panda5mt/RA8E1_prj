@@ -22,8 +22,6 @@ RA8E1マイコンを使用したリアルタイム画像伝送システム．カ
 #### Ethernet PHY (LAN8720A)
 - **PHY IC**: LAN8720A
 - **インターフェース**: RMII (Reduced Media Independent Interface)
-- **リセットピン**: LAN8720_nRST (Low active)
-- **リセットシーケンス**: LOW 300ms → HIGH 300ms
 - **動作確認**: DHCP自動IP取得，AutoIP対応
 
 #### OctalRAM接続
