@@ -139,7 +139,7 @@ udp_photo_receiver
 ### ブートモードへの移行
 1. **CON1をショート**: ショートプラグでCON1の2ピンを短絡(※シルク印刷は写真では上下反転)
 2. **SW1を押す**: リセットボタン(SW1)を押してブートモードに入る
-3. **書き込み準備完了**: マイコンがプログラミングモードで起動
+3. **書き込み準備完了**: RA8マイコンが書き込み待機状態になる
 
 ### Renesas Flash Programmerでの書き込み
 1. [Renesas Flash Programmer](https://www.renesas.com/ja/software-tool/renesas-flash-programmer-programming-gui)をダウンロード・インストール
