@@ -2,6 +2,8 @@
 
 RA8E1マイコンを使用したリアルタイム画像伝送システム。カメラからキャプチャした画像をOctalRAMに保存し、UDP通信でMATLABに送信してリアルタイム表示するプロジェクト。
 
+![RA8E1 Board](src/RA8E1Board_1.jpeg)
+
 ## システム概要
 
 ### ハードウェア構成
@@ -10,6 +12,41 @@ RA8E1マイコンを使用したリアルタイム画像伝送システム。カ
 - **カメラ**: YUV422(YUYV)形式対応DVPカメラ(OV5642)
 - **通信**: Ethernet UDP (ポート9000)
 - **解像度**: QVGA (320×240ピクセル)
+
+### 基板設定
+
+#### Ethernet PHY (LAN8720A)
+- **PHY IC**: LAN8720A
+- **インターフェース**: RMII (Reduced Media Independent Interface)
+- **リセットピン**: LAN8720_nRST (Low active)
+- **リセットシーケンス**: LOW 300ms → HIGH 300ms
+- **動作確認**: DHCP自動IP取得、AutoIP対応
+
+#### OctalRAM接続
+- **IC**: IS66WVO8M8DALL
+- **容量**: 64Mbit (8MB)
+- **インターフェース**: Octal SPI
+- **ベースアドレス**: `HYPERRAM_BASE_ADDR`
+- **アドレス変換**: `((addr & 0xfffffff0) << 6) | (addr & 0x0f)`
+- **アクセス制限**: 64バイト単位推奨
+
+#### カメラインターフェース (CEU)
+- **カメラモジュール**: OV5642
+- **信号方式**: DVP (Digital Video Port)
+- **データフォーマット**: YUV422 (YUYV)
+- **制御インターフェース**: SCCB (I2C互換)
+- **解像度**: QVGA (320×240)
+- **フレームサイズ**: 153,600バイト (320×240×2)
+
+#### USB通信
+- **機能**: CDC (Communications Device Class)
+- **用途**: デバッグログ出力 (`xprintf`)
+- **ボーレート**: 自動 (USB CDC)
+
+#### FreeRTOS構成
+- **Thread0**: カメラキャプチャ → HyperRAM書き込み (200ms周期)
+- **Thread1**: UDP動画ストリーミング送信
+- **Thread2**: 予約（未使用）
 
 ### 主要機能
 - CEUペリフェラルによるYUV422画像キャプチャ
