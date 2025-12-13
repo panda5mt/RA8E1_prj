@@ -120,7 +120,7 @@ udp_photo_receiver
 3. 接続設定:
    - **インターフェース**: USB CDC
    - **デバイス**: RA8E1 (R7FA8AFDCFB)
-4. 書き込み実行後、CON1のショートを外して通常起動
+4. 書き込み実行後、**CON1のショートを外してからSW1を押す**（通常起動）
 
 ##  Building via CLI:
 Configure: ```cmake -DARM_TOOLCHAIN_PATH="/your/toolchain/path" -DCMAKE_TOOLCHAIN_FILE=cmake/gcc.cmake  -G Ninja -B build/Debug```
