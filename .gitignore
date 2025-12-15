@@ -69,3 +69,4 @@ add_git.sh
 */FreeRTOS-Kernel/*
 /.cache/
 compile_commands.json
+/fcmethod/
