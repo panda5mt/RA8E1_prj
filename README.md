@@ -24,7 +24,9 @@ RA8E1マイコンを使用したリアルタイム画像伝送システム．カ
 
 **LLVM Embedded Toolchain for Arm**
 - **推奨バージョン**: v18.1.3（Renesas指定バージョン）
-- **ダウンロード**: [LLVM Embedded Toolchain for Arm](https://github.com/ARM-software/LLVM-embedded-toolchain-for-Arm/releases)
+- **ダウンロード**: 
+  - Windows/Intel Linux: [Renesas FSP Releases](https://github.com/renesas/fsp/releases) からLLVMツールチェーンをダウンロード
+  - その他のプラットフォーム: [LLVM Embedded Toolchain for Arm](https://github.com/ARM-software/LLVM-embedded-toolchain-for-Arm/releases)
 - **インストール例**: 
   - Windows: `C:/LLVM-ET-Arm-18.1.3-Windows-x86_64/`
   - Linux: `/home/user/LLVM-ET-Arm-18.1.3-Linux-AArch64/`
