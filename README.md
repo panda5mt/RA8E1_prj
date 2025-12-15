@@ -151,6 +151,13 @@ udp_photo_receiver
    - **デバイス**: RA8E1 (R7FA8AFDCFB)
 4. 書き込み実行後，**CON1のショートを外してからSW1を押す**(通常起動)
 
+## 開発環境のセットアップ
+
+このプロジェクトは**Visual Studio Code + Renesas Extension**を使用した開発を推奨しています。
+
+**セットアップ方法は下記のRenesas公式動画を参照してください**:
+- [Renesas FSP with VS Code - 公式ガイド](https://www.bing.com/videos/riverview/relatedvideo?q=renesas+fsp+vsCode&mid=2458A3064E6E4F935C8E2458A3064E6E4F935C8E&FORM=VIRE)
+
 ##  Building via CLI:
 Configure: ```cmake -DARM_TOOLCHAIN_PATH="/your/toolchain/path" -DCMAKE_TOOLCHAIN_FILE=cmake/gcc.cmake  -G Ninja -B build/Debug```
 
