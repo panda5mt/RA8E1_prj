@@ -16,16 +16,55 @@ RA8E1マイコンを使用したリアルタイム画像伝送システム．カ
 - **通信**: Ethernet UDP (ポート9000)
 - **機能**: リアルタイム動画ストリーミング (約1-2 fps)
 
+## 前提条件
+
+### ハードウェア
+- RA8E1開発基板(組み立て済み)
+- Ethernetケーブル(クロス/ストレートどちらでも可)
+- USB Type-Cケーブル(電源・書き込み・デバッグ用)
+
+### ソフトウェア
+- **Visual Studio Code** + Renesas Extension
+- **LLVM Embedded Toolchain for Arm** v18.1.3
+- **CMake** 3.25以降
+- **Ninja** ビルドシステム
+- **Renesas Flash Programmer**(書き込み用)
+- **MATLAB** + **DSP System Toolbox**(必須)
+
+## クイックスタートガイド
+
+初めての方は以下の3ステップで動作確認できます：
+
+### 1. ビルド
+```bash
+# cmake/llvm.cmake でツールチェーンパスを設定
+cmake -DCMAKE_TOOLCHAIN_FILE=cmake/llvm.cmake -G Ninja -B build/Debug
+cmake --build build/Debug
+```
+
+### 2. 書き込み
+1. CON1をショートしてSW1押下(ブートモード)
+2. Renesas Flash Programmerで `build/Debug/RA8E1_prj.hex` を書き込み
+3. CON1ショートを外してSW1押下(通常起動)
+
+### 3. ネットワーク接続と動作確認
+1. **PCとRA8E1をEthernetケーブルで直接接続**(クロス接続，推奨)
+2. AutoIPによりIPアドレス自動割り当て(169.254.x.x)
+3. USB CDC経由でシリアルログを確認：`[LwIP] AutoIP IP: 169.254.xxx.xxx`
+4. MATLABで `udp_photo_receiver` 実行 → 動画表示
+
+> **Note**: クロス接続(PC⇔RA8E1直結)がAutoIPで設定不要のため推奨です。DHCPサーバーがある環境ではルーター経由でも動作します。
+
 ## 開発環境のセットアップ
 
-このプロジェクトは**Visual Studio Code + Renesas Extension**を使用した開発を推奨しています。
+このプロジェクトは**Visual Studio Code + Renesas Extension**を使用した開発を推奨しています．
 
 ### 必要なコンパイラ
 
 **LLVM Embedded Toolchain for Arm**
-- **推奨バージョン**: v18.1.3（Renesas指定バージョン）
+- **推奨バージョン**: v18.1.3(Renesas指定バージョン)
 - **ダウンロード**: 
-  - Windows/Intel Linux: [Renesas FSP Releases](https://github.com/renesas/fsp/releases) からLLVMツールチェーンをダウンロード
+  - Windows/Intel Linux: [Renesas FSP Releases](https://github.com/renesas/fsp/releases) からFSP with e2 studioをインストールし，LLVMツールチェーンを選択してインストール
   - その他のプラットフォーム: [LLVM Embedded Toolchain for Arm](https://github.com/ARM-software/LLVM-embedded-toolchain-for-Arm/releases)
 - **インストール例**: 
   - Windows: `C:/LLVM-ET-Arm-18.1.3-Windows-x86_64/`
@@ -33,7 +72,7 @@ RA8E1マイコンを使用したリアルタイム画像伝送システム．カ
 
 #### PATH指定方法
 
-**方法1: [cmake/llvm.cmake](cmake/llvm.cmake) を直接編集（推奨）**
+**方法1: [cmake/llvm.cmake](cmake/llvm.cmake) を直接編集(推奨)**
 ```cmake
 # cmake/llvm.cmake の3行目を編集
 set(ARM_TOOLCHAIN_PATH "C:/LLVM-ET-Arm-18.1.3-Windows-x86_64/bin")
@@ -75,12 +114,12 @@ Build:
 cmake --build build/Debug
 ```
 
-### ARM SBC（Raspberry Piなど）でのビルド
+### ARM SBC(Raspberry Piなど)でのビルド
 
-Raspberry PiなどのARM SBCでは**RASC.exe（Windows専用）が動作しません**。以下の手順でRASCを呼び出さずにビルドできます：
+Raspberry PiなどのARM SBCでは**RASC.exe(Windows専用)が動作しません**．以下の手順でRASCを呼び出さずにビルドできます：
 
 1. **[cmake/GeneratedSrc.cmake](cmake/GeneratedSrc.cmake) を編集**
-2. **99行目から129行目までをコメントアウト**（Pre-build stepとPost-build step）
+2. **99行目から129行目までをコメントアウト**(Pre-build stepとPost-build step)
 
 ```cmake
 # Pre-build step: run RASC to generate project content if configuration.xml is changed
@@ -171,6 +210,68 @@ udp_photo_receiver
 - **総パケット数**: 300パケット/フレーム
 - **パケット構造**: 24バイトヘッダー + 512バイトデータ
 - **実効フレームレート**: 約1-2 fps(ネットワーク環境依存)
+
+## ネットワーク接続
+
+### 方法1: AutoIP(クロス接続，推奨)
+
+**最も簡単な接続方法です。ルーターやスイッチの設定が不要です。**
+
+1. **PCとRA8E1を直接Ethernetケーブルで接続**
+   - クロスケーブル/ストレートケーブルどちらでも可(Auto MDI-X対応)
+2. **自動的にIPアドレスが割り当てられます**
+   - RA8E1: `169.254.x.x`(AutoIP)
+   - PC: Windowsは自動的にAutoIP有効化
+3. **USB CDC経由でシリアルログ確認**
+   ```
+   [LwIP] DHCP timeout: AutoIP start...
+   [LwIP] AutoIP IP: 169.254.xxx.xxx
+   [VIDEO] Starting 1000 frame transmission: ...
+   ```
+
+### 方法2: DHCP(ルーター経由)
+
+DHCPサーバーがある環境(家庭用ルーターなど)では自動的にIPアドレスが割り当てられます。
+
+1. **RA8E1とPCを同じルーター/スイッチに接続**
+2. **シリアルログでIPアドレス確認**
+   ```
+   [LwIP] DHCP IP: 192.168.x.xxx
+   ```
+
+> **Tip**: クロス接続(方法1)はネットワーク設定に悩まされず，すぐに動作確認できるため推奨します。
+
+## 動作確認
+
+### 1. USB CDCログの確認
+
+TeraTerm，PuTTY，Arduino IDEのシリアルモニタなどでUSB CDC(仮想COMポート)に接続：
+
+- **ボーレート**: 自動(USB CDC)
+- **期待されるログ**:
+  ```
+  [ETH] LAN8720A Ready
+  [LwIP] AutoIP IP: 169.254.xxx.xxx  (または DHCP IP)
+  [VIDEO] Starting 1000 frame transmission: 153600 bytes/frame, 300 chunks/frame
+  [VIDEO] F10/1000 done
+  [VIDEO] F20/1000 done
+  ...
+  ```
+
+### 2. MATLAB受信確認
+
+```matlab
+% udp_photo_receiver.m を実行
+udp_photo_receiver
+```
+
+**期待される動作**:
+- ウィンドウが開いて動画がリアルタイム表示される
+- 10秒ごとに統計情報が表示: `Frames: 100 (1.23 fps)`
+
+**トラブル時**:
+- UDP受信できない → Windowsファイアウォールでポート9000を許可
+- 画像が表示されない → DSP System Toolboxがインストールされているか確認
 
 ## 設定のカスタマイズ
 
@@ -264,10 +365,10 @@ RA8E1_prj/
 
 基板には以下のコネクタを実装します：
 - **CON2**: DVPカメラ用2×10ピンソケット
-- **CON1**: ブートモード切替用ピンヘッダ（ショートジャンパー用）
-- **CON3**: Raspberry Pi互換スタッキングコネクタ（オプション）
+- **CON1**: ブートモード切替用ピンヘッダ(ショートジャンパー用)
+- **CON3**: Raspberry Pi互換スタッキングコネクタ(オプション)
 
-> **Note**: CON3にRaspberry Pi用スタッキングコネクタ（2×20ピン）を実装することで、Raspberry Pi上にRA8E1基板をスタックして使用できます。写真では未実装ですが、必要に応じて半田付けしてください。
+> **Note**: CON3にRaspberry Pi用スタッキングコネクタ(2×20ピン)を実装することで，Raspberry Pi上にRA8E1基板をスタックして使用できます．写真では未実装ですが，必要に応じて半田付けしてください．
 
 #### 2. カメラモジュールの取り付け
 
@@ -279,7 +380,7 @@ RA8E1_prj/
 
 **組み立て手順**：
 1. **CON2に2×10ピンソケットを半田付け** - DVPカメラインターフェース用
-2. **CON1にピンヘッダを半田付け** - ショートジャンパー用（2ピン）
+2. **CON1にピンヘッダを半田付け** - ショートジャンパー用(2ピン)
 3. **OV5642モジュールをCON2に挿入** - カメラの向きに注意
 4. **動作確認** - ショートやはんだブリッジがないか確認
 
