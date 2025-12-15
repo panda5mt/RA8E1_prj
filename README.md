@@ -53,7 +53,7 @@ cmake --build build/Debug
 3. USB CDC経由でシリアルログを確認：`[LwIP] AutoIP IP: 169.254.xxx.xxx`
 4. MATLABで `udp_photo_receiver` 実行 → 動画表示
 
-> **Note**: クロス接続(PC⇔RA8E1直結)がAutoIPで設定不要のため推奨です。DHCPサーバーがある環境ではルーター経由でも動作します。
+> **Note**: クロス接続(PC⇔RA8E1直結)がAutoIPで設定不要のため推奨です．DHCPサーバーがある環境ではルーター経由でも動作します．
 
 ## 開発環境のセットアップ
 
@@ -91,10 +91,17 @@ cmake -DARM_TOOLCHAIN_PATH="C:/LLVM-ET-Arm-18.1.3-Windows-x86_64/bin" ...
 ## ビルド方法
 
 ### Visual Studio Codeでのビルド
-- Set ARM_LLVM_TOOLCHAIN_PATH as an environment variable before starting VS code or alternatively set ARM_TOOLCHAIN_PATH in .vscode/cmake-kits.json
-- Select "ARM LLVM kit with toolchainFile" kit in VS Code status bar
-- Click build in VS Code status bar
-- It is recommended to avoid spaces in the toolchain and project paths as they might be interpreted as delimiters by CMake and the other build tools.
+
+**Renesas Extensionをインストール済みの場合**：
+- **F7キーを押すだけでビルドできます**(最も簡単)
+- または，ステータスバーの"Build"ボタンをクリック
+
+詳細なセットアップ手順は[Renesas公式ビデオ](https://www.bing.com/videos/riverview/relatedvideo?q=renesas+fsp+vsCode&mid=2458A3064E6E4F935C8E2458A3064E6E4F935C8E&FORM=VIRE)を参照してください．
+
+**注意事項**：
+- ツールチェーンパスは [cmake/llvm.cmake](cmake/llvm.cmake) で設定
+- CMake Kitは"ARM LLVM kit with toolchainFile"を選択
+- パスにスペースを含めないことを推奨
 
 Example:
 ```powershell
@@ -215,7 +222,7 @@ udp_photo_receiver
 
 ### 方法1: AutoIP(クロス接続，推奨)
 
-**最も簡単な接続方法です。ルーターやスイッチの設定が不要です。**
+**最も簡単な接続方法です．ルーターやスイッチの設定が不要です．**
 
 1. **PCとRA8E1を直接Ethernetケーブルで接続**
    - クロスケーブル/ストレートケーブルどちらでも可(Auto MDI-X対応)
@@ -231,7 +238,7 @@ udp_photo_receiver
 
 ### 方法2: DHCP(ルーター経由)
 
-DHCPサーバーがある環境(家庭用ルーターなど)では自動的にIPアドレスが割り当てられます。
+DHCPサーバーがある環境(家庭用ルーターなど)では自動的にIPアドレスが割り当てられます．
 
 1. **RA8E1とPCを同じルーター/スイッチに接続**
 2. **シリアルログでIPアドレス確認**
@@ -239,7 +246,7 @@ DHCPサーバーがある環境(家庭用ルーターなど)では自動的にIP
    [LwIP] DHCP IP: 192.168.x.xxx
    ```
 
-> **Tip**: クロス接続(方法1)はネットワーク設定に悩まされず，すぐに動作確認できるため推奨します。
+> **Tip**: クロス接続(方法1)はネットワーク設定に悩まされず，すぐに動作確認できるため推奨します．
 
 ## 動作確認
 
