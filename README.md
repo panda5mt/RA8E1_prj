@@ -31,16 +31,7 @@ RA8E1マイコンを使用したリアルタイム画像伝送システム．カ
 
 #### PATH指定方法
 
-**方法1: 環境変数で指定（推奨）**
-```powershell
-# Windows
-$env:ARM_TOOLCHAIN_PATH = "C:/LLVM-ET-Arm-18.1.3-Windows-x86_64/bin"
-
-# Linux/Mac
-export ARM_TOOLCHAIN_PATH="/home/user/LLVM-ET-Arm-18.1.3-Linux-AArch64/bin"
-```
-
-**方法2: cmake/llvm.cmake を直接編集**
+**方法1: cmake/llvm.cmake を直接編集（推奨）**
 ```cmake
 # cmake/llvm.cmake の3行目を編集
 set(ARM_TOOLCHAIN_PATH "C:/LLVM-ET-Arm-18.1.3-Windows-x86_64/bin")
@@ -48,7 +39,7 @@ set(ARM_TOOLCHAIN_PATH "C:/LLVM-ET-Arm-18.1.3-Windows-x86_64/bin")
 # set(ARM_TOOLCHAIN_PATH "/home/user/LLVM-ET-Arm-18.1.3-Linux-AArch64/bin")
 ```
 
-**方法3: CMakeコマンドラインで指定**
+**方法2: CMakeコマンドラインで指定**
 ```bash
 cmake -DARM_TOOLCHAIN_PATH="C:/LLVM-ET-Arm-18.1.3-Windows-x86_64/bin" ...
 ```
