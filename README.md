@@ -10,12 +10,168 @@ RA8E1マイコンを使用したリアルタイム画像伝送システム．カ
 
 ## システム概要
 
-### ハードウェア構成
 - **マイコン**: Renesas RA8E1 (R7FA8AFDCFB)
-- **メモリ**: OctalRAM IS66WVO8M8DALL (64Mbit, 8MB)
-- **カメラ**: YUV422(YUYV)形式対応DVPカメラ(OV5642)
+- **カメラ**: OV5642 (YUV422形式，QVGA 320×240)
+- **メモリ**: OctalRAM IS66WVO8M8DALL (8MB)
 - **通信**: Ethernet UDP (ポート9000)
-- **解像度**: QVGA (320×240ピクセル)
+- **機能**: リアルタイム動画ストリーミング (約1-2 fps)
+
+## 開発環境のセットアップ
+
+このプロジェクトは**Visual Studio Code + Renesas Extension**を使用した開発を推奨しています。
+
+### 必要なコンパイラ
+
+**LLVM Embedded Toolchain for Arm**
+- **推奨バージョン**: v18.1.3（Renesas指定バージョン）
+- **ダウンロード**: [LLVM Embedded Toolchain for Arm](https://github.com/ARM-software/LLVM-embedded-toolchain-for-Arm/releases)
+- **インストール例**: 
+  - Windows: `C:/LLVM-ET-Arm-18.1.3-Windows-x86_64/`
+  - Linux: `/home/user/LLVM-ET-Arm-18.1.3-Linux-AArch64/`
+
+#### PATH指定方法
+
+**方法1: 環境変数で指定（推奨）**
+```powershell
+# Windows
+$env:ARM_TOOLCHAIN_PATH = "C:/LLVM-ET-Arm-18.1.3-Windows-x86_64/bin"
+
+# Linux/Mac
+export ARM_TOOLCHAIN_PATH="/home/user/LLVM-ET-Arm-18.1.3-Linux-AArch64/bin"
+```
+
+**方法2: cmake/llvm.cmake を直接編集**
+```cmake
+# cmake/llvm.cmake の3行目を編集
+set(ARM_TOOLCHAIN_PATH "C:/LLVM-ET-Arm-18.1.3-Windows-x86_64/bin")
+# または
+# set(ARM_TOOLCHAIN_PATH "/home/user/LLVM-ET-Arm-18.1.3-Linux-AArch64/bin")
+```
+
+**方法3: CMakeコマンドラインで指定**
+```bash
+cmake -DARM_TOOLCHAIN_PATH="C:/LLVM-ET-Arm-18.1.3-Windows-x86_64/bin" ...
+```
+
+**セットアップ方法は下記のRenesas公式動画を参照してください**:
+- [Visual Studio Code - How to Install Renesas Extensions](https://www.bing.com/videos/riverview/relatedvideo?q=renesas+fsp+vsCode&mid=2458A3064E6E4F935C8E2458A3064E6E4F935C8E&FORM=VIRE)
+
+## ビルド方法
+
+### Visual Studio Codeでのビルド
+- Set ARM_LLVM_TOOLCHAIN_PATH as an environment variable before starting VS code or alternatively set ARM_TOOLCHAIN_PATH in .vscode/cmake-kits.json
+- Select "ARM LLVM kit with toolchainFile" kit in VS Code status bar
+- Click build in VS Code status bar
+- It is recommended to avoid spaces in the toolchain and project paths as they might be interpreted as delimiters by CMake and the other build tools.
+
+Example:
+```powershell
+set ARM_LLVM_TOOLCHAIN_PATH=C:/LLVMEmbeddedToolchainForArm-18.1.3-Windows-x86_64/bin
+cd "c:/Users/lynxe/Documents/GitHub/RA8E1_prj"
+code .
+```
+
+### CLI でのビルド
+Configure:
+```bash
+cmake -DARM_TOOLCHAIN_PATH="C:/LLVMEmbeddedToolchainForArm-18.1.3-Windows-x86_64/bin" -DCMAKE_TOOLCHAIN_FILE=cmake/llvm.cmake -G Ninja -B build/Debug
+```
+
+Build:
+```bash
+cmake --build build/Debug
+```
+
+## マイコンへの書き込み方法
+
+<p align="center">
+  <img src="RA8E1Board_2.jpeg" alt="RA8E1 Boot Mode" width="600">
+  <br>
+  <em>ブートモード設定 - CON1ショートとSW1ボタン位置</em>
+</p>
+
+### ブートモードへの移行
+1. **CON1をショート**: ショートプラグでCON1の2ピンを短絡(※シルク印刷は写真では上下反転)
+2. **SW1を押す**: リセットボタン(SW1)を押してブートモードに入る
+3. **書き込み準備完了**: RA8マイコンが書き込み待機状態になる
+
+### Renesas Flash Programmerでの書き込み
+1. [Renesas Flash Programmer](https://www.renesas.com/ja/software-tool/renesas-flash-programmer-programming-gui)をダウンロード・インストール
+2. ビルドで生成されたHEXファイルを指定:
+   - デバッグビルド: `build/Debug/RA8E1_prj.hex`
+   - リリースビルド: `build/Release/RA8E1_prj.hex`
+3. 接続設定:
+   - **インターフェース**: USB CDC
+   - **デバイス**: RA8E1 (R7FA8AFDCFB)
+4. 書き込み実行後，**CON1のショートを外してからSW1を押す**(通常起動)
+
+## 使用方法
+
+### MATLAB受信側
+```matlab
+% UDP受信開始(無制限受信モード)
+udp_photo_receiver
+
+% リアルタイムで動画ストリーミング表示
+% 停止: Ctrl+C または画像ウィンドウを閉じる
+```
+
+### 通信プロトコル
+- **動作モード**: マルチフレーム動画送信
+- **チャンク送信間隔**: 0ms(最速，pbuf確保失敗時は1msリトライ)
+- **フレーム間隔**: 2ms(設定可変)
+- **フレーム数**: 無制限(total_frames = -1)または指定数
+- **チャンクサイズ**: 512バイト/パケット
+- **総パケット数**: 300パケット/フレーム
+- **パケット構造**: 24バイトヘッダー + 512バイトデータ
+- **実効フレームレート**: 約1-2 fps(ネットワーク環境依存)
+
+## 設定のカスタマイズ
+
+### C側設定(main_thread1_entry.c)
+```c
+ctx->interval_ms = 0;           // チャンク間隔 (0=最速, 推奨3-5ms)
+ctx->frame_interval_ms = 2;     // フレーム間隔 (ms)
+ctx->total_frames = -1;         // -1=無制限, 数値=指定フレーム数
+```
+
+### MATLAB側設定(udp_photo_receiver.m)
+```matlab
+total_timeout_sec = inf;        % inf=無制限, 数値=秒数制限
+frame_timeout_sec = 10;         % フレームタイムアウト
+```
+
+## プロジェクト構造
+
+```
+RA8E1_prj/
+├── src/                    # ソースコード
+│   ├── hal_entry.c        # メインエントリーポイント
+│   ├── main_thread*_entry.c # FreeRTOSタスク
+│   ├── cam.c              # カメラ制御
+│   ├── hyperram_integ.c   # OctalRAM統合
+│   └── usb_cdc.h          # USB CDC通信
+├── matlab/                # MATLAB受信コード
+│   ├── udp_photo_receiver.m    # メイン受信関数
+│   ├── test_udp_simple.m      # UDP接続テスト
+│   └── viewQVGA_YUV.m         # YUV参照デコーダー
+├── ra_gen/                # FSP生成ファイル
+├── ra_cfg/                # FSPコンフィギュレーション
+└── cmake/                 # CMake設定
+```
+
+## トラブルシューティング
+
+### よくある問題
+1. **UDP受信エラー**: MATLABのDSP System Toolbox確認
+2. **画像表示なし**: ポート9000のファイアウォール設定確認
+3. **色彩異常**: YUV422フォーマット・エンディアン設定確認
+4. **pbuf allocエラー**: `interval_ms`を3-5msに増やす(lwIPメモリプール不足)
+5. **フレームレート低下**: ネットワーク帯域，MATLAB処理速度を確認
+
+---
+
+## ハードウェア詳細
 
 ### 基板設定
 
@@ -50,16 +206,9 @@ RA8E1マイコンを使用したリアルタイム画像伝送システム．カ
 - **Thread1**: UDP動画ストリーミング送信
 - **Thread2**: 予約(未使用)
 
-### 主要機能
-- CEUペリフェラルによるYUV422画像キャプチャ
-- OctalRAMへの画像データ保存 (153,600バイト)
-- UDP通信による512バイトチャンク分割送信
-- MATLABでのリアルタイム画像受信・表示
-- リトルエンディアン対応YUV422デコード
+### 基板組み立て手順
 
-## 基板組み立て手順
-
-### 1. 基板全体の確認
+#### 1. 基板全体の確認
 
 <p align="center">
   <img src="RA8E1Board_3.jpeg" alt="RA8E1 Board Overview" width="600">
@@ -74,7 +223,7 @@ RA8E1マイコンを使用したリアルタイム画像伝送システム．カ
 
 > **Note**: CON3にRaspberry Pi用スタッキングコネクタ（2×20ピン）を実装することで、Raspberry Pi上にRA8E1基板をスタックして使用できます。写真では未実装ですが、必要に応じて半田付けしてください。
 
-### 2. カメラモジュールの取り付け
+#### 2. カメラモジュールの取り付け
 
 <p align="center">
   <img src="RA8E1Board_4.jpeg" alt="RA8E1 Board with Camera" width="600">
@@ -87,97 +236,6 @@ RA8E1マイコンを使用したリアルタイム画像伝送システム．カ
 2. **CON1にピンヘッダを半田付け** - ショートジャンパー用（2ピン）
 3. **OV5642モジュールをCON2に挿入** - カメラの向きに注意
 4. **動作確認** - ショートやはんだブリッジがないか確認
-
-## プロジェクト構造
-
-```
-RA8E1_prj/
-├── src/                    # ソースコード
-│   ├── hal_entry.c        # メインエントリーポイント
-│   ├── main_thread*_entry.c # FreeRTOSタスク
-│   ├── cam.c              # カメラ制御
-│   ├── hyperram_integ.c   # OctalRAM統合
-│   └── usb_cdc.h          # USB CDC通信
-├── matlab/                # MATLAB受信コード
-│   ├── udp_photo_receiver.m    # メイン受信関数
-│   ├── test_udp_simple.m      # UDP接続テスト
-│   └── viewQVGA_YUV.m         # YUV参照デコーダー
-├── ra_gen/                # FSP生成ファイル
-├── ra_cfg/                # FSPコンフィギュレーション
-└── cmake/                 # CMake設定
-```
-
-## 使用方法
-
-### MATLAB受信側
-```matlab
-% UDP受信開始(無制限受信モード)
-udp_photo_receiver
-
-% リアルタイムで動画ストリーミング表示
-% 停止: Ctrl+C または画像ウィンドウを閉じる
-```
-
-### 通信プロトコル
-- **動作モード**: マルチフレーム動画送信
-- **チャンク送信間隔**: 0ms(最速，pbuf確保失敗時は1msリトライ)
-- **フレーム間隔**: 2ms(設定可変)
-- **フレーム数**: 無制限(total_frames = -1)または指定数
-- **チャンクサイズ**: 512バイト/パケット
-- **総パケット数**: 300パケット/フレーム
-- **パケット構造**: 24バイトヘッダー + 512バイトデータ
-- **実効フレームレート**: 約1-2 fps(ネットワーク環境依存)
-
-## マイコンへの書き込み方法
-
-<p align="center">
-  <img src="RA8E1Board_2.jpeg" alt="RA8E1 Boot Mode" width="600">
-  <br>
-  <em>ブートモード設定 - CON1ショートとSW1ボタン位置</em>
-</p>
-
-### ブートモードへの移行
-1. **CON1をショート**: ショートプラグでCON1の2ピンを短絡(※シルク印刷は写真では上下反転)
-2. **SW1を押す**: リセットボタン(SW1)を押してブートモードに入る
-3. **書き込み準備完了**: RA8マイコンが書き込み待機状態になる
-
-### Renesas Flash Programmerでの書き込み
-1. [Renesas Flash Programmer](https://www.renesas.com/ja/software-tool/renesas-flash-programmer-programming-gui)をダウンロード・インストール
-2. ビルドで生成されたHEXファイルを指定:
-   - デバッグビルド: `build/Debug/RA8E1_prj.hex`
-   - リリースビルド: `build/Release/RA8E1_prj.hex`
-3. 接続設定:
-   - **インターフェース**: USB CDC
-   - **デバイス**: RA8E1 (R7FA8AFDCFB)
-4. 書き込み実行後，**CON1のショートを外してからSW1を押す**(通常起動)
-
-## 開発環境のセットアップ
-
-このプロジェクトは**Visual Studio Code + Renesas Extension**を使用した開発を推奨しています。
-
-**セットアップ方法は下記のRenesas公式動画を参照してください**:
-- [Visual Studio Code - How to Install Renesas Extensions](https://www.bing.com/videos/riverview/relatedvideo?q=renesas+fsp+vsCode&mid=2458A3064E6E4F935C8E2458A3064E6E4F935C8E&FORM=VIRE)
-
-##  Building via CLI:
-Configure: ```cmake -DARM_TOOLCHAIN_PATH="/your/toolchain/path" -DCMAKE_TOOLCHAIN_FILE=cmake/gcc.cmake  -G Ninja -B build/Debug```
-
-- Ex.: ```cmake -DARM_TOOLCHAIN_PATH="C:/LLVMEmbeddedToolchainForArm-17.0.1-Windows-x86_64/bin" -DCMAKE_TOOLCHAIN_FILE=cmake/llvm.cmake  -G Ninja -B build/Debug```
-- Ex.: ```cmake -DARM_TOOLCHAIN_PATH="C:/LLVMEmbeddedToolchainForArm-17.0.1-Windows-x86_64/bin" -DCMAKE_TOOLCHAIN_FILE=cmake/llvm.cmake  -DCMAKE_BUILD_TYPE=Release -G Ninja -B build/Release```
-
-Build: ```cmake --build build/Debug```
-
-
-### Configure via Visual Studio Code
-- Set ARM_LLVM_TOOLCHAIN_PATH as an environment variable before starting VS code or alternatively set ARM_TOOLCHAIN_PATH in .vscode/cmake-kits.json
-- Select "ARM LLVM kit with toolchainFile" kit in VS Code status bar
-- It is recommended to avoid spaces in the toolchain and project paths as they might be interpreted as delimiters by CMake and the other build tools.
-
-Example:
-
-```set ARM_LLVM_TOOLCHAIN_PATH=C:/LLVMEmbeddedToolchainForArm-17.0.1-Windows-x86_64/bin```
-```cd "c:/Users/lynxe/Documents/GitHub/RA8E1_prj" && code .```
-
-- Click build in VS Code status bar
 
 ## 技術仕様
 
@@ -204,27 +262,3 @@ typedef struct {
     uint16_t checksum;         // チェックサム
 } udp_photo_header_t;        // 24バイト
 ```
-
-## 設定のカスタマイズ
-
-### C側設定(main_thread1_entry.c)
-```c
-ctx->interval_ms = 0;           // チャンク間隔 (0=最速, 推奨3-5ms)
-ctx->frame_interval_ms = 2;     // フレーム間隔 (ms)
-ctx->total_frames = -1;         // -1=無制限, 数値=指定フレーム数
-```
-
-### MATLAB側設定(udp_photo_receiver.m)
-```matlab
-total_timeout_sec = inf;        % inf=無制限, 数値=秒数制限
-frame_timeout_sec = 10;         % フレームタイムアウト
-```
-
-## トラブルシューティング
-
-### よくある問題
-1. **UDP受信エラー**: MATLABのDSP System Toolbox確認
-2. **画像表示なし**: ポート9000のファイアウォール設定確認
-3. **色彩異常**: YUV422フォーマット・エンディアン設定確認
-4. **pbuf allocエラー**: `interval_ms`を3-5msに増やす(lwIPメモリプール不足)
-5. **フレームレート低下**: ネットワーク帯域，MATLAB処理速度を確認
