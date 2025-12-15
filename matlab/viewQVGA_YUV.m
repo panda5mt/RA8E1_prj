@@ -11,6 +11,24 @@ function viewQVGAfromYUV(filename)
     %}
 
     %==============================
+    % 0) ファイルパスの自動補完
+    %==============================
+    if ~isfile(filename)
+        % ファイルが見つからない場合、matlabフォルダ内を探す
+        scriptPath = fileparts(mfilename('fullpath'));
+        altPath = fullfile(scriptPath, filename);
+        if isfile(altPath)
+            filename = altPath;
+        else
+            % カレントディレクトリから相対パスで探す
+            altPath2 = fullfile('matlab', filename);
+            if isfile(altPath2)
+                filename = altPath2;
+            end
+        end
+    end
+    
+    %==============================
     % 1) テキストファイル全行を読み込み
     %==============================
     lines = readlines(filename, 'EmptyLineRule','skip'); % R2020b 以降
