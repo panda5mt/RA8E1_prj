@@ -73,6 +73,59 @@ Build:
 cmake --build build/Debug
 ```
 
+### ARM SBC（Raspberry Piなど）でのビルド
+
+Raspberry PiなどのARM SBCでは**RASC.exe（Windows専用）が動作しません**。以下の手順でRASCを呼び出さずにビルドできます：
+
+1. **[cmake/GeneratedSrc.cmake](cmake/GeneratedSrc.cmake) を編集**
+2. **99行目から129行目までをコメントアウト**（Pre-build stepとPost-build step）
+
+```cmake
+# Pre-build step: run RASC to generate project content if configuration.xml is changed
+# add_custom_command(
+#     OUTPUT
+#         configuration.xml.stamp
+#     COMMAND
+#         ${RASC_EXE_PATH}  -nosplash --launcher.suppressErrors --generate ...
+#     COMMAND
+#         ${CMAKE_COMMAND} -E touch configuration.xml.stamp
+#     COMMENT
+#         "RASC pre-build to generate project content"
+#     DEPENDS
+#         ${CMAKE_CURRENT_SOURCE_DIR}/configuration.xml
+# )
+#
+# add_custom_target(generate_content ALL
+#   DEPENDS configuration.xml.stamp
+# )
+#
+# add_dependencies(${PROJECT_NAME}.elf generate_content)
+#
+#
+# # Post-build step: run RASC to generate the SmartBundle file
+# add_custom_command(
+#     TARGET
+#         ${PROJECT_NAME}.elf
+#     POST_BUILD
+#     COMMAND
+#         echo Running RASC post-build to generate Smart Bundle (.sbd) file
+#     COMMAND
+#         ${RASC_EXE_PATH} -nosplash --launcher.suppressErrors --gensmartbundle ...
+#     VERBATIM
+# )
+```
+
+3. 通常通りビルド
+```bash
+cmake -DARM_TOOLCHAIN_PATH="/home/user/LLVM-ET-Arm-18.1.3-Linux-AArch64/bin" -DCMAKE_TOOLCHAIN_FILE=cmake/llvm.cmake -G Ninja -B build/Debug
+cmake --build build/Debug
+```
+
+Build:
+```bash
+cmake --build build/Debug
+```
+
 ## マイコンへの書き込み方法
 
 <p align="center">
