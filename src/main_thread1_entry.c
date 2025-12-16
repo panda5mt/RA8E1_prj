@@ -144,24 +144,9 @@ static void udp_send_timer_cb(void *arg)
             // パケットにヘッダーをコピー
             memcpy(p->payload, &header, sizeof(udp_photo_header_t));
 
-            // HyperRAMから64バイト単位で読み込み（制限対応）
+            // HyperRAMから読み込み
             uint8_t *dest_ptr = (uint8_t *)p->payload + sizeof(udp_photo_header_t);
-            uint32_t remaining_size = send_size;
-            uint32_t current_offset = 0;
-
-            while (remaining_size > 0)
-            {
-                uint32_t read_size = (remaining_size > 64) ? 64 : remaining_size;
-                uint32_t base_addr = ctx->sent_bytes + current_offset;
-                uint32_t converted_addr = ((base_addr & 0xfffffff0) << 6) | (base_addr & 0x0f);
-
-                // 64バイト以下の単位でコピー
-                memcpy(dest_ptr + current_offset,
-                       (uint8_t *)HYPERRAM_BASE_ADDR + converted_addr, read_size);
-
-                current_offset += read_size;
-                remaining_size -= read_size;
-            }
+            hyperram_b_read(dest_ptr, (void *)ctx->sent_bytes, send_size);
             err_t e = udp_sendto(ctx->pcb, p, &ctx->dest_ip, ctx->port);
             pbuf_free(p);
 

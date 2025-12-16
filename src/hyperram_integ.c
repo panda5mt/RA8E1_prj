@@ -5,6 +5,8 @@
 #include "r_ospi_b.h"
 #include "r_spi_flash_api.h"
 #include <string.h>
+#include "FreeRTOS.h"
+#include "semphr.h"
 /* Flash device timing */
 #define OSPI_B_TIME_UNIT (BSP_DELAY_UNITS_MICROSECONDS)
 #define OSPI_B_TIME_RESET_SETUP (2U)    /*  Type 50ns */
@@ -12,6 +14,8 @@
 
 spi_flash_direct_transfer_t g_ospi0_trans;
 bool ospi_b_dma_sent = false;
+static SemaphoreHandle_t g_ospi_write_mutex = NULL;
+static SemaphoreHandle_t g_ospi_read_mutex = NULL;
 /* Custom command sets. */
 ospi_b_xspi_command_set_t g_command_sets[] =
     {
@@ -197,6 +201,28 @@ fsp_err_t hyperram_init(void)
     }
     xprintf("CR=0x%04x\n", g_ospi0_trans.data);
 
+    // ミューテックス初期化（書き込み用）
+    if (g_ospi_write_mutex == NULL)
+    {
+        g_ospi_write_mutex = xSemaphoreCreateMutex();
+        if (g_ospi_write_mutex == NULL)
+        {
+            xprintf("[OSPI] Write mutex creation failed!\n");
+            return FSP_ERR_OUT_OF_MEMORY;
+        }
+    }
+
+    // ミューテックス初期化（読み込み用）
+    if (g_ospi_read_mutex == NULL)
+    {
+        g_ospi_read_mutex = xSemaphoreCreateMutex();
+        if (g_ospi_read_mutex == NULL)
+        {
+            xprintf("[OSPI] Read mutex creation failed!\n");
+            return FSP_ERR_OUT_OF_MEMORY;
+        }
+    }
+
     // 正常終了
     xprintf("[OSPI] RW init end\n");
 
@@ -220,10 +246,21 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
         adr = ((adr & 0xfffffff0) << 6) | (adr & 0x0f); // Octal ram address format
         adr += (uint32_t)HYPERRAM_BASE_ADDR;
 
-        err = R_OSPI_B_Write(&g_ospi0_ctrl,
-                             (uint8_t const *const)(src_p8 + offset),
-                             (uint8_t *const)adr,
-                             batch_size);
+        // ミューテックス取得
+        if (xSemaphoreTake(g_ospi_write_mutex, pdMS_TO_TICKS(1000)) == pdTRUE)
+        {
+            err = R_OSPI_B_Write(&g_ospi0_ctrl,
+                                 (uint8_t const *const)(src_p8 + offset),
+                                 (uint8_t *const)adr,
+                                 batch_size);
+            // ミューテックス解放
+            xSemaphoreGive(g_ospi_write_mutex);
+        }
+        else
+        {
+            return FSP_ERR_TIMEOUT;
+        }
+
         if (FSP_SUCCESS != err)
         {
             return err;
@@ -240,10 +277,58 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
         adr = ((adr & 0xfffffff0) << 6) | (adr & 0x0f); // Octal ram address format
         adr += (uint32_t)HYPERRAM_BASE_ADDR;
 
-        err = R_OSPI_B_Write(&g_ospi0_ctrl,
-                             (uint8_t const *const)(src_p8 + offset),
-                             (uint8_t *const)adr,
-                             remaining);
+        // ミューテックス取得
+        if (xSemaphoreTake(g_ospi_write_mutex, pdMS_TO_TICKS(1000)) == pdTRUE)
+        {
+            err = R_OSPI_B_Write(&g_ospi0_ctrl,
+                                 (uint8_t const *const)(src_p8 + offset),
+                                 (uint8_t *const)adr,
+                                 remaining);
+            // ミューテックス解放
+            xSemaphoreGive(g_ospi_write_mutex);
+        }
+        else
+        {
+            return FSP_ERR_TIMEOUT;
+        }
+    }
+
+    return err;
+}
+
+fsp_err_t hyperram_b_read(void *p_dest, const void *p_src, uint32_t total_length)
+{
+    fsp_err_t err = FSP_SUCCESS;
+
+    uint8_t *dest_p8 = (uint8_t *)p_dest;
+    const uint8_t *src_p8 = (const uint8_t *)p_src;
+
+    uint32_t remaining_size = total_length;
+    uint32_t current_offset = 0;
+
+    // 64バイト単位で読み込み（HyperRAM制限対応）
+    while (remaining_size > 0)
+    {
+        uint32_t read_size = (remaining_size > 64) ? 64 : remaining_size;
+        uint32_t base_addr = (uint32_t)src_p8 + current_offset;
+        uint32_t converted_addr = ((base_addr & 0xfffffff0) << 6) | (base_addr & 0x0f);
+
+        // ミューテックス取得（読み込み保護）
+        if (xSemaphoreTake(g_ospi_read_mutex, pdMS_TO_TICKS(1000)) == pdTRUE)
+        {
+            // 64バイト以下の単位でコピー
+            memcpy(dest_p8 + current_offset,
+                   (uint8_t *)HYPERRAM_BASE_ADDR + converted_addr, read_size);
+            // ミューテックス解放
+            xSemaphoreGive(g_ospi_read_mutex);
+        }
+        else
+        {
+            return FSP_ERR_TIMEOUT;
+        }
+
+        current_offset += read_size;
+        remaining_size -= read_size;
     }
 
     return err;

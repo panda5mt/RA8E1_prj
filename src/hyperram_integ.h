@@ -34,6 +34,7 @@ extern "C"
     void ospi_wait_mmap_idle(void);
     void dump_ospi_read_side(R_XSPI0_Type *r, int ch);
     fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_length);
+    fsp_err_t hyperram_b_read(void *p_dest, const void *p_src, uint32_t total_length);
 
 #ifdef __cplusplus
 }
