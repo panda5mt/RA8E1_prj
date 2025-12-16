@@ -742,6 +742,15 @@
       </stack>
       <stack module="module.lwip.port.freertos.949045050"/>
     </context>
+    <context id="rtos.awsfreertos.thread.74635663">
+      <property id="_symbol" value="main_thread3"/>
+      <property id="rtos.awsfreertos.thread.name" value="Main Thread3"/>
+      <property id="rtos.awsfreertos.thread.stack" value="32768"/>
+      <property id="rtos.awsfreertos.thread.priority" value="1"/>
+      <property id="rtos.awsfreertos.thread.context" value="NULL"/>
+      <property id="rtos.awsfreertos.thread.allocation" value="rtos.awsfreertos.thread.allocation.static"/>
+      <property id="rtos.awsfreertos.thread.secure_context" value="rtos.awsfreertos.thread.secure_context.enable"/>
+    </context>
     <config id="config.driver.ospi_b">
       <property id="config.driver.ospi_b.param_checking_enable" value="config.driver.ospi_b.param_checking_enable.enabled"/>
       <property id="config.driver.ospi_b.dmac_support" value="config.driver.ospi_b.dmac_support.enabled"/>

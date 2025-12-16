@@ -1267,6 +1267,15 @@ FSP Configuration
               
       Instance "lwIP system freertos Ethernet (rm_lwip_sys_freertos)"
     Instance "LwIP system FreeRTOS port"
+  Thread "Main Thread3"
+    Symbol: main_thread3
+    Name: Main Thread3
+    Stack size (bytes): 32768
+    Priority: 1
+    Thread Context: NULL
+    Memory Allocation: Static
+    Allocate Secure Context: Enable
+    
   Object "g_usb_write_complete_binary_semaphore Counting Semaphore"
     Symbol: g_usb_write_complete_binary_semaphore
     Initial count: 0
