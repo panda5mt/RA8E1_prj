@@ -7,7 +7,7 @@
 #define FRAME_HEIGHT 240
 #define FRAME_SIZE (FRAME_WIDTH * FRAME_HEIGHT * 2) // YUV422 = 2 bytes/pixel
 #define MONO_OFFSET FRAME_SIZE                      // モノクロ画像は元画像の次に配置
-#define BATCH_SIZE 512                              // バッチ処理サイズ（512バイト）
+#define BATCH_SIZE 1024                             // バッチ処理サイズ（1024バイト）
 
 /* YUV422データをモノクロ化する関数
  * YUV422フォーマット: [V0 Y1 U0 Y0] (リトルエンディアン, 4バイト/2ピクセル)
@@ -72,8 +72,8 @@ void main_thread3_entry(void *pvParameters)
                 break;
             }
 
-            // 32バッチごとに少し待機（16KB処理ごと = 約1/10フレームごと）
-            if ((offset / BATCH_SIZE) % 32 == 31)
+            // 16バッチごとに少し待機（16KB処理ごと = 約1/10フレームごと）
+            if ((offset / BATCH_SIZE) % 16 == 15)
             {
                 vTaskDelay(pdMS_TO_TICKS(1));
             }
