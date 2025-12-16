@@ -7,7 +7,7 @@
 #define FRAME_HEIGHT 240
 #define FRAME_SIZE (FRAME_WIDTH * FRAME_HEIGHT * 2) // YUV422 = 2 bytes/pixel
 #define MONO_OFFSET FRAME_SIZE                      // モノクロ画像は元画像の次に配置
-#define BATCH_SIZE 256                              // バッチ処理サイズ（256バイト）
+#define BATCH_SIZE 512                              // バッチ処理サイズ（512バイト）
 
 /* YUV422データをモノクロ化する関数
  * YUV422フォーマット: [V0 Y1 U0 Y0] (リトルエンディアン, 4バイト/2ピクセル)
@@ -48,12 +48,12 @@ void main_thread3_entry(void *pvParameters)
 
     while (1)
     {
-        // フレーム全体をバッチ処理
+        // フレーム全体をバッチ処理（高速化版）
         for (uint32_t offset = 0; offset < FRAME_SIZE; offset += BATCH_SIZE)
         {
             uint32_t read_size = (offset + BATCH_SIZE <= FRAME_SIZE) ? BATCH_SIZE : (FRAME_SIZE - offset);
 
-            // 1. HyperRAMから256バイト読み込み
+            // 1. HyperRAMから512バイト読み込み
             fsp_err_t err = hyperram_b_read(buffer, (void *)offset, read_size);
             if (FSP_SUCCESS != err)
             {
@@ -72,12 +72,14 @@ void main_thread3_entry(void *pvParameters)
                 break;
             }
 
-            // バッチごとに少し待機してThread1に処理を譲る
-            vTaskDelay(pdMS_TO_TICKS(1));
+            // 32バッチごとに少し待機（16KB処理ごと = 約1/10フレームごと）
+            if ((offset / BATCH_SIZE) % 32 == 31)
+            {
+                vTaskDelay(pdMS_TO_TICKS(1));
+            }
         }
 
-        // 処理完了（10秒待機して次のサイクル）
-        xprintf("[Thread3] Frame conversion complete\n");
-        vTaskDelay(pdMS_TO_TICKS(10000));
+        // 処理完了（1秒待機して次のサイクル）
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
