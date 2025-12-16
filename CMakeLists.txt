@@ -20,6 +20,10 @@ include(${CMAKE_CURRENT_LIST_DIR}/Config.cmake)
 
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/GeneratedCfg.cmake)
 
+# Enable Helium MVE for ARM Cortex-M85
+list(APPEND RASC_CMAKE_C_FLAGS "-march=armv8.1-m.main+mve")
+list(APPEND RASC_CMAKE_CXX_FLAGS "-march=armv8.1-m.main+mve")
+
 # If required user can amend RASC generated flags here, e.g. list(REMOVE_ITEM RASC_CMAKE_C_FLAGS "-Wall")
 
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/GeneratedSrc.cmake)

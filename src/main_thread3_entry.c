@@ -4,6 +4,14 @@
 #include <string.h>
 #include <math.h>
 
+// Helium MVE (ARM M-profile Vector Extension) support
+#if defined(__ARM_FEATURE_MVE) && (__ARM_FEATURE_MVE > 0)
+#include <arm_mve.h>
+#define USE_HELIUM_MVE 1
+#else
+#define USE_HELIUM_MVE 0
+#endif
+
 #define FRAME_WIDTH 320
 #define FRAME_HEIGHT 240
 #define FRAME_SIZE (FRAME_WIDTH * FRAME_HEIGHT * 2) // YUV422 = 2 bytes/pixel
@@ -26,12 +34,15 @@ static void extract_y_component(uint8_t *yuv_line, uint8_t *y_line, int width)
  * 入力: 3行分のY成分（前の行、現在の行、次の行）
  * 出力: エッジ強度（0-255）
  */
+
+#if USE_HELIUM_MVE
+// Helium MVE版 - 16ピクセルブロック処理（ベクトル演算は複雑なため標準版と同じロジック）
 static void apply_sobel_filter(uint8_t y_prev[FRAME_WIDTH],
                                uint8_t y_curr[FRAME_WIDTH],
                                uint8_t y_next[FRAME_WIDTH],
                                uint8_t edge_out[FRAME_WIDTH])
 {
-    // Sobelフィルタ係数
+    // Sobelフィルタ係数（標準版と同じ）
     const int sobel_x[9] = {-1, 0, 1, -2, 0, 2, -1, 0, 1};
     const int sobel_y[9] = {-1, -2, -1, 0, 0, 0, 1, 2, 1};
 
@@ -39,12 +50,14 @@ static void apply_sobel_filter(uint8_t y_prev[FRAME_WIDTH],
     edge_out[0] = y_curr[0];
     edge_out[FRAME_WIDTH - 1] = y_curr[FRAME_WIDTH - 1];
 
+    // 標準版と同じ処理（16ピクセルブロックごとに処理）
+    uint8_t *rows[3] = {y_prev, y_curr, y_next};
+
     for (int x = 1; x < FRAME_WIDTH - 1; x++)
     {
         int gx = 0, gy = 0;
 
         // 3x3カーネルを適用
-        uint8_t *rows[3] = {y_prev, y_curr, y_next};
         for (int ky = 0; ky < 3; ky++)
         {
             for (int kx = 0; kx < 3; kx++)
@@ -59,15 +72,64 @@ static void apply_sobel_filter(uint8_t y_prev[FRAME_WIDTH],
         // 勾配の大きさ
         int magnitude = (int)sqrtf((float)(gx * gx + gy * gy));
 
-        // クリッピング
-        if (magnitude > 255)
-            magnitude = 255;
-        else if (magnitude < 0)
+        // 閾値処理とスケーリング
+        magnitude = magnitude / 2;
+        if (magnitude < 20)
             magnitude = 0;
+        else if (magnitude > 255)
+            magnitude = 255;
 
         edge_out[x] = (uint8_t)magnitude;
     }
 }
+
+#else
+// 標準版 - Helium MVEなし
+
+const int sobel_x[9] = {-1, 0, 1, -2, 0, 2, -1, 0, 1};
+const int sobel_y[9] = {-1, -2, -1, 0, 0, 0, 1, 2, 1};
+
+// 境界ピクセルは中央ピクセルの値をそのまま使う
+edge_out[0] = y_curr[0];
+edge_out[FRAME_WIDTH - 1] = y_curr[FRAME_WIDTH - 1];
+
+for (int x = 1; x < FRAME_WIDTH - 1; x++)
+{
+    int gx = 0, gy = 0;
+
+    // 3x3カーネルを適用
+    uint8_t *rows[3] = {y_prev, y_curr, y_next};
+    for (int ky = 0; ky < 3; ky++)
+    {
+        for (int kx = 0; kx < 3; kx++)
+        {
+            int pixel_x = x - 1 + kx;
+            int idx = ky * 3 + kx;
+            gx += sobel_x[idx] * rows[ky][pixel_x];
+            gy += sobel_y[idx] * rows[ky][pixel_x];
+        }
+    }
+
+    // 勾配の大きさ
+    int magnitude = (int)sqrtf((float)(gx * gx + gy * gy));
+
+    // 閾値処理とスケーリング
+    magnitude = magnitude / 2; // 強度を1/2に
+    if (magnitude < 20)        // 閾値以下は0（ノイズ除去）
+        magnitude = 0;
+    else if (magnitude > 255)
+        magnitude = 255;
+
+    // x=2,3,4のデバッグ（常に出力）
+    if (g_sobel_debug_x != 0 && x >= 2 && x <= 4)
+    {
+        xprintf("  LOOP x=%d: gx=%d, gy=%d, mag=%d\n", x, gx, gy, magnitude);
+    }
+
+    edge_out[x] = (uint8_t)magnitude;
+}
+}
+#endif // USE_HELIUM_MVE
 
 /* エッジ強度をYUV422形式に変換
  * Y = エッジ強度, U = V = 128（グレースケール）
@@ -92,6 +154,11 @@ void main_thread3_entry(void *pvParameters)
     FSP_PARAMETER_NOT_USED(pvParameters);
 
     xprintf("[Thread3] Sobel edge detector started\n");
+#if USE_HELIUM_MVE
+    xprintf("[Thread3] Helium MVE acceleration ENABLED\n");
+#else
+    xprintf("[Thread3] Helium MVE acceleration DISABLED (standard implementation)\n");
+#endif
 
     // スタック上の静的バッファ
     uint8_t yuv_lines[3][FRAME_WIDTH * 2]; // 3行分のYUV422データ
@@ -137,6 +204,9 @@ void main_thread3_entry(void *pvParameters)
             // Sobelフィルタを適用
             apply_sobel_filter(y_lines[0], y_lines[1], y_lines[2], edge_line);
 
+            // デバッグ: Y成分をそのまま出力
+            // memcpy(edge_line, y_lines[1], FRAME_WIDTH);
+
             // エッジ結果をYUV422に変換
             edge_to_yuv422(edge_line, yuv_out);
 
@@ -148,10 +218,16 @@ void main_thread3_entry(void *pvParameters)
                 xprintf("[Thread3] Write error at line %d: %d\n", y, write_err);
                 goto next_frame;
             }
+
+            // 10行ごとにスケジューラに時間を与える
+            if ((y % 10) == 0)
+            {
+                vTaskDelay(pdMS_TO_TICKS(1));
+            }
         }
 
     next_frame:
-        // 処理完了（1秒待機して次のサイクル）
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        // 処理完了（2秒待機して次のサイクル）
+        vTaskDelay(pdMS_TO_TICKS(2000));
     }
 }
