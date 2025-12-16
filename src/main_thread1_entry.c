@@ -80,6 +80,9 @@ static uint16_t calc_header_checksum(udp_photo_header_t *header)
 /* DHCP完了待ち用セマフォ */
 static SemaphoreHandle_t g_ip_ready_sem = NULL;
 
+/* 静的UDP送信コンテキスト（ヒープ不要） */
+static udp_send_ctx_t g_udp_send_ctx;
+
 /* ====== 受信コールバック ====== */
 static void udp_rx_cb(void *arg, struct udp_pcb *upcb, struct pbuf *p,
                       const ip_addr_t *addr, u16_t port)
@@ -268,7 +271,7 @@ static void udp_send_timer_cb(void *arg)
         }
         udp_remove(ctx->pcb);
         ctx->pcb = NULL;
-        vPortFree(ctx);
+        // 静的メモリなのでvPortFreeは不要
     }
 }
 
@@ -387,14 +390,8 @@ void main_thread1_entry(void *pvParameters)
         /* 受信コールバック登録 */
         udp_recv(pcb, udp_rx_cb, NULL);
 
-        /* 送信用コンテキストを確保し、tcpip_thread のタイマで駆動 */
-        udp_send_ctx_t *ctx = (udp_send_ctx_t *)pvPortMalloc(sizeof(*ctx));
-        if (!ctx)
-        {
-            xprintf("[UDP] OOM\n");
-            udp_remove(pcb);
-            goto forever;
-        }
+        /* 送信用コンテキストを静的メモリで使用 */
+        udp_send_ctx_t *ctx = &g_udp_send_ctx;
         memset(ctx, 0, sizeof(*ctx));
         ctx->pcb = pcb;
         ctx->dest_ip = dest_ip;

@@ -14,6 +14,7 @@
 
 spi_flash_direct_transfer_t g_ospi0_trans;
 bool ospi_b_dma_sent = false;
+static bool g_ospi_initialized = false;
 static SemaphoreHandle_t g_ospi_write_mutex = NULL;
 static SemaphoreHandle_t g_ospi_read_mutex = NULL;
 /* Custom command sets. */
@@ -124,6 +125,12 @@ void dump_ospi_read_side(R_XSPI0_Type *r, int ch)
 fsp_err_t hyperram_init(void)
 {
     fsp_err_t err = FSP_SUCCESS;
+    if (g_ospi_initialized)
+    {
+        // すでに初期化済み
+        return FSP_SUCCESS;
+    }
+
     R_BSP_MODULE_START(FSP_IP_OSPI, 0);
     // 0. VCCによるHW設定 VCC2 = 1.8VなのでLVOCR.LVO1E=1にする
     uint32_t *lvocr_ptr = (uint32_t *)0x4001E000;
@@ -225,7 +232,7 @@ fsp_err_t hyperram_init(void)
 
     // 正常終了
     xprintf("[OSPI] RW init end\n");
-
+    g_ospi_initialized = true;
     return err;
 }
 
