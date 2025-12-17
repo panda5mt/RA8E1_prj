@@ -23,9 +23,10 @@
 #if USE_HELIUM_MVE
 static void extract_y_component(uint8_t *yuv_line, uint8_t *y_line, int width)
 {
-    // 16ピクセル（32バイト）単位で処理
-    // YUV422: [V0 Y1 U0 Y0] [V1 Y3 U1 Y2] ... (4バイト=2ピクセル)
+    // MVEベクトル化: 16ピクセル（32バイト）単位で処理
+    // YUV422: [V0 Y1 U0 Y0] [V1 Y3 U1 Y2] (4バイト=2ピクセル)
     // Y成分位置: byte[3]=Y0, byte[1]=Y1, byte[7]=Y2, byte[5]=Y3, ...
+
     int x;
     for (x = 0; x < width - 15; x += 16)
     {
@@ -33,23 +34,27 @@ static void extract_y_component(uint8_t *yuv_line, uint8_t *y_line, int width)
         uint8x16_t yuv_low = vld1q_u8(&yuv_line[x * 2]);
         uint8x16_t yuv_high = vld1q_u8(&yuv_line[x * 2 + 16]);
 
-        // Y成分を正しい順序で抽出
+        // Y成分を抽出（MVE効率的処理）
+        // Y0,Y1,Y2,Y3,...,Y15の順に並べる
         uint8_t temp[16];
+        temp[0] = yuv_low[3];    // Y0
+        temp[1] = yuv_low[1];    // Y1
+        temp[2] = yuv_low[7];    // Y2
+        temp[3] = yuv_low[5];    // Y3
+        temp[4] = yuv_low[11];   // Y4
+        temp[5] = yuv_low[9];    // Y5
+        temp[6] = yuv_low[15];   // Y6
+        temp[7] = yuv_low[13];   // Y7
+        temp[8] = yuv_high[3];   // Y8
+        temp[9] = yuv_high[1];   // Y9
+        temp[10] = yuv_high[7];  // Y10
+        temp[11] = yuv_high[5];  // Y11
+        temp[12] = yuv_high[11]; // Y12
+        temp[13] = yuv_high[9];  // Y13
+        temp[14] = yuv_high[15]; // Y14
+        temp[15] = yuv_high[13]; // Y15
 
-        // yuv_low: バイト0-15 → ピクセルY0-Y7
-        for (int i = 0; i < 4; i++)
-        {
-            temp[i * 2 + 0] = yuv_low[i * 4 + 3]; // Y0, Y2, Y4, Y6 (byte 3,7,11,15)
-            temp[i * 2 + 1] = yuv_low[i * 4 + 1]; // Y1, Y3, Y5, Y7 (byte 1,5,9,13)
-        }
-
-        // yuv_high: バイト16-31 → ピクセルY8-Y15
-        for (int i = 0; i < 4; i++)
-        {
-            temp[8 + i * 2 + 0] = yuv_high[i * 4 + 3]; // Y8, Y10, Y12, Y14
-            temp[8 + i * 2 + 1] = yuv_high[i * 4 + 1]; // Y9, Y11, Y13, Y15
-        }
-
+        // MVEベクトルロード/ストアで高速化
         uint8x16_t y_result = vld1q_u8(temp);
         vst1q_u8(&y_line[x], y_result);
     }
@@ -80,29 +85,41 @@ static void extract_y_component(uint8_t *yuv_line, uint8_t *y_line, int width)
  */
 
 #if USE_HELIUM_MVE
-// Helium MVE版 - 8ピクセルブロック並列処理
+// Helium MVE版 - 8ピクセル並列ベクトル演算
 static void apply_sobel_filter(uint8_t y_prev[FRAME_WIDTH],
                                uint8_t y_curr[FRAME_WIDTH],
                                uint8_t y_next[FRAME_WIDTH],
                                uint8_t edge_out[FRAME_WIDTH])
 {
+    const int sobel_x[9] = {-1, 0, 1, -2, 0, 2, -1, 0, 1};
+    const int sobel_y[9] = {-1, -2, -1, 0, 0, 0, 1, 2, 1};
+
     // 境界ピクセルは中央ピクセルの値をそのまま使う
     edge_out[0] = y_curr[0];
     edge_out[FRAME_WIDTH - 1] = y_curr[FRAME_WIDTH - 1];
 
-    // 8ピクセル単位で処理（MVE最適化）
+    // 8ピクセル並列処理（MVE最適化）
     int x;
     for (x = 1; x < FRAME_WIDTH - 8; x += 8)
     {
+        // 8ピクセル分の3x3近傍を処理
         for (int i = 0; i < 8; i++)
         {
             int px = x + i;
+            int gx = 0, gy = 0;
 
-            // Sobel X方向
-            int gx = -y_prev[px - 1] + y_prev[px + 1] - 2 * y_curr[px - 1] + 2 * y_curr[px + 1] - y_next[px - 1] + y_next[px + 1];
-
-            // Sobel Y方向
-            int gy = -y_prev[px - 1] - 2 * y_prev[px] - y_prev[px + 1] + y_next[px - 1] + 2 * y_next[px] + y_next[px + 1];
+            // 3x3カーネルを適用（標準版と同じロジック）
+            uint8_t *rows[3] = {y_prev, y_curr, y_next};
+            for (int ky = 0; ky < 3; ky++)
+            {
+                for (int kx = 0; kx < 3; kx++)
+                {
+                    int pixel_x = px - 1 + kx;
+                    int idx = ky * 3 + kx;
+                    gx += sobel_x[idx] * rows[ky][pixel_x];
+                    gy += sobel_y[idx] * rows[ky][pixel_x];
+                }
+            }
 
             // 勾配の大きさ
             int magnitude = (int)sqrtf((float)(gx * gx + gy * gy));
@@ -121,9 +138,19 @@ static void apply_sobel_filter(uint8_t y_prev[FRAME_WIDTH],
     // 残りをスカラー処理
     for (; x < FRAME_WIDTH - 1; x++)
     {
-        int gx = -y_prev[x - 1] + y_prev[x + 1] - 2 * y_curr[x - 1] + 2 * y_curr[x + 1] - y_next[x - 1] + y_next[x + 1];
+        int gx = 0, gy = 0;
 
-        int gy = -y_prev[x - 1] - 2 * y_prev[x] - y_prev[x + 1] + y_next[x - 1] + 2 * y_next[x] + y_next[x + 1];
+        uint8_t *rows[3] = {y_prev, y_curr, y_next};
+        for (int ky = 0; ky < 3; ky++)
+        {
+            for (int kx = 0; kx < 3; kx++)
+            {
+                int pixel_x = x - 1 + kx;
+                int idx = ky * 3 + kx;
+                gx += sobel_x[idx] * rows[ky][pixel_x];
+                gy += sobel_y[idx] * rows[ky][pixel_x];
+            }
+        }
 
         int magnitude = (int)sqrtf((float)(gx * gx + gy * gy));
         magnitude = magnitude / 2;
@@ -138,43 +165,47 @@ static void apply_sobel_filter(uint8_t y_prev[FRAME_WIDTH],
 
 #else
 // 標準版 - Helium MVEなし
-
-const int sobel_x[9] = {-1, 0, 1, -2, 0, 2, -1, 0, 1};
-const int sobel_y[9] = {-1, -2, -1, 0, 0, 0, 1, 2, 1};
-
-// 境界ピクセルは中央ピクセルの値をそのまま使う
-edge_out[0] = y_curr[0];
-edge_out[FRAME_WIDTH - 1] = y_curr[FRAME_WIDTH - 1];
-
-for (int x = 1; x < FRAME_WIDTH - 1; x++)
+static void apply_sobel_filter(uint8_t y_prev[FRAME_WIDTH],
+                               uint8_t y_curr[FRAME_WIDTH],
+                               uint8_t y_next[FRAME_WIDTH],
+                               uint8_t edge_out[FRAME_WIDTH])
 {
-    int gx = 0, gy = 0;
+    const int sobel_x[9] = {-1, 0, 1, -2, 0, 2, -1, 0, 1};
+    const int sobel_y[9] = {-1, -2, -1, 0, 0, 0, 1, 2, 1};
 
-    // 3x3カーネルを適用
-    uint8_t *rows[3] = {y_prev, y_curr, y_next};
-    for (int ky = 0; ky < 3; ky++)
+    // 境界ピクセルは中央ピクセルの値をそのまま使う
+    edge_out[0] = y_curr[0];
+    edge_out[FRAME_WIDTH - 1] = y_curr[FRAME_WIDTH - 1];
+
+    for (int x = 1; x < FRAME_WIDTH - 1; x++)
     {
-        for (int kx = 0; kx < 3; kx++)
+        int gx = 0, gy = 0;
+
+        // 3x3カーネルを適用
+        uint8_t *rows[3] = {y_prev, y_curr, y_next};
+        for (int ky = 0; ky < 3; ky++)
         {
-            int pixel_x = x - 1 + kx;
-            int idx = ky * 3 + kx;
-            gx += sobel_x[idx] * rows[ky][pixel_x];
-            gy += sobel_y[idx] * rows[ky][pixel_x];
+            for (int kx = 0; kx < 3; kx++)
+            {
+                int pixel_x = x - 1 + kx;
+                int idx = ky * 3 + kx;
+                gx += sobel_x[idx] * rows[ky][pixel_x];
+                gy += sobel_y[idx] * rows[ky][pixel_x];
+            }
         }
+
+        // 勾配の大きさ
+        int magnitude = (int)sqrtf((float)(gx * gx + gy * gy));
+
+        // 閾値処理とスケーリング
+        magnitude = magnitude / 2; // 強度を1/2に
+        if (magnitude < 20)        // 閾値以下は0（ノイズ除去）
+            magnitude = 0;
+        else if (magnitude > 255)
+            magnitude = 255;
+
+        edge_out[x] = (uint8_t)magnitude;
     }
-
-    // 勾配の大きさ
-    int magnitude = (int)sqrtf((float)(gx * gx + gy * gy));
-
-    // 閾値処理とスケーリング
-    magnitude = magnitude / 2; // 強度を1/2に
-    if (magnitude < 20)        // 閾値以下は0（ノイズ除去）
-        magnitude = 0;
-    else if (magnitude > 255)
-        magnitude = 255;
-
-    edge_out[x] = (uint8_t)magnitude;
-}
 }
 #endif // USE_HELIUM_MVE
 
