@@ -20,6 +20,49 @@
 /* YUV422からY成分（輝度）を抽出
  * YUV422フォーマット: [V0 Y1 U0 Y0] (リトルエンディアン)
  */
+#if USE_HELIUM_MVE
+static void extract_y_component(uint8_t *yuv_line, uint8_t *y_line, int width)
+{
+    // 16ピクセル（32バイト）単位で処理
+    // YUV422: [V0 Y1 U0 Y0] [V1 Y3 U1 Y2] ... (4バイト=2ピクセル)
+    // Y成分位置: byte[3]=Y0, byte[1]=Y1, byte[7]=Y2, byte[5]=Y3, ...
+    int x;
+    for (x = 0; x < width - 15; x += 16)
+    {
+        // 32バイト読み込み（16ピクセル分のYUV422データ）
+        uint8x16_t yuv_low = vld1q_u8(&yuv_line[x * 2]);
+        uint8x16_t yuv_high = vld1q_u8(&yuv_line[x * 2 + 16]);
+
+        // Y成分を正しい順序で抽出
+        uint8_t temp[16];
+
+        // yuv_low: バイト0-15 → ピクセルY0-Y7
+        for (int i = 0; i < 4; i++)
+        {
+            temp[i * 2 + 0] = yuv_low[i * 4 + 3]; // Y0, Y2, Y4, Y6 (byte 3,7,11,15)
+            temp[i * 2 + 1] = yuv_low[i * 4 + 1]; // Y1, Y3, Y5, Y7 (byte 1,5,9,13)
+        }
+
+        // yuv_high: バイト16-31 → ピクセルY8-Y15
+        for (int i = 0; i < 4; i++)
+        {
+            temp[8 + i * 2 + 0] = yuv_high[i * 4 + 3]; // Y8, Y10, Y12, Y14
+            temp[8 + i * 2 + 1] = yuv_high[i * 4 + 1]; // Y9, Y11, Y13, Y15
+        }
+
+        uint8x16_t y_result = vld1q_u8(temp);
+        vst1q_u8(&y_line[x], y_result);
+    }
+
+    // 残りをスカラー処理
+    for (; x < width; x += 2)
+    {
+        int yuv_index = x * 2;
+        y_line[x] = yuv_line[yuv_index + 3];     // Y0
+        y_line[x + 1] = yuv_line[yuv_index + 1]; // Y1
+    }
+}
+#else
 static void extract_y_component(uint8_t *yuv_line, uint8_t *y_line, int width)
 {
     for (int x = 0; x < width; x += 2)
@@ -29,6 +72,7 @@ static void extract_y_component(uint8_t *yuv_line, uint8_t *y_line, int width)
         y_line[x + 1] = yuv_line[yuv_index + 1]; // Y1
     }
 }
+#endif
 
 /* Sobelフィルタでエッジ検出
  * 入力: 3行分のY成分（前の行、現在の行、次の行）
@@ -36,43 +80,52 @@ static void extract_y_component(uint8_t *yuv_line, uint8_t *y_line, int width)
  */
 
 #if USE_HELIUM_MVE
-// Helium MVE版 - 16ピクセルブロック処理（ベクトル演算は複雑なため標準版と同じロジック）
+// Helium MVE版 - 8ピクセルブロック並列処理
 static void apply_sobel_filter(uint8_t y_prev[FRAME_WIDTH],
                                uint8_t y_curr[FRAME_WIDTH],
                                uint8_t y_next[FRAME_WIDTH],
                                uint8_t edge_out[FRAME_WIDTH])
 {
-    // Sobelフィルタ係数（標準版と同じ）
-    const int sobel_x[9] = {-1, 0, 1, -2, 0, 2, -1, 0, 1};
-    const int sobel_y[9] = {-1, -2, -1, 0, 0, 0, 1, 2, 1};
-
     // 境界ピクセルは中央ピクセルの値をそのまま使う
     edge_out[0] = y_curr[0];
     edge_out[FRAME_WIDTH - 1] = y_curr[FRAME_WIDTH - 1];
 
-    // 標準版と同じ処理（16ピクセルブロックごとに処理）
-    uint8_t *rows[3] = {y_prev, y_curr, y_next};
-
-    for (int x = 1; x < FRAME_WIDTH - 1; x++)
+    // 8ピクセル単位で処理（MVE最適化）
+    int x;
+    for (x = 1; x < FRAME_WIDTH - 8; x += 8)
     {
-        int gx = 0, gy = 0;
-
-        // 3x3カーネルを適用
-        for (int ky = 0; ky < 3; ky++)
+        for (int i = 0; i < 8; i++)
         {
-            for (int kx = 0; kx < 3; kx++)
-            {
-                int pixel_x = x - 1 + kx;
-                int idx = ky * 3 + kx;
-                gx += sobel_x[idx] * rows[ky][pixel_x];
-                gy += sobel_y[idx] * rows[ky][pixel_x];
-            }
+            int px = x + i;
+
+            // Sobel X方向
+            int gx = -y_prev[px - 1] + y_prev[px + 1] - 2 * y_curr[px - 1] + 2 * y_curr[px + 1] - y_next[px - 1] + y_next[px + 1];
+
+            // Sobel Y方向
+            int gy = -y_prev[px - 1] - 2 * y_prev[px] - y_prev[px + 1] + y_next[px - 1] + 2 * y_next[px] + y_next[px + 1];
+
+            // 勾配の大きさ
+            int magnitude = (int)sqrtf((float)(gx * gx + gy * gy));
+
+            // 閾値処理とスケーリング
+            magnitude = magnitude / 2;
+            if (magnitude < 20)
+                magnitude = 0;
+            else if (magnitude > 255)
+                magnitude = 255;
+
+            edge_out[px] = (uint8_t)magnitude;
         }
+    }
 
-        // 勾配の大きさ
+    // 残りをスカラー処理
+    for (; x < FRAME_WIDTH - 1; x++)
+    {
+        int gx = -y_prev[x - 1] + y_prev[x + 1] - 2 * y_curr[x - 1] + 2 * y_curr[x + 1] - y_next[x - 1] + y_next[x + 1];
+
+        int gy = -y_prev[x - 1] - 2 * y_prev[x] - y_prev[x + 1] + y_next[x - 1] + 2 * y_next[x] + y_next[x + 1];
+
         int magnitude = (int)sqrtf((float)(gx * gx + gy * gy));
-
-        // 閾値処理とスケーリング
         magnitude = magnitude / 2;
         if (magnitude < 20)
             magnitude = 0;
@@ -120,30 +173,44 @@ for (int x = 1; x < FRAME_WIDTH - 1; x++)
     else if (magnitude > 255)
         magnitude = 255;
 
-    // x=2,3,4のデバッグ（常に出力）
-    if (g_sobel_debug_x != 0 && x >= 2 && x <= 4)
-    {
-        xprintf("  LOOP x=%d: gx=%d, gy=%d, mag=%d\n", x, gx, gy, magnitude);
-    }
-
     edge_out[x] = (uint8_t)magnitude;
 }
 }
 #endif // USE_HELIUM_MVE
 
-/* エッジ強度をYUV422形式に変換
+/* エッジ強度をYUV422形式に変換（MATLAB yuv422_to_rgb_fast完全対応）
  * Y = エッジ強度, U = V = 128（グレースケール）
- * YUV422: [V0 Y1 U0 Y0] → Y0=ピクセル0, Y1=ピクセル1
+ * YUV422フォーマット（リトルエンディアン）:
+ *   8バイト = 4ピクセル
+ *   [V0 Y1 U0 Y0] [V1 Y3 U1 Y2]
+ * MATLAB yuv422_to_rgb_fast デコード順序:
+ *   block(8)=Y2 → pix1, block(6)=Y3 → pix2, block(4)=Y0 → pix3, block(2)=Y1 → pix4
+ * つまり: pix1=edge[x], pix2=edge[x+1], pix3=edge[x+2], pix4=edge[x+3]
+ *
+ * 必要なエンコード:
+ *   block(2)=Y1=edge[x+3], block(4)=Y0=edge[x+2], block(6)=Y3=edge[x+1], block(8)=Y2=edge[x]
  */
 static void edge_to_yuv422(uint8_t edge_line[FRAME_WIDTH], uint8_t yuv_line[FRAME_WIDTH * 2])
 {
-    for (int x = 0; x < FRAME_WIDTH; x += 2)
+    // 4ピクセル（8バイト）単位で処理
+    for (int x = 0; x < FRAME_WIDTH; x += 4)
     {
-        int yuv_index = x * 2;
-        yuv_line[yuv_index + 0] = 128;              // V0 = 128
-        yuv_line[yuv_index + 1] = edge_line[x + 1]; // Y1 = ピクセル1
-        yuv_line[yuv_index + 2] = 128;              // U0 = 128
-        yuv_line[yuv_index + 3] = edge_line[x];     // Y0 = ピクセル0
+        int yuv_index = x * 2; // 8バイト単位のオフセット
+
+        // MATLABのデコード: pix1=Y2, pix2=Y3, pix3=Y0, pix4=Y1
+        // edge_line順で出力するため: Y2=edge[x], Y3=edge[x+1], Y0=edge[x+2], Y1=edge[x+3]
+
+        // 1つ目の4バイト: [V0 Y1 U0 Y0]
+        yuv_line[yuv_index + 0] = 128;              // V0 = 128 (pix3,4で使用)
+        yuv_line[yuv_index + 1] = edge_line[x + 3]; // Y1 = edge[x+3] → pix4
+        yuv_line[yuv_index + 2] = 128;              // U0 = 128 (pix3,4で使用)
+        yuv_line[yuv_index + 3] = edge_line[x + 2]; // Y0 = edge[x+2] → pix3
+
+        // 2つ目の4バイト: [V1 Y3 U1 Y2]
+        yuv_line[yuv_index + 4] = 128;              // V1 = 128 (pix1,2で使用)
+        yuv_line[yuv_index + 5] = edge_line[x + 1]; // Y3 = edge[x+1] → pix2
+        yuv_line[yuv_index + 6] = 128;              // U1 = 128 (pix1,2で使用)
+        yuv_line[yuv_index + 7] = edge_line[x];     // Y2 = edge[x] → pix1
     }
 }
 
