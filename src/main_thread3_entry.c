@@ -7,7 +7,7 @@
 // Helium MVE (ARM M-profile Vector Extension) support
 #if defined(__ARM_FEATURE_MVE) && (__ARM_FEATURE_MVE > 0)
 #include <arm_mve.h>
-#define USE_HELIUM_MVE 1
+#define USE_HELIUM_MVE 1 // シンプルで安全なMVE実装
 #else
 #define USE_HELIUM_MVE 0
 #endif
@@ -85,53 +85,69 @@ static void extract_y_component(uint8_t *yuv_line, uint8_t *y_line, int width)
  */
 
 #if USE_HELIUM_MVE
-// Helium MVE版 - 8ピクセル並列ベクトル演算
+// Helium MVE版 - シンプルで安全な実装（スカラー計算 + ベクトル後処理）
 static void apply_sobel_filter(uint8_t y_prev[FRAME_WIDTH],
                                uint8_t y_curr[FRAME_WIDTH],
                                uint8_t y_next[FRAME_WIDTH],
                                uint8_t edge_out[FRAME_WIDTH])
 {
-    const int sobel_x[9] = {-1, 0, 1, -2, 0, 2, -1, 0, 1};
-    const int sobel_y[9] = {-1, -2, -1, 0, 0, 0, 1, 2, 1};
-
     // 境界ピクセルは中央ピクセルの値をそのまま使う
     edge_out[0] = y_curr[0];
     edge_out[FRAME_WIDTH - 1] = y_curr[FRAME_WIDTH - 1];
 
-    // 8ピクセル並列処理（MVE最適化）
+    // 8ピクセル単位で処理（スカラー計算 + MVEベクトル後処理）
     int x;
     for (x = 1; x < FRAME_WIDTH - 8; x += 8)
     {
-        // 8ピクセル分の3x3近傍を処理
+        // 8ピクセル分のSobel演算をスカラーで計算
+        int16_t gx_buf[8] __attribute__((aligned(16)));
+        int16_t gy_buf[8] __attribute__((aligned(16)));
+
         for (int i = 0; i < 8; i++)
         {
             int px = x + i;
-            int gx = 0, gy = 0;
 
-            // 3x3カーネルを適用（標準版と同じロジック）
-            uint8_t *rows[3] = {y_prev, y_curr, y_next};
-            for (int ky = 0; ky < 3; ky++)
-            {
-                for (int kx = 0; kx < 3; kx++)
-                {
-                    int pixel_x = px - 1 + kx;
-                    int idx = ky * 3 + kx;
-                    gx += sobel_x[idx] * rows[ky][pixel_x];
-                    gy += sobel_y[idx] * rows[ky][pixel_x];
-                }
-            }
+            // Sobel X勾配（スカラー計算）
+            int gx = -1 * y_prev[px - 1] + 1 * y_prev[px + 1] +
+                     -2 * y_curr[px - 1] + 2 * y_curr[px + 1] +
+                     -1 * y_next[px - 1] + 1 * y_next[px + 1];
 
-            // 勾配の大きさ
-            int magnitude = (int)sqrtf((float)(gx * gx + gy * gy));
+            // Sobel Y勾配（スカラー計算）
+            int gy = -1 * y_prev[px - 1] - 2 * y_prev[px] - 1 * y_prev[px + 1] +
+                     1 * y_next[px - 1] + 2 * y_next[px] + 1 * y_next[px + 1];
 
-            // 閾値処理とスケーリング
-            magnitude = magnitude / 2;
-            if (magnitude < 20)
-                magnitude = 0;
-            else if (magnitude > 255)
-                magnitude = 255;
+            gx_buf[i] = (int16_t)gx;
+            gy_buf[i] = (int16_t)gy;
+        }
 
-            edge_out[px] = (uint8_t)magnitude;
+        // ベクトルロード（MVE）
+        int16x8_t gx_vec = vld1q_s16(gx_buf);
+        int16x8_t gy_vec = vld1q_s16(gy_buf);
+
+        // ベクトル演算で後処理（MVE）
+        // 1. 絶対値
+        int16x8_t abs_gx = vabsq_s16(gx_vec);
+        int16x8_t abs_gy = vabsq_s16(gy_vec);
+
+        // 2. 勾配の大きさ近似: (|gx| + |gy|) / 2
+        int16x8_t magnitude = vaddq_s16(abs_gx, abs_gy);
+        magnitude = vshrq_n_s16(magnitude, 1); // /2
+
+        // 3. 閾値処理: magnitude < 20 → 0
+        mve_pred16_t mask = vcmpgtq_n_s16(magnitude, 19);
+        magnitude = vpselq_s16(magnitude, vdupq_n_s16(0), mask);
+
+        // 4. 上限クランプ: magnitude > 255 → 255
+        magnitude = vminq_s16(magnitude, vdupq_n_s16(255));
+
+        // 5. 結果をスカラーバッファに保存
+        int16_t result_buf[8] __attribute__((aligned(16)));
+        vst1q_s16(result_buf, magnitude);
+
+        // 6. 8ビットに変換して出力
+        for (int i = 0; i < 8; i++)
+        {
+            edge_out[x + i] = (uint8_t)result_buf[i];
         }
     }
 
@@ -140,20 +156,16 @@ static void apply_sobel_filter(uint8_t y_prev[FRAME_WIDTH],
     {
         int gx = 0, gy = 0;
 
-        uint8_t *rows[3] = {y_prev, y_curr, y_next};
-        for (int ky = 0; ky < 3; ky++)
-        {
-            for (int kx = 0; kx < 3; kx++)
-            {
-                int pixel_x = x - 1 + kx;
-                int idx = ky * 3 + kx;
-                gx += sobel_x[idx] * rows[ky][pixel_x];
-                gy += sobel_y[idx] * rows[ky][pixel_x];
-            }
-        }
+        // Sobel X
+        gx += -1 * y_prev[x - 1] + 1 * y_prev[x + 1];
+        gx += -2 * y_curr[x - 1] + 2 * y_curr[x + 1];
+        gx += -1 * y_next[x - 1] + 1 * y_next[x + 1];
 
-        int magnitude = (int)sqrtf((float)(gx * gx + gy * gy));
-        magnitude = magnitude / 2;
+        // Sobel Y
+        gy += -1 * y_prev[x - 1] - 2 * y_prev[x] - 1 * y_prev[x + 1];
+        gy += 1 * y_next[x - 1] + 2 * y_next[x] + 1 * y_next[x + 1];
+
+        int magnitude = (abs(gx) + abs(gy)) / 2;
         if (magnitude < 20)
             magnitude = 0;
         else if (magnitude > 255)
