@@ -19,6 +19,7 @@
 #define UDP_PORT_DEST 9000
 #define FRAME_SIZE (320 * 240 * 2) // YUV422 = 2 bytes/pixel
 #define MONO_OFFSET FRAME_SIZE     // モノクロ画像オフセット
+#define GRADIENT_OFFSET FRAME_SIZE // p,q勾配マップオフセット（MONO_OFFSETと同じ位置）
 
 // UDP写真データチャンクヘッダー
 typedef struct __attribute__((packed))
@@ -149,9 +150,9 @@ static void udp_send_timer_cb(void *arg)
             // パケットにヘッダーをコピー
             memcpy(p->payload, &header, sizeof(udp_photo_header_t));
 
-            // HyperRAMからモノクロデータを読み込み（オフセット MONO_OFFSET + sent_bytes）
+            // HyperRAMからp,q勾配マップを読み込み（GRADIENT_OFFSET + sent_bytes）
             uint8_t *dest_ptr = (uint8_t *)p->payload + sizeof(udp_photo_header_t);
-            hyperram_b_read(dest_ptr, (void *)(MONO_OFFSET + ctx->sent_bytes), send_size);
+            hyperram_b_read(dest_ptr, (void *)(GRADIENT_OFFSET + ctx->sent_bytes), send_size); // p,q勾配マップ
             err_t e = udp_sendto(ctx->pcb, p, &ctx->dest_ip, ctx->port);
             pbuf_free(p);
 

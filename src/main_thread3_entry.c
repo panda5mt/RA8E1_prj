@@ -15,7 +15,12 @@
 #define FRAME_WIDTH 320
 #define FRAME_HEIGHT 240
 #define FRAME_SIZE (FRAME_WIDTH * FRAME_HEIGHT * 2) // YUV422 = 2 bytes/pixel
-#define MONO_OFFSET FRAME_SIZE                      // エッジ画像は元画像の次に配置
+#define GRADIENT_OFFSET FRAME_SIZE                  // p,q勾配マップを配置（2チャンネル×8bit）
+
+// Shape from Shading 光源パラメータ（定数）
+#define LIGHT_PS 0.0f // 光源方向x成分
+#define LIGHT_QS 0.0f // 光源方向y成分
+#define LIGHT_TS 1.0f // 光源方向z成分（正規化された垂直光源）
 
 /* YUV422からY成分（輝度）を抽出
  * YUV422フォーマット: [V0 Y1 U0 Y0] (リトルエンディアン)
@@ -221,6 +226,74 @@ static void apply_sobel_filter(uint8_t y_prev[FRAME_WIDTH],
 }
 #endif // USE_HELIUM_MVE
 
+/* Shape from Shading用のp,q勾配を計算
+ * p = ∂z/∂x (x方向の表面勾配)
+ * q = ∂z/∂y (y方向の表面勾配)
+ *
+ * 反射率方程式: R(x,y) = ρ(x,y) * (p*ps + q*qs + 1) / sqrt((1+p²+q²)(1+ps²+qs²+ts²))
+ * 光源定数の場合、正規化輝度 E = R/ρ から:
+ * E * sqrt(1+p²+q²) * sqrt(1+ps²+qs²+ts²) = p*ps + q*qs + 1
+ *
+ * 簡易推定: I(x,y) ≈ (1 - p*Gx - q*Gy) として、ローカル勾配から推定
+ */
+static void compute_pq_gradients(uint8_t y_prev[FRAME_WIDTH], uint8_t y_curr[FRAME_WIDTH],
+                                 uint8_t y_next[FRAME_WIDTH], uint8_t pq_out[FRAME_WIDTH * 2])
+{
+    // Sobelカーネルで輝度勾配を計算
+    const int sobel_x[9] = {
+        -1, 0, 1,
+        -2, 0, 2,
+        -1, 0, 1};
+    const int sobel_y[9] = {
+        -1, -2, -1,
+        0, 0, 0,
+        1, 2, 1};
+
+    // 最初と最後のピクセルは0に設定
+    pq_out[0] = 0;                   // q[0]
+    pq_out[1] = 0;                   // p[0]
+    pq_out[FRAME_WIDTH * 2 - 2] = 0; // q[last]
+    pq_out[FRAME_WIDTH * 2 - 1] = 0; // p[last]
+
+    // 勾配を計算
+    for (int x = 1; x < FRAME_WIDTH - 1; x++)
+    {
+        int gx = 0, gy = 0;
+
+        // 3x3カーネルを適用
+        uint8_t *rows[3] = {y_prev, y_curr, y_next};
+        for (int ky = 0; ky < 3; ky++)
+        {
+            for (int kx = 0; kx < 3; kx++)
+            {
+                int pixel_x = x - 1 + kx;
+                int idx = ky * 3 + kx;
+                gx += sobel_x[idx] * rows[ky][pixel_x];
+                gy += sobel_y[idx] * rows[ky][pixel_x];
+            }
+        }
+
+        // 勾配をスケーリング: -127〜+127の範囲に正規化
+        // Sobel出力範囲: 約±1020 → ÷8でスケーリング
+        int p = gx / 8;
+        int q = gy / 8;
+
+        // 範囲制限
+        if (p < -127)
+            p = -127;
+        if (p > 127)
+            p = 127;
+        if (q < -127)
+            q = -127;
+        if (q > 127)
+            q = 127;
+
+        // 符号なし8ビットに変換（0=中央値、-127→0、+127→254）
+        pq_out[x * 2] = (uint8_t)(q + 127);     // q成分
+        pq_out[x * 2 + 1] = (uint8_t)(p + 127); // p成分
+    }
+}
+
 /* エッジ強度をYUV422形式に変換（MATLAB yuv422_to_rgb_fast完全対応）
  * Y = エッジ強度, U = V = 128（グレースケール）
  * YUV422フォーマット（リトルエンディアン）:
@@ -263,7 +336,8 @@ void main_thread3_entry(void *pvParameters)
 {
     FSP_PARAMETER_NOT_USED(pvParameters);
 
-    xprintf("[Thread3] Sobel edge detector started\n");
+    xprintf("[Thread3] Shape from Shading (p,q gradient) processor started\n");
+    xprintf("[Thread3] Light source: ps=%.2f, qs=%.2f, ts=%.2f\n", LIGHT_PS, LIGHT_QS, LIGHT_TS);
 #if USE_HELIUM_MVE
     xprintf("[Thread3] Helium MVE acceleration ENABLED\n");
 #else
@@ -311,17 +385,12 @@ void main_thread3_entry(void *pvParameters)
                 extract_y_component(yuv_lines[row_index], y_lines[row_index], FRAME_WIDTH);
             }
 
-            // Sobelフィルタを適用
-            apply_sobel_filter(y_lines[0], y_lines[1], y_lines[2], edge_line);
+            // p, q勾配を計算（Shape from Shading）
+            // edge_lineに直接 [q0 p0 q1 p1 ...] 形式で640バイト書き込まれる
+            compute_pq_gradients(y_lines[0], y_lines[1], y_lines[2], yuv_out);
 
-            // デバッグ: Y成分をそのまま出力
-            // memcpy(edge_line, y_lines[1], FRAME_WIDTH);
-
-            // エッジ結果をYUV422に変換
-            edge_to_yuv422(edge_line, yuv_out);
-
-            // HyperRAMのMONO_OFFSETに書き込み
-            uint32_t write_offset = MONO_OFFSET + (y * FRAME_WIDTH * 2);
+            // HyperRAMのGRADIENT_OFFSETに書き込み（そのまま640バイト）
+            uint32_t write_offset = GRADIENT_OFFSET + (y * FRAME_WIDTH * 2);
             fsp_err_t write_err = hyperram_b_write(yuv_out, (void *)write_offset, FRAME_WIDTH * 2);
             if (FSP_SUCCESS != write_err)
             {

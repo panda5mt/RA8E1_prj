@@ -178,20 +178,25 @@ function is_complete = check_frame_complete(packets)
 end
 
 function img_handle = process_complete_frame_fast(packets, total_chunks, total_size, ax, img_handle)
-    % 高速フレーム処理（元の正しいYUV変換使用）
+    % 高速フレーム処理（p,q勾配マップ表示）
     
     % フレームデータ復元（高速版）
     frame_data = reconstruct_frame_ultra_fast(packets, total_chunks, total_size);
     
-    % 元の正しく動作するYUV変換を使用
-    rgb_image = yuv422_to_rgb_fast(frame_data, 320, 240);
+    % p,q勾配マップを可視化
+    [p_map, q_map] = extract_pq_gradients(frame_data, 320, 240);
     
-    % 画像表示更新（最小限の処理）
+    % 画像表示更新（p,q勾配を合成表示）
     if isempty(img_handle) || ~ishandle(img_handle)
-        img_handle = imshow(rgb_image, 'Parent', ax);
-        set(ax, 'Title', text('String', 'RA8E1 Video', 'FontSize', 10));
+        % 勾配強度を計算（ベクトルの大きさ）
+        gradient_magnitude = sqrt(double(p_map).^2 + double(q_map).^2);
+        img_handle = imshow(gradient_magnitude, [], 'Parent', ax);
+        colormap(ax, jet); % カラーマップでp,q勾配強度を可視化
+        colorbar(ax);
+        set(ax, 'Title', text('String', 'Shape from Shading: p,q Gradient Map', 'FontSize', 10));
     else
-        img_handle.CData = rgb_image;  % 直接プロパティアクセス
+        gradient_magnitude = sqrt(double(p_map).^2 + double(q_map).^2);
+        img_handle.CData = gradient_magnitude;  % 直接プロパティアクセス
     end
     
     drawnow;% limitrate;  % 描画レート制限で効率化
@@ -332,6 +337,42 @@ function rgb_image = yuv422_to_rgb_fast(yuv_data, width, height)
     rgb_image = cat(3, R, G, B);
 end
 
+function gray_image = yuv422_to_grayscale(yuv_data, width, height)
+    % YUV422からY成分（輝度）のみを抽出してグレースケール画像を生成
+    % YUV422フォーマット: [V0 Y1 U0 Y0] [V1 Y3 U1 Y2] ... (リトルエンディアン)
+    
+    expected_bytes = width * height * 2;
+    if length(yuv_data) < expected_bytes
+        error('YUV data is too short. Expected: %d, Got: %d', expected_bytes, length(yuv_data));
+    end
+    
+    yuv_data = yuv_data(1:expected_bytes);
+    
+    % Y成分の抽出（高速ベクトル化処理）
+    % 8バイトブロック（4ピクセル）ごとに処理
+    % Y位置: byte[4]=Y0, byte[2]=Y1, byte[8]=Y2, byte[6]=Y3
+    indices = 1:8:length(yuv_data);
+    n_blocks = length(indices);
+    
+    Y_ch = zeros(width * height, 1, 'uint8');
+    
+    for i = 1:n_blocks
+        idx = indices(i);
+        if idx + 7 <= length(yuv_data)
+            block = yuv_data(idx:idx+7);
+            pix_base = (i-1)*4;
+            % MATLABのデコード順序: pix1=Y2, pix2=Y3, pix3=Y0, pix4=Y1
+            Y_ch(pix_base+1) = block(8);  % Y2
+            Y_ch(pix_base+2) = block(6);  % Y3
+            Y_ch(pix_base+3) = block(4);  % Y0
+            Y_ch(pix_base+4) = block(2);  % Y1
+        end
+    end
+    
+    % 画像形状に変換（転置が必要）
+    gray_image = reshape(Y_ch, width, height)';
+end
+
 function rgb_image = yuv422_to_rgb(yuv_data, width, height)
     % YUV422(YUYV)をRGBに変換(viewQVGA_YUV.mの処理を参考)
     
@@ -417,5 +458,25 @@ function rgb_image = yuv422_to_rgb(yuv_data, width, height)
     
     % RGB画像を結合
     rgb_image = cat(3, R, G, B);
+end
+
+function [p_map, q_map] = extract_pq_gradients(frame_data, width, height)
+    % p,q勾配マップを抽出
+    % フォーマット: [q0 p0 q1 p1 ...] (640バイト/行)
+    % 値の範囲: 0〜254 (127=中央値、0=-127、254=+127)
+    
+    total_pixels = width * height;
+    
+    % インターリーブされたデータから分離
+    q_raw = frame_data(1:2:end);  % 奇数インデックス: q勾配
+    p_raw = frame_data(2:2:end);  % 偶数インデックス: p勾配
+    
+    % 符号付き整数に変換 (-127〜+127)
+    q_signed = double(q_raw) - 127;
+    p_signed = double(p_raw) - 127;
+    
+    % 画像として reshape (width × height → height × width)
+    q_map = reshape(q_signed, [width, height])';
+    p_map = reshape(p_signed, [width, height])';
 end
 
