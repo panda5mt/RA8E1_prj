@@ -178,25 +178,22 @@ function is_complete = check_frame_complete(packets)
 end
 
 function img_handle = process_complete_frame_fast(packets, total_chunks, total_size, ax, img_handle)
-    % 高速フレーム処理（p,q勾配マップ表示）
+    % 高速フレーム処理（深度マップ表示）
     
     % フレームデータ復元（高速版）
     frame_data = reconstruct_frame_ultra_fast(packets, total_chunks, total_size);
     
-    % p,q勾配マップを可視化
-    [p_map, q_map] = extract_pq_gradients(frame_data, 320, 240);
+    % 深度マップを可視化（8bit grayscale: 320×240）
+    depth_map = extract_depth_map(frame_data, 320, 240);
     
-    % 画像表示更新（p,q勾配を合成表示）
+    % 画像表示更新（深度マップをjetカラーマップで表示）
     if isempty(img_handle) || ~ishandle(img_handle)
-        % 勾配強度を計算（ベクトルの大きさ）
-        gradient_magnitude = sqrt(double(p_map).^2 + double(q_map).^2);
-        img_handle = imshow(gradient_magnitude, [], 'Parent', ax);
-        colormap(ax, jet); % カラーマップでp,q勾配強度を可視化
+        img_handle = imshow(depth_map, [], 'Parent', ax);
+        colormap(ax, jet); % jetカラーマップで深度を可視化（青=遠、赤=近）
         colorbar(ax);
-        set(ax, 'Title', text('String', 'Shape from Shading: p,q Gradient Map', 'FontSize', 10));
+        set(ax, 'Title', text('String', 'Shape from Shading: Depth Map', 'FontSize', 10));
     else
-        gradient_magnitude = sqrt(double(p_map).^2 + double(q_map).^2);
-        img_handle.CData = gradient_magnitude;  % 直接プロパティアクセス
+        img_handle.CData = depth_map;  % 直接プロパティアクセス
     end
     
     drawnow;% limitrate;  % 描画レート制限で効率化
@@ -480,3 +477,14 @@ function [p_map, q_map] = extract_pq_gradients(frame_data, width, height)
     p_map = reshape(p_signed, [width, height])';
 end
 
+function depth_map = extract_depth_map(frame_data, width, height)
+    % 深度マップを抽出（8bit grayscale）
+    % フォーマット: [d0 d1 d2 ...] (320バイト/行)
+    % 値の範囲: 0〜255 (0=遠い、255=近い）
+    
+    % uint8データをdoubleに変換
+    depth_raw = double(frame_data);
+    
+    % 画像として reshape (width × height → height × width)
+    depth_map = reshape(depth_raw, [width, height])';
+end

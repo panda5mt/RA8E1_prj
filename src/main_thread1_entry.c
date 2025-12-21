@@ -17,9 +17,10 @@
 #include "ra/fsp/src/bsp/mcu/all/bsp_io.h"
 
 #define UDP_PORT_DEST 9000
-#define FRAME_SIZE (320 * 240 * 2) // YUV422 = 2 bytes/pixel
-#define MONO_OFFSET FRAME_SIZE     // モノクロ画像オフセット
-#define GRADIENT_OFFSET FRAME_SIZE // p,q勾配マップオフセット（MONO_OFFSETと同じ位置）
+#define FRAME_SIZE (320 * 240 * 2)    // YUV422 = 2 bytes/pixel
+#define MONO_OFFSET FRAME_SIZE        // モノクロ画像オフセット
+#define GRADIENT_OFFSET FRAME_SIZE    // p,q勾配マップオフセット（MONO_OFFSETと同じ位置）
+#define DEPTH_OFFSET (FRAME_SIZE * 2) // 深度マップオフセット（8bit grayscale: 320×240 = 76,800バイト）
 
 // UDP写真データチャンクヘッダー
 typedef struct __attribute__((packed))
@@ -150,9 +151,9 @@ static void udp_send_timer_cb(void *arg)
             // パケットにヘッダーをコピー
             memcpy(p->payload, &header, sizeof(udp_photo_header_t));
 
-            // HyperRAMからp,q勾配マップを読み込み（GRADIENT_OFFSET + sent_bytes）
+            // HyperRAMから深度マップを読み込み（DEPTH_OFFSET + sent_bytes）
             uint8_t *dest_ptr = (uint8_t *)p->payload + sizeof(udp_photo_header_t);
-            hyperram_b_read(dest_ptr, (void *)(GRADIENT_OFFSET + ctx->sent_bytes), send_size); // p,q勾配マップ
+            hyperram_b_read(dest_ptr, (void *)(DEPTH_OFFSET + ctx->sent_bytes), send_size); // 深度マップ（8bit grayscale）
             err_t e = udp_sendto(ctx->pcb, p, &ctx->dest_ip, ctx->port);
             pbuf_free(p);
 
@@ -401,11 +402,11 @@ void main_thread1_entry(void *pvParameters)
         ctx->port = UDP_PORT_DEST;
         ctx->interval_ms = 0; /* 0ms間隔（lwIPタスクに余裕を持たせたい場合は3ms） */
 
-        // 動画データ送信モードの設定（モノクロYUVデータ送信）
+        // 動画データ送信モード（深度マップ送信：8bit grayscale）
         ctx->is_video_mode = true;
         ctx->is_photo_mode = false;
         ctx->photo_data = (uint8_t *)HYPERRAM_BASE_ADDR; // 使用しない（hyperram_b_readで直接指定）
-        ctx->photo_size = 320 * 240 * 2;                 // 320x240x2 = 153600 bytes
+        ctx->photo_size = 320 * 240;                     // 深度マップ: 320x240x1 = 76,800 bytes
         ctx->sent_bytes = 0;
         ctx->chunk_size = 512; // 512バイトずつ送信
 

@@ -3,6 +3,7 @@
 #include "putchar_ra8usb.h"
 #include <string.h>
 #include <math.h>
+#include "arm_math.h" // CMSIS-DSP (FFT関数)
 
 // Helium MVE (ARM M-profile Vector Extension) support
 #if defined(__ARM_FEATURE_MVE) && (__ARM_FEATURE_MVE > 0)
@@ -16,6 +17,7 @@
 #define FRAME_HEIGHT 240
 #define FRAME_SIZE (FRAME_WIDTH * FRAME_HEIGHT * 2) // YUV422 = 2 bytes/pixel
 #define GRADIENT_OFFSET FRAME_SIZE                  // p,q勾配マップを配置（2チャンネル×8bit）
+#define DEPTH_OFFSET (FRAME_SIZE * 2)               // 深度マップ（8bit grayscale: 320×240 = 76,800バイト）
 
 // Shape from Shading 光源パラメータ（定数）
 #define LIGHT_PS 0.0f // 光源方向x成分
@@ -294,6 +296,36 @@ static void compute_pq_gradients(uint8_t y_prev[FRAME_WIDTH], uint8_t y_curr[FRA
     }
 }
 
+/* 簡易深度復元（行方向積分）
+ * p,q勾配から深度マップを生成
+ * 簡易版：行ごとにp勾配を積分（∫p dx）
+ * 本格版（FFT）は後で実装
+ */
+static void reconstruct_depth_simple(uint8_t pq_data[FRAME_WIDTH * 2], uint8_t depth_line[FRAME_WIDTH])
+{
+    // p勾配を符号付きに戻す（0〜254 → -127〜+127）
+    float z = 0.0f;           // 深度の累積値
+    const float scale = 2.0f; // スケーリングファクタ
+
+    for (int x = 0; x < FRAME_WIDTH; x++)
+    {
+        // p勾配を取得（偶数インデックス）
+        int p_raw = (int)pq_data[x * 2 + 1] - 127; // -127〜+127
+
+        // 深度を積分（z += p * dx、ここでdx=1ピクセル）
+        z += (float)p_raw * scale;
+
+        // 0〜255の範囲にマッピング
+        int depth_val = (int)(z + 128.0f);
+        if (depth_val < 0)
+            depth_val = 0;
+        if (depth_val > 255)
+            depth_val = 255;
+
+        depth_line[x] = (uint8_t)depth_val;
+    }
+}
+
 /* エッジ強度をYUV422形式に変換（MATLAB yuv422_to_rgb_fast完全対応）
  * Y = エッジ強度, U = V = 128（グレースケール）
  * YUV422フォーマット（リトルエンディアン）:
@@ -386,7 +418,7 @@ void main_thread3_entry(void *pvParameters)
             }
 
             // p, q勾配を計算（Shape from Shading）
-            // edge_lineに直接 [q0 p0 q1 p1 ...] 形式で640バイト書き込まれる
+            // yuv_outに直接 [q0 p0 q1 p1 ...] 形式で640バイト書き込まれる
             compute_pq_gradients(y_lines[0], y_lines[1], y_lines[2], yuv_out);
 
             // HyperRAMのGRADIENT_OFFSETに書き込み（そのまま640バイト）
@@ -395,6 +427,19 @@ void main_thread3_entry(void *pvParameters)
             if (FSP_SUCCESS != write_err)
             {
                 xprintf("[Thread3] Write error at line %d: %d\n", y, write_err);
+                goto next_frame;
+            }
+
+            // 深度復元（簡易版：p勾配の積分）
+            // edge_lineバッファを再利用して深度マップを生成
+            reconstruct_depth_simple(yuv_out, edge_line);
+
+            // HyperRAMのDEPTH_OFFSETに書き込み（320バイト/行）
+            uint32_t depth_offset = DEPTH_OFFSET + (y * FRAME_WIDTH);
+            fsp_err_t depth_write_err = hyperram_b_write(edge_line, (void *)depth_offset, FRAME_WIDTH);
+            if (FSP_SUCCESS != depth_write_err)
+            {
+                xprintf("[Thread3] Depth write error at line %d: %d\n", y, depth_write_err);
                 goto next_frame;
             }
 
