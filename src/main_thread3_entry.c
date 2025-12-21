@@ -784,7 +784,7 @@ void main_thread3_entry(void *pvParameters)
 
     next_frame:
         // フレーム全体の処理完了後、FFTベースの深度復元を実行
-        xprintf("[Thread3] Frame complete, starting FFT reconstruction\n");
+        // xprintf("[Thread3] Frame complete, starting FFT reconstruction\n");
         reconstruct_depth_fft();
 
         // 処理完了（2秒待機して次のサイクル）
