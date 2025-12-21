@@ -4,6 +4,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if __has_include("lwiperf_opts.h")
+    #include "lwiperf_opts.h"
+#endif
+
             #define NO_SYS ((0))
 #if (NO_SYS == 0)
             #define LWIP_PROVIDE_ERRNO (1)

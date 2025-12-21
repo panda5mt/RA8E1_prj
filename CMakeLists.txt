@@ -27,3 +27,9 @@ list(APPEND RASC_CMAKE_CXX_FLAGS "-march=armv8.1-m.main+mve")
 # If required user can amend RASC generated flags here, e.g. list(REMOVE_ITEM RASC_CMAKE_C_FLAGS "-Wall")
 
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/GeneratedSrc.cmake)
+
+# Add xprintf include path
+target_include_directories(${PROJECT_NAME}.elf
+    PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/xprintf/src
+)

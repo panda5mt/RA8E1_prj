@@ -110,11 +110,11 @@
             #endif
 
             #define USB_CFG_MODE (USB_CFG_PERI_MODE | USB_CFG_HOST_MODE)
-
+            #define USB_CFG_MULTIPORT (USB_CFG_DISABLE)
             #define USB_CFG_PARAM_CHECKING_ENABLE (BSP_CFG_PARAM_CHECKING_ENABLE)
             #define USB_CFG_CLKSEL (USB_CFG_24MHZ)
             #define USB_CFG_BUSWAIT (USB_CFG_BUSWAIT_7)
-            #define USB_CFG_BC (USB_CFG_ENABLE)
+            #define USB_CFG_BC (USB_CFG_DISABLE)
             #define USB_CFG_VBUS (USB_CFG_HIGH)
             #define USB_CFG_DCP (USB_CFG_DISABLE)
             #define USB_CFG_CLASS_REQUEST (USB_CFG_ENABLE)
@@ -123,8 +123,6 @@
             #define USB_CFG_LDO_REGULATOR (USB_CFG_DISABLE)
             #define USB_CFG_TYPEC_FEATURE (RA_NOT_DEFINED)
             #define USB_CFG_DMA_DTC_DISABLED   (USB_CFG_ENABLE)
-            #define USB_SRC_ADDRESS (NULL)
-            #define USB_DEST_ADDRESS (NULL)
             #define USB_CFG_TPLCNT (1)
             #define USB_CFG_TPL USB_NOVENDOR, USB_NOPRODUCT
             #define USB_CFG_TPL_TABLE NULL

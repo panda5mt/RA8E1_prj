@@ -7,12 +7,22 @@ set(RASC_PROJECT_NAME RA8E1_prj)
 SET(RASC_TOOLCHAIN_NAME LLVMARM)
 
 SET(RASC_CMAKE_ASM_FLAGS "-mfloat-abi=hard;--target=arm-none-eabi;-mcpu=cortex-m85;-Wunused;-Wuninitialized;-Wall;-Wextra;-Wmissing-declarations;-Wconversion;-Wpointer-arith;-Wshadow;-Waggregate-return;-Wno-parentheses-equality;-Wfloat-equal;-fshort-enums;-fno-unroll-loops;-fmessage-length=0;-fsigned-char;-ffunction-sections;-fdata-sections;-mthumb;-mlittle-endian;-x;assembler-with-cpp;-MP")
-SET(RASC_CMAKE_C_FLAGS "-mfloat-abi=hard;--target=arm-none-eabi;-mcpu=cortex-m85;-Wunused;-Wuninitialized;-Wall;-Wextra;-Wmissing-declarations;-Wconversion;-Wpointer-arith;-Wshadow;-Waggregate-return;-Wno-parentheses-equality;-Wfloat-equal;-fshort-enums;-fno-unroll-loops;-fmessage-length=0;-fsigned-char;-ffunction-sections;-fdata-sections;-mthumb;-mlittle-endian;-std=c99;-MP")
-SET(RASC_CMAKE_CXX_FLAGS "-mfloat-abi=hard;--target=arm-none-eabi;-mcpu=cortex-m85;-Wunused;-Wuninitialized;-Wall;-Wextra;-Wmissing-declarations;-Wconversion;-Wpointer-arith;-Wshadow;-Waggregate-return;-Wno-parentheses-equality;-Wfloat-equal;-fshort-enums;-fno-unroll-loops;-fmessage-length=0;-fsigned-char;-ffunction-sections;-fdata-sections;-mthumb;-mlittle-endian;-std=c++11;-MP")
-SET(RASC_CMAKE_EXE_LINKER_FLAGS "-mfloat-abi=hard;--target=arm-none-eabi;-mcpu=cortex-m85;-Wunused;-Wuninitialized;-Wall;-Wextra;-Wmissing-declarations;-Wconversion;-Wpointer-arith;-Wshadow;-Waggregate-return;-Wno-parentheses-equality;-Wfloat-equal;-fshort-enums;-fno-unroll-loops;-fmessage-length=0;-fsigned-char;-ffunction-sections;-fdata-sections;--target=arm-none-eabi;-mthumb;-mlittle-endian;-T;script/fsp.lld;-Wl,-Map=${PROJECT_NAME}.map;-Wl,--gc-sections;-Wl,--cref;-Wl,--icf=none;-o;${CMAKE_BINARY_DIR}/${PROJECT_NAME}.elf")
+SET(RASC_CMAKE_C_FLAGS "-mfloat-abi=hard;--target=arm-none-eabi;-mcpu=cortex-m85;-Wunused;-Wuninitialized;-Wall;-Wextra;-Wmissing-declarations;-Wconversion;-Wpointer-arith;-Wshadow;-Waggregate-return;-Wno-parentheses-equality;-Wfloat-equal;-fshort-enums;-fno-unroll-loops;-fmessage-length=0;-fsigned-char;-ffunction-sections;-fdata-sections;-mthumb;-mlittle-endian;-std=c99;-MP;-Os")
+SET(RASC_CMAKE_CXX_FLAGS "-mfloat-abi=hard;--target=arm-none-eabi;-mcpu=cortex-m85;-Wunused;-Wuninitialized;-Wall;-Wextra;-Wmissing-declarations;-Wconversion;-Wpointer-arith;-Wshadow;-Waggregate-return;-Wno-parentheses-equality;-Wfloat-equal;-fshort-enums;-fno-unroll-loops;-fmessage-length=0;-fsigned-char;-ffunction-sections;-fdata-sections;-mthumb;-mlittle-endian;-std=c++11;-MP;-Os")
+SET(RASC_CMAKE_EXE_LINKER_FLAGS "-mfloat-abi=hard;--target=arm-none-eabi;-mcpu=cortex-m85;-Wunused;-Wuninitialized;-Wall;-Wextra;-Wmissing-declarations;-Wconversion;-Wpointer-arith;-Wshadow;-Waggregate-return;-Wno-parentheses-equality;-Wfloat-equal;-fshort-enums;-fno-unroll-loops;-fmessage-length=0;-fsigned-char;-ffunction-sections;-fdata-sections;--target=arm-none-eabi;-mthumb;-mlittle-endian;-T;script/fsp.lld;-Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.map;-Wl,--gc-sections;-Wl,--cref;-Wl,--icf=none;-o;${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.elf;-Wl,-z,norelro")
 SET(RASC_CMAKE_DEFINITIONS "_RA_CORE=CM85;_RA_ORDINAL=1;_RENESAS_RA_")
 SET(RASC_ASM_FILES "${CMAKE_CURRENT_SOURCE_DIR}/ra_gen/*.asm")
 
+cmake_path(GET CMAKE_CURRENT_SOURCE_DIR PARENT_PATH PROJECT_PARENT_DIR)
+
+file(RELATIVE_PATH  VAR_CMAKE_BUILD_CONFIG_OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}")
+
+
+
+
+if(DEVICE AND (NOT "${RASC_TARGET_DEVICE}" STREQUAL "${DEVICE}"))
+	message(FATAL_ERROR "Incorrect device specified ${DEVICE} but project is built for ${RASC_TARGET_DEVICE}")
+endif()
 
 
 # ADD COMPILE FLAGS FOR GCC version >= 12.2
@@ -39,7 +49,7 @@ else()
 endif()
 
 # Make target for opening the FSP Configuration in Smart Configurator
-add_custom_target(rasc
+add_custom_target(open_rasc_${PROJECT_NAME}
     COMMAND ${RASC_COMMAND}
     WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
     COMMENT "FSP Smart Configurator"

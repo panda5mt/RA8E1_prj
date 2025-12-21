@@ -36,12 +36,12 @@
             #define BSP_CFG_PFS_PROTECT ((1))
 
             #define BSP_CFG_C_RUNTIME_INIT ((1))
-            #define BSP_CFG_EARLY_INIT     ((1))
+            #define BSP_CFG_EARLY_INIT     ((0))
 
             #define BSP_CFG_STARTUP_CLOCK_REG_NOT_RESET ((0))
 
             #ifndef BSP_CLOCK_CFG_MAIN_OSC_POPULATED
-            #define BSP_CLOCK_CFG_MAIN_OSC_POPULATED (0)
+            #define BSP_CLOCK_CFG_MAIN_OSC_POPULATED (1)
             #endif
 
             #ifndef BSP_CLOCK_CFG_MAIN_OSC_CLOCK_SOURCE

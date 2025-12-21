@@ -19,6 +19,12 @@
 #define GRADIENT_OFFSET FRAME_SIZE                  // p,q勾配マップを配置（2チャンネル×8bit）
 #define DEPTH_OFFSET (FRAME_SIZE * 2)               // 深度マップ（8bit grayscale: 320×240 = 76,800バイト）
 
+// FFT作業領域（HyperRAM上、complex float32）
+// p_fft, q_fftそれぞれ: 320×240×2(complex)×4(float) = 614,400バイト
+#define FFT_P_OFFSET (DEPTH_OFFSET + FRAME_WIDTH * FRAME_HEIGHT)     // p勾配FFT結果
+#define FFT_Q_OFFSET (FFT_P_OFFSET + FRAME_WIDTH * FRAME_HEIGHT * 8) // q勾配FFT結果
+#define FFT_Z_OFFSET (FFT_Q_OFFSET + FRAME_WIDTH * FRAME_HEIGHT * 8) // 深度FFT結果
+
 // Shape from Shading 光源パラメータ（定数）
 #define LIGHT_PS 0.0f // 光源方向x成分
 #define LIGHT_QS 0.0f // 光源方向y成分
@@ -326,6 +332,332 @@ static void reconstruct_depth_simple(uint8_t pq_data[FRAME_WIDTH * 2], uint8_t d
     }
 }
 
+/* Frankot-Chellappa法による深度復元（FFTベース）
+ * 分離可能FFTで実装（メモリ効率化）
+ * p,q勾配から2D FFTで深度を計算
+ */
+static void reconstruct_depth_fft(void)
+{
+    xprintf("[Thread3] Frankot-Chellappa depth reconstruction started\n");
+
+    // FFTサイズ（2のべき乗）: 256×256
+    const uint16_t FFT_SIZE = 256;
+
+    // CMSIS-DSP FFTインスタンス
+    arm_cfft_instance_f32 fft_instance;
+    arm_status status = arm_cfft_init_f32(&fft_instance, FFT_SIZE);
+    if (status != ARM_MATH_SUCCESS)
+    {
+        xprintf("[Thread3] FFT init failed: %d\n", status);
+        return;
+    }
+
+    xprintf("[Thread3] FFT init OK, size=%d\n", FFT_SIZE);
+
+    // 作業バッファ（スタック上: 1行分のcomplex float）
+    // 256ポイント × 2(real+imag) × 4byte = 2KB
+    float32_t row_buffer[FFT_SIZE * 2]; // Complex: [real0, imag0, real1, imag1, ...]
+
+    // ステップ1: p勾配の行方向FFT
+    xprintf("[Thread3] Step 1: Row-wise FFT for p gradient\n");
+    for (int y = 0; y < FRAME_HEIGHT; y++)
+    {
+        // HyperRAMからp,q勾配データを1行読み込み
+        uint8_t pq_line[FRAME_WIDTH * 2];
+        uint32_t offset = GRADIENT_OFFSET + (y * FRAME_WIDTH * 2);
+        hyperram_b_read(pq_line, (void *)offset, FRAME_WIDTH * 2);
+
+        // p勾配を抽出してcomplex配列に変換（実部のみ、虚部=0）
+        memset(row_buffer, 0, sizeof(row_buffer));
+        for (int x = 0; x < FRAME_WIDTH && x < FFT_SIZE; x++)
+        {
+            int p_raw = (int)pq_line[x * 2 + 1] - 127; // p勾配（-127〜+127）
+            row_buffer[x * 2] = (float32_t)p_raw;      // 実部
+            row_buffer[x * 2 + 1] = 0.0f;              // 虚部
+        }
+
+        // 行方向FFT実行
+        arm_cfft_f32(&fft_instance, row_buffer, 0, 1); // forward FFT
+
+        // 結果をHyperRAMのFFT_P_OFFSETに保存
+        uint32_t fft_offset = FFT_P_OFFSET + (y * FFT_SIZE * 2 * sizeof(float32_t));
+        hyperram_b_write(row_buffer, (void *)fft_offset, FFT_SIZE * 2 * sizeof(float32_t));
+    }
+
+    xprintf("[Thread3] Step 1 complete: p gradient row FFT done\n");
+
+    // Step 2: q勾配の行方向FFT
+    xprintf("[Thread3] Step 2: Row-wise FFT for q gradient\n");
+    for (int y = 0; y < FRAME_HEIGHT; y++)
+    {
+        // HyperRAMからp,q勾配データを1行読み込み
+        uint8_t pq_line[FRAME_WIDTH * 2];
+        uint32_t offset = GRADIENT_OFFSET + (y * FRAME_WIDTH * 2);
+        hyperram_b_read(pq_line, (void *)offset, FRAME_WIDTH * 2);
+
+        // q勾配を抽出してcomplex配列に変換（実部のみ、虚部=0）
+        memset(row_buffer, 0, sizeof(row_buffer));
+        for (int x = 0; x < FRAME_WIDTH && x < FFT_SIZE; x++)
+        {
+            int q_raw = (int)pq_line[x * 2] - 127; // q勾配（-127〜+127）
+            row_buffer[x * 2] = (float32_t)q_raw;  // 実部
+            row_buffer[x * 2 + 1] = 0.0f;          // 虚部
+        }
+
+        // 行方向FFT実行
+        arm_cfft_f32(&fft_instance, row_buffer, 0, 1); // forward FFT
+
+        // 結果をHyperRAMのFFT_Q_OFFSETに保存
+        uint32_t fft_offset = FFT_Q_OFFSET + (y * FFT_SIZE * 2 * sizeof(float32_t));
+        hyperram_b_write(row_buffer, (void *)fft_offset, FFT_SIZE * 2 * sizeof(float32_t));
+    }
+
+    xprintf("[Thread3] Step 2 complete: q gradient row FFT done\n");
+
+    // Step 3: 列方向FFT（p勾配）
+    xprintf("[Thread3] Step 3: Column-wise FFT for p gradient\n");
+    for (int x = 0; x < FFT_SIZE; x++)
+    {
+        // 1列分のデータをHyperRAMから読み込み
+        memset(row_buffer, 0, sizeof(row_buffer));
+        for (int y = 0; y < FRAME_HEIGHT && y < FFT_SIZE; y++)
+        {
+            // FFT_P_OFFSETから(x,y)位置のcomplex値を読み込み
+            uint32_t offset = FFT_P_OFFSET + (y * FFT_SIZE * 2 * sizeof(float32_t)) + (x * 2 * sizeof(float32_t));
+            float32_t complex_val[2]; // [real, imag]
+            hyperram_b_read(complex_val, (void *)offset, 2 * sizeof(float32_t));
+
+            row_buffer[y * 2] = complex_val[0];     // 実部
+            row_buffer[y * 2 + 1] = complex_val[1]; // 虚部
+        }
+
+        // 列方向FFT実行
+        arm_cfft_f32(&fft_instance, row_buffer, 0, 1); // forward FFT
+
+        // 結果をHyperRAMに書き戻す（転置して保存）
+        for (int y = 0; y < FFT_SIZE; y++)
+        {
+            uint32_t offset = FFT_P_OFFSET + (y * FFT_SIZE * 2 * sizeof(float32_t)) + (x * 2 * sizeof(float32_t));
+            float32_t complex_val[2];
+            complex_val[0] = row_buffer[y * 2];     // 実部
+            complex_val[1] = row_buffer[y * 2 + 1]; // 虚部
+            hyperram_b_write(complex_val, (void *)offset, 2 * sizeof(float32_t));
+        }
+    }
+
+    xprintf("[Thread3] Step 3a complete: p gradient column FFT done\n");
+
+    // Step 3b: 列方向FFT（q勾配）
+    xprintf("[Thread3] Step 3b: Column-wise FFT for q gradient\n");
+    for (int x = 0; x < FFT_SIZE; x++)
+    {
+        // 1列分のデータをHyperRAMから読み込み
+        memset(row_buffer, 0, sizeof(row_buffer));
+        for (int y = 0; y < FRAME_HEIGHT && y < FFT_SIZE; y++)
+        {
+            uint32_t offset = FFT_Q_OFFSET + (y * FFT_SIZE * 2 * sizeof(float32_t)) + (x * 2 * sizeof(float32_t));
+            float32_t complex_val[2];
+            hyperram_b_read(complex_val, (void *)offset, 2 * sizeof(float32_t));
+
+            row_buffer[y * 2] = complex_val[0];
+            row_buffer[y * 2 + 1] = complex_val[1];
+        }
+
+        // 列方向FFT実行
+        arm_cfft_f32(&fft_instance, row_buffer, 0, 1);
+
+        // 結果をHyperRAMに書き戻す
+        for (int y = 0; y < FFT_SIZE; y++)
+        {
+            uint32_t offset = FFT_Q_OFFSET + (y * FFT_SIZE * 2 * sizeof(float32_t)) + (x * 2 * sizeof(float32_t));
+            float32_t complex_val[2];
+            complex_val[0] = row_buffer[y * 2];
+            complex_val[1] = row_buffer[y * 2 + 1];
+            hyperram_b_write(complex_val, (void *)offset, 2 * sizeof(float32_t));
+        }
+    }
+
+    xprintf("[Thread3] Step 3 complete: Column FFT done for p and q\n");
+
+    // Step 4: 周波数領域での深度計算（Frankot-Chellappa法）
+    // Z(wx, wy) = (-j*wx*P + -j*wy*Q) / (wx² + wy²)
+    xprintf("[Thread3] Step 4: Frequency domain depth calculation\n");
+
+    for (int wy = 0; wy < FFT_SIZE; wy++)
+    {
+        for (int wx = 0; wx < FFT_SIZE; wx++)
+        {
+            // 周波数座標（-π〜π）
+            float freq_x = (float)(wx < FFT_SIZE / 2 ? wx : wx - FFT_SIZE) * (2.0f * PI / FFT_SIZE);
+            float freq_y = (float)(wy < FFT_SIZE / 2 ? wy : wy - FFT_SIZE) * (2.0f * PI / FFT_SIZE);
+
+            // 周波数の2乗和
+            float freq_sq = freq_x * freq_x + freq_y * freq_y;
+
+            // DC成分（wx=wy=0）はスキップ（ゼロ除算回避）
+            if (freq_sq < 1e-10f)
+            {
+                // DC成分は0に設定
+                uint32_t offset = FFT_Z_OFFSET + (wy * FFT_SIZE * 2 * sizeof(float32_t)) + (wx * 2 * sizeof(float32_t));
+                float32_t zero[2] = {0.0f, 0.0f};
+                hyperram_b_write(zero, (void *)offset, 2 * sizeof(float32_t));
+                continue;
+            }
+
+            // P(wx, wy)を読み込み
+            uint32_t p_offset = FFT_P_OFFSET + (wy * FFT_SIZE * 2 * sizeof(float32_t)) + (wx * 2 * sizeof(float32_t));
+            float32_t P[2]; // [real, imag]
+            hyperram_b_read(P, (void *)p_offset, 2 * sizeof(float32_t));
+
+            // Q(wx, wy)を読み込み
+            uint32_t q_offset = FFT_Q_OFFSET + (wy * FFT_SIZE * 2 * sizeof(float32_t)) + (wx * 2 * sizeof(float32_t));
+            float32_t Q[2]; // [real, imag]
+            hyperram_b_read(Q, (void *)q_offset, 2 * sizeof(float32_t));
+
+            // -j*wx*P: 複素数乗算 (-j) * (P_real + j*P_imag) = P_imag - j*P_real
+            float32_t jxP_real = P[1] * freq_x;  // P_imag * wx
+            float32_t jxP_imag = -P[0] * freq_x; // -P_real * wx
+
+            // -j*wy*Q
+            float32_t jyQ_real = Q[1] * freq_y;
+            float32_t jyQ_imag = -Q[0] * freq_y;
+
+            // 分子 = -j*wx*P + -j*wy*Q
+            float32_t numer_real = jxP_real + jyQ_real;
+            float32_t numer_imag = jxP_imag + jyQ_imag;
+
+            // Z = 分子 / freq_sq（実数除算）
+            float32_t Z[2];
+            Z[0] = numer_real / freq_sq;
+            Z[1] = numer_imag / freq_sq;
+
+            // 結果をFFT_Z_OFFSETに保存
+            uint32_t z_offset = FFT_Z_OFFSET + (wy * FFT_SIZE * 2 * sizeof(float32_t)) + (wx * 2 * sizeof(float32_t));
+            hyperram_b_write(Z, (void *)z_offset, 2 * sizeof(float32_t));
+        }
+    }
+
+    xprintf("[Thread3] Step 4 complete: Frequency domain depth calculated\n");
+
+    // Step 5: 逆FFT（列方向→行方向）
+    xprintf("[Thread3] Step 5: Inverse FFT (column-wise first)\n");
+
+    // Step 5a: 列方向IFFT
+    for (int x = 0; x < FFT_SIZE; x++)
+    {
+        // 1列分のデータをHyperRAMから読み込み
+        memset(row_buffer, 0, sizeof(row_buffer));
+        for (int y = 0; y < FFT_SIZE; y++)
+        {
+            uint32_t offset = FFT_Z_OFFSET + (y * FFT_SIZE * 2 * sizeof(float32_t)) + (x * 2 * sizeof(float32_t));
+            float32_t complex_val[2];
+            hyperram_b_read(complex_val, (void *)offset, 2 * sizeof(float32_t));
+
+            row_buffer[y * 2] = complex_val[0];
+            row_buffer[y * 2 + 1] = complex_val[1];
+        }
+
+        // 列方向IFFT実行
+        arm_cfft_f32(&fft_instance, row_buffer, 1, 1); // inverse FFT (ifftFlag=1)
+
+        // 結果をHyperRAMに書き戻す
+        for (int y = 0; y < FFT_SIZE; y++)
+        {
+            uint32_t offset = FFT_Z_OFFSET + (y * FFT_SIZE * 2 * sizeof(float32_t)) + (x * 2 * sizeof(float32_t));
+            float32_t complex_val[2];
+            complex_val[0] = row_buffer[y * 2];
+            complex_val[1] = row_buffer[y * 2 + 1];
+            hyperram_b_write(complex_val, (void *)offset, 2 * sizeof(float32_t));
+        }
+    }
+
+    xprintf("[Thread3] Step 5a complete: Column IFFT done\n");
+
+    // Step 5b: 行方向IFFT
+    xprintf("[Thread3] Step 5b: Row-wise IFFT\n");
+    for (int y = 0; y < FRAME_HEIGHT && y < FFT_SIZE; y++)
+    {
+        // 1行分のデータをHyperRAMから読み込み
+        uint32_t offset = FFT_Z_OFFSET + (y * FFT_SIZE * 2 * sizeof(float32_t));
+        hyperram_b_read(row_buffer, (void *)offset, FFT_SIZE * 2 * sizeof(float32_t));
+
+        // 行方向IFFT実行
+        arm_cfft_f32(&fft_instance, row_buffer, 1, 1); // inverse FFT
+
+        // 結果をHyperRAMに書き戻す
+        hyperram_b_write(row_buffer, (void *)offset, FFT_SIZE * 2 * sizeof(float32_t));
+    }
+
+    xprintf("[Thread3] Step 5 complete: Inverse FFT done\n");
+
+    // ========== Step 6: 実部抽出と正規化 ==========
+    // 最初にmin/maxを検出（正規化のため）
+    float32_t z_min = 1e10f;
+    float32_t z_max = -1e10f;
+
+    for (int y = 0; y < FRAME_HEIGHT; y++)
+    {
+        uint32_t offset = FFT_Z_OFFSET + (y * FFT_SIZE * 2 * sizeof(float32_t));
+        hyperram_b_read(row_buffer, (void *)offset, FFT_SIZE * 2 * sizeof(float32_t));
+
+        // FFT_SIZE=256, FRAME_WIDTH=320なので、256ピクセル分のみ処理
+        int width_to_process = (FFT_SIZE < FRAME_WIDTH) ? FFT_SIZE : FRAME_WIDTH;
+        for (int x = 0; x < width_to_process; x++)
+        {
+            float32_t z_real = row_buffer[x * 2]; // 実部
+            if (z_real < z_min)
+                z_min = z_real;
+            if (z_real > z_max)
+                z_max = z_real;
+        }
+    }
+
+    // 正規化して8bit深度マップ保存
+    float32_t z_range = z_max - z_min;
+    if (z_range < 1e-6f)
+        z_range = 1.0f; // ゼロ除算回避
+
+    uint8_t depth_line[FRAME_WIDTH];
+
+    for (int y = 0; y < FRAME_HEIGHT; y++)
+    {
+        // 1行分の複素数深度を読み込み（FFT_SIZE=256ピクセル分）
+        uint32_t offset = FFT_Z_OFFSET + (y * FFT_SIZE * 2 * sizeof(float32_t));
+        hyperram_b_read(row_buffer, (void *)offset, FFT_SIZE * 2 * sizeof(float32_t));
+
+        // 実部を抽出して0-255に正規化
+        for (int x = 0; x < FRAME_WIDTH; x++)
+        {
+            float32_t z_real;
+            if (x < FFT_SIZE)
+            {
+                // FFTデータから取得
+                z_real = row_buffer[x * 2]; // 実部
+            }
+            else
+            {
+                // FFTサイズを超える部分は最後の値で埋める
+                z_real = row_buffer[(FFT_SIZE - 1) * 2];
+            }
+
+            float32_t normalized = (z_real - z_min) / z_range;
+            int depth_val = (int)(normalized * 255.0f);
+
+            if (depth_val < 0)
+                depth_val = 0;
+            if (depth_val > 255)
+                depth_val = 255;
+
+            depth_line[x] = (uint8_t)depth_val;
+        }
+
+        // HyperRAMに保存
+        hyperram_b_write(depth_line, (void *)(DEPTH_OFFSET + y * FRAME_WIDTH), FRAME_WIDTH);
+    }
+
+    xprintf("[Thread3] FFT depth reconstruction complete\n");
+}
+
 /* エッジ強度をYUV422形式に変換（MATLAB yuv422_to_rgb_fast完全対応）
  * Y = エッジ強度, U = V = 128（グレースケール）
  * YUV422フォーマット（リトルエンディアン）:
@@ -451,6 +783,10 @@ void main_thread3_entry(void *pvParameters)
         }
 
     next_frame:
+        // フレーム全体の処理完了後、FFTベースの深度復元を実行
+        xprintf("[Thread3] Frame complete, starting FFT reconstruction\n");
+        reconstruct_depth_fft();
+
         // 処理完了（2秒待機して次のサイクル）
         vTaskDelay(pdMS_TO_TICKS(2000));
     }

@@ -17,6 +17,13 @@ bool ospi_b_dma_sent = false;
 static bool g_ospi_initialized = false;
 static SemaphoreHandle_t g_ospi_write_mutex = NULL;
 static SemaphoreHandle_t g_ospi_read_mutex = NULL;
+spi_flash_erase_command_t g_command_erase_sets[] =
+    {
+        [0] = {
+            .command = 0x00,
+            .size = 0U,
+        }};
+
 /* Custom command sets. */
 ospi_b_xspi_command_set_t g_command_sets[] =
     {
@@ -37,7 +44,7 @@ ospi_b_xspi_command_set_t g_command_sets[] =
                .read_dummy_cycles = OSPI_RAM_LATENCY_CYCLES,
                .program_dummy_cycles = OSPI_RAM_LATENCY_CYCLES,
 
-               .status_dummy_cycles = NULL,
+               .status_dummy_cycles = 0,
                .p_erase_commands = NULL}};
 
 fsp_err_t ospi_raw_trans(spi_flash_direct_transfer_t *p_trans,

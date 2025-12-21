@@ -120,10 +120,10 @@ FSP Configuration
     Parameter checking: Disabled
     Assert Failures: Return FSP_ERR_ASSERTION
     Clock Registers not Reset Values during Startup: Disabled
-    Main Oscillator Populated: Not Populated
+    Main Oscillator Populated: Populated
     PFS Protect: Enabled
     C Runtime Initialization : Enabled
-    Early BSP Initialization : Enabled
+    Early BSP Initialization : Disabled
     Main Oscillator Clock Source: Crystal or Resonator
     Subclock Populated: Populated
     Subclock Drive (Drive capacitance availability varies by MCU): Standard/Normal mode
@@ -463,6 +463,10 @@ FSP Configuration
     
   User Event Links
     
+  Linker Section Mappings
+    *(.bss.g_heap): RAM Uninitialized
+    *(.bss.g_main_stack): RAM Uninitialized
+    
   Module "I/O Port (r_ioport)"
     Parameter Checking: Default (BSP)
     CCD Support: Not Supported
@@ -488,7 +492,7 @@ FSP Configuration
     Parameter Checking: Default (BSP)
     CL Only Mode: Disabled
     CPU Bus Access Wait Cycles: 9 cycles
-    Battery Charging: Enabled
+    Battery Charging: Not Supported
     Power IC Shutdown Polarity: Active High
     Dedicated Charging Port (DCP) Mode: Disabled
     Notifications for SET_INTERFACE/SET_FEATURE/CLEAR_FEATURE: Enabled
@@ -496,8 +500,7 @@ FSP Configuration
     Continuous Transfer Mode: Disabled
     LDO Regulator: Not Supported
     DMA/DTC Support: DMA Disabled
-    DMA/DTC Source Address: DMA Disabled
-    DMA/DTC Destination Address: DMA Disabled
+    USB Multiport Enable: Not Supported
     USB Compliance Test mode: Disabled
     USB TPL table name: NULL
     
@@ -811,6 +814,7 @@ FSP Configuration
     Parameter Checking: Default (BSP)
     ET0_LINKSTA Pin Status Flag: Fall -> Rise
     Link Signal Change Flag: Unused
+    Read Buffer Size Checking: Disabled
     
   Module "Ethernet (r_ether_phy)"
     Parameter Checking: Default (BSP)
@@ -930,8 +934,12 @@ FSP Configuration
       Input: Data Bus Specifications: Data Bus Size: 8-bit
       Input: Data Bus Specifications: HSYNC Polarity: High
       Input: Data Bus Specifications: VSYNC Polarity: High
+      Input: Image Component Input Order (Image Capture Mode Only): Cb0, Y0, Cr0, Y1
       Output: Byte Swapping: 
       Output: Burst Transfer Mode: Transfer in 32-byte units
+      Output: Format: Conversion: YCbCr422 (No Conversion)
+      Output: Scale-Down: Horizontal Size: 0
+      Output: Scale-Down: Vertical Size: 0
       Interrupts: Callback: g_ceu0_user_callback
       Interrupts: CEU Interrupt Priority: Priority 2
       Interrupts: Selectable CEU Events: One-Frame Capture End Event: Enabled
@@ -976,6 +984,14 @@ FSP Configuration
       General: Compare Match: Compare Match A: Compare match value: 0
       General: Compare Match: Compare Match B: Status: Disabled
       General: Compare Match: Compare Match B: Compare match value: 0
+      General: Compare Match: Compare Match C: Status: Disabled
+      General: Compare Match: Compare Match C: Compare match value: 0x10000
+      General: Compare Match: Compare Match D: Status: Disabled
+      General: Compare Match: Compare Match D: Compare match value: 0x10000
+      General: Compare Match: Compare Match E: Status: Disabled
+      General: Compare Match: Compare Match E: Compare match value: 0x10000
+      General: Compare Match: Compare Match F: Status: Disabled
+      General: Compare Match: Compare Match F: Compare match value: 0x10000
       General: Period Unit: Hertz
       Output: Custom Waveform: GTIOA: Initial Output Level: Pin Level Low
       Output: Custom Waveform: GTIOA: Cycle End Output Level: Pin Level Retain
@@ -1006,6 +1022,10 @@ FSP Configuration
       Interrupts: Overflow/Crest Interrupt Priority: Disabled
       Interrupts: Capture/Compare match A Interrupt Priority: Disabled
       Interrupts: Capture/Compare match B Interrupt Priority: Disabled
+      Interrupts: Compare Match C Interrupt Priority: Disabled
+      Interrupts: Compare Match D Interrupt Priority: Disabled
+      Interrupts: Compare Match E Interrupt Priority: Disabled
+      Interrupts: Compare Match F Interrupt Priority: Disabled
       Interrupts: Underflow/Trough Interrupt Priority: Disabled
       Extra Features: Extra Features: Disabled
       Extra Features: Output Disable: POEG Link: POEG Channel 0
@@ -1030,6 +1050,14 @@ FSP Configuration
       General: Compare Match: Compare Match A: Compare match value: 0
       General: Compare Match: Compare Match B: Status: Disabled
       General: Compare Match: Compare Match B: Compare match value: 0
+      General: Compare Match: Compare Match C: Status: Disabled
+      General: Compare Match: Compare Match C: Compare match value: 0x10000
+      General: Compare Match: Compare Match D: Status: Disabled
+      General: Compare Match: Compare Match D: Compare match value: 0x10000
+      General: Compare Match: Compare Match E: Status: Disabled
+      General: Compare Match: Compare Match E: Compare match value: 0x10000
+      General: Compare Match: Compare Match F: Status: Disabled
+      General: Compare Match: Compare Match F: Compare match value: 0x10000
       General: Period Unit: Kilohertz
       Output: Custom Waveform: GTIOA: Initial Output Level: Pin Level Low
       Output: Custom Waveform: GTIOA: Cycle End Output Level: Pin Level Retain
@@ -1060,6 +1088,10 @@ FSP Configuration
       Interrupts: Overflow/Crest Interrupt Priority: Disabled
       Interrupts: Capture/Compare match A Interrupt Priority: Disabled
       Interrupts: Capture/Compare match B Interrupt Priority: Disabled
+      Interrupts: Compare Match C Interrupt Priority: Disabled
+      Interrupts: Compare Match D Interrupt Priority: Disabled
+      Interrupts: Compare Match E Interrupt Priority: Disabled
+      Interrupts: Compare Match F Interrupt Priority: Disabled
       Interrupts: Underflow/Trough Interrupt Priority: Disabled
       Extra Features: Extra Features: Disabled
       Extra Features: Output Disable: POEG Link: POEG Channel 0
@@ -1084,8 +1116,10 @@ FSP Configuration
       General: DS Auto-calibration Pattern Address: 0
       Command Sets: Custom Table: Table Pointer: g_command_sets
       Command Sets: Custom Table: Table Length: 1
-      Command Sets: Erase Sizes: Sector Erase: 4096
-      Command Sets: Erase Sizes: Block Erase: 262144
+      Command Sets: Custom Table: Erase Command Table: g_command_erase_sets
+      Command Sets: Custom Table: Erase Command Table Length: 1
+      Command Sets: Erase Sizes: Sector Erase: 0
+      Command Sets: Erase Sizes: Block Erase: 0
       Command Sets: Initial Mode: Protocol Mode: Dual data rate OPI (8D-8D-8D)
       Command Sets: Initial Mode: Frame Format: xSPI Profile 1.0
       Command Sets: Initial Mode: Latency Mode: Variable (DQS)
@@ -1193,7 +1227,6 @@ FSP Configuration
         USB Mode: Peri mode
         USB Speed: Full Speed
         USB Module Number: USB_IP0 Port
-        USB Device Class: Peripheral Communications Device Class
         USB Descriptor: g_usb_descriptor
         USB Compliance Callback: NULL
         USBFS Interrupt Priority: Priority 12
