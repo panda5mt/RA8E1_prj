@@ -783,9 +783,9 @@ void main_thread3_entry(void *pvParameters)
         }
 
     next_frame:
-        // フレーム全体の処理完了後、FFTベースの深度復元を実行
+        // FFT深度マップを無効化（簡易深度マップのみ使用）
         // xprintf("[Thread3] Frame complete, starting FFT reconstruction\n");
-        reconstruct_depth_fft();
+        // reconstruct_depth_fft();
 
         // 処理完了（2秒待機して次のサイクル）
         vTaskDelay(pdMS_TO_TICKS(2000));
