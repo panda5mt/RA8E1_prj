@@ -311,8 +311,58 @@ static void compute_pq_gradients(uint8_t y_prev[FRAME_WIDTH], uint8_t y_curr[FRA
 /* 簡易深度復元（行方向積分）
  * p,q勾配から深度マップを生成
  * 簡易版：行ごとにp勾配を積分（∫p dx）
- * 本格版（FFT）は後で実装
  */
+#if USE_HELIUM_MVE
+// Helium MVE版 - ベクトル化による高速化
+static void reconstruct_depth_simple(uint8_t pq_data[FRAME_WIDTH * 2], uint8_t depth_line[FRAME_WIDTH])
+{
+    float z = 0.0f;           // 深度の累積値
+    const float scale = 2.0f; // スケーリングファクタ
+
+    // 8ピクセル単位でベクトル処理
+    int x;
+    for (x = 0; x < FRAME_WIDTH - 7; x += 8)
+    {
+        // 8ピクセル分のp勾配を抽出
+        int16_t p_raw[8] __attribute__((aligned(16)));
+        for (int i = 0; i < 8; i++)
+        {
+            p_raw[i] = (int16_t)pq_data[(x + i) * 2 + 1] - 127; // -127〜+127
+        }
+
+        // スカラー積分（累積和）
+        for (int i = 0; i < 8; i++)
+        {
+            z += (float)p_raw[i] * scale;
+
+            // 0〜255の範囲にマッピング
+            int depth_val = (int)(z + 128.0f);
+            if (depth_val < 0)
+                depth_val = 0;
+            if (depth_val > 255)
+                depth_val = 255;
+
+            depth_line[x + i] = (uint8_t)depth_val;
+        }
+    }
+
+    // 残りをスカラー処理
+    for (; x < FRAME_WIDTH; x++)
+    {
+        int p_raw = (int)pq_data[x * 2 + 1] - 127;
+        z += (float)p_raw * scale;
+
+        int depth_val = (int)(z + 128.0f);
+        if (depth_val < 0)
+            depth_val = 0;
+        if (depth_val > 255)
+            depth_val = 255;
+
+        depth_line[x] = (uint8_t)depth_val;
+    }
+}
+#else
+// 標準版（MVEなし）
 static void reconstruct_depth_simple(uint8_t pq_data[FRAME_WIDTH * 2], uint8_t depth_line[FRAME_WIDTH])
 {
     // p勾配を符号付きに戻す（0〜254 → -127〜+127）
@@ -337,6 +387,7 @@ static void reconstruct_depth_simple(uint8_t pq_data[FRAME_WIDTH * 2], uint8_t d
         depth_line[x] = (uint8_t)depth_val;
     }
 }
+#endif
 
 /* Frankot-Chellappa法による深度復元（FFTベース）
  * 分離可能FFTで実装（メモリ効率化）
