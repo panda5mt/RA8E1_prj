@@ -349,6 +349,12 @@ static void reconstruct_depth_simple(uint8_t pq_data[FRAME_WIDTH * 2], uint8_t d
         {
             z += (float)p_raw[i] * scale;
 
+            // 積分値が極端になりすぎないように制限
+            if (z < -200.0f)
+                z = -200.0f;
+            if (z > 200.0f)
+                z = 200.0f;
+
             int depth_val = (int)(z + 128.0f);
             if (depth_val < 0)
                 depth_val = 0;
@@ -368,6 +374,12 @@ static void reconstruct_depth_simple(uint8_t pq_data[FRAME_WIDTH * 2], uint8_t d
         {
             z += (float)p_raw[i] * scale;
 
+            // 積分値が極端になりすぎないように制限
+            if (z < -200.0f)
+                z = -200.0f;
+            if (z > 200.0f)
+                z = 200.0f;
+
             int depth_val = (int)(z + 128.0f);
             if (depth_val < 0)
                 depth_val = 0;
@@ -383,6 +395,12 @@ static void reconstruct_depth_simple(uint8_t pq_data[FRAME_WIDTH * 2], uint8_t d
     {
         int p_raw = (int)pq_data[x * 2 + 1] - 127;
         z += (float)p_raw * scale;
+
+        // 積分値が極端になりすぎないように制限
+        if (z < -200.0f)
+            z = -200.0f;
+        if (z > 200.0f)
+            z = 200.0f;
 
         int depth_val = (int)(z + 128.0f);
         if (depth_val < 0)
