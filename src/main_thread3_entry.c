@@ -313,29 +313,42 @@ static void compute_pq_gradients(uint8_t y_prev[FRAME_WIDTH], uint8_t y_curr[FRA
  * 簡易版：行ごとにp勾配を積分（∫p dx）
  */
 #if USE_HELIUM_MVE
-// Helium MVE版 - ベクトル化による高速化
+// Helium MVE版 - 真のベクトル命令による高速化
 static void reconstruct_depth_simple(uint8_t pq_data[FRAME_WIDTH * 2], uint8_t depth_line[FRAME_WIDTH])
 {
     float z = 0.0f;           // 深度の累積値
     const float scale = 2.0f; // スケーリングファクタ
 
-    // 8ピクセル単位でベクトル処理
+    // 16ピクセル単位でMVEベクトル処理（128-bit）
     int x;
-    for (x = 0; x < FRAME_WIDTH - 7; x += 8)
+    for (x = 0; x < FRAME_WIDTH - 15; x += 16)
     {
-        // 8ピクセル分のp勾配を抽出
-        int16_t p_raw[8] __attribute__((aligned(16)));
-        for (int i = 0; i < 8; i++)
+        // 16ピクセル分のp勾配を抽出（128-bit MVEロード用）
+        uint8_t p_bytes[16] __attribute__((aligned(16)));
+        for (int i = 0; i < 16; i++)
         {
-            p_raw[i] = (int16_t)pq_data[(x + i) * 2 + 1] - 127; // -127〜+127
+            p_bytes[i] = pq_data[(x + i) * 2 + 1]; // p成分
         }
 
-        // スカラー積分（累積和）
+        // MVEベクトルロード（128-bit = 16バイト）
+        uint8x16_t p_u8_vec = vld1q_u8(p_bytes);
+
+        // uint8 → int16 拡張（MVE: 下位8バイト）
+        int16x8_t p_s16_low = vreinterpretq_s16_u16(vmovlbq_u8(p_u8_vec));
+
+        // -127オフセット適用（MVEベクトル減算）
+        int16x8_t offset = vdupq_n_s16(127);
+        int16x8_t p_adjusted_low = vsubq_s16(p_s16_low, offset);
+
+        // ベクトルをスカラーに展開
+        int16_t p_raw[8] __attribute__((aligned(16)));
+        vst1q_s16(p_raw, p_adjusted_low);
+
+        // 積分処理（前半8ピクセル）
         for (int i = 0; i < 8; i++)
         {
             z += (float)p_raw[i] * scale;
 
-            // 0〜255の範囲にマッピング
             int depth_val = (int)(z + 128.0f);
             if (depth_val < 0)
                 depth_val = 0;
@@ -343,6 +356,25 @@ static void reconstruct_depth_simple(uint8_t pq_data[FRAME_WIDTH * 2], uint8_t d
                 depth_val = 255;
 
             depth_line[x + i] = (uint8_t)depth_val;
+        }
+
+        // uint8 → int16 拡張（MVE: 上位8バイト）
+        int16x8_t p_s16_high = vreinterpretq_s16_u16(vmovltq_u8(p_u8_vec));
+        int16x8_t p_adjusted_high = vsubq_s16(p_s16_high, offset);
+        vst1q_s16(p_raw, p_adjusted_high);
+
+        // 積分処理（後半8ピクセル）
+        for (int i = 0; i < 8; i++)
+        {
+            z += (float)p_raw[i] * scale;
+
+            int depth_val = (int)(z + 128.0f);
+            if (depth_val < 0)
+                depth_val = 0;
+            if (depth_val > 255)
+                depth_val = 255;
+
+            depth_line[x + 8 + i] = (uint8_t)depth_val;
         }
     }
 
