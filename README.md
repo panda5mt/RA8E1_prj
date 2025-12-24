@@ -1,8 +1,8 @@
-# RA8E1 Real-time Image Transmission System
+# RA8E1 Real-time Image Transmission & Depth Reconstruction System
 
 > [日本語版はこちら / Japanese version](READMEjp.md)
 
-A real-time image transmission system using the RA8E1 microcontroller. This project captures images from a camera, stores them in OctalRAM, and transmits them to MATLAB via UDP for real-time display.
+A real-time image transmission and depth reconstruction system using the RA8E1 microcontroller. This project captures images from a camera, computes gradients, performs depth reconstruction using FFT or simple integration methods, and transmits the results to MATLAB via UDP for real-time display.
 
 <p align="center">
   <img src="src/RA8E1Board_1.jpeg" alt="RA8E1 Board" width="600">
@@ -12,11 +12,17 @@ A real-time image transmission system using the RA8E1 microcontroller. This proj
 
 ## System Overview
 
-- **Microcontroller**: Renesas RA8E1 (R7FA8AFDCFB)
+- **Microcontroller**: Renesas RA8E1 (R7FA8AFDCFB) with ARM Cortex-M85 @ 200MHz
+- **SIMD**: ARM Helium MVE (M-Profile Vector Extension) enabled
 - **Camera**: OV5642 (YUV422 format, QVGA 320×240)
 - **Memory**: OctalRAM IS66WVO8M8DALL (8MB)
 - **Communication**: Ethernet UDP (Port 9000)
-- **Features**: Real-time video streaming (~1-2 fps)
+- **Features**: 
+  - Real-time video streaming (~1-2 fps)
+  - Real-time gradient computation (p/q gradients)
+  - Depth reconstruction (2 methods):
+    - **FFT Method**: Frankot-Chellappa algorithm (~26 seconds/frame, high quality)
+    - **Simple Method**: Row integration (<1ms/frame, optimized with MVE)
 
 ## Prerequisites
 
@@ -286,6 +292,24 @@ ctx->frame_interval_ms = 2;     // Frame interval (ms)
 ctx->total_frames = -1;         // -1=unlimited, number=specified frame count
 ```
 
+### Depth Reconstruction Settings (main_thread3_entry.c)
+```c
+#define USE_FFT_DEPTH 0         // 0=Simple (fast), 1=FFT (high quality)
+```
+
+**Depth Reconstruction Methods**:
+- **USE_FFT_DEPTH = 0**: Simple row integration method
+  - Processing time: <1ms per frame
+  - MVE-optimized (20-25% faster with Helium intrinsics)
+  - Suitable for real-time applications
+  - Lower quality but extremely fast
+  
+- **USE_FFT_DEPTH = 1**: FFT-based Frankot-Chellappa method
+  - Processing time: ~26 seconds per frame
+  - High-quality surface reconstruction
+  - Adaptive normalization per frame
+  - Better for offline processing or quality analysis
+
 ### MATLAB-side Settings (udp_photo_receiver.m)
 ```matlab
 total_timeout_sec = inf;        % inf=unlimited, number=seconds limit
@@ -298,7 +322,10 @@ frame_timeout_sec = 10;         % Frame timeout
 RA8E1_prj/
 ├── src/                    # Source code
 │   ├── hal_entry.c        # Main entry point
-│   ├── main_thread*_entry.c # FreeRTOS tasks
+│   ├── main_thread0_entry.c # Camera capture task
+│   ├── main_thread1_entry.c # UDP transmission task
+│   ├── main_thread2_entry.c # Reserved task
+│   ├── main_thread3_entry.c # Gradient & depth reconstruction task
 │   ├── cam.c              # Camera control
 │   ├── hyperram_integ.c   # OctalRAM integration
 │   └── usb_cdc.h          # USB CDC communication
@@ -356,6 +383,10 @@ RA8E1_prj/
 - **Thread0**: Camera capture → HyperRAM write (200ms cycle)
 - **Thread1**: UDP video streaming transmission
 - **Thread2**: Reserved (unused)
+- **Thread3**: Gradient computation & depth reconstruction
+  - Sobel operators for p/q gradient calculation
+  - Switchable depth reconstruction (FFT or Simple)
+  - MVE-optimized for performance
 
 ### Board Assembly Instructions
 
