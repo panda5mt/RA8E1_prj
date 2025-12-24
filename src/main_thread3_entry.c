@@ -6,9 +6,11 @@
 #include "arm_math.h" // CMSIS-DSP (FFT関数)
 
 // ========== 深度復元アルゴリズム切り替え ==========
+// 2 = マルチグリッド版（ポアソン方程式反復解法、中品質、中速: ~0.5-2秒/フレーム）
 // 1 = FFT版（Frankot-Chellappa法、高品質、遅い: ~26秒/フレーム）
 // 0 = 簡易版（行方向積分、低品質、高速: <1ms/フレーム）
-#define USE_FFT_DEPTH 0
+#define USE_DEPTH_METHOD 2
+#define USE_FFT_DEPTH 0 // 後方互換性のため残す
 // =================================================
 
 // Helium MVE (ARM M-profile Vector Extension) support
@@ -954,6 +956,255 @@ static void edge_to_yuv422(uint8_t edge_line[FRAME_WIDTH], uint8_t yuv_line[FRAM
     }
 }
 
+// ========== マルチグリッド法による深度復元 ==========
+#if USE_DEPTH_METHOD == 2
+
+// マルチグリッドパラメータ
+static const int pre_smooth = 2;   // Pre-smoothing反復回数
+static const int post_smooth = 2;  // Post-smoothing反復回数
+static const int coarse_iter = 10; // 最粗レベルでの反復回数
+static const int mg_cycles = 3;    // V-cycle反復回数
+
+// Gauss-Seidel反復（Red-Black順序）
+static void gauss_seidel_iteration(float *z, const float *rhs, int width, int height, int iterations)
+{
+    const float h2 = 1.0f;
+    for (int iter = 0; iter < iterations; iter++)
+    {
+        for (int color = 0; color < 2; color++)
+        {
+            for (int y = 1; y < height - 1; y++)
+            {
+                for (int x = 1 + ((y + color) % 2); x < width - 1; x += 2)
+                {
+                    int idx = y * width + x;
+                    z[idx] = 0.25f * (z[idx - 1] + z[idx + 1] + z[idx - width] + z[idx + width] - h2 * rhs[idx]);
+                }
+            }
+        }
+    }
+}
+
+// Restriction演算子（fine → coarse）
+static void restrict_residual(const float *fine, float *coarse, int fine_w, int fine_h)
+{
+    int coarse_w = fine_w / 2;
+    int coarse_h = fine_h / 2;
+
+    for (int cy = 0; cy < coarse_h; cy++)
+    {
+        for (int cx = 0; cx < coarse_w; cx++)
+        {
+            int fy = cy * 2;
+            int fx = cx * 2;
+
+            float sum = 0.0f;
+            sum += fine[fy * fine_w + fx] * 4.0f;
+            if (fx > 0)
+                sum += fine[fy * fine_w + (fx - 1)] * 2.0f;
+            if (fx < fine_w - 1)
+                sum += fine[fy * fine_w + (fx + 1)] * 2.0f;
+            if (fy > 0)
+                sum += fine[(fy - 1) * fine_w + fx] * 2.0f;
+            if (fy < fine_h - 1)
+                sum += fine[(fy + 1) * fine_w + fx] * 2.0f;
+            if (fx > 0 && fy > 0)
+                sum += fine[(fy - 1) * fine_w + (fx - 1)];
+            if (fx < fine_w - 1 && fy > 0)
+                sum += fine[(fy - 1) * fine_w + (fx + 1)];
+            if (fx > 0 && fy < fine_h - 1)
+                sum += fine[(fy + 1) * fine_w + (fx - 1)];
+            if (fx < fine_w - 1 && fy < fine_h - 1)
+                sum += fine[(fy + 1) * fine_w + (fx + 1)];
+
+            coarse[cy * coarse_w + cx] = sum / 16.0f;
+        }
+    }
+}
+
+// Prolongation演算子（coarse → fine）
+static void prolong_correction(const float *coarse, float *fine, int fine_w, int fine_h)
+{
+    int coarse_w = fine_w / 2;
+
+    for (int cy = 0; cy < fine_h / 2; cy++)
+    {
+        for (int cx = 0; cx < coarse_w; cx++)
+        {
+            int fy = cy * 2;
+            int fx = cx * 2;
+            float val = coarse[cy * coarse_w + cx];
+
+            fine[fy * fine_w + fx] += val;
+            if (fx < fine_w - 1)
+                fine[fy * fine_w + (fx + 1)] += val * 0.5f;
+            if (fy < fine_h - 1)
+                fine[(fy + 1) * fine_w + fx] += val * 0.5f;
+            if (fx < fine_w - 1 && fy < fine_h - 1)
+                fine[(fy + 1) * fine_w + (fx + 1)] += val * 0.25f;
+        }
+    }
+}
+
+// 発散計算（∇·(p,q)）
+static void compute_divergence(const uint8_t *pq_data, float *div, int width, int height)
+{
+    memset(div, 0, width * height * sizeof(float));
+
+    for (int y = 1; y < height - 1; y++)
+    {
+        for (int x = 1; x < width - 1; x++)
+        {
+            int idx = y * width + x;
+
+            float p_curr = (float)((int)pq_data[idx * 2 + 1] - 127);
+            float p_prev = (float)((int)pq_data[idx * 2 - 1] - 127);
+            float q_curr = (float)((int)pq_data[idx * 2] - 127);
+            float q_prev = (float)((int)pq_data[(idx - width) * 2] - 127);
+
+            div[idx] = -(p_curr - p_prev + q_curr - q_prev);
+        }
+    }
+}
+
+// V-cycle
+static void multigrid_vcycle(float *z, const float *rhs, int width, int height, int level)
+{
+    if (level == 3 || width <= 40 || height <= 30)
+    {
+        gauss_seidel_iteration(z, rhs, width, height, coarse_iter);
+        return;
+    }
+
+    gauss_seidel_iteration(z, rhs, width, height, pre_smooth);
+
+    int size = width * height;
+    float *residual = (float *)malloc(size * sizeof(float));
+    if (!residual)
+        return;
+
+    for (int i = 0; i < size; i++)
+    {
+        int x = i % width;
+        int y = i / width;
+        if (x == 0 || x == width - 1 || y == 0 || y == height - 1)
+        {
+            residual[i] = 0.0f;
+        }
+        else
+        {
+            float lap_z = z[i - 1] + z[i + 1] + z[i - width] + z[i + width] - 4.0f * z[i];
+            residual[i] = rhs[i] - lap_z;
+        }
+    }
+
+    int coarse_w = width / 2;
+    int coarse_h = height / 2;
+    int coarse_size = coarse_w * coarse_h;
+
+    float *coarse_rhs = (float *)calloc(coarse_size, sizeof(float));
+    float *coarse_z = (float *)calloc(coarse_size, sizeof(float));
+
+    if (!coarse_rhs || !coarse_z)
+    {
+        free(residual);
+        if (coarse_rhs)
+            free(coarse_rhs);
+        if (coarse_z)
+            free(coarse_z);
+        return;
+    }
+
+    restrict_residual(residual, coarse_rhs, width, height);
+    multigrid_vcycle(coarse_z, coarse_rhs, coarse_w, coarse_h, level + 1);
+    prolong_correction(coarse_z, z, width, height);
+
+    free(residual);
+    free(coarse_rhs);
+    free(coarse_z);
+
+    gauss_seidel_iteration(z, rhs, width, height, post_smooth);
+}
+
+// メイン関数
+static void reconstruct_depth_multigrid(void)
+{
+    xprintf("[Thread3] Multigrid: Starting depth reconstruction\n");
+
+    const int size = FRAME_WIDTH * FRAME_HEIGHT;
+    uint8_t *pq_data = (uint8_t *)malloc(size * 2);
+    if (!pq_data)
+    {
+        xprintf("[Thread3] Multigrid: pq_data allocation failed\n");
+        return;
+    }
+
+    hyperram_b_read(pq_data, (void *)GRADIENT_OFFSET, size * 2);
+
+    float *z = (float *)calloc(size, sizeof(float));
+    float *div = (float *)malloc(size * sizeof(float));
+
+    if (!z || !div)
+    {
+        xprintf("[Thread3] Multigrid: z/div allocation failed\n");
+        free(pq_data);
+        if (z)
+            free(z);
+        if (div)
+            free(div);
+        return;
+    }
+
+    compute_divergence(pq_data, div, FRAME_WIDTH, FRAME_HEIGHT);
+    free(pq_data);
+
+    for (int cycle = 0; cycle < mg_cycles; cycle++)
+    {
+        multigrid_vcycle(z, div, FRAME_WIDTH, FRAME_HEIGHT, 0);
+    }
+
+    free(div);
+
+    float z_min = z[0], z_max = z[0];
+    for (int i = 0; i < size; i++)
+    {
+        if (z[i] < z_min)
+            z_min = z[i];
+        if (z[i] > z_max)
+            z_max = z[i];
+    }
+
+    float z_range = z_max - z_min;
+    if (z_range < 1e-6f)
+        z_range = 1.0f;
+
+    uint8_t *depth_map = (uint8_t *)malloc(size);
+    if (!depth_map)
+    {
+        free(z);
+        return;
+    }
+
+    for (int i = 0; i < size; i++)
+    {
+        float normalized = (z[i] - z_min) / z_range;
+        int val = (int)(normalized * 255.0f);
+        if (val < 0)
+            val = 0;
+        if (val > 255)
+            val = 255;
+        depth_map[i] = (uint8_t)val;
+    }
+
+    hyperram_b_write(depth_map, (void *)DEPTH_OFFSET, size);
+    free(depth_map);
+    free(z);
+
+    xprintf("[Thread3] Multigrid: Complete (range: %.2f - %.2f)\n", z_min, z_max);
+}
+
+#endif // USE_DEPTH_METHOD == 2
+
 /* Main Thread3 entry function */
 /* pvParameters contains TaskHandle_t */
 void main_thread3_entry(void *pvParameters)
@@ -968,7 +1219,9 @@ void main_thread3_entry(void *pvParameters)
     xprintf("[Thread3] Helium MVE acceleration DISABLED (standard implementation)\n");
 #endif
 
-#if USE_FFT_DEPTH == 1
+#if USE_DEPTH_METHOD == 2
+    xprintf("[Thread3] Depth reconstruction: Multigrid (Poisson solver) - Medium quality, ~0.5-2sec/frame\n");
+#elif USE_FFT_DEPTH == 1
     xprintf("[Thread3] Depth reconstruction: FFT (Frankot-Chellappa) - High quality, ~26sec/frame\n");
 #else
     xprintf("[Thread3] Depth reconstruction: Simple (row integration) - Low quality, <1ms/frame\n");
@@ -1048,13 +1301,24 @@ void main_thread3_entry(void *pvParameters)
         }
 
     next_frame:
-#if USE_FFT_DEPTH == 1
+#if USE_DEPTH_METHOD == 2
+        // マルチグリッド深度マップ（ポアソン方程式反復解法）
+        xprintf("[Thread3] Frame complete, starting Multigrid reconstruction\n");
+        uint32_t mg_start = xTaskGetTickCount();
+        reconstruct_depth_multigrid();
+        uint32_t mg_end = xTaskGetTickCount();
+        xprintf("[Thread3] Multigrid processing time: %u ms\n", (mg_end - mg_start));
+        xprintf("[Thread3] Depth map ready for transmission\n");
+        vTaskDelay(pdMS_TO_TICKS(200));
+#elif USE_FFT_DEPTH == 1
         // FFT深度マップ（Frankot-Chellappa法、適応的正規化）
         xprintf("[Thread3] Frame complete, starting FFT reconstruction\n");
         reconstruct_depth_fft();
-#endif
-
-        // 処理完了（2秒待機して次のサイクル）
         vTaskDelay(pdMS_TO_TICKS(2000));
+#else
+        // 簡易版は行ごとに書き込み済み
+        xprintf("[Thread3] Simple depth map complete\n");
+        vTaskDelay(pdMS_TO_TICKS(200));
+#endif
     }
 }
