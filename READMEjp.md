@@ -1,6 +1,6 @@
-# RA8E1 Real-time Image Transmission System
+# RA8E1 Real-time Image Transmission & Depth Reconstruction System
 
-RA8E1マイコンを使用したリアルタイム画像伝送システム．カメラからキャプチャした画像をOctalRAMに保存し，UDP通信でMATLABに送信してリアルタイム表示するプロジェクト．
+RA8E1マイコンを使用したリアルタイム画像伝送・深度再構成システム．カメラからキャプチャした画像から勾配を計算し，FFTまたは簡易積分法による深度再構成を行い，結果をUDP通信でMATLABに送信してリアルタイム表示するプロジェクト．
 
 <p align="center">
   <img src="src/RA8E1Board_1.jpeg" alt="RA8E1 Board" width="600">
@@ -10,11 +10,17 @@ RA8E1マイコンを使用したリアルタイム画像伝送システム．カ
 
 ## システム概要
 
-- **マイコン**: Renesas RA8E1 (R7FA8AFDCFB)
+- **マイコン**: Renesas RA8E1 (R7FA8AFDCFB) ARM Cortex-M85 @ 200MHz
+- **SIMD**: ARM Helium MVE (M-Profile Vector Extension) 有効
 - **カメラ**: OV5642 (YUV422形式，QVGA 320×240)
 - **メモリ**: OctalRAM IS66WVO8M8DALL (8MB)
 - **通信**: Ethernet UDP (ポート9000)
-- **機能**: リアルタイム動画ストリーミング (約1-2 fps)
+- **機能**: 
+  - リアルタイム動画ストリーミング (約1-2 fps)
+  - リアルタイム勾配計算 (p/q勾配)
+  - 深度再構成 (2つの手法):
+    - **FFT法**: Frankot-Chellappa法 (~26秒/フレーム，高品質)
+    - **簡易法**: 行積分法 (<1ms/フレーム，MVE最適化)
 
 ## 前提条件
 
@@ -289,6 +295,24 @@ ctx->frame_interval_ms = 2;     // フレーム間隔 (ms)
 ctx->total_frames = -1;         // -1=無制限, 数値=指定フレーム数
 ```
 
+### 深度再構成設定 (main_thread3_entry.c)
+```c
+#define USE_FFT_DEPTH 0         // 0=簡易版(高速), 1=FFT版(高品質)
+```
+
+**深度再構成手法**:
+- **USE_FFT_DEPTH = 0**: 簡易行積分法
+  - 処理時間: 1ms未満/フレーム
+  - MVE最適化済み(Helium命令で20-25%高速化)
+  - リアルタイム処理に最適
+  - 品質は低めだが極めて高速
+  
+- **USE_FFT_DEPTH = 1**: FFTベースFrankot-Chellappa法
+  - 処理時間: 約26秒/フレーム
+  - 高品質な表面再構成
+  - フレーム毎に適応的正規化
+  - オフライン処理や品質分析向け
+
 ### MATLAB側設定(udp_photo_receiver.m)
 ```matlab
 total_timeout_sec = inf;        % inf=無制限, 数値=秒数制限
@@ -301,7 +325,10 @@ frame_timeout_sec = 10;         % フレームタイムアウト
 RA8E1_prj/
 ├── src/                    # ソースコード
 │   ├── hal_entry.c        # メインエントリーポイント
-│   ├── main_thread*_entry.c # FreeRTOSタスク
+│   ├── main_thread0_entry.c # カメラキャプチャタスク
+│   ├── main_thread1_entry.c # UDP送信タスク
+│   ├── main_thread2_entry.c # 予約タスク
+│   ├── main_thread3_entry.c # 勾配計算・深度再構成タスク
 │   ├── cam.c              # カメラ制御
 │   ├── hyperram_integ.c   # OctalRAM統合
 │   └── usb_cdc.h          # USB CDC通信
@@ -359,6 +386,10 @@ RA8E1_prj/
 - **Thread0**: カメラキャプチャ → HyperRAM書き込み (200ms周期)
 - **Thread1**: UDP動画ストリーミング送信
 - **Thread2**: 予約(未使用)
+- **Thread3**: 勾配計算・深度再構成
+  - Sobelオペレータによるp/q勾配計算
+  - 切替可能な深度再構成(FFTまたは簡易版)
+  - 性能向上のためMVE最適化
 
 ### 基板組み立て手順
 
