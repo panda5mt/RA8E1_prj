@@ -474,28 +474,132 @@ static void apply_sobel_filter(uint8_t y_prev[FRAME_WIDTH],
 static void compute_pq_gradients(uint8_t y_prev[FRAME_WIDTH], uint8_t y_curr[FRAME_WIDTH],
                                  uint8_t y_next[FRAME_WIDTH], uint8_t pq_out[FRAME_WIDTH * 2])
 {
-    // Sobelカーネルで輝度勾配を計算
-    const int sobel_x[9] = {
-        -1, 0, 1,
-        -2, 0, 2,
-        -1, 0, 1};
-    const int sobel_y[9] = {
-        -1, -2, -1,
-        0, 0, 0,
-        1, 2, 1};
-
     // 最初と最後のピクセルは0に設定
     pq_out[0] = 0;                   // q[0]
     pq_out[1] = 0;                   // p[0]
     pq_out[FRAME_WIDTH * 2 - 2] = 0; // q[last]
     pq_out[FRAME_WIDTH * 2 - 1] = 0; // p[last]
 
-    // 勾配を計算
-    for (int x = 1; x < FRAME_WIDTH - 1; x++)
+#if USE_HELIUM_MVE
+    // MVE版: 8ピクセル単位でSobelフィルタを並列処理
+    int x;
+    for (x = 1; x < FRAME_WIDTH - 8; x += 8)
+    {
+        // 3行×10ピクセル（中央8 + 左右各1）をロード
+        int16x8_t gx_vec = vdupq_n_s16(0);
+        int16x8_t gy_vec = vdupq_n_s16(0);
+
+        // 上段（y_prev）: Sobel_x: [-1, 0, 1], Sobel_y: [-1, -2, -1]
+        uint16x8_t prev_left = vmovlbq_u8(vld1q_u8(&y_prev[x - 1]));  // 左シフト
+        uint16x8_t prev_center = vmovlbq_u8(vld1q_u8(&y_prev[x]));    // 中央
+        uint16x8_t prev_right = vmovlbq_u8(vld1q_u8(&y_prev[x + 1])); // 右シフト
+
+        gx_vec = vsubq_s16(gx_vec, vreinterpretq_s16_u16(prev_left));                   // -1 * left
+        gx_vec = vaddq_s16(gx_vec, vreinterpretq_s16_u16(prev_right));                  // +1 * right
+        gy_vec = vsubq_s16(gy_vec, vreinterpretq_s16_u16(prev_left));                   // -1 * left
+        gy_vec = vsubq_s16(gy_vec, vshlq_n_s16(vreinterpretq_s16_u16(prev_center), 1)); // -2 * center
+        gy_vec = vsubq_s16(gy_vec, vreinterpretq_s16_u16(prev_right));                  // -1 * right
+
+        // 中段（y_curr）: Sobel_x: [-2, 0, 2], Sobel_y: [0, 0, 0]
+        uint16x8_t curr_left = vmovlbq_u8(vld1q_u8(&y_curr[x - 1]));
+        uint16x8_t curr_right = vmovlbq_u8(vld1q_u8(&y_curr[x + 1]));
+
+        gx_vec = vsubq_s16(gx_vec, vshlq_n_s16(vreinterpretq_s16_u16(curr_left), 1));  // -2 * left
+        gx_vec = vaddq_s16(gx_vec, vshlq_n_s16(vreinterpretq_s16_u16(curr_right), 1)); // +2 * right
+
+        // 下段（y_next）: Sobel_x: [-1, 0, 1], Sobel_y: [1, 2, 1]
+        uint16x8_t next_left = vmovlbq_u8(vld1q_u8(&y_next[x - 1]));
+        uint16x8_t next_center = vmovlbq_u8(vld1q_u8(&y_next[x]));
+        uint16x8_t next_right = vmovlbq_u8(vld1q_u8(&y_next[x + 1]));
+
+        gx_vec = vsubq_s16(gx_vec, vreinterpretq_s16_u16(next_left));                   // -1 * left
+        gx_vec = vaddq_s16(gx_vec, vreinterpretq_s16_u16(next_right));                  // +1 * right
+        gy_vec = vaddq_s16(gy_vec, vreinterpretq_s16_u16(next_left));                   // +1 * left
+        gy_vec = vaddq_s16(gy_vec, vshlq_n_s16(vreinterpretq_s16_u16(next_center), 1)); // +2 * center
+        gy_vec = vaddq_s16(gy_vec, vreinterpretq_s16_u16(next_right));                  // +1 * right
+
+        // ÷8でスケーリング（算術右シフト）
+        int16x8_t p_vec = vshrq_n_s16(gx_vec, 3);
+        int16x8_t q_vec = vshrq_n_s16(gy_vec, 3);
+
+        // 範囲制限: [-127, 127]
+        p_vec = vmaxq_s16(p_vec, vdupq_n_s16(-127));
+        p_vec = vminq_s16(p_vec, vdupq_n_s16(127));
+        q_vec = vmaxq_s16(q_vec, vdupq_n_s16(-127));
+        q_vec = vminq_s16(q_vec, vdupq_n_s16(127));
+
+        // +127でオフセット
+        uint16x8_t p_u16 = vreinterpretq_u16_s16(vaddq_s16(p_vec, vdupq_n_s16(127)));
+        uint16x8_t q_u16 = vreinterpretq_u16_s16(vaddq_s16(q_vec, vdupq_n_s16(127)));
+
+        // uint16 → uint8に狭窄してスカラー配列に保存
+        int16_t p_arr[8], q_arr[8];
+        vst1q_s16(p_arr, p_vec);
+        vst1q_s16(q_arr, q_vec);
+
+        // インターリーブして保存: q0, p0, q1, p1, ...
+        for (int i = 0; i < 8; i++)
+        {
+            int p_val = p_arr[i] + 127;
+            int q_val = q_arr[i] + 127;
+            if (p_val < 0)
+                p_val = 0;
+            if (p_val > 255)
+                p_val = 255;
+            if (q_val < 0)
+                q_val = 0;
+            if (q_val > 255)
+                q_val = 255;
+            pq_out[(x + i) * 2] = (uint8_t)q_val;     // q
+            pq_out[(x + i) * 2 + 1] = (uint8_t)p_val; // p
+        }
+    }
+
+    // 残りをスカラー処理
+    for (; x < FRAME_WIDTH - 1; x++)
     {
         int gx = 0, gy = 0;
 
         // 3x3カーネルを適用
+        uint8_t *rows[3] = {y_prev, y_curr, y_next};
+        const int sobel_x[9] = {-1, 0, 1, -2, 0, 2, -1, 0, 1};
+        const int sobel_y[9] = {-1, -2, -1, 0, 0, 0, 1, 2, 1};
+
+        for (int ky = 0; ky < 3; ky++)
+        {
+            for (int kx = 0; kx < 3; kx++)
+            {
+                int pixel_x = x - 1 + kx;
+                int idx = ky * 3 + kx;
+                gx += sobel_x[idx] * rows[ky][pixel_x];
+                gy += sobel_y[idx] * rows[ky][pixel_x];
+            }
+        }
+
+        int p = gx / 8;
+        int q = gy / 8;
+
+        if (p < -127)
+            p = -127;
+        if (p > 127)
+            p = 127;
+        if (q < -127)
+            q = -127;
+        if (q > 127)
+            q = 127;
+
+        pq_out[x * 2] = (uint8_t)(q + 127);
+        pq_out[x * 2 + 1] = (uint8_t)(p + 127);
+    }
+#else
+    // スカラー版
+    const int sobel_x[9] = {-1, 0, 1, -2, 0, 2, -1, 0, 1};
+    const int sobel_y[9] = {-1, -2, -1, 0, 0, 0, 1, 2, 1};
+
+    for (int x = 1; x < FRAME_WIDTH - 1; x++)
+    {
+        int gx = 0, gy = 0;
+
         uint8_t *rows[3] = {y_prev, y_curr, y_next};
         for (int ky = 0; ky < 3; ky++)
         {
@@ -508,12 +612,9 @@ static void compute_pq_gradients(uint8_t y_prev[FRAME_WIDTH], uint8_t y_curr[FRA
             }
         }
 
-        // 勾配をスケーリング: -127〜+127の範囲に正規化
-        // Sobel出力範囲: 約±1020 → ÷8でスケーリング
         int p = gx / 8;
         int q = gy / 8;
 
-        // 範囲制限
         if (p < -127)
             p = -127;
         if (p > 127)
@@ -523,10 +624,10 @@ static void compute_pq_gradients(uint8_t y_prev[FRAME_WIDTH], uint8_t y_curr[FRA
         if (q > 127)
             q = 127;
 
-        // 符号なし8ビットに変換（0=中央値、-127→0、+127→254）
-        pq_out[x * 2] = (uint8_t)(q + 127);     // q成分
-        pq_out[x * 2 + 1] = (uint8_t)(p + 127); // p成分
+        pq_out[x * 2] = (uint8_t)(q + 127);
+        pq_out[x * 2 + 1] = (uint8_t)(p + 127);
     }
+#endif
 }
 
 /* 簡易深度復元（行方向積分）
