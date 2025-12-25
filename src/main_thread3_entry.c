@@ -7,7 +7,7 @@
 // ========== 深度復元アルゴリズム切り替え ==========
 // 1 = マルチグリッド版（ポアソン方程式反復解法、中品質、中速: ~0.5-2秒/フレーム）
 // 0 = 簡易版（行方向積分、低品質、高速: <1ms/フレーム）
-#define USE_DEPTH_METHOD 0
+#define USE_DEPTH_METHOD 1
 
 // HyperRAMから直接p勾配をストリーミングして行積分する簡易版。
 // USE_SIMPLE_DIRECT_P=1で有効化。
@@ -853,10 +853,10 @@ static void edge_to_yuv422(uint8_t edge_line[FRAME_WIDTH], uint8_t yuv_line[FRAM
 // ========== マルチグリッド法による深度復元 ==========
 #if USE_DEPTH_METHOD == 1
 
-static const int pre_smooth = 1;
-static const int post_smooth = 1;
-static const int coarse_iter = 2;
-static const int mg_cycles = 1;
+static const int pre_smooth = 3;
+static const int post_smooth = 3;
+static const int coarse_iter = 200; // 最粗レベルで十分に収束させる
+static const int mg_cycles = 5;     // V-cycleを複数回実行
 
 static void mg_prepare_layout(void)
 {
@@ -1178,6 +1178,23 @@ static void mg_gauss_seidel(const mg_level_t *level, int iterations)
                     }
                 }
             }
+        }
+
+        // Red-Black両パス完了後、Neumann境界条件を適用
+        // 上下境界: y=0とy=height-1を隣接行で設定
+        hyperram_b_read(row_curr, (void *)(level->z_offset + row_bytes), row_bytes); // y=1
+        hyperram_b_write(row_curr, (void *)(level->z_offset + 0), row_bytes);        // y=0 = y=1
+
+        hyperram_b_read(row_curr, (void *)(level->z_offset + (height - 2) * row_bytes), row_bytes);  // y=h-2
+        hyperram_b_write(row_curr, (void *)(level->z_offset + (height - 1) * row_bytes), row_bytes); // y=h-1 = y=h-2
+
+        // 左右境界: 全行でx=0とx=width-1を隣接ピクセルで設定
+        for (int y = 0; y < height; y++)
+        {
+            hyperram_b_read(row_curr, (void *)(level->z_offset + y * row_bytes), row_bytes);
+            row_curr[0] = row_curr[1];
+            row_curr[width - 1] = row_curr[width - 2];
+            hyperram_b_write(row_curr, (void *)(level->z_offset + y * row_bytes), row_bytes);
         }
     }
 }
@@ -1600,7 +1617,19 @@ static void mg_vcycle(int level_index)
 
     if (is_base_level)
     {
+        if (level->width == 80)
+        {
+            xprintf("[MG] Coarsest level: %dx%d, %d iterations\n", level->width, level->height, coarse_iter);
+        }
         mg_gauss_seidel(level, coarse_iter);
+
+        // デバッグ: 最粗レベルの解をチェック
+        if (level->width == 80)
+        {
+            float test_row[FRAME_WIDTH];
+            hyperram_b_read(test_row, (void *)(level->z_offset + level->width * sizeof(float)), level->width * sizeof(float));
+            xprintf("[MG] After coarse solve: z[1,40]=%.6f\n", test_row[40]);
+        }
         return;
     }
 
@@ -1610,8 +1639,9 @@ static void mg_vcycle(int level_index)
     const mg_level_t *coarse = &g_mg_levels[level_index + 1];
     mg_restrict_residual(level, coarse, level->residual_offset);
 
-    size_t coarse_bytes = (size_t)coarse->width * coarse->height * sizeof(float);
-    mg_zero_buffer(coarse->z_offset, coarse_bytes);
+    // 粗いレベルのゼロ化を削除 - residualが既にRHSとして設定されている
+    // size_t coarse_bytes = (size_t)coarse->width * coarse->height * sizeof(float);
+    // mg_zero_buffer(coarse->z_offset, coarse_bytes);
 
     mg_vcycle(level_index + 1);
 
