@@ -7,7 +7,7 @@
 // ========== 深度復元アルゴリズム切り替え ==========
 // 1 = マルチグリッド版（ポアソン方程式反復解法、中品質、中速: ~0.5-2秒/フレーム）
 // 0 = 簡易版（行方向積分、低品質、高速: <1ms/フレーム）
-#define USE_DEPTH_METHOD 1
+#define USE_DEPTH_METHOD 0
 
 // HyperRAMから直接p勾配をストリーミングして行積分する簡易版。
 // USE_SIMPLE_DIRECT_P=1で有効化。
@@ -884,7 +884,7 @@ static void mg_prepare_layout(void)
 
         g_mg_level_count++;
 
-        if (width <= 40 || height <= 30)
+        if (width <= 80 || height <= 60)
         {
             break;
         }
@@ -1596,7 +1596,7 @@ static void mg_prolong_correction(const mg_level_t *coarse, const mg_level_t *fi
 static void mg_vcycle(int level_index)
 {
     const mg_level_t *level = &g_mg_levels[level_index];
-    bool is_base_level = (level_index == g_mg_level_count - 1) || (level->width <= 40) || (level->height <= 30);
+    bool is_base_level = (level_index == g_mg_level_count - 1) || (level->width <= 80) || (level->height <= 60);
 
     if (is_base_level)
     {
