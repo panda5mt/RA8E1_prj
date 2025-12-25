@@ -38,7 +38,7 @@ FSP Configuration
     Clocks: MSTP Change Delays: Enabled
     Clocks: Settling Delay (us): 150
     Main Oscillator Wait Time: 8163 cycles
-    Cache settings: Data cache: Disabled
+    Cache settings: Data cache: Enabled
     I/O Ports: Voltage Mode: VCC: High (VCC >= 2.7 V)
     I/O Ports: Voltage Mode: VCC2: Low (VCC2 < 2.7 V)
     
