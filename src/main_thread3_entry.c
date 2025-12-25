@@ -13,6 +13,11 @@
 // USE_SIMPLE_DIRECT_P=1で有効化。
 // USE_SIMPLE_DIRECT_P=0で従来のSRAMバッファ経由
 #define USE_SIMPLE_DIRECT_P 1
+
+// 輝度正規化（明るさに依存しない深度推定）
+// 1 = 各行ごとにコントラストを正規化（薄暗い/明るい環境でも同じ深度）
+// 0 = 正規化なし（従来動作）
+#define USE_BRIGHTNESS_NORMALIZATION 1
 // =================================================
 
 // Helium MVE (ARM M-profile Vector Extension) support
@@ -47,10 +52,84 @@ static uint32_t g_mg_residual_offset = 0;
 static bool g_mg_layout_ready = false;
 #endif
 
-// Shape from Shading 光源パラメータ（定数）
-#define LIGHT_PS 0.0f // 光源方向x成分
-#define LIGHT_QS 0.0f // 光源方向y成分
-#define LIGHT_TS 1.0f // 光源方向z成分（正規化された垂直光源）
+// Shape from Shading 光源パラメータ（変数）
+static float g_light_ps = 0.0f; // 光源方向x成分
+static float g_light_qs = 0.0f; // 光源方向y成分
+static float g_light_ts = 1.0f; // 光源方向z成分（正規化された垂直光源）
+
+/* 光源パラメータを更新する関数
+ * センサーからの入力または固定値を設定
+ * 注意: 光源ベクトルは正規化されている必要があります
+ *       sqrt(ps^2 + qs^2 + ts^2) = 1
+ */
+void update_light_source(float ps, float qs, float ts)
+{
+    // 正規化
+    float magnitude = sqrtf(ps * ps + qs * qs + ts * ts);
+    if (magnitude > 1e-6f)
+    {
+        g_light_ps = ps / magnitude;
+        g_light_qs = qs / magnitude;
+        g_light_ts = ts / magnitude;
+    }
+    else
+    {
+        // デフォルト値（垂直光源）
+        g_light_ps = 0.0f;
+        g_light_qs = 0.0f;
+        g_light_ts = 1.0f;
+    }
+}
+
+/* 光源パラメータを取得する関数 */
+void get_light_source(float *ps, float *qs, float *ts)
+{
+    if (ps)
+        *ps = g_light_ps;
+    if (qs)
+        *qs = g_light_qs;
+    if (ts)
+        *ts = g_light_ts;
+}
+
+/* 輝度を正規化してコントラストを一定にする
+ * 薄暗い環境でも明るい環境でも同じ深度推定結果を得る
+ */
+#if USE_BRIGHTNESS_NORMALIZATION
+static void normalize_brightness(uint8_t *y_line, int width)
+{
+    // 最小値と最大値を検索
+    uint8_t min_val = 255;
+    uint8_t max_val = 0;
+
+    for (int x = 0; x < width; x++)
+    {
+        if (y_line[x] < min_val)
+            min_val = y_line[x];
+        if (y_line[x] > max_val)
+            max_val = y_line[x];
+    }
+
+    // コントラストが低すぎる場合はスキップ（ノイズ対策）
+    int range = max_val - min_val;
+    if (range < 20)
+    {
+        return;
+    }
+
+    // 0-255の範囲に伸長（ヒストグラム伸長）
+    float scale = 255.0f / (float)range;
+    for (int x = 0; x < width; x++)
+    {
+        int normalized = (int)((y_line[x] - min_val) * scale);
+        if (normalized < 0)
+            normalized = 0;
+        if (normalized > 255)
+            normalized = 255;
+        y_line[x] = (uint8_t)normalized;
+    }
+}
+#endif
 
 /* YUV422からY成分（輝度）を抽出
  * YUV422フォーマット: [V0 Y1 U0 Y0] (リトルエンディアン)
@@ -147,6 +226,12 @@ static fsp_err_t load_y_line_from_hyperram(int requested_row,
     }
 
     extract_y_component(yuv_line, y_line, FRAME_WIDTH);
+
+#if USE_BRIGHTNESS_NORMALIZATION
+    // 輝度を正規化（明るさに依存しない深度推定）
+    normalize_brightness(y_line, FRAME_WIDTH);
+#endif
+
     return FSP_SUCCESS;
 }
 
@@ -1128,7 +1213,31 @@ void main_thread3_entry(void *pvParameters)
     FSP_PARAMETER_NOT_USED(pvParameters);
 
     xprintf("[Thread3] Shape from Shading (p,q gradient) processor started\n");
-    xprintf("[Thread3] Light source: ps=%.2f, qs=%.2f, ts=%.2f\n", LIGHT_PS, LIGHT_QS, LIGHT_TS);
+
+    // 光源パラメータの設定例
+    // ========================================
+    // 例1: 垂直光源（デフォルト、真上からの照明）
+    update_light_source(0.0f, 0.0f, 1.0f);
+
+    // 例2: 斜め上から（右上から30度）
+    // update_light_source(0.5f, 0.3f, 1.0f);
+
+    // 例3: 左上から
+    // update_light_source(-0.5f, 0.3f, 1.0f);
+
+    // 例4: 前方やや上から（カメラに向かって）
+    // update_light_source(0.0f, -0.5f, 1.0f);
+
+    // 将来的にセンサーを使う場合:
+    // float sensor_x, sensor_y, sensor_z;
+    // read_light_sensors(&sensor_x, &sensor_y, &sensor_z);
+    // update_light_source(sensor_x, sensor_y, sensor_z);
+    // ========================================
+
+    float ps, qs, ts;
+    get_light_source(&ps, &qs, &ts);
+    xprintf("[Thread3] Light source: ps=%.2f, qs=%.2f, ts=%.2f\n", ps, qs, ts);
+
 #if USE_HELIUM_MVE
     xprintf("[Thread3] Helium MVE acceleration ENABLED\n");
 #else
