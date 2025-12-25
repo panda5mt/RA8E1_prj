@@ -78,7 +78,7 @@
       <property id="config.bsp.fsp.mscr.forcewt" value="config.bsp.fsp.mscr.forcewt.enabled"/>
       <property id="config.bsp.fsp.mcu.rtc.err_adjustment_value.max_value" value="63"/>
       <property id="config.bsp.fsp.ioport.voltage_mode.vcc" value="config.bsp.fsp.ioport.voltage_mode.vcc.high"/>
-      <property id="config.bsp.fsp.ioport.voltage_mode.vcc2" value="config.bsp.fsp.ioport.voltage_mode.vcc2.high"/>
+      <property id="config.bsp.fsp.ioport.voltage_mode.vcc2" value="config.bsp.fsp.ioport.voltage_mode.vcc2.low"/>
     </config>
     <config id="config.bsp.ra8e1.linker">
       <property id="config.bsp.option_setting.ofs0" value="config.bsp.option_setting.ofs0.enabled"/>
@@ -111,13 +111,13 @@
       <property id="config.bsp.option_setting.banksel.bankswap" value="config.bsp.option_setting.banksel.bankswap.disabled"/>
       <property id="config.bsp.option_setting.banksel.blockswap" value="config.bsp.option_setting.banksel.blockswap.disabled"/>
       <property id="config.bsp.option_setting.bps" value="config.bsp.option_setting.bps.disabled"/>
-      <property id="config.bsp.option_setting.bps.0" value="0U"/>
-      <property id="config.bsp.option_setting.bps.1" value="0U"/>
-      <property id="config.bsp.option_setting.bps.2" value="0U"/>
+      <property id="config.bsp.option_setting.bps.0" value=""/>
+      <property id="config.bsp.option_setting.bps.1" value=""/>
+      <property id="config.bsp.option_setting.bps.2" value=""/>
       <property id="config.bsp.option_setting.pbps" value="config.bsp.option_setting.pbps.disabled"/>
-      <property id="config.bsp.option_setting.pbps.0" value="0U"/>
-      <property id="config.bsp.option_setting.pbps.1" value="0U"/>
-      <property id="config.bsp.option_setting.pbps.2" value="0U"/>
+      <property id="config.bsp.option_setting.pbps.0" value=""/>
+      <property id="config.bsp.option_setting.pbps.1" value=""/>
+      <property id="config.bsp.option_setting.pbps.2" value=""/>
       <property id="config.bsp.option_setting.ofs1_sec" value="config.bsp.option_setting.ofs1_sec.enabled"/>
       <property id="config.bsp.option_setting.ofs1_sec.voltage_detection0.start" value="config.bsp.option_setting.ofs1_sec.voltage_detection0.start.disabled"/>
       <property id="config.bsp.option_setting.ofs1_sec.voltage_detection0_level" value="config.bsp.option_setting.ofs1_sec.voltage_detection0_level.160"/>
@@ -129,13 +129,13 @@
       <property id="config.bsp.option_setting.banksel_sec.bankswap" value="config.bsp.option_setting.banksel_sec.bankswap.disabled"/>
       <property id="config.bsp.option_setting.banksel_sec.blockswap" value="config.bsp.option_setting.banksel_sec.blockswap.disabled"/>
       <property id="config.bsp.option_setting.bps_sec" value="config.bsp.option_setting.bps_sec.disabled"/>
-      <property id="config.bsp.option_setting.bps_sec.0" value="0U"/>
-      <property id="config.bsp.option_setting.bps_sec.1" value="0U"/>
-      <property id="config.bsp.option_setting.bps_sec.2" value="0U"/>
+      <property id="config.bsp.option_setting.bps_sec.0" value=""/>
+      <property id="config.bsp.option_setting.bps_sec.1" value=""/>
+      <property id="config.bsp.option_setting.bps_sec.2" value=""/>
       <property id="config.bsp.option_setting.pbps_sec" value="config.bsp.option_setting.pbps_sec.disabled"/>
-      <property id="config.bsp.option_setting.pbps_sec.0" value="0U"/>
-      <property id="config.bsp.option_setting.pbps_sec.1" value="0U"/>
-      <property id="config.bsp.option_setting.pbps_sec.2" value="0U"/>
+      <property id="config.bsp.option_setting.pbps_sec.0" value=""/>
+      <property id="config.bsp.option_setting.pbps_sec.1" value=""/>
+      <property id="config.bsp.option_setting.pbps_sec.2" value=""/>
       <property id="config.bsp.option_setting.ofs1_sel" value="config.bsp.option_setting.ofs1_sel.enabled"/>
       <property id="config.bsp.option_setting.ofs1_sel.voltage_detection0_level" value="config.bsp.option_setting.ofs1_sel.voltage_detection0_level.secure"/>
       <property id="config.bsp.option_setting.ofs1_sel.voltage_detection0.start" value="config.bsp.option_setting.ofs1_sel.voltage_detection0.start.secure"/>
@@ -145,9 +145,9 @@
       <property id="config.bsp.option_setting.banksel_sel" value="config.bsp.option_setting.banksel_sel.disabled"/>
       <property id="config.bsp.option_setting.banksel_sel.mode" value="config.bsp.option_setting.banksel_sel.mode.both"/>
       <property id="config.bsp.option_setting.bps_sel" value="config.bsp.option_setting.bps_sel.disabled"/>
-      <property id="config.bsp.option_setting.bps_sel.0" value="0U"/>
-      <property id="config.bsp.option_setting.bps_sel.1" value="0U"/>
-      <property id="config.bsp.option_setting.bps_sel.2" value="0U"/>
+      <property id="config.bsp.option_setting.bps_sel.0" value=""/>
+      <property id="config.bsp.option_setting.bps_sel.1" value=""/>
+      <property id="config.bsp.option_setting.bps_sel.2" value=""/>
     </config>
     <config id="config.bsp.ra">
       <property id="config.bsp.common.main" value="0x400"/>

@@ -40,7 +40,7 @@ FSP Configuration
     Main Oscillator Wait Time: 8163 cycles
     Cache settings: Data cache: Disabled
     I/O Ports: Voltage Mode: VCC: High (VCC >= 2.7 V)
-    I/O Ports: Voltage Mode: VCC2: High (VCC2 >= 2.7 V)
+    I/O Ports: Voltage Mode: VCC2: Low (VCC2 < 2.7 V)
     
   RA8E1 Device Options
     OFS Registers: OFS0 (Option Function Select Register 0) Settings: Enabled

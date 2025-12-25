@@ -114,6 +114,51 @@ static void extract_y_component(uint8_t *yuv_line, uint8_t *y_line, int width)
 }
 #endif
 
+// HyperRAMアクセスを最小限にするための行キャッシュ補助関数
+static inline int clamp_frame_row(int row)
+{
+    if (row < 0)
+    {
+        return 0;
+    }
+    if (row >= FRAME_HEIGHT)
+    {
+        return FRAME_HEIGHT - 1;
+    }
+    return row;
+}
+
+static fsp_err_t load_y_line_from_hyperram(int requested_row,
+                                           uint8_t yuv_line[FRAME_WIDTH * 2],
+                                           uint8_t y_line[FRAME_WIDTH],
+                                           int *loaded_row_out)
+{
+    int row = clamp_frame_row(requested_row);
+    if (loaded_row_out)
+    {
+        *loaded_row_out = row;
+    }
+
+    uint32_t offset = (uint32_t)row * FRAME_WIDTH * 2;
+    fsp_err_t err = hyperram_b_read(yuv_line, (void *)offset, FRAME_WIDTH * 2);
+    if (FSP_SUCCESS != err)
+    {
+        return err;
+    }
+
+    extract_y_component(yuv_line, y_line, FRAME_WIDTH);
+    return FSP_SUCCESS;
+}
+
+static void duplicate_line_buffer(uint8_t dst_yuv[FRAME_WIDTH * 2],
+                                  uint8_t dst_y[FRAME_WIDTH],
+                                  const uint8_t src_yuv[FRAME_WIDTH * 2],
+                                  const uint8_t src_y[FRAME_WIDTH])
+{
+    memcpy(dst_yuv, src_yuv, FRAME_WIDTH * 2);
+    memcpy(dst_y, src_y, FRAME_WIDTH);
+}
+
 /* Sobelフィルタでエッジ検出
  * 入力: 3行分のY成分（前の行、現在の行、次の行）
  * 出力: エッジ強度（0-255）
@@ -1109,37 +1154,43 @@ void main_thread3_entry(void *pvParameters)
 
     while (1)
     {
+        int prev_idx = 0;
+        int curr_idx = 1;
+        int next_idx = 2;
+        int curr_row_idx = 0;
+        int next_row_idx = (FRAME_HEIGHT > 1) ? 1 : 0;
+
+        int loaded_row = -1;
+        fsp_err_t preload_err = load_y_line_from_hyperram(curr_row_idx,
+                                                          yuv_lines[curr_idx],
+                                                          y_lines[curr_idx],
+                                                          &loaded_row);
+        if (FSP_SUCCESS != preload_err)
+        {
+            xprintf("[Thread3] Read error at line %d: %d\n", loaded_row, preload_err);
+            goto next_frame;
+        }
+        curr_row_idx = loaded_row;
+        duplicate_line_buffer(yuv_lines[prev_idx], y_lines[prev_idx],
+                              yuv_lines[curr_idx], y_lines[curr_idx]);
+
+        preload_err = load_y_line_from_hyperram(next_row_idx,
+                                                yuv_lines[next_idx],
+                                                y_lines[next_idx],
+                                                &loaded_row);
+        if (FSP_SUCCESS != preload_err)
+        {
+            xprintf("[Thread3] Read error at line %d: %d\n", loaded_row, preload_err);
+            goto next_frame;
+        }
+        next_row_idx = loaded_row;
+
         // フレーム全体を行単位で処理
         for (int y = 0; y < FRAME_HEIGHT; y++)
         {
-            // 3行読み込み（前の行、現在の行、次の行）
-            for (int row_offset = -1; row_offset <= 1; row_offset++)
-            {
-                int row_index = (row_offset + 1); // 0, 1, 2
-                int read_y = y + row_offset;
-
-                // 境界処理：範囲外は現在の行をコピー
-                if (read_y < 0)
-                    read_y = 0;
-                if (read_y >= FRAME_HEIGHT)
-                    read_y = FRAME_HEIGHT - 1;
-
-                // HyperRAMから1行読み込み（640バイト = 320ピクセル×2）
-                uint32_t offset = read_y * FRAME_WIDTH * 2;
-                fsp_err_t err = hyperram_b_read(yuv_lines[row_index], (void *)offset, FRAME_WIDTH * 2);
-                if (FSP_SUCCESS != err)
-                {
-                    xprintf("[Thread3] Read error at line %d: %d\n", read_y, err);
-                    goto next_frame;
-                }
-
-                // Y成分を抽出
-                extract_y_component(yuv_lines[row_index], y_lines[row_index], FRAME_WIDTH);
-            }
-
             // p, q勾配を計算（Shape from Shading）
             // yuv_outに直接 [q0 p0 q1 p1 ...] 形式で640バイト書き込まれる
-            compute_pq_gradients(y_lines[0], y_lines[1], y_lines[2], yuv_out);
+            compute_pq_gradients(y_lines[prev_idx], y_lines[curr_idx], y_lines[next_idx], yuv_out);
 
             // HyperRAMのGRADIENT_OFFSETに書き込み（そのまま640バイト）
             uint32_t write_offset = GRADIENT_OFFSET + (y * FRAME_WIDTH * 2);
@@ -1162,6 +1213,37 @@ void main_thread3_entry(void *pvParameters)
             {
                 xprintf("[Thread3] Depth write error at line %d: %d\n", y, depth_write_err);
                 goto next_frame;
+            }
+
+            if (y < FRAME_HEIGHT - 1)
+            {
+                int recycled_idx = prev_idx;
+                prev_idx = curr_idx;
+                curr_idx = next_idx;
+                next_idx = recycled_idx;
+                curr_row_idx = next_row_idx;
+
+                int next_request = y + 2;
+                if (next_request >= FRAME_HEIGHT)
+                {
+                    duplicate_line_buffer(yuv_lines[next_idx], y_lines[next_idx],
+                                          yuv_lines[curr_idx], y_lines[curr_idx]);
+                    next_row_idx = curr_row_idx;
+                }
+                else
+                {
+                    int next_loaded = -1;
+                    fsp_err_t next_err = load_y_line_from_hyperram(next_request,
+                                                                   yuv_lines[next_idx],
+                                                                   y_lines[next_idx],
+                                                                   &next_loaded);
+                    if (FSP_SUCCESS != next_err)
+                    {
+                        xprintf("[Thread3] Read error at line %d: %d\n", next_loaded, next_err);
+                        goto next_frame;
+                    }
+                    next_row_idx = next_loaded;
+                }
             }
 
             // 10行ごとにスケジューラに時間を与える
