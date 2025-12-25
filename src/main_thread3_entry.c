@@ -7,7 +7,7 @@
 // ========== 深度復元アルゴリズム切り替え ==========
 // 1 = マルチグリッド版（ポアソン方程式反復解法、中品質、中速: ~0.5-2秒/フレーム）
 // 0 = 簡易版（行方向積分、低品質、高速: <1ms/フレーム）
-#define USE_DEPTH_METHOD 0
+#define USE_DEPTH_METHOD 1
 
 // HyperRAMから直接p勾配をストリーミングして行積分する簡易版。
 // USE_SIMPLE_DIRECT_P=1で有効化。
@@ -786,6 +786,76 @@ static void mg_compute_divergence_to_hyperram(const mg_level_t *level)
             div_row[0] = 0.0f;
             div_row[width - 1] = 0.0f;
 
+#if USE_HELIUM_MVE
+            // MVE版: 8ピクセル単位で処理（発散計算の高速化）
+            // div = -(∂p/∂x + ∂q/∂y) = -((p_curr - p_prev) + (q_curr - q_prev))
+            int x;
+            for (x = 1; x < width - 8; x += 8)
+            {
+                // p成分を抽出（8ピクセル分）
+                uint8_t p_curr_buf[8] __attribute__((aligned(16)));
+                uint8_t p_prev_buf[8] __attribute__((aligned(16)));
+                uint8_t q_curr_buf[8] __attribute__((aligned(16)));
+                uint8_t q_prev_buf[8] __attribute__((aligned(16)));
+
+                for (int i = 0; i < 8; i++)
+                {
+                    p_curr_buf[i] = pq_curr[(x + i) * 2 + 1];
+                    p_prev_buf[i] = pq_curr[(x + i - 1) * 2 + 1];
+                    q_curr_buf[i] = pq_curr[(x + i) * 2];
+                    q_prev_buf[i] = pq_prev[(x + i) * 2];
+                }
+
+                // MVEベクトルロード
+                uint8x16_t p_curr_u8 = vld1q_u8(p_curr_buf);
+                uint8x16_t p_prev_u8 = vld1q_u8(p_prev_buf);
+                uint8x16_t q_curr_u8 = vld1q_u8(q_curr_buf);
+                uint8x16_t q_prev_u8 = vld1q_u8(q_prev_buf);
+
+                // uint8 → int16 拡張（下位8バイト）
+                int16x8_t p_curr_s16 = vreinterpretq_s16_u16(vmovlbq_u8(p_curr_u8));
+                int16x8_t p_prev_s16 = vreinterpretq_s16_u16(vmovlbq_u8(p_prev_u8));
+                int16x8_t q_curr_s16 = vreinterpretq_s16_u16(vmovlbq_u8(q_curr_u8));
+                int16x8_t q_prev_s16 = vreinterpretq_s16_u16(vmovlbq_u8(q_prev_u8));
+
+                // -127オフセット適用
+                int16x8_t offset = vdupq_n_s16(127);
+                p_curr_s16 = vsubq_s16(p_curr_s16, offset);
+                p_prev_s16 = vsubq_s16(p_prev_s16, offset);
+                q_curr_s16 = vsubq_s16(q_curr_s16, offset);
+                q_prev_s16 = vsubq_s16(q_prev_s16, offset);
+
+                // ∂p/∂x = p_curr - p_prev
+                int16x8_t dp_dx = vsubq_s16(p_curr_s16, p_prev_s16);
+
+                // ∂q/∂y = q_curr - q_prev
+                int16x8_t dq_dy = vsubq_s16(q_curr_s16, q_prev_s16);
+
+                // div = -(dp/dx + dq/dy)
+                int16x8_t div_s16 = vaddq_s16(dp_dx, dq_dy);
+                div_s16 = vnegq_s16(div_s16);
+
+                // int16 → float変換
+                int16_t div_i16[8] __attribute__((aligned(16)));
+                vst1q_s16(div_i16, div_s16);
+
+                for (int i = 0; i < 8; i++)
+                {
+                    div_row[x + i] = (float)div_i16[i];
+                }
+            }
+
+            // 残りをスカラー処理
+            for (; x < width - 1; x++)
+            {
+                int p_curr = (int)pq_curr[x * 2 + 1] - 127;
+                int p_prev = (int)pq_curr[(x - 1) * 2 + 1] - 127;
+                int q_curr = (int)pq_curr[x * 2] - 127;
+                int q_prev = (int)pq_prev[x * 2] - 127;
+                div_row[x] = -(float)(p_curr - p_prev + q_curr - q_prev);
+            }
+#else
+            // スカラー版
             for (int x = 1; x < width - 1; x++)
             {
                 int p_curr = (int)pq_curr[x * 2 + 1] - 127;
@@ -794,6 +864,7 @@ static void mg_compute_divergence_to_hyperram(const mg_level_t *level)
                 int q_prev = (int)pq_prev[x * 2] - 127;
                 div_row[x] = -(float)(p_curr - p_prev + q_curr - q_prev);
             }
+#endif
         }
 
         hyperram_b_write(div_row, (void *)(level->rhs_offset + y * rhs_row_bytes), rhs_row_bytes);
@@ -922,30 +993,76 @@ static void mg_compute_residual(const mg_level_t *level, uint32_t residual_offse
 
     for (int y = 1; y < height - 1; y++)
     {
-        hyperram_b_read(rhs_curr, (void *)(level->rhs_offset + y * row_bytes), row_bytes);
+        hyperram_b_read(rhs_curr, (void *)(level->rhs_offset + (uint32_t)y * row_bytes), row_bytes);
         res_row[0] = 0.0f;
         res_row[width - 1] = 0.0f;
 
+#if USE_HELIUM_MVE
+        // MVE版: 4要素単位でLaplacian演算と残差計算
+        float32x4_t coeff_4 = vdupq_n_f32(-4.0f);
+
+        int x;
+        for (x = 1; x < width - 4; x += 4)
+        {
+            // 5点ステンシルLaplacian: lap = left + right + top + bottom - 4*center
+
+            // 左隣（x-1, x, x+1, x+2）
+            float32x4_t left = vld1q_f32(&row_curr[x - 1]);
+
+            // 右隣（x+1, x+2, x+3, x+4）
+            float32x4_t right = vld1q_f32(&row_curr[x + 1]);
+
+            // 中央（x, x+1, x+2, x+3）
+            float32x4_t center = vld1q_f32(&row_curr[x]);
+
+            // 上下（x, x+1, x+2, x+3）
+            float32x4_t top = vld1q_f32(&row_prev[x]);
+            float32x4_t bottom = vld1q_f32(&row_next[x]);
+
+            // Laplacian = left + right + top + bottom - 4*center
+            float32x4_t lap = vaddq_f32(left, right);
+            lap = vaddq_f32(lap, top);
+            lap = vaddq_f32(lap, bottom);
+            float32x4_t center_4x = vmulq_f32(center, coeff_4);
+            lap = vaddq_f32(lap, center_4x); // lap += (-4 * center)
+
+            // 残差 = rhs - lap
+            float32x4_t rhs_vec = vld1q_f32(&rhs_curr[x]);
+            float32x4_t res_vec = vsubq_f32(rhs_vec, lap);
+
+            // 結果を保存
+            vst1q_f32(&res_row[x], res_vec);
+        }
+
+        // 残りをスカラー処理
+        for (; x < width - 1; x++)
+        {
+            float lap = row_curr[x - 1] + row_curr[x + 1] + row_prev[x] + row_next[x] - 4.0f * row_curr[x];
+            res_row[x] = rhs_curr[x] - lap;
+        }
+#else
+        // スカラー版
         for (int x = 1; x < width - 1; x++)
         {
             float lap = row_curr[x - 1] + row_curr[x + 1] + row_prev[x] + row_next[x] - 4.0f * row_curr[x];
             res_row[x] = rhs_curr[x] - lap;
         }
+#endif
 
-        hyperram_b_write(res_row, (void *)(residual_offset + y * row_bytes), row_bytes);
+        hyperram_b_write(res_row, (void *)(residual_offset + (uint32_t)y * row_bytes), row_bytes);
 
         if (y < height - 2)
         {
             memcpy(row_prev, row_curr, row_bytes);
             memcpy(row_curr, row_next, row_bytes);
-            hyperram_b_read(row_next, (void *)(level->z_offset + (y + 2) * row_bytes), row_bytes);
+            hyperram_b_read(row_next, (void *)(level->z_offset + (uint32_t)(y + 2) * row_bytes), row_bytes);
         }
     }
 
     if (height > 1)
     {
         memset(res_row, 0, row_bytes);
-        hyperram_b_write(res_row, (void *)(residual_offset + (height - 1) * row_bytes), row_bytes);
+        hyperram_b_write(res_row, (void *)(residual_offset + (uint32_t)(height - 1) * row_bytes), row_bytes);
     }
 }
 
@@ -1125,9 +1242,40 @@ static void mg_export_depth_map(const mg_level_t *level, float *z_min_out, float
     float z_min = 1e9f;
     float z_max = -1e9f;
 
+    // フェーズ1: Min/Max検索
     for (int y = 0; y < height; y++)
     {
-        hyperram_b_read(row_buffer, (void *)(level->z_offset + y * row_bytes), row_bytes);
+        hyperram_b_read(row_buffer, (void *)(level->z_offset + (uint32_t)y * row_bytes), row_bytes);
+
+#if USE_HELIUM_MVE
+        // MVE版: 4要素単位でmin/max検索
+        int x;
+        for (x = 0; x < width - 3; x += 4)
+        {
+            float32x4_t vec = vld1q_f32(&row_buffer[x]);
+
+            // ベクトル内の各要素をチェック
+            float temp[4];
+            vst1q_f32(temp, vec);
+            for (int i = 0; i < 4; i++)
+            {
+                if (temp[i] < z_min)
+                    z_min = temp[i];
+                if (temp[i] > z_max)
+                    z_max = temp[i];
+            }
+        }
+
+        // 残りをスカラー処理
+        for (; x < width; x++)
+        {
+            if (row_buffer[x] < z_min)
+                z_min = row_buffer[x];
+            if (row_buffer[x] > z_max)
+                z_max = row_buffer[x];
+        }
+#else
+        // スカラー版
         for (int x = 0; x < width; x++)
         {
             if (row_buffer[x] < z_min)
@@ -1139,6 +1287,7 @@ static void mg_export_depth_map(const mg_level_t *level, float *z_min_out, float
                 z_max = row_buffer[x];
             }
         }
+#endif
     }
 
     float range = z_max - z_min;
@@ -1147,9 +1296,55 @@ static void mg_export_depth_map(const mg_level_t *level, float *z_min_out, float
         range = 1.0f;
     }
 
+    // フェーズ2: 正規化とuint8変換
     for (int y = 0; y < height; y++)
     {
-        hyperram_b_read(row_buffer, (void *)(level->z_offset + y * row_bytes), row_bytes);
+        hyperram_b_read(row_buffer, (void *)(level->z_offset + (uint32_t)y * row_bytes), row_bytes);
+
+#if USE_HELIUM_MVE
+        // MVE版: 4要素単位で正規化とクランプ
+        float32x4_t z_min_vec = vdupq_n_f32(z_min);
+        float32x4_t scale_vec = vdupq_n_f32(255.0f / range);
+        int32x4_t zero_vec = vdupq_n_s32(0);
+        int32x4_t max_vec = vdupq_n_s32(255);
+
+        int x;
+        for (x = 0; x < width - 3; x += 4)
+        {
+            // 正規化: (z - z_min) * (255 / range)
+            float32x4_t z_vec = vld1q_f32(&row_buffer[x]);
+            float32x4_t normalized = vsubq_f32(z_vec, z_min_vec); // z - z_min
+            normalized = vmulq_f32(normalized, scale_vec);        // * (255/range)
+
+            // float → int32変換
+            int32x4_t val_i32 = vcvtq_s32_f32(normalized);
+
+            // クランプ: 0 <= val <= 255
+            val_i32 = vmaxq_s32(val_i32, zero_vec); // max(val, 0)
+            val_i32 = vminq_s32(val_i32, max_vec);  // min(val, 255)
+
+            // int32 → uint8変換
+            int32_t temp[4];
+            vst1q_s32(temp, val_i32);
+            depth_row[x] = (uint8_t)temp[0];
+            depth_row[x + 1] = (uint8_t)temp[1];
+            depth_row[x + 2] = (uint8_t)temp[2];
+            depth_row[x + 3] = (uint8_t)temp[3];
+        }
+
+        // 残りをスカラー処理
+        for (; x < width; x++)
+        {
+            float normalized = (row_buffer[x] - z_min) / range;
+            int val = (int)(normalized * 255.0f);
+            if (val < 0)
+                val = 0;
+            if (val > 255)
+                val = 255;
+            depth_row[x] = (uint8_t)val;
+        }
+#else
+        // スカラー版
         for (int x = 0; x < width; x++)
         {
             float normalized = (row_buffer[x] - z_min) / range;
@@ -1164,7 +1359,8 @@ static void mg_export_depth_map(const mg_level_t *level, float *z_min_out, float
             }
             depth_row[x] = (uint8_t)val;
         }
-        hyperram_b_write(depth_row, (void *)(DEPTH_OFFSET + y * FRAME_WIDTH), FRAME_WIDTH);
+#endif
+        hyperram_b_write(depth_row, (void *)(DEPTH_OFFSET + (uint32_t)y * FRAME_WIDTH), FRAME_WIDTH);
     }
 
     if (z_min_out)
