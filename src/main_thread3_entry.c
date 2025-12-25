@@ -1101,11 +1101,56 @@ static void mg_gauss_seidel(const mg_level_t *level, int iterations)
             {
                 hyperram_b_read(rhs_curr, (void *)(level->rhs_offset + y * row_bytes), row_bytes);
                 int start_x = 1 + ((y + color) & 1);
+
+#if USE_HELIUM_MVE
+                // MVE版: 4ピクセル並列処理（Red-Blackパターン、stride=2）
+                int x;
+                for (x = start_x; x < width - 8; x += 8)
+                {
+                    // 4つのRed/Blackピクセル（x, x+2, x+4, x+6）とその隣接ピクセルをロード
+                    // 左隣: x-1, x+1, x+3, x+5
+                    float32x4_t left = {row_curr[x - 1], row_curr[x + 1], row_curr[x + 3], row_curr[x + 5]};
+                    // 右隣: x+1, x+3, x+5, x+7
+                    float32x4_t right = {row_curr[x + 1], row_curr[x + 3], row_curr[x + 5], row_curr[x + 7]};
+                    // 上隣: x, x+2, x+4, x+6
+                    float32x4_t above = {row_prev[x], row_prev[x + 2], row_prev[x + 4], row_prev[x + 6]};
+                    // 下隣: x, x+2, x+4, x+6
+                    float32x4_t below = {row_next[x], row_next[x + 2], row_next[x + 4], row_next[x + 6]};
+                    // RHS: x, x+2, x+4, x+6
+                    float32x4_t rhs_vec = {rhs_curr[x], rhs_curr[x + 2], rhs_curr[x + 4], rhs_curr[x + 6]};
+
+                    // neighbor_sum = left + right + above + below
+                    float32x4_t sum = vaddq_f32(left, right);
+                    sum = vaddq_f32(sum, above);
+                    sum = vaddq_f32(sum, below);
+
+                    // result = 0.25 * (neighbor_sum - rhs)
+                    sum = vsubq_f32(sum, rhs_vec);
+                    float32x4_t result = vmulq_n_f32(sum, 0.25f);
+
+                    // ストア（stride=2でスカラー保存）
+                    float result_arr[4];
+                    vst1q_f32(result_arr, result);
+                    row_curr[x] = result_arr[0];
+                    row_curr[x + 2] = result_arr[1];
+                    row_curr[x + 4] = result_arr[2];
+                    row_curr[x + 6] = result_arr[3];
+                }
+
+                // 残りをスカラー処理
+                for (; x < width - 1; x += 2)
+                {
+                    float neighbor_sum = row_curr[x - 1] + row_curr[x + 1] + row_prev[x] + row_next[x];
+                    row_curr[x] = 0.25f * (neighbor_sum - rhs_curr[x]);
+                }
+#else
+                // スカラー版
                 for (int x = start_x; x < width - 1; x += 2)
                 {
                     float neighbor_sum = row_curr[x - 1] + row_curr[x + 1] + row_prev[x] + row_next[x];
                     row_curr[x] = 0.25f * (neighbor_sum - rhs_curr[x]);
                 }
+#endif
 
                 hyperram_b_write(row_curr, (void *)(level->z_offset + y * row_bytes), row_bytes);
 
