@@ -98,10 +98,39 @@ void get_light_source(float *ps, float *qs, float *ts)
 #if USE_BRIGHTNESS_NORMALIZATION
 static void normalize_brightness(uint8_t *y_line, int width)
 {
-    // 最小値と最大値を検索
+    // フェーズ1: 最小値と最大値を検索
     uint8_t min_val = 255;
     uint8_t max_val = 0;
 
+#if USE_HELIUM_MVE
+    // MVE版: 16要素単位でmin/max検索
+    int x;
+    for (x = 0; x < width - 15; x += 16)
+    {
+        uint8x16_t vec = vld1q_u8(&y_line[x]);
+
+        // ベクトル内の各要素をチェック（リダクション命令がないため）
+        uint8_t temp[16];
+        vst1q_u8(temp, vec);
+        for (int i = 0; i < 16; i++)
+        {
+            if (temp[i] < min_val)
+                min_val = temp[i];
+            if (temp[i] > max_val)
+                max_val = temp[i];
+        }
+    }
+
+    // 残りをスカラー処理
+    for (; x < width; x++)
+    {
+        if (y_line[x] < min_val)
+            min_val = y_line[x];
+        if (y_line[x] > max_val)
+            max_val = y_line[x];
+    }
+#else
+    // スカラー版
     for (int x = 0; x < width; x++)
     {
         if (y_line[x] < min_val)
@@ -109,6 +138,7 @@ static void normalize_brightness(uint8_t *y_line, int width)
         if (y_line[x] > max_val)
             max_val = y_line[x];
     }
+#endif
 
     // コントラストが低すぎる場合はスキップ（ノイズ対策）
     int range = max_val - min_val;
@@ -117,8 +147,38 @@ static void normalize_brightness(uint8_t *y_line, int width)
         return;
     }
 
-    // 0-255の範囲に伸長（ヒストグラム伸長）
+    // フェーズ2: 0-255の範囲に伸長（ヒストグラム伸長）
     float scale = 255.0f / (float)range;
+
+#if USE_HELIUM_MVE
+    // MVE版: 簡略化版（16要素単位）
+    for (int x = 0; x < width - 15; x += 16)
+    {
+        uint8_t temp[16];
+        for (int i = 0; i < 16; i++)
+        {
+            int normalized = (int)((y_line[x + i] - min_val) * scale);
+            if (normalized < 0)
+                normalized = 0;
+            if (normalized > 255)
+                normalized = 255;
+            temp[i] = (uint8_t)normalized;
+        }
+        vst1q_u8(&y_line[x], vld1q_u8(temp));
+    }
+
+    // 残りをスカラー処理
+    for (int x = width - (width % 16); x < width; x++)
+    {
+        int normalized = (int)((y_line[x] - min_val) * scale);
+        if (normalized < 0)
+            normalized = 0;
+        if (normalized > 255)
+            normalized = 255;
+        y_line[x] = (uint8_t)normalized;
+    }
+#else
+    // スカラー版
     for (int x = 0; x < width; x++)
     {
         int normalized = (int)((y_line[x] - min_val) * scale);
@@ -128,6 +188,7 @@ static void normalize_brightness(uint8_t *y_line, int width)
             normalized = 255;
         y_line[x] = (uint8_t)normalized;
     }
+#endif
 }
 #endif
 
