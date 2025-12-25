@@ -294,17 +294,17 @@ ctx->total_frames = -1;         // -1=unlimited, number=specified frame count
 
 ### Depth Reconstruction Settings (main_thread3_entry.c)
 ```c
-#define USE_DEPTH_METHOD 0      // 2=Multigrid Poisson solver, others=Simple integration
+#define USE_DEPTH_METHOD 0      // 1=Multigrid Poisson solver, 0=Simple integration
 #define USE_SIMPLE_DIRECT_P 1   // 1=read p directly from HyperRAM, 0=use SRAM buffer
 ```
 
 **Depth Reconstruction Modes**:
-- **USE_DEPTH_METHOD = 2**: Multigrid Poisson solver
+- **USE_DEPTH_METHOD = 1**: Multigrid Poisson solver
   - Processing time: ~0.5-2 seconds per frame
   - Medium quality, HyperRAM-backed workspace
   - Best when accuracy matters more than latency
 
-- **USE_DEPTH_METHOD != 2**: Simple row-integration path
+- **USE_DEPTH_METHOD = 0**: Simple row-integration path
   - Processing time: <1ms per frame
   - MVE-optimized (20-25% faster with Helium intrinsics)
   - Ideal for real-time preview; lower surface fidelity
