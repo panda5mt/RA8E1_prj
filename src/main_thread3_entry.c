@@ -9,7 +9,7 @@
 // 2 = マルチグリッド版（ポアソン方程式反復解法、中品質、中速: ~0.5-2秒/フレーム）
 // 1 = FFT版（Frankot-Chellappa法、高品質、遅い: ~26秒/フレーム）
 // 0 = 簡易版（行方向積分、低品質、高速: <1ms/フレーム）
-#define USE_DEPTH_METHOD 2
+#define USE_DEPTH_METHOD 1
 #define USE_FFT_DEPTH 0 // 後方互換性のため残す
 // =================================================
 
@@ -32,6 +32,24 @@
 #define FFT_P_OFFSET (DEPTH_OFFSET + FRAME_WIDTH * FRAME_HEIGHT)     // p勾配FFT結果
 #define FFT_Q_OFFSET (FFT_P_OFFSET + FRAME_WIDTH * FRAME_HEIGHT * 8) // q勾配FFT結果
 #define FFT_Z_OFFSET (FFT_Q_OFFSET + FRAME_WIDTH * FRAME_HEIGHT * 8) // 深度FFT結果
+
+#if USE_DEPTH_METHOD == 2
+#define MG_WORK_OFFSET (FFT_Z_OFFSET + FRAME_WIDTH * FRAME_HEIGHT * 8)
+#define MG_MAX_LEVELS 6
+
+typedef struct
+{
+    uint32_t z_offset;
+    uint32_t rhs_offset;
+    int width;
+    int height;
+} mg_level_t;
+
+static mg_level_t g_mg_levels[MG_MAX_LEVELS];
+static int g_mg_level_count = 0;
+static uint32_t g_mg_residual_offset = 0;
+static bool g_mg_layout_ready = false;
+#endif
 
 // Shape from Shading 光源パラメータ（定数）
 #define LIGHT_PS 0.0f // 光源方向x成分
@@ -959,247 +977,524 @@ static void edge_to_yuv422(uint8_t edge_line[FRAME_WIDTH], uint8_t yuv_line[FRAM
 // ========== マルチグリッド法による深度復元 ==========
 #if USE_DEPTH_METHOD == 2
 
-// マルチグリッドパラメータ
-static const int pre_smooth = 2;   // Pre-smoothing反復回数
-static const int post_smooth = 2;  // Post-smoothing反復回数
-static const int coarse_iter = 10; // 最粗レベルでの反復回数
-static const int mg_cycles = 3;    // V-cycle反復回数
+static const int pre_smooth = 2;
+static const int post_smooth = 2;
+static const int coarse_iter = 10;
+static const int mg_cycles = 3;
 
-// Gauss-Seidel反復（Red-Black順序）
-static void gauss_seidel_iteration(float *z, const float *rhs, int width, int height, int iterations)
+static void mg_prepare_layout(void)
 {
-    const float h2 = 1.0f;
+    if (g_mg_layout_ready)
+    {
+        return;
+    }
+
+    uint32_t offset = MG_WORK_OFFSET;
+    int width = FRAME_WIDTH;
+    int height = FRAME_HEIGHT;
+    g_mg_level_count = 0;
+
+    while (g_mg_level_count < MG_MAX_LEVELS)
+    {
+        mg_level_t *level = &g_mg_levels[g_mg_level_count];
+        level->width = width;
+        level->height = height;
+        level->z_offset = offset;
+        offset += (uint32_t)(width * height * sizeof(float));
+        level->rhs_offset = offset;
+        offset += (uint32_t)(width * height * sizeof(float));
+
+        g_mg_level_count++;
+
+        if (width <= 40 || height <= 30)
+        {
+            break;
+        }
+
+        width = (width + 1) / 2;
+        height = (height + 1) / 2;
+    }
+
+    g_mg_residual_offset = offset;
+    g_mg_layout_ready = true;
+}
+
+static void mg_zero_buffer(uint32_t offset, size_t length)
+{
+    uint8_t zero_block[128] = {0};
+    size_t written = 0;
+
+    while (written < length)
+    {
+        size_t chunk = length - written;
+        if (chunk > sizeof(zero_block))
+        {
+            chunk = sizeof(zero_block);
+        }
+
+        hyperram_b_write(zero_block, (void *)(offset + written), (uint32_t)chunk);
+        written += chunk;
+    }
+}
+
+static void mg_zero_all_levels(void)
+{
+    for (int i = 0; i < g_mg_level_count; i++)
+    {
+        size_t bytes = (size_t)g_mg_levels[i].width * g_mg_levels[i].height * sizeof(float);
+        mg_zero_buffer(g_mg_levels[i].z_offset, bytes);
+    }
+}
+
+static void mg_compute_divergence_to_hyperram(const mg_level_t *level)
+{
+    const int width = level->width;
+    const int height = level->height;
+    const uint32_t pq_row_bytes = FRAME_WIDTH * 2;
+    const uint32_t rhs_row_bytes = (uint32_t)width * sizeof(float);
+
+    uint8_t pq_prev[FRAME_WIDTH * 2];
+    uint8_t pq_curr[FRAME_WIDTH * 2];
+    uint8_t pq_next[FRAME_WIDTH * 2];
+    float div_row[FRAME_WIDTH];
+
+    hyperram_b_read(pq_curr, (void *)GRADIENT_OFFSET, pq_row_bytes);
+    memcpy(pq_prev, pq_curr, pq_row_bytes);
+    if (height > 1)
+    {
+        hyperram_b_read(pq_next, (void *)(GRADIENT_OFFSET + pq_row_bytes), pq_row_bytes);
+    }
+    else
+    {
+        memcpy(pq_next, pq_curr, pq_row_bytes);
+    }
+
+    for (int y = 0; y < height; y++)
+    {
+        if (y == 0 || y == height - 1)
+        {
+            memset(div_row, 0, rhs_row_bytes);
+        }
+        else
+        {
+            div_row[0] = 0.0f;
+            div_row[width - 1] = 0.0f;
+
+            for (int x = 1; x < width - 1; x++)
+            {
+                int p_curr = (int)pq_curr[x * 2 + 1] - 127;
+                int p_prev = (int)pq_curr[(x - 1) * 2 + 1] - 127;
+                int q_curr = (int)pq_curr[x * 2] - 127;
+                int q_prev = (int)pq_prev[x * 2] - 127;
+                div_row[x] = -(float)(p_curr - p_prev + q_curr - q_prev);
+            }
+        }
+
+        hyperram_b_write(div_row, (void *)(level->rhs_offset + y * rhs_row_bytes), rhs_row_bytes);
+
+        if (y == height - 1)
+        {
+            break;
+        }
+
+        memcpy(pq_prev, pq_curr, pq_row_bytes);
+        memcpy(pq_curr, pq_next, pq_row_bytes);
+
+        int next_row = y + 2;
+        if (next_row >= height)
+        {
+            memcpy(pq_next, pq_curr, pq_row_bytes);
+        }
+        else
+        {
+            hyperram_b_read(pq_next, (void *)(GRADIENT_OFFSET + next_row * pq_row_bytes), pq_row_bytes);
+        }
+    }
+}
+
+static void mg_gauss_seidel(const mg_level_t *level, int iterations)
+{
+    const int width = level->width;
+    const int height = level->height;
+
+    if (width < 2 || height < 2)
+    {
+        return;
+    }
+
+    const uint32_t row_bytes = (uint32_t)width * sizeof(float);
+    float row_prev[FRAME_WIDTH];
+    float row_curr[FRAME_WIDTH];
+    float row_next[FRAME_WIDTH];
+    float rhs_curr[FRAME_WIDTH];
+
     for (int iter = 0; iter < iterations; iter++)
     {
         for (int color = 0; color < 2; color++)
         {
+            hyperram_b_read(row_prev, (void *)(level->z_offset + 0), row_bytes);
+            hyperram_b_read(row_curr, (void *)(level->z_offset + row_bytes), row_bytes);
+
+            if (height > 2)
+            {
+                hyperram_b_read(row_next, (void *)(level->z_offset + 2 * row_bytes), row_bytes);
+            }
+            else
+            {
+                memcpy(row_next, row_curr, row_bytes);
+            }
+
             for (int y = 1; y < height - 1; y++)
             {
-                for (int x = 1 + ((y + color) % 2); x < width - 1; x += 2)
+                hyperram_b_read(rhs_curr, (void *)(level->rhs_offset + y * row_bytes), row_bytes);
+                int start_x = 1 + ((y + color) & 1);
+                for (int x = start_x; x < width - 1; x += 2)
                 {
-                    int idx = y * width + x;
-                    z[idx] = 0.25f * (z[idx - 1] + z[idx + 1] + z[idx - width] + z[idx + width] - h2 * rhs[idx]);
+                    float neighbor_sum = row_curr[x - 1] + row_curr[x + 1] + row_prev[x] + row_next[x];
+                    row_curr[x] = 0.25f * (neighbor_sum - rhs_curr[x]);
+                }
+
+                hyperram_b_write(row_curr, (void *)(level->z_offset + y * row_bytes), row_bytes);
+
+                if (y < height - 2)
+                {
+                    memcpy(row_prev, row_curr, row_bytes);
+                    memcpy(row_curr, row_next, row_bytes);
+                    int next_index = y + 2;
+                    if (next_index < height)
+                    {
+                        hyperram_b_read(row_next, (void *)(level->z_offset + next_index * row_bytes), row_bytes);
+                    }
+                    else
+                    {
+                        memcpy(row_next, row_curr, row_bytes);
+                    }
                 }
             }
         }
     }
 }
 
-// Restriction演算子（fine → coarse）
-static void restrict_residual(const float *fine, float *coarse, int fine_w, int fine_h)
+static void mg_compute_residual(const mg_level_t *level, uint32_t residual_offset)
 {
-    int coarse_w = fine_w / 2;
-    int coarse_h = fine_h / 2;
+    const int width = level->width;
+    const int height = level->height;
+    const uint32_t row_bytes = (uint32_t)width * sizeof(float);
 
-    for (int cy = 0; cy < coarse_h; cy++)
+    float row_prev[FRAME_WIDTH];
+    float row_curr[FRAME_WIDTH];
+    float row_next[FRAME_WIDTH];
+    float rhs_curr[FRAME_WIDTH];
+    float res_row[FRAME_WIDTH];
+
+    if (height == 0)
     {
-        for (int cx = 0; cx < coarse_w; cx++)
-        {
-            int fy = cy * 2;
-            int fx = cx * 2;
-
-            float sum = 0.0f;
-            sum += fine[fy * fine_w + fx] * 4.0f;
-            if (fx > 0)
-                sum += fine[fy * fine_w + (fx - 1)] * 2.0f;
-            if (fx < fine_w - 1)
-                sum += fine[fy * fine_w + (fx + 1)] * 2.0f;
-            if (fy > 0)
-                sum += fine[(fy - 1) * fine_w + fx] * 2.0f;
-            if (fy < fine_h - 1)
-                sum += fine[(fy + 1) * fine_w + fx] * 2.0f;
-            if (fx > 0 && fy > 0)
-                sum += fine[(fy - 1) * fine_w + (fx - 1)];
-            if (fx < fine_w - 1 && fy > 0)
-                sum += fine[(fy - 1) * fine_w + (fx + 1)];
-            if (fx > 0 && fy < fine_h - 1)
-                sum += fine[(fy + 1) * fine_w + (fx - 1)];
-            if (fx < fine_w - 1 && fy < fine_h - 1)
-                sum += fine[(fy + 1) * fine_w + (fx + 1)];
-
-            coarse[cy * coarse_w + cx] = sum / 16.0f;
-        }
+        return;
     }
-}
 
-// Prolongation演算子（coarse → fine）
-static void prolong_correction(const float *coarse, float *fine, int fine_w, int fine_h)
-{
-    int coarse_w = fine_w / 2;
-
-    for (int cy = 0; cy < fine_h / 2; cy++)
+    hyperram_b_read(row_prev, (void *)(level->z_offset + 0), row_bytes);
+    if (height > 1)
     {
-        for (int cx = 0; cx < coarse_w; cx++)
-        {
-            int fy = cy * 2;
-            int fx = cx * 2;
-            float val = coarse[cy * coarse_w + cx];
-
-            fine[fy * fine_w + fx] += val;
-            if (fx < fine_w - 1)
-                fine[fy * fine_w + (fx + 1)] += val * 0.5f;
-            if (fy < fine_h - 1)
-                fine[(fy + 1) * fine_w + fx] += val * 0.5f;
-            if (fx < fine_w - 1 && fy < fine_h - 1)
-                fine[(fy + 1) * fine_w + (fx + 1)] += val * 0.25f;
-        }
+        hyperram_b_read(row_curr, (void *)(level->z_offset + row_bytes), row_bytes);
     }
-}
+    else
+    {
+        memcpy(row_curr, row_prev, row_bytes);
+    }
 
-// 発散計算（∇·(p,q)）
-static void compute_divergence(const uint8_t *pq_data, float *div, int width, int height)
-{
-    memset(div, 0, width * height * sizeof(float));
+    if (height > 2)
+    {
+        hyperram_b_read(row_next, (void *)(level->z_offset + 2 * row_bytes), row_bytes);
+    }
+    else
+    {
+        memcpy(row_next, row_curr, row_bytes);
+    }
+
+    memset(res_row, 0, row_bytes);
+    hyperram_b_write(res_row, (void *)residual_offset, row_bytes);
 
     for (int y = 1; y < height - 1; y++)
     {
+        hyperram_b_read(rhs_curr, (void *)(level->rhs_offset + y * row_bytes), row_bytes);
+        res_row[0] = 0.0f;
+        res_row[width - 1] = 0.0f;
+
         for (int x = 1; x < width - 1; x++)
         {
-            int idx = y * width + x;
-
-            float p_curr = (float)((int)pq_data[idx * 2 + 1] - 127);
-            float p_prev = (float)((int)pq_data[idx * 2 - 1] - 127);
-            float q_curr = (float)((int)pq_data[idx * 2] - 127);
-            float q_prev = (float)((int)pq_data[(idx - width) * 2] - 127);
-
-            div[idx] = -(p_curr - p_prev + q_curr - q_prev);
+            float lap = row_curr[x - 1] + row_curr[x + 1] + row_prev[x] + row_next[x] - 4.0f * row_curr[x];
+            res_row[x] = rhs_curr[x] - lap;
         }
+
+        hyperram_b_write(res_row, (void *)(residual_offset + y * row_bytes), row_bytes);
+
+        if (y < height - 2)
+        {
+            memcpy(row_prev, row_curr, row_bytes);
+            memcpy(row_curr, row_next, row_bytes);
+            hyperram_b_read(row_next, (void *)(level->z_offset + (y + 2) * row_bytes), row_bytes);
+        }
+    }
+
+    if (height > 1)
+    {
+        memset(res_row, 0, row_bytes);
+        hyperram_b_write(res_row, (void *)(residual_offset + (height - 1) * row_bytes), row_bytes);
     }
 }
 
-// V-cycle
-static void multigrid_vcycle(float *z, const float *rhs, int width, int height, int level)
+static void mg_restrict_residual(const mg_level_t *fine, const mg_level_t *coarse, uint32_t residual_offset)
 {
-    if (level == 3 || width <= 40 || height <= 30)
+    const int fine_w = fine->width;
+    const int fine_h = fine->height;
+    const int coarse_w = coarse->width;
+    const int coarse_h = coarse->height;
+    const uint32_t fine_row_bytes = (uint32_t)fine_w * sizeof(float);
+    const uint32_t coarse_row_bytes = (uint32_t)coarse_w * sizeof(float);
+
+    float row_above[FRAME_WIDTH];
+    float row_center[FRAME_WIDTH];
+    float row_below[FRAME_WIDTH];
+    float coarse_row[FRAME_WIDTH];
+
+    if (fine_h == 0)
     {
-        gauss_seidel_iteration(z, rhs, width, height, coarse_iter);
         return;
     }
 
-    gauss_seidel_iteration(z, rhs, width, height, pre_smooth);
-
-    int size = width * height;
-    float *residual = (float *)malloc(size * sizeof(float));
-    if (!residual)
-        return;
-
-    for (int i = 0; i < size; i++)
+    for (int cy = 0; cy < coarse_h; cy++)
     {
-        int x = i % width;
-        int y = i / width;
-        if (x == 0 || x == width - 1 || y == 0 || y == height - 1)
+        int fy = cy * 2;
+
+        if (fy == 0)
         {
-            residual[i] = 0.0f;
+            hyperram_b_read(row_center, (void *)(residual_offset + fy * fine_row_bytes), fine_row_bytes);
+            memcpy(row_above, row_center, fine_row_bytes);
         }
         else
         {
-            float lap_z = z[i - 1] + z[i + 1] + z[i - width] + z[i + width] - 4.0f * z[i];
-            residual[i] = rhs[i] - lap_z;
+            hyperram_b_read(row_above, (void *)(residual_offset + (fy - 1) * fine_row_bytes), fine_row_bytes);
+            hyperram_b_read(row_center, (void *)(residual_offset + fy * fine_row_bytes), fine_row_bytes);
+        }
+
+        if (fy + 1 < fine_h)
+        {
+            hyperram_b_read(row_below, (void *)(residual_offset + (fy + 1) * fine_row_bytes), fine_row_bytes);
+        }
+        else
+        {
+            memcpy(row_below, row_center, fine_row_bytes);
+        }
+
+        for (int cx = 0; cx < coarse_w; cx++)
+        {
+            int fx = cx * 2;
+            float sum = row_center[fx] * 4.0f;
+
+            if (fx > 0)
+            {
+                sum += row_center[fx - 1] * 2.0f;
+            }
+            if (fx < fine_w - 1)
+            {
+                sum += row_center[fx + 1] * 2.0f;
+            }
+            if (fy > 0)
+            {
+                sum += row_above[fx] * 2.0f;
+            }
+            if (fy < fine_h - 1)
+            {
+                sum += row_below[fx] * 2.0f;
+            }
+            if (fx > 0 && fy > 0)
+            {
+                sum += row_above[fx - 1];
+            }
+            if (fx < fine_w - 1 && fy > 0)
+            {
+                sum += row_above[fx + 1];
+            }
+            if (fx > 0 && fy < fine_h - 1)
+            {
+                sum += row_below[fx - 1];
+            }
+            if (fx < fine_w - 1 && fy < fine_h - 1)
+            {
+                sum += row_below[fx + 1];
+            }
+
+            coarse_row[cx] = sum / 16.0f;
+        }
+
+        hyperram_b_write(coarse_row, (void *)(coarse->rhs_offset + cy * coarse_row_bytes), coarse_row_bytes);
+    }
+}
+
+static void mg_prolong_correction(const mg_level_t *coarse, const mg_level_t *fine)
+{
+    const int coarse_w = coarse->width;
+    const int coarse_h = coarse->height;
+    const int fine_w = fine->width;
+    const int fine_h = fine->height;
+    const uint32_t coarse_row_bytes = (uint32_t)coarse_w * sizeof(float);
+    const uint32_t fine_row_bytes = (uint32_t)fine_w * sizeof(float);
+
+    float coarse_row[FRAME_WIDTH];
+    float fine_row_even[FRAME_WIDTH];
+    float fine_row_odd[FRAME_WIDTH];
+
+    for (int cy = 0; cy < coarse_h; cy++)
+    {
+        int fy = cy * 2;
+        hyperram_b_read(coarse_row, (void *)(coarse->z_offset + cy * coarse_row_bytes), coarse_row_bytes);
+        hyperram_b_read(fine_row_even, (void *)(fine->z_offset + fy * fine_row_bytes), fine_row_bytes);
+        bool has_odd = (fy + 1) < fine_h;
+        if (has_odd)
+        {
+            hyperram_b_read(fine_row_odd, (void *)(fine->z_offset + (fy + 1) * fine_row_bytes), fine_row_bytes);
+        }
+
+        for (int cx = 0; cx < coarse_w; cx++)
+        {
+            int fx = cx * 2;
+            float val = coarse_row[cx];
+            fine_row_even[fx] += val;
+            if (fx + 1 < fine_w)
+            {
+                fine_row_even[fx + 1] += val * 0.5f;
+            }
+            if (has_odd)
+            {
+                fine_row_odd[fx] += val * 0.5f;
+                if (fx + 1 < fine_w)
+                {
+                    fine_row_odd[fx + 1] += val * 0.25f;
+                }
+            }
+        }
+
+        hyperram_b_write(fine_row_even, (void *)(fine->z_offset + fy * fine_row_bytes), fine_row_bytes);
+        if (has_odd)
+        {
+            hyperram_b_write(fine_row_odd, (void *)(fine->z_offset + (fy + 1) * fine_row_bytes), fine_row_bytes);
+        }
+    }
+}
+
+static void mg_vcycle(int level_index)
+{
+    const mg_level_t *level = &g_mg_levels[level_index];
+    bool is_base_level = (level_index == g_mg_level_count - 1) || (level->width <= 40) || (level->height <= 30);
+
+    if (is_base_level)
+    {
+        mg_gauss_seidel(level, coarse_iter);
+        return;
+    }
+
+    mg_gauss_seidel(level, pre_smooth);
+
+    mg_compute_residual(level, g_mg_residual_offset);
+    const mg_level_t *coarse = &g_mg_levels[level_index + 1];
+    mg_restrict_residual(level, coarse, g_mg_residual_offset);
+
+    size_t coarse_bytes = (size_t)coarse->width * coarse->height * sizeof(float);
+    mg_zero_buffer(coarse->z_offset, coarse_bytes);
+
+    mg_vcycle(level_index + 1);
+
+    mg_prolong_correction(coarse, level);
+    mg_gauss_seidel(level, post_smooth);
+}
+
+static void mg_export_depth_map(const mg_level_t *level, float *z_min_out, float *z_max_out)
+{
+    const int width = level->width;
+    const int height = level->height;
+    const uint32_t row_bytes = (uint32_t)width * sizeof(float);
+
+    float row_buffer[FRAME_WIDTH];
+    uint8_t depth_row[FRAME_WIDTH];
+    float z_min = 1e9f;
+    float z_max = -1e9f;
+
+    for (int y = 0; y < height; y++)
+    {
+        hyperram_b_read(row_buffer, (void *)(level->z_offset + y * row_bytes), row_bytes);
+        for (int x = 0; x < width; x++)
+        {
+            if (row_buffer[x] < z_min)
+            {
+                z_min = row_buffer[x];
+            }
+            if (row_buffer[x] > z_max)
+            {
+                z_max = row_buffer[x];
+            }
         }
     }
 
-    int coarse_w = width / 2;
-    int coarse_h = height / 2;
-    int coarse_size = coarse_w * coarse_h;
-
-    float *coarse_rhs = (float *)calloc(coarse_size, sizeof(float));
-    float *coarse_z = (float *)calloc(coarse_size, sizeof(float));
-
-    if (!coarse_rhs || !coarse_z)
+    float range = z_max - z_min;
+    if (range < 1e-6f)
     {
-        free(residual);
-        if (coarse_rhs)
-            free(coarse_rhs);
-        if (coarse_z)
-            free(coarse_z);
-        return;
+        range = 1.0f;
     }
 
-    restrict_residual(residual, coarse_rhs, width, height);
-    multigrid_vcycle(coarse_z, coarse_rhs, coarse_w, coarse_h, level + 1);
-    prolong_correction(coarse_z, z, width, height);
+    for (int y = 0; y < height; y++)
+    {
+        hyperram_b_read(row_buffer, (void *)(level->z_offset + y * row_bytes), row_bytes);
+        for (int x = 0; x < width; x++)
+        {
+            float normalized = (row_buffer[x] - z_min) / range;
+            int val = (int)(normalized * 255.0f);
+            if (val < 0)
+            {
+                val = 0;
+            }
+            if (val > 255)
+            {
+                val = 255;
+            }
+            depth_row[x] = (uint8_t)val;
+        }
+        hyperram_b_write(depth_row, (void *)(DEPTH_OFFSET + y * FRAME_WIDTH), FRAME_WIDTH);
+    }
 
-    free(residual);
-    free(coarse_rhs);
-    free(coarse_z);
-
-    gauss_seidel_iteration(z, rhs, width, height, post_smooth);
+    if (z_min_out)
+    {
+        *z_min_out = z_min;
+    }
+    if (z_max_out)
+    {
+        *z_max_out = z_max;
+    }
 }
 
-// メイン関数
 static void reconstruct_depth_multigrid(void)
 {
     xprintf("[Thread3] Multigrid: Starting depth reconstruction\n");
+    mg_prepare_layout();
 
-    const int size = FRAME_WIDTH * FRAME_HEIGHT;
-    uint8_t *pq_data = (uint8_t *)malloc(size * 2);
-    if (!pq_data)
+    if (g_mg_level_count == 0)
     {
-        xprintf("[Thread3] Multigrid: pq_data allocation failed\n");
+        xprintf("[Thread3] Multigrid: layout generation failed\n");
         return;
     }
 
-    hyperram_b_read(pq_data, (void *)GRADIENT_OFFSET, size * 2);
+    mg_zero_all_levels();
 
-    float *z = (float *)calloc(size, sizeof(float));
-    float *div = (float *)malloc(size * sizeof(float));
-
-    if (!z || !div)
-    {
-        xprintf("[Thread3] Multigrid: z/div allocation failed\n");
-        free(pq_data);
-        if (z)
-            free(z);
-        if (div)
-            free(div);
-        return;
-    }
-
-    compute_divergence(pq_data, div, FRAME_WIDTH, FRAME_HEIGHT);
-    free(pq_data);
+    const mg_level_t *fine_level = &g_mg_levels[0];
+    mg_compute_divergence_to_hyperram(fine_level);
 
     for (int cycle = 0; cycle < mg_cycles; cycle++)
     {
-        multigrid_vcycle(z, div, FRAME_WIDTH, FRAME_HEIGHT, 0);
+        mg_vcycle(0);
     }
 
-    free(div);
-
-    float z_min = z[0], z_max = z[0];
-    for (int i = 0; i < size; i++)
-    {
-        if (z[i] < z_min)
-            z_min = z[i];
-        if (z[i] > z_max)
-            z_max = z[i];
-    }
-
-    float z_range = z_max - z_min;
-    if (z_range < 1e-6f)
-        z_range = 1.0f;
-
-    uint8_t *depth_map = (uint8_t *)malloc(size);
-    if (!depth_map)
-    {
-        free(z);
-        return;
-    }
-
-    for (int i = 0; i < size; i++)
-    {
-        float normalized = (z[i] - z_min) / z_range;
-        int val = (int)(normalized * 255.0f);
-        if (val < 0)
-            val = 0;
-        if (val > 255)
-            val = 255;
-        depth_map[i] = (uint8_t)val;
-    }
-
-    hyperram_b_write(depth_map, (void *)DEPTH_OFFSET, size);
-    free(depth_map);
-    free(z);
-
+    float z_min = 0.0f;
+    float z_max = 0.0f;
+    mg_export_depth_map(fine_level, &z_min, &z_max);
     xprintf("[Thread3] Multigrid: Complete (range: %.2f - %.2f)\n", z_min, z_max);
 }
 
