@@ -23,9 +23,13 @@
 // Helium MVE (ARM M-profile Vector Extension) support
 #if defined(__ARM_FEATURE_MVE) && (__ARM_FEATURE_MVE > 0)
 #include <arm_mve.h>
-#define USE_HELIUM_MVE 1 // シンプルで安全なMVE実装
+#define USE_HELIUM_MVE 1           // シンプルで安全なMVE実装
+#define USE_MVE_FOR_MG_RESTRICT 1  // restrict/prolongを有効化
+#define USE_MVE_FOR_GAUSS_SEIDEL 1 // Gauss-Seidelを有効化
 #else
 #define USE_HELIUM_MVE 0
+#define USE_MVE_FOR_MG_RESTRICT 0
+#define USE_MVE_FOR_GAUSS_SEIDEL 0
 #endif
 
 #define FRAME_WIDTH 320
@@ -42,13 +46,13 @@ typedef struct
 {
     uint32_t z_offset;
     uint32_t rhs_offset;
+    uint32_t residual_offset; // 各レベル専用の残差バッファ
     int width;
     int height;
 } mg_level_t;
 
 static mg_level_t g_mg_levels[MG_MAX_LEVELS];
 static int g_mg_level_count = 0;
-static uint32_t g_mg_residual_offset = 0;
 static bool g_mg_layout_ready = false;
 #endif
 
@@ -529,10 +533,10 @@ static void compute_pq_gradients(uint8_t y_prev[FRAME_WIDTH], uint8_t y_curr[FRA
         q_vec = vminq_s16(q_vec, vdupq_n_s16(127));
 
         // +127でオフセット
-        uint16x8_t p_u16 = vreinterpretq_u16_s16(vaddq_s16(p_vec, vdupq_n_s16(127)));
-        uint16x8_t q_u16 = vreinterpretq_u16_s16(vaddq_s16(q_vec, vdupq_n_s16(127)));
+        p_vec = vaddq_s16(p_vec, vdupq_n_s16(127));
+        q_vec = vaddq_s16(q_vec, vdupq_n_s16(127));
 
-        // uint16 → uint8に狭窄してスカラー配列に保存
+        // int16 → uint8に変換して保存
         int16_t p_arr[8], q_arr[8];
         vst1q_s16(p_arr, p_vec);
         vst1q_s16(q_arr, q_vec);
@@ -540,18 +544,8 @@ static void compute_pq_gradients(uint8_t y_prev[FRAME_WIDTH], uint8_t y_curr[FRA
         // インターリーブして保存: q0, p0, q1, p1, ...
         for (int i = 0; i < 8; i++)
         {
-            int p_val = p_arr[i] + 127;
-            int q_val = q_arr[i] + 127;
-            if (p_val < 0)
-                p_val = 0;
-            if (p_val > 255)
-                p_val = 255;
-            if (q_val < 0)
-                q_val = 0;
-            if (q_val > 255)
-                q_val = 255;
-            pq_out[(x + i) * 2] = (uint8_t)q_val;     // q
-            pq_out[(x + i) * 2 + 1] = (uint8_t)p_val; // p
+            pq_out[(x + i) * 2] = (uint8_t)q_arr[i];     // q
+            pq_out[(x + i) * 2 + 1] = (uint8_t)p_arr[i]; // p
         }
     }
 
@@ -859,10 +853,10 @@ static void edge_to_yuv422(uint8_t edge_line[FRAME_WIDTH], uint8_t yuv_line[FRAM
 // ========== マルチグリッド法による深度復元 ==========
 #if USE_DEPTH_METHOD == 1
 
-static const int pre_smooth = 2;
-static const int post_smooth = 2;
-static const int coarse_iter = 10;
-static const int mg_cycles = 3;
+static const int pre_smooth = 1;
+static const int post_smooth = 1;
+static const int coarse_iter = 2;
+static const int mg_cycles = 1;
 
 static void mg_prepare_layout(void)
 {
@@ -885,6 +879,8 @@ static void mg_prepare_layout(void)
         offset += (uint32_t)(width * height * sizeof(float));
         level->rhs_offset = offset;
         offset += (uint32_t)(width * height * sizeof(float));
+        level->residual_offset = offset; // 各レベル専用の残差バッファ
+        offset += (uint32_t)(width * height * sizeof(float));
 
         g_mg_level_count++;
 
@@ -897,7 +893,18 @@ static void mg_prepare_layout(void)
         height = (height + 1) / 2;
     }
 
-    g_mg_residual_offset = offset;
+    uint32_t total_size = offset;
+
+    xprintf("[MG Layout] Total levels: %d\n", g_mg_level_count);
+    xprintf("[MG Layout] Work offset: 0x%08X\n", MG_WORK_OFFSET);
+    xprintf("[MG Layout] Total size: %u bytes (%.2f MB)\n", total_size, (float)total_size / (1024.0f * 1024.0f));
+    xprintf("[MG Layout] HyperRAM capacity: 8 MB\n");
+
+    if (total_size > 8 * 1024 * 1024)
+    {
+        xprintf("[MG Layout] WARNING: Exceeds HyperRAM capacity!\n");
+    }
+
     g_mg_layout_ready = true;
 }
 
@@ -925,6 +932,8 @@ static void mg_zero_all_levels(void)
     {
         size_t bytes = (size_t)g_mg_levels[i].width * g_mg_levels[i].height * sizeof(float);
         mg_zero_buffer(g_mg_levels[i].z_offset, bytes);
+        mg_zero_buffer(g_mg_levels[i].rhs_offset, bytes);
+        mg_zero_buffer(g_mg_levels[i].residual_offset, bytes);
     }
 }
 
@@ -1102,7 +1111,7 @@ static void mg_gauss_seidel(const mg_level_t *level, int iterations)
                 hyperram_b_read(rhs_curr, (void *)(level->rhs_offset + y * row_bytes), row_bytes);
                 int start_x = 1 + ((y + color) & 1);
 
-#if USE_HELIUM_MVE
+#if USE_MVE_FOR_GAUSS_SEIDEL
                 // MVE版: 4ピクセル並列処理（Red-Blackパターン、stride=2）
                 int x;
                 for (x = start_x; x < width - 8; x += 8)
@@ -1330,6 +1339,90 @@ static void mg_restrict_residual(const mg_level_t *fine, const mg_level_t *coars
             memcpy(row_below, row_center, fine_row_bytes);
         }
 
+#if USE_MVE_FOR_MG_RESTRICT
+        // MVE版: 4ピクセル並列処理（9点ステンシル）
+        int cx;
+        for (cx = 0; cx < coarse_w - 3; cx += 4)
+        {
+            // 4つの粗グリッド点に対応する細グリッド点: fx=cx*2
+            int fx0 = cx * 2, fx1 = (cx + 1) * 2, fx2 = (cx + 2) * 2, fx3 = (cx + 3) * 2;
+
+            // 中央点×4
+            float32x4_t sum = {row_center[fx0] * 4.0f, row_center[fx1] * 4.0f,
+                               row_center[fx2] * 4.0f, row_center[fx3] * 4.0f};
+
+            // 左隣×2
+            if (fx0 > 0)
+            {
+                float32x4_t left = {row_center[fx0 - 1] * 2.0f, row_center[fx1 - 1] * 2.0f,
+                                    row_center[fx2 - 1] * 2.0f, row_center[fx3 - 1] * 2.0f};
+                sum = vaddq_f32(sum, left);
+            }
+            // 右隣×2
+            if (fx3 < fine_w - 1)
+            {
+                float32x4_t right = {row_center[fx0 + 1] * 2.0f, row_center[fx1 + 1] * 2.0f,
+                                     row_center[fx2 + 1] * 2.0f, row_center[fx3 + 1] * 2.0f};
+                sum = vaddq_f32(sum, right);
+            }
+            // 上隣×2
+            if (fy > 0)
+            {
+                float32x4_t above = {row_above[fx0] * 2.0f, row_above[fx1] * 2.0f,
+                                     row_above[fx2] * 2.0f, row_above[fx3] * 2.0f};
+                sum = vaddq_f32(sum, above);
+            }
+            // 下隣×2
+            if (fy < fine_h - 1)
+            {
+                float32x4_t below = {row_below[fx0] * 2.0f, row_below[fx1] * 2.0f,
+                                     row_below[fx2] * 2.0f, row_below[fx3] * 2.0f};
+                sum = vaddq_f32(sum, below);
+            }
+            // 対角4点（条件付き加算は簡略化のためスカラーで処理）
+            float result[4];
+            vst1q_f32(result, sum);
+            for (int i = 0; i < 4; i++)
+            {
+                int fx = (cx + i) * 2;
+                float s = result[i];
+                if (fx > 0 && fy > 0)
+                    s += row_above[fx - 1];
+                if (fx < fine_w - 1 && fy > 0)
+                    s += row_above[fx + 1];
+                if (fx > 0 && fy < fine_h - 1)
+                    s += row_below[fx - 1];
+                if (fx < fine_w - 1 && fy < fine_h - 1)
+                    s += row_below[fx + 1];
+                coarse_row[cx + i] = s / 16.0f;
+            }
+        }
+
+        // 残りをスカラー処理
+        for (; cx < coarse_w; cx++)
+        {
+            int fx = cx * 2;
+            float sum = row_center[fx] * 4.0f;
+            if (fx > 0)
+                sum += row_center[fx - 1] * 2.0f;
+            if (fx < fine_w - 1)
+                sum += row_center[fx + 1] * 2.0f;
+            if (fy > 0)
+                sum += row_above[fx] * 2.0f;
+            if (fy < fine_h - 1)
+                sum += row_below[fx] * 2.0f;
+            if (fx > 0 && fy > 0)
+                sum += row_above[fx - 1];
+            if (fx < fine_w - 1 && fy > 0)
+                sum += row_above[fx + 1];
+            if (fx > 0 && fy < fine_h - 1)
+                sum += row_below[fx - 1];
+            if (fx < fine_w - 1 && fy < fine_h - 1)
+                sum += row_below[fx + 1];
+            coarse_row[cx] = sum / 16.0f;
+        }
+#else
+        // スカラー版
         for (int cx = 0; cx < coarse_w; cx++)
         {
             int fx = cx * 2;
@@ -1370,6 +1463,7 @@ static void mg_restrict_residual(const mg_level_t *fine, const mg_level_t *coars
 
             coarse_row[cx] = sum / 16.0f;
         }
+#endif
 
         hyperram_b_write(coarse_row, (void *)(coarse->rhs_offset + cy * coarse_row_bytes), coarse_row_bytes);
     }
@@ -1399,6 +1493,78 @@ static void mg_prolong_correction(const mg_level_t *coarse, const mg_level_t *fi
             hyperram_b_read(fine_row_odd, (void *)(fine->z_offset + (fy + 1) * fine_row_bytes), fine_row_bytes);
         }
 
+#if USE_MVE_FOR_MG_RESTRICT
+        // MVE版: 4ピクセル並列処理（双線形補間）
+        int cx;
+        for (cx = 0; cx < coarse_w - 3; cx += 4)
+        {
+            // 4つの粗グリッド値をロード
+            float32x4_t val_vec = vld1q_f32(&coarse_row[cx]);
+            float32x4_t val_half = vmulq_n_f32(val_vec, 0.5f);
+            float32x4_t val_quarter = vmulq_n_f32(val_vec, 0.25f);
+
+            // 細グリッド位置
+            int fx0 = cx * 2, fx1 = (cx + 1) * 2, fx2 = (cx + 2) * 2, fx3 = (cx + 3) * 2;
+
+            // 偶数行: fx位置に加算
+            float vals[4];
+            vst1q_f32(vals, val_vec);
+            fine_row_even[fx0] += vals[0];
+            fine_row_even[fx1] += vals[1];
+            fine_row_even[fx2] += vals[2];
+            fine_row_even[fx3] += vals[3];
+
+            // 偶数行: fx+1位置に0.5倍で加算
+            if (fx3 + 1 < fine_w)
+            {
+                vst1q_f32(vals, val_half);
+                fine_row_even[fx0 + 1] += vals[0];
+                fine_row_even[fx1 + 1] += vals[1];
+                fine_row_even[fx2 + 1] += vals[2];
+                fine_row_even[fx3 + 1] += vals[3];
+            }
+
+            // 奇数行
+            if (has_odd)
+            {
+                vst1q_f32(vals, val_half);
+                fine_row_odd[fx0] += vals[0];
+                fine_row_odd[fx1] += vals[1];
+                fine_row_odd[fx2] += vals[2];
+                fine_row_odd[fx3] += vals[3];
+
+                if (fx3 + 1 < fine_w)
+                {
+                    vst1q_f32(vals, val_quarter);
+                    fine_row_odd[fx0 + 1] += vals[0];
+                    fine_row_odd[fx1 + 1] += vals[1];
+                    fine_row_odd[fx2 + 1] += vals[2];
+                    fine_row_odd[fx3 + 1] += vals[3];
+                }
+            }
+        }
+
+        // 残りをスカラー処理
+        for (; cx < coarse_w; cx++)
+        {
+            int fx = cx * 2;
+            float val = coarse_row[cx];
+            fine_row_even[fx] += val;
+            if (fx + 1 < fine_w)
+            {
+                fine_row_even[fx + 1] += val * 0.5f;
+            }
+            if (has_odd)
+            {
+                fine_row_odd[fx] += val * 0.5f;
+                if (fx + 1 < fine_w)
+                {
+                    fine_row_odd[fx + 1] += val * 0.25f;
+                }
+            }
+        }
+#else
+        // スカラー版
         for (int cx = 0; cx < coarse_w; cx++)
         {
             int fx = cx * 2;
@@ -1417,6 +1583,7 @@ static void mg_prolong_correction(const mg_level_t *coarse, const mg_level_t *fi
                 }
             }
         }
+#endif
 
         hyperram_b_write(fine_row_even, (void *)(fine->z_offset + fy * fine_row_bytes), fine_row_bytes);
         if (has_odd)
@@ -1439,9 +1606,9 @@ static void mg_vcycle(int level_index)
 
     mg_gauss_seidel(level, pre_smooth);
 
-    mg_compute_residual(level, g_mg_residual_offset);
+    mg_compute_residual(level, level->residual_offset);
     const mg_level_t *coarse = &g_mg_levels[level_index + 1];
-    mg_restrict_residual(level, coarse, g_mg_residual_offset);
+    mg_restrict_residual(level, coarse, level->residual_offset);
 
     size_t coarse_bytes = (size_t)coarse->width * coarse->height * sizeof(float);
     mg_zero_buffer(coarse->z_offset, coarse_bytes);
