@@ -11,6 +11,10 @@
 // 0 = 簡易版（行方向積分、低品質、高速: <1ms/フレーム）
 #define USE_DEPTH_METHOD 1
 #define USE_FFT_DEPTH 0 // 後方互換性のため残す
+// HyperRAMから直接p勾配をストリーミングして行積分する簡易版。
+// USE_SIMPLE_DIRECT_P=1で有効化。
+// USE_SIMPLE_DIRECT_P=0で従来のSRAMバッファ経由
+#define USE_SIMPLE_DIRECT_P 1
 // =================================================
 
 // Helium MVE (ARM M-profile Vector Extension) support
@@ -455,6 +459,65 @@ static void reconstruct_depth_simple(uint8_t pq_data[FRAME_WIDTH * 2], uint8_t d
             depth_val = 255;
 
         depth_line[x] = (uint8_t)depth_val;
+    }
+}
+#endif
+
+#if USE_SIMPLE_DIRECT_P
+/* HyperRAMから直接p勾配をストリーミングして行積分する簡易版。
+ * USE_SIMPLE_DIRECT_P=0で従来のSRAMバッファ経由に戻せる。 */
+static void reconstruct_depth_simple_direct(uint32_t gradient_line_offset, uint8_t depth_line[FRAME_WIDTH])
+{
+    float z = 0.0f;
+    const float scale = 2.0f;
+    uint8_t chunk[128];
+    uint32_t remaining = FRAME_WIDTH * 2;
+    uint32_t offset = 0;
+    int pixel = 0;
+
+    while (remaining > 0 && pixel < FRAME_WIDTH)
+    {
+        uint32_t chunk_size = (remaining > sizeof(chunk)) ? (uint32_t)sizeof(chunk) : remaining;
+        chunk_size &= ~1U; // 偶数バイト境界を維持
+
+        fsp_err_t err = hyperram_b_read(chunk, (void *)(gradient_line_offset + offset), chunk_size);
+        if (FSP_SUCCESS != err)
+        {
+            xprintf("[Thread3] Direct depth read failed at offset=%lu err=%d\n",
+                    (unsigned long)(gradient_line_offset + offset), err);
+            memset(depth_line + pixel, 0, FRAME_WIDTH - pixel);
+            return;
+        }
+
+        for (uint32_t i = 0; i < chunk_size && pixel < FRAME_WIDTH; i += 2)
+        {
+            int p_raw = (int)chunk[i + 1] - 127;
+            z += (float)p_raw * scale;
+
+            if (z < -200.0f)
+            {
+                z = -200.0f;
+            }
+            else if (z > 200.0f)
+            {
+                z = 200.0f;
+            }
+
+            int depth_val = (int)(z + 128.0f);
+            if (depth_val < 0)
+            {
+                depth_val = 0;
+            }
+            else if (depth_val > 255)
+            {
+                depth_val = 255;
+            }
+
+            depth_line[pixel++] = (uint8_t)depth_val;
+        }
+
+        remaining -= chunk_size;
+        offset += chunk_size;
     }
 }
 #endif
@@ -1577,8 +1640,12 @@ void main_thread3_entry(void *pvParameters)
             }
 
 #if USE_FFT_DEPTH == 0
+#if USE_SIMPLE_DIRECT_P
+            reconstruct_depth_simple_direct(write_offset, edge_line);
+#else
             // 簡易深度マップ（行方向積分）
             reconstruct_depth_simple(yuv_out, edge_line);
+#endif
             uint32_t depth_offset = DEPTH_OFFSET + (y * FRAME_WIDTH);
             fsp_err_t depth_write_err = hyperram_b_write(edge_line, (void *)depth_offset, FRAME_WIDTH);
             if (FSP_SUCCESS != depth_write_err)
