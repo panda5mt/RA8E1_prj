@@ -5,9 +5,10 @@
 #include <math.h>
 
 // ========== 深度復元アルゴリズム切り替え ==========
-// 2 = マルチグリッド版（ポアソン方程式反復解法、中品質、中速: ~0.5-2秒/フレーム）
-// その他 = 簡易版（行方向積分、低品質、高速: <1ms/フレーム）
+// 1 = マルチグリッド版（ポアソン方程式反復解法、中品質、中速: ~0.5-2秒/フレーム）
+// 0 = 簡易版（行方向積分、低品質、高速: <1ms/フレーム）
 #define USE_DEPTH_METHOD 1
+
 // HyperRAMから直接p勾配をストリーミングして行積分する簡易版。
 // USE_SIMPLE_DIRECT_P=1で有効化。
 // USE_SIMPLE_DIRECT_P=0で従来のSRAMバッファ経由
@@ -28,7 +29,7 @@
 #define GRADIENT_OFFSET FRAME_SIZE                  // p,q勾配マップを配置（2チャンネル×8bit）
 #define DEPTH_OFFSET (FRAME_SIZE * 2)               // 深度マップ（8bit grayscale: 320×240 = 76,800バイト）
 
-#if USE_DEPTH_METHOD == 2
+#if USE_DEPTH_METHOD == 1
 #define MG_WORK_OFFSET (DEPTH_OFFSET + FRAME_WIDTH * FRAME_HEIGHT)
 #define MG_MAX_LEVELS 6
 
