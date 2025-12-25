@@ -1894,10 +1894,11 @@ void main_thread3_entry(void *pvParameters)
                 goto next_frame;
             }
 
+#if USE_DEPTH_METHOD == 0
+            // 簡易版のみ：行ごとに深度マップを書き込み
 #if USE_SIMPLE_DIRECT_P
             reconstruct_depth_simple_direct(write_offset, edge_line);
 #else
-            // 簡易深度マップ（行方向積分）
             reconstruct_depth_simple(yuv_out, edge_line);
 #endif
             uint32_t depth_offset = DEPTH_OFFSET + (y * FRAME_WIDTH);
@@ -1907,6 +1908,7 @@ void main_thread3_entry(void *pvParameters)
                 xprintf("[Thread3] Depth write error at line %d: %d\n", y, depth_write_err);
                 goto next_frame;
             }
+#endif
 
             if (y < FRAME_HEIGHT - 1)
             {
