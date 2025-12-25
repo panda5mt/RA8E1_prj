@@ -7,7 +7,7 @@
 // ========== 深度復元アルゴリズム切り替え ==========
 // 1 = マルチグリッド版（ポアソン方程式反復解法、中品質、中速: ~0.5-2秒/フレーム）
 // 0 = 簡易版（行方向積分、低品質、高速: <1ms/フレーム）
-#define USE_DEPTH_METHOD 0
+#define USE_DEPTH_METHOD 1
 
 // HyperRAMから直接p勾配をストリーミングして行積分する簡易版。
 // USE_SIMPLE_DIRECT_P=1で有効化。
@@ -151,24 +151,38 @@ static void normalize_brightness(uint8_t *y_line, int width)
     float scale = 255.0f / (float)range;
 
 #if USE_HELIUM_MVE
-    // MVE版: 簡略化版（16要素単位）
-    for (int x = 0; x < width - 15; x += 16)
+    // MVE版: 真のベクトル処理（16要素単位）
+    // 固定小数点スケール: scale_fixed = scale * 256
+    uint32_t scale_fixed = (uint32_t)(scale * 256.0f + 0.5f);
+    uint8x16_t min_vec = vdupq_n_u8(min_val);
+
+    for (x = 0; x < width - 15; x += 16)
     {
-        uint8_t temp[16];
-        for (int i = 0; i < 16; i++)
-        {
-            int normalized = (int)((y_line[x + i] - min_val) * scale);
-            if (normalized < 0)
-                normalized = 0;
-            if (normalized > 255)
-                normalized = 255;
-            temp[i] = (uint8_t)normalized;
-        }
-        vst1q_u8(&y_line[x], vld1q_u8(temp));
+        // 16バイトロード
+        uint8x16_t data = vld1q_u8(&y_line[x]);
+
+        // min_val減算（飽和減算）
+        uint8x16_t adjusted = vqsubq_u8(data, min_vec);
+
+        // 下位8バイトを16ビットに拡張
+        uint16x8_t low = vmovlbq_u8(adjusted);
+        // スケール乗算（固定小数点）
+        low = vmulq_n_u16(low, (uint16_t)scale_fixed);
+        // 8ビット右シフトで÷256（飽和シフト付き狭窄でuint8に戻す）
+        uint8x16_t result = vqshrnbq_n_u16(vuninitializedq_u8(), low, 8);
+
+        // 上位8バイトを16ビットに拡張
+        uint16x8_t high = vmovltq_u8(adjusted);
+        high = vmulq_n_u16(high, (uint16_t)scale_fixed);
+        // 8ビット右シフト + 上位8バイトに狭窄格納
+        result = vqshrntq_n_u16(result, high, 8);
+
+        // 結果を保存
+        vst1q_u8(&y_line[x], result);
     }
 
     // 残りをスカラー処理
-    for (int x = width - (width % 16); x < width; x++)
+    for (; x < width; x++)
     {
         int normalized = (int)((y_line[x] - min_val) * scale);
         if (normalized < 0)
