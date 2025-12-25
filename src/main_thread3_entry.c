@@ -514,10 +514,6 @@ static void reconstruct_depth_simple_direct(uint32_t gradient_line_offset, uint8
 }
 #endif
 
-/* Frankot-Chellappa法による深度復元（FFTベース）
- * 分離可能FFTで実装（メモリ効率化）
- * p,q勾配から2D FFTで深度を計算
- */
 /* エッジ強度をYUV422形式に変換（MATLAB yuv422_to_rgb_fast完全対応）
  * Y = エッジ強度, U = V = 128（グレースケール）
  * YUV422フォーマット（リトルエンディアン）:
@@ -555,7 +551,7 @@ static void edge_to_yuv422(uint8_t edge_line[FRAME_WIDTH], uint8_t yuv_line[FRAM
 }
 
 // ========== マルチグリッド法による深度復元 ==========
-#if USE_DEPTH_METHOD == 2
+#if USE_DEPTH_METHOD == 1
 
 static const int pre_smooth = 2;
 static const int post_smooth = 2;
@@ -1078,7 +1074,7 @@ static void reconstruct_depth_multigrid(void)
     xprintf("[Thread3] Multigrid: Complete (range: %.2f - %.2f)\n", z_min, z_max);
 }
 
-#endif // USE_DEPTH_METHOD == 2
+#endif // USE_DEPTH_METHOD == 1
 
 /* Main Thread3 entry function */
 /* pvParameters contains TaskHandle_t */
@@ -1094,7 +1090,7 @@ void main_thread3_entry(void *pvParameters)
     xprintf("[Thread3] Helium MVE acceleration DISABLED (standard implementation)\n");
 #endif
 
-#if USE_DEPTH_METHOD == 2
+#if USE_DEPTH_METHOD == 1
     xprintf("[Thread3] Depth reconstruction: Multigrid (Poisson solver) - Medium quality, ~0.5-2sec/frame\n");
 #else
     xprintf("[Thread3] Depth reconstruction: Simple (row integration) - Low quality, <1ms/frame\n");
@@ -1176,7 +1172,7 @@ void main_thread3_entry(void *pvParameters)
         }
 
     next_frame:
-#if USE_DEPTH_METHOD == 2
+#if USE_DEPTH_METHOD == 1
         // マルチグリッド深度マップ（ポアソン方程式反復解法）
         xprintf("[Thread3] Frame complete, starting Multigrid reconstruction\n");
         uint32_t mg_start = xTaskGetTickCount();
