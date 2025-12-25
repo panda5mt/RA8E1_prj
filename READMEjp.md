@@ -297,21 +297,24 @@ ctx->total_frames = -1;         // -1=無制限, 数値=指定フレーム数
 
 ### 深度再構成設定 (main_thread3_entry.c)
 ```c
-#define USE_FFT_DEPTH 0         // 0=簡易版(高速), 1=FFT版(高品質)
+#define USE_DEPTH_METHOD 0      // 2=マルチグリッド(ポアソン解法), その他=簡易行積分
+#define USE_SIMPLE_DIRECT_P 1   // 1=HyperRAMから直接読み出し, 0=従来SRAM経由
 ```
 
-**深度再構成手法**:
-- **USE_FFT_DEPTH = 0**: 簡易行積分法
+**深度再構成モード**:
+- **USE_DEPTH_METHOD = 2**: マルチグリッド・ポアソン解法
+  - 処理時間: 約0.5〜2秒/フレーム
+  - 中品質。HyperRAM上にワークスペースを展開
+  - 品質重視または後処理向け
+
+- **USE_DEPTH_METHOD != 2**: 簡易行積分法
   - 処理時間: 1ms未満/フレーム
   - MVE最適化済み(Helium命令で20-25%高速化)
-  - リアルタイム処理に最適
-  - 品質は低めだが極めて高速
-  
-- **USE_FFT_DEPTH = 1**: FFTベースFrankot-Chellappa法
-  - 処理時間: 約26秒/フレーム
-  - 高品質な表面再構成
-  - フレーム毎に適応的正規化
-  - オフライン処理や品質分析向け
+  - リアルタイム用途に最適。表面品質は低め
+
+**簡易版バリアント**:
+- **USE_SIMPLE_DIRECT_P = 1**: p勾配をHyperRAMから直接ストリーミング（最速・RAM節約）
+- **USE_SIMPLE_DIRECT_P = 0**: 従来のSRAMバッファ経由（デバッグや他形式出力が必要な場合）
 
 ### MATLAB側設定(udp_photo_receiver.m)
 ```matlab

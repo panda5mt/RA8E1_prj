@@ -294,21 +294,24 @@ ctx->total_frames = -1;         // -1=unlimited, number=specified frame count
 
 ### Depth Reconstruction Settings (main_thread3_entry.c)
 ```c
-#define USE_FFT_DEPTH 0         // 0=Simple (fast), 1=FFT (high quality)
+#define USE_DEPTH_METHOD 0      // 2=Multigrid Poisson solver, others=Simple integration
+#define USE_SIMPLE_DIRECT_P 1   // 1=read p directly from HyperRAM, 0=use SRAM buffer
 ```
 
-**Depth Reconstruction Methods**:
-- **USE_FFT_DEPTH = 0**: Simple row integration method
+**Depth Reconstruction Modes**:
+- **USE_DEPTH_METHOD = 2**: Multigrid Poisson solver
+  - Processing time: ~0.5-2 seconds per frame
+  - Medium quality, HyperRAM-backed workspace
+  - Best when accuracy matters more than latency
+
+- **USE_DEPTH_METHOD != 2**: Simple row-integration path
   - Processing time: <1ms per frame
   - MVE-optimized (20-25% faster with Helium intrinsics)
-  - Suitable for real-time applications
-  - Lower quality but extremely fast
-  
-- **USE_FFT_DEPTH = 1**: FFT-based Frankot-Chellappa method
-  - Processing time: ~26 seconds per frame
-  - High-quality surface reconstruction
-  - Adaptive normalization per frame
-  - Better for offline processing or quality analysis
+  - Ideal for real-time preview; lower surface fidelity
+
+**Simple Mode Variants**:
+- **USE_SIMPLE_DIRECT_P = 1**: Stream p-gradients directly from HyperRAM (fastest, minimal RAM usage)
+- **USE_SIMPLE_DIRECT_P = 0**: Use legacy SRAM buffer path (useful for debugging or alternate exporters)
 
 ### MATLAB-side Settings (udp_photo_receiver.m)
 ```matlab
