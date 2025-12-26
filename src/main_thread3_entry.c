@@ -1,6 +1,7 @@
 #include "main_thread3.h"
 #include "hyperram_integ.h"
 #include "putchar_ra8usb.h"
+#include "fft_depth_test.h"
 #include <string.h>
 #include <math.h>
 
@@ -1874,6 +1875,12 @@ void main_thread3_entry(void *pvParameters)
 
     // まず少し待機してシステムを安定させる
     vTaskDelay(pdMS_TO_TICKS(2000));
+
+    // ========== FFT動作テスト実行 ==========
+    xprintf("\n[Thread3] Starting 2D FFT/IFFT test suite...\n");
+    fft_depth_test_all();
+    xprintf("[Thread3] FFT tests complete, proceeding to main loop\n\n");
+    // =========================================
 
     while (1)
     {
