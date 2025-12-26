@@ -96,17 +96,18 @@ void fft_1d_mve(float *real, float *imag, int N, bool is_inverse)
         for (int k = 0; k < N; k += step)
         {
 #if USE_HELIUM_MVE
-            // MVE版: 4複素数並列処理
+            // MVE版: 4複素数並列処理（真のSIMD命令使用）
             int m;
             for (m = 0; m < halfStep - 3; m += 4)
             {
+                // 回転係数インデックス計算
                 int idx[4];
                 for (int v = 0; v < 4; v++)
                 {
                     idx[v] = (m + v) * tableStep % (N / 2);
                 }
 
-                // 回転係数（twiddle factors）
+                // 回転係数をベクトルにロード
                 float w_real[4], w_imag[4];
                 for (int v = 0; v < 4; v++)
                 {
@@ -114,22 +115,40 @@ void fft_1d_mve(float *real, float *imag, int N, bool is_inverse)
                     w_imag[v] = is_inverse ? sin_table[idx[v]] : -sin_table[idx[v]];
                 }
 
-                // バタフライ演算（4並列）
-                for (int v = 0; v < 4; v++)
-                {
-                    int i = k + m + v;
-                    int j = i + halfStep;
+                float32x4_t w_real_vec = vld1q_f32(w_real);
+                float32x4_t w_imag_vec = vld1q_f32(w_imag);
 
-                    // t = w * x[j]
-                    float t_real = w_real[v] * real[j] - w_imag[v] * imag[j];
-                    float t_imag = w_real[v] * imag[j] + w_imag[v] * real[j];
+                // インデックス計算
+                int i = k + m;
+                int j = i + halfStep;
 
-                    // バタフライ更新
-                    real[j] = real[i] - t_real;
-                    imag[j] = imag[i] - t_imag;
-                    real[i] += t_real;
-                    imag[i] += t_imag;
-                }
+                // データをベクトルにロード
+                float32x4_t real_i_vec = vld1q_f32(&real[i]);
+                float32x4_t imag_i_vec = vld1q_f32(&imag[i]);
+                float32x4_t real_j_vec = vld1q_f32(&real[j]);
+                float32x4_t imag_j_vec = vld1q_f32(&imag[j]);
+
+                // 複素数乗算: t = w * x[j]
+                // t_real = w_real * real[j] - w_imag * imag[j]
+                // t_imag = w_real * imag[j] + w_imag * real[j]
+                float32x4_t t_real = vfmsq_f32(vmulq_f32(w_real_vec, real_j_vec), w_imag_vec, imag_j_vec);
+                float32x4_t t_imag = vfmaq_f32(vmulq_f32(w_real_vec, imag_j_vec), w_imag_vec, real_j_vec);
+
+                // バタフライ更新
+                // real[j] = real[i] - t_real
+                // imag[j] = imag[i] - t_imag
+                // real[i] = real[i] + t_real
+                // imag[i] = imag[i] + t_imag
+                float32x4_t new_real_j = vsubq_f32(real_i_vec, t_real);
+                float32x4_t new_imag_j = vsubq_f32(imag_i_vec, t_imag);
+                float32x4_t new_real_i = vaddq_f32(real_i_vec, t_real);
+                float32x4_t new_imag_i = vaddq_f32(imag_i_vec, t_imag);
+
+                // 結果をメモリにストア
+                vst1q_f32(&real[i], new_real_i);
+                vst1q_f32(&imag[i], new_imag_i);
+                vst1q_f32(&real[j], new_real_j);
+                vst1q_f32(&imag[j], new_imag_j);
             }
 
             // 残りをスカラー処理
