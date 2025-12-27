@@ -112,8 +112,8 @@ void main_thread0_entry(void *pvParameters)
         }
 
         // フレーム間隔：動画ストリーミングのフレームレートに合わせる
-        // 1秒間隔はUDPストリーミングのフレーム間隔と同期
-        vTaskDelay(pdMS_TO_TICKS(100));
+        // 500msに変更してHyperRAM競合を軽減
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
 
     ////////////////////////////

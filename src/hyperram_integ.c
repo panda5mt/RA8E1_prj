@@ -7,6 +7,7 @@
 #include <string.h>
 #include "FreeRTOS.h"
 #include "semphr.h"
+
 /* Flash device timing */
 #define OSPI_B_TIME_UNIT (BSP_DELAY_UNITS_MICROSECONDS)
 #define OSPI_B_TIME_RESET_SETUP (2U)    /*  Type 50ns */
@@ -15,8 +16,9 @@
 spi_flash_direct_transfer_t g_ospi0_trans;
 bool ospi_b_dma_sent = false;
 static bool g_ospi_initialized = false;
-static SemaphoreHandle_t g_ospi_write_mutex = NULL;
-static SemaphoreHandle_t g_ospi_read_mutex = NULL;
+
+/* HyperRAMスレッドセーフアクセス管理（ミューテックスベース） */
+static SemaphoreHandle_t g_hyperram_mutex = NULL;
 spi_flash_erase_command_t g_command_erase_sets[] =
     {
         [0] = {
@@ -215,98 +217,100 @@ fsp_err_t hyperram_init(void)
     }
     xprintf("CR=0x%04x\n", g_ospi0_trans.data);
 
-    // ミューテックス初期化（書き込み用）
-    if (g_ospi_write_mutex == NULL)
-    {
-        g_ospi_write_mutex = xSemaphoreCreateMutex();
-        if (g_ospi_write_mutex == NULL)
-        {
-            xprintf("[OSPI] Write mutex creation failed!\n");
-            return FSP_ERR_OUT_OF_MEMORY;
-        }
-    }
-
-    // ミューテックス初期化（読み込み用）
-    if (g_ospi_read_mutex == NULL)
-    {
-        g_ospi_read_mutex = xSemaphoreCreateMutex();
-        if (g_ospi_read_mutex == NULL)
-        {
-            xprintf("[OSPI] Read mutex creation failed!\n");
-            return FSP_ERR_OUT_OF_MEMORY;
-        }
-    }
-
     // 正常終了
     xprintf("[OSPI] RW init end\n");
     g_ospi_initialized = true;
+
+    // スレッドセーフアクセス用ミューテックス作成（優先度継承付き）
+    if (g_hyperram_mutex == NULL)
+    {
+        g_hyperram_mutex = xSemaphoreCreateMutex();
+        if (g_hyperram_mutex == NULL)
+        {
+            xprintf("[HyperRAM] ERROR: Mutex creation failed!\n");
+            return FSP_ERR_OUT_OF_MEMORY;
+        }
+        xprintf("[HyperRAM] Mutex-based thread-safe access initialized\n");
+    }
+
     return err;
 }
+
+/* Note: Mutex is created in hyperram_timing_optimization() */
 
 fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_length)
 {
     fsp_err_t err = FSP_SUCCESS;
 
+    if (g_hyperram_mutex == NULL)
+    {
+        xprintf("[HyperRAM-W] ERROR: Mutex not initialized!\n");
+        return FSP_ERR_NOT_INITIALIZED;
+    }
+
+    // 大きい書き込み（1KB以上）のみログ出力
+    bool verbose = (total_length >= 1024);
+
+    if (verbose)
+    {
+        xprintf("[HyperRAM-W] Acquiring mutex (dest=0x%08X, len=%lu)...\n",
+                (uint32_t)p_dest, total_length);
+    }
+
+    // ミューテックス取得（最大5秒待機 - カメラの大きな書き込みに対応）
+    if (xSemaphoreTake(g_hyperram_mutex, pdMS_TO_TICKS(5000)) != pdTRUE)
+    {
+        xprintf("[HyperRAM-W] Mutex timeout after 5s!\n");
+        return FSP_ERR_TIMEOUT;
+    }
+
+    if (verbose)
+    {
+        xprintf("[HyperRAM-W] Mutex acquired, writing...\n");
+    }
+
+    // 排他制御下で書き込み実行
     const uint8_t *src_p8 = (const uint8_t *)p_src;
     uint8_t *dest_p8 = (uint8_t *)p_dest;
-
-    const uint32_t batch_size = 64; // 64バイトずつ書き込み
+    const uint32_t batch_size = 64;
     uint32_t offset = 0;
 
-    // 64バイトごとのバッチ処理
     while (offset + batch_size <= total_length)
     {
-        uint32_t adr = (uint32_t)dest_p8 + offset;      // 8bit length address
-        adr = ((adr & 0xfffffff0) << 6) | (adr & 0x0f); // Octal ram address format
+        uint32_t adr = (uint32_t)dest_p8 + offset;
+        adr = ((adr & 0xfffffff0) << 6) | (adr & 0x0f);
         adr += (uint32_t)HYPERRAM_BASE_ADDR;
 
-        // ミューテックス取得
-        if (xSemaphoreTake(g_ospi_write_mutex, pdMS_TO_TICKS(1000)) == pdTRUE)
-        {
-            err = R_OSPI_B_Write(&g_ospi0_ctrl,
-                                 (uint8_t const *const)(src_p8 + offset),
-                                 (uint8_t *const)adr,
-                                 batch_size);
-            // ミューテックス解放
-            xSemaphoreGive(g_ospi_write_mutex);
-        }
-        else
-        {
-            return FSP_ERR_TIMEOUT;
-        }
-
+        err = R_OSPI_B_Write(&g_ospi0_ctrl,
+                             (uint8_t const *const)(src_p8 + offset),
+                             (uint8_t *const)adr,
+                             batch_size);
         if (FSP_SUCCESS != err)
         {
-            return err;
+            break;
         }
-
         offset += batch_size;
     }
 
-    // 残りのバイト数を処理
-    uint32_t remaining = total_length - offset;
-    if (remaining > 0)
+    if (FSP_SUCCESS == err && (total_length - offset) > 0)
     {
-        uint32_t adr = (uint32_t)dest_p8 + offset;      // 8bit length address
-        adr = ((adr & 0xfffffff0) << 6) | (adr & 0x0f); // Octal ram address format
+        uint32_t remaining = total_length - offset;
+        uint32_t adr = (uint32_t)dest_p8 + offset;
+        adr = ((adr & 0xfffffff0) << 6) | (adr & 0x0f);
         adr += (uint32_t)HYPERRAM_BASE_ADDR;
 
-        // ミューテックス取得
-        if (xSemaphoreTake(g_ospi_write_mutex, pdMS_TO_TICKS(1000)) == pdTRUE)
-        {
-            err = R_OSPI_B_Write(&g_ospi0_ctrl,
-                                 (uint8_t const *const)(src_p8 + offset),
-                                 (uint8_t *const)adr,
-                                 remaining);
-            // ミューテックス解放
-            xSemaphoreGive(g_ospi_write_mutex);
-        }
-        else
-        {
-            return FSP_ERR_TIMEOUT;
-        }
+        err = R_OSPI_B_Write(&g_ospi0_ctrl,
+                             (uint8_t const *const)(src_p8 + offset),
+                             (uint8_t *const)adr,
+                             remaining);
     }
 
+    // ミューテックス解放
+    if (verbose)
+    {
+        xprintf("[HyperRAM-W] Done (%lu bytes)\n", total_length);
+    }
+    xSemaphoreGive(g_hyperram_mutex);
     return err;
 }
 
@@ -314,37 +318,40 @@ fsp_err_t hyperram_b_read(void *p_dest, const void *p_src, uint32_t total_length
 {
     fsp_err_t err = FSP_SUCCESS;
 
+    if (g_hyperram_mutex == NULL)
+    {
+        xprintf("[HyperRAM-R] ERROR: Mutex not initialized!\n");
+        return FSP_ERR_NOT_INITIALIZED;
+    }
+
+    // ミューテックス取得（最大5秒待機）
+    if (xSemaphoreTake(g_hyperram_mutex, pdMS_TO_TICKS(5000)) != pdTRUE)
+    {
+        xprintf("[HyperRAM-R] Mutex timeout after 5s!\n");
+        return FSP_ERR_TIMEOUT;
+    }
+
+    // 排他制御下で読み込み実行
     uint8_t *dest_p8 = (uint8_t *)p_dest;
     const uint8_t *src_p8 = (const uint8_t *)p_src;
-
     uint32_t remaining_size = total_length;
     uint32_t current_offset = 0;
 
-    // 64バイト単位で読み込み（HyperRAM制限対応）
     while (remaining_size > 0)
     {
         uint32_t read_size = (remaining_size > 64) ? 64 : remaining_size;
         uint32_t base_addr = (uint32_t)src_p8 + current_offset;
         uint32_t converted_addr = ((base_addr & 0xfffffff0) << 6) | (base_addr & 0x0f);
 
-        // ミューテックス取得（読み込み保護）
-        if (xSemaphoreTake(g_ospi_read_mutex, pdMS_TO_TICKS(1000)) == pdTRUE)
-        {
-            // 64バイト以下の単位でコピー
-            memcpy(dest_p8 + current_offset,
-                   (uint8_t *)HYPERRAM_BASE_ADDR + converted_addr, read_size);
-            // ミューテックス解放
-            xSemaphoreGive(g_ospi_read_mutex);
-        }
-        else
-        {
-            return FSP_ERR_TIMEOUT;
-        }
+        memcpy(dest_p8 + current_offset,
+               (uint8_t *)HYPERRAM_BASE_ADDR + converted_addr, read_size);
 
         current_offset += read_size;
         remaining_size -= read_size;
     }
 
+    // ミューテックス解放
+    xSemaphoreGive(g_hyperram_mutex);
     return err;
 }
 
