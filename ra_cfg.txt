@@ -1212,7 +1212,7 @@ FSP Configuration
   Thread "Main Thread2"
     Symbol: main_thread2
     Name: Main Thread2
-    Stack size (bytes): 1024
+    Stack size (bytes): 2048
     Priority: 2
     Thread Context: NULL
     Memory Allocation: Static
