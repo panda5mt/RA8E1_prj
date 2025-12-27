@@ -885,7 +885,7 @@ FSP Configuration
     Memory Allocation: Support Static Allocation: Enabled
     Memory Allocation: Support Dynamic Allocation: Enabled
     Memory Allocation: Total Heap Size: 32768
-    Memory Allocation: Application Allocated Heap: Enabled
+    Memory Allocation: Application Allocated Heap: Disabled
     Stats: Generate Run Time Stats: Disabled
     Timers: Use Timers: Enabled
     Timers: Timer Task Priority: 3
