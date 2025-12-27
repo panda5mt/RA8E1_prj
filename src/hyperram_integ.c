@@ -249,24 +249,13 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
     }
 
     // 大きい書き込み（1KB以上）のみログ出力
-    bool verbose = (total_length >= 1024);
-
-    if (verbose)
-    {
-        xprintf("[HyperRAM-W] Acquiring mutex (dest=0x%08X, len=%lu)...\n",
-                (uint32_t)p_dest, total_length);
-    }
+    // bool verbose = (total_length >= 1024);
 
     // ミューテックス取得（最大5秒待機 - カメラの大きな書き込みに対応）
     if (xSemaphoreTake(g_hyperram_mutex, pdMS_TO_TICKS(5000)) != pdTRUE)
     {
-        xprintf("[HyperRAM-W] Mutex timeout after 5s!\n");
+        // xprintf("[HyperRAM-W] Mutex timeout after 5s!\n");
         return FSP_ERR_TIMEOUT;
-    }
-
-    if (verbose)
-    {
-        xprintf("[HyperRAM-W] Mutex acquired, writing...\n");
     }
 
     // 排他制御下で書き込み実行
@@ -306,10 +295,6 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
     }
 
     // ミューテックス解放
-    if (verbose)
-    {
-        xprintf("[HyperRAM-W] Done (%lu bytes)\n", total_length);
-    }
     xSemaphoreGive(g_hyperram_mutex);
     return err;
 }

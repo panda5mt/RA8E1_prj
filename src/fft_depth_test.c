@@ -272,26 +272,18 @@ void fft_2d_hyperram(
         uint32_t row_offset_real = hyperram_input_real_offset + (uint32_t)(r * cols) * sizeof(float);
         uint32_t row_offset_imag = hyperram_input_imag_offset + (uint32_t)(r * cols) * sizeof(float);
 
-        xprintf("[FFT] Reading row %d real...\n", r);
         hyperram_b_read(work_real, (void *)row_offset_real, (uint32_t)(cols) * sizeof(float));
-        xprintf("[FFT] Reading row %d imag...\n", r);
         hyperram_b_read(work_imag, (void *)row_offset_imag, (uint32_t)(cols) * sizeof(float));
-        xprintf("[FFT] Row %d read complete\n", r);
 
         // 行方向1D FFT実行
-        xprintf("[FFT] Processing row %d FFT...\n", r);
         fft_1d_mve(work_real, work_imag, cols, is_inverse);
-        xprintf("[FFT] Row %d FFT complete\n", r);
 
         // HyperRAMに結果を書き戻し
         uint32_t out_row_offset_real = hyperram_output_real_offset + (uint32_t)(r * cols) * sizeof(float);
         uint32_t out_row_offset_imag = hyperram_output_imag_offset + (uint32_t)(r * cols) * sizeof(float);
 
-        xprintf("[FFT] Writing row %d real...\n", r);
         hyperram_b_write(work_real, (void *)out_row_offset_real, (uint32_t)(cols) * sizeof(float));
-        xprintf("[FFT] Writing row %d imag...\n", r);
         hyperram_b_write(work_imag, (void *)out_row_offset_imag, (uint32_t)(cols) * sizeof(float));
-        xprintf("[FFT] Row %d write complete\n", r);
 
         // 進捗表示（10行ごと）
         if ((r + 1) % 10 == 0 || r == rows - 1)
@@ -541,17 +533,14 @@ void fft_test_hyperram_round_trip(void)
 {
     xprintf("\n========== FFT Test 4: HyperRAM-based Round Trip ==========\n");
     xprintf("[FFT] Testing memory-efficient HyperRAM implementation\n");
-    xprintf("[FFT] DEBUG: Declaring buffers...\n");
 
     // 作業用バッファ（RAM上）
     static float input_real[FFT_TEST_POINTS];
     static float input_imag[FFT_TEST_POINTS];
     static float output_real[FFT_TEST_POINTS];
 
-    xprintf("[FFT] DEBUG: Initializing input_imag with memset...\n");
     // テストデータ生成（疑似乱数パターン）
     memset(input_imag, 0, FFT_TEST_POINTS * sizeof(float));
-    xprintf("[FFT] DEBUG: memset complete\n");
 
     xprintf("[FFT] DEBUG: Generating test data in loop (FFT_TEST_POINTS=%d)...\n", FFT_TEST_POINTS);
     for (int i = 0; i < FFT_TEST_POINTS; i++)
@@ -564,15 +553,12 @@ void fft_test_hyperram_round_trip(void)
             vTaskDelay(pdMS_TO_TICKS(1)); // 1ms待機してタスクスイッチ許可
         }
     }
-    xprintf("[FFT] DEBUG: Loop complete\n");
 
     xprintf("[FFT] Input: Pseudo-random pattern\n");
     // マトリックス表示をスキップしてデバッグ
     // fft_print_matrix("Input (Real)", input_real, FFT_TEST_SIZE, FFT_TEST_SIZE, 8);
 
     // HyperRAMに入力データを書き込み
-    xprintf("[FFT] Writing input to HyperRAM (Real offset=0x%X, size=%lu)...\n",
-            FFT_REAL_OFFSET, FFT_TEST_POINTS * sizeof(float));
     hyperram_b_write(input_real, (void *)FFT_REAL_OFFSET, FFT_TEST_POINTS * sizeof(float));
     hyperram_b_write(input_imag, (void *)FFT_IMAG_OFFSET, FFT_TEST_POINTS * sizeof(float));
 
@@ -600,7 +586,6 @@ void fft_test_hyperram_round_trip(void)
     xprintf("[FFT] Inverse FFT completed in %u ms (HyperRAM-based)\n", end - mid);
 
     // HyperRAMから結果を読み出し
-    xprintf("[FFT] Reading output from HyperRAM...\n");
     hyperram_b_read(output_real, (void *)FFT_REAL_OFFSET, FFT_TEST_POINTS * sizeof(float));
 
     // マトリックス表示をスキップしてデバッグ
