@@ -117,7 +117,6 @@ void main_thread0_entry(void *pvParameters)
     }
 
     ////////////////////////////
-
     // xprintf("[OSPI] write end\n");
     // hyperram_ptr = HYPERRAM_BASE_ADDR;
     // hyperram_ptr32 = HYPERRAM_BASE_ADDR;

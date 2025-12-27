@@ -185,6 +185,7 @@ fsp_err_t hyperram_init(void)
                          0x00040000, 4,
                          0x51C0, 2,
                          0, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+
     if (FSP_SUCCESS != err)
     {
         xprintf("[OSPI] direct transfer error!\n");
@@ -270,6 +271,7 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
         adr = ((adr & 0xfffffff0) << 6) | (adr & 0x0f);
         adr += (uint32_t)HYPERRAM_BASE_ADDR;
 
+        taskENTER_CRITICAL();
         err = R_OSPI_B_Write(&g_ospi0_ctrl,
                              (uint8_t const *const)(src_p8 + offset),
                              (uint8_t *const)adr,
@@ -278,6 +280,8 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
         {
             break;
         }
+        taskEXIT_CRITICAL();
+
         offset += batch_size;
     }
 
@@ -287,11 +291,12 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
         uint32_t adr = (uint32_t)dest_p8 + offset;
         adr = ((adr & 0xfffffff0) << 6) | (adr & 0x0f);
         adr += (uint32_t)HYPERRAM_BASE_ADDR;
-
+        taskENTER_CRITICAL();
         err = R_OSPI_B_Write(&g_ospi0_ctrl,
                              (uint8_t const *const)(src_p8 + offset),
                              (uint8_t *const)adr,
                              remaining);
+        taskEXIT_CRITICAL();
     }
 
     // ミューテックス解放
