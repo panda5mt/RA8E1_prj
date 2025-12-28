@@ -667,67 +667,116 @@ void fft_test_hyperram_round_trip(void)
 {
     xprintf("\n========== FFT Test 4: HyperRAM-based Round Trip ==========\n");
     xprintf("[FFT] Testing memory-efficient HyperRAM implementation\n");
+    xprintf("[FFT] Running 5 iterations with varying data patterns...\n");
 
     // 作業用バッファ（RAM上）
     static float input_real[FFT_TEST_POINTS];
     static float input_imag[FFT_TEST_POINTS];
     static float output_real[FFT_TEST_POINTS];
-    static float intermediate_real[FFT_TEST_POINTS];
 
-    // テストデータ生成（疑似乱数パターン）
-    memset(input_imag, 0, FFT_TEST_POINTS * sizeof(float));
+    const int NUM_ITERATIONS = 5;
+    float rmse_values[NUM_ITERATIONS];
+    uint32_t forward_times[NUM_ITERATIONS];
+    uint32_t inverse_times[NUM_ITERATIONS];
 
-    xprintf("[FFT] DEBUG: Generating test data in loop (FFT_TEST_POINTS=%d)...\n", FFT_TEST_POINTS);
-    for (int i = 0; i < FFT_TEST_POINTS; i++)
+    for (int iter = 0; iter < NUM_ITERATIONS; iter++)
     {
-        input_real[i] = (float)(i % 100) / 100.0f;
+        xprintf("\n[FFT] Iteration %d/%d:\n", iter + 1, NUM_ITERATIONS);
 
-        // 32要素ごとにタスクスイッチを許可（ウォッチドッグ対策）
-        if (i > 0 && (i % 32) == 0)
+        // テストデータ生成（パターンを変化させる）
+        memset(input_imag, 0, FFT_TEST_POINTS * sizeof(float));
+
+        for (int i = 0; i < FFT_TEST_POINTS; i++)
         {
-            vTaskDelay(pdMS_TO_TICKS(1)); // 1ms待機してタスクスイッチ許可
+            // 各イテレーションで異なるパターン
+            switch (iter)
+            {
+            case 0: // 線形パターン
+                input_real[i] = (float)(i % 100) / 100.0f;
+                break;
+            case 1: // 二次パターン
+                input_real[i] = (float)((i * i) % 100) / 100.0f;
+                break;
+            case 2: // 正弦波
+                input_real[i] = sinf(2.0f * 3.14159f * (float)i / 16.0f);
+                break;
+            case 3: // ランダム風
+                input_real[i] = (float)((i * 7 + 13) % 100) / 100.0f;
+                break;
+            case 4: // ステップ
+                input_real[i] = (i < 128) ? 0.5f : -0.5f;
+                break;
+            }
+
+            // 32要素ごとにタスクスイッチを許可（ウォッチドッグ対策）
+            if (i > 0 && (i % 32) == 0)
+            {
+                vTaskDelay(pdMS_TO_TICKS(1));
+            }
         }
+
+        // HyperRAMに入力データを書き込み
+        hyperram_b_write(input_real, (void *)FFT_REAL_OFFSET, FFT_TEST_POINTS * sizeof(float));
+        hyperram_b_write(input_imag, (void *)FFT_IMAG_OFFSET, FFT_TEST_POINTS * sizeof(float));
+
+        // Forward FFT（HyperRAM経由、転置方式）
+        uint32_t start = xTaskGetTickCount();
+        fft_2d_hyperram(
+            FFT_REAL_OFFSET,
+            FFT_IMAG_OFFSET,
+            FFT_REAL_OFFSET, // in-place変換
+            FFT_IMAG_OFFSET,
+            FFT_TEST_SIZE, FFT_TEST_SIZE, false);
+        uint32_t mid = xTaskGetTickCount();
+        forward_times[iter] = mid - start;
+
+        // Inverse FFT（HyperRAM経由、転置方式）
+        fft_2d_hyperram(
+            FFT_REAL_OFFSET,
+            FFT_IMAG_OFFSET,
+            FFT_REAL_OFFSET,
+            FFT_IMAG_OFFSET,
+            FFT_TEST_SIZE, FFT_TEST_SIZE, true);
+        uint32_t end = xTaskGetTickCount();
+        inverse_times[iter] = end - mid;
+
+        // HyperRAMから結果を読み出し
+        hyperram_b_read(output_real, (void *)FFT_REAL_OFFSET, FFT_TEST_POINTS * sizeof(float));
+        rmse_values[iter] = fft_calculate_rmse(output_real, input_real, FFT_TEST_POINTS);
+
+        xprintf("  Forward: %u ms, Inverse: %u ms, RMSE: %.6e\n",
+                forward_times[iter], inverse_times[iter], rmse_values[iter]);
     }
 
-    xprintf("[FFT] Input: Pseudo-random pattern\n");
+    // 統計計算
+    float rmse_sum = 0.0f, rmse_min = rmse_values[0], rmse_max = rmse_values[0];
+    uint32_t fwd_sum = 0, inv_sum = 0;
 
-    // HyperRAMに入力データを書き込み
-    hyperram_b_write(input_real, (void *)FFT_REAL_OFFSET, FFT_TEST_POINTS * sizeof(float));
-    hyperram_b_write(input_imag, (void *)FFT_IMAG_OFFSET, FFT_TEST_POINTS * sizeof(float));
-
-    // Forward FFT（HyperRAM経由、転置方式）
-    uint32_t start = xTaskGetTickCount();
-    fft_2d_hyperram(
-        FFT_REAL_OFFSET,
-        FFT_IMAG_OFFSET,
-        FFT_REAL_OFFSET, // in-place変換
-        FFT_IMAG_OFFSET,
-        FFT_TEST_SIZE, FFT_TEST_SIZE, false);
-    uint32_t mid = xTaskGetTickCount();
-
-    xprintf("[FFT] Forward FFT completed in %u ms (HyperRAM-based)\n", mid - start);
-
-    // Inverse FFT（HyperRAM経由、転置方式）
-    fft_2d_hyperram(
-        FFT_REAL_OFFSET,
-        FFT_IMAG_OFFSET,
-        FFT_REAL_OFFSET,
-        FFT_IMAG_OFFSET,
-        FFT_TEST_SIZE, FFT_TEST_SIZE, true);
-    uint32_t end = xTaskGetTickCount();
-
-    xprintf("[FFT] Inverse FFT completed in %u ms (HyperRAM-based)\n", end - mid);
-
-    // HyperRAMから結果を読み出し
-    hyperram_b_read(output_real, (void *)FFT_REAL_OFFSET, FFT_TEST_POINTS * sizeof(float));
-    float rmse = fft_calculate_rmse(output_real, input_real, FFT_TEST_POINTS);
-    xprintf("[FFT] Round-trip RMSE: %.6e (lower is better)\n", rmse);
-
-    if (rmse < 1e-5f)
+    for (int i = 0; i < NUM_ITERATIONS; i++)
     {
-        xprintf("[FFT] PASS: Excellent precision (RMSE < 1e-5)\n");
+        rmse_sum += rmse_values[i];
+        fwd_sum += forward_times[i];
+        inv_sum += inverse_times[i];
+
+        if (rmse_values[i] < rmse_min)
+            rmse_min = rmse_values[i];
+        if (rmse_values[i] > rmse_max)
+            rmse_max = rmse_values[i];
     }
-    else if (rmse < 1e-3f)
+
+    float rmse_avg = rmse_sum / NUM_ITERATIONS;
+
+    xprintf("\n[FFT] Statistics over %d iterations:\n", NUM_ITERATIONS);
+    xprintf("  RMSE:    avg=%.6e, min=%.6e, max=%.6e\n", rmse_avg, rmse_min, rmse_max);
+    xprintf("  Forward: avg=%u ms\n", fwd_sum / NUM_ITERATIONS);
+    xprintf("  Inverse: avg=%u ms\n", inv_sum / NUM_ITERATIONS);
+
+    if (rmse_max < 1e-5f)
+    {
+        xprintf("[FFT] PASS: All iterations excellent precision (RMSE < 1e-5)\n");
+        xprintf("[FFT] HyperRAM integration working correctly!\n");
+    }
+    else if (rmse_max < 1e-3f)
     {
         xprintf("[FFT] PASS: Good precision (RMSE < 1e-3)\n");
     }
