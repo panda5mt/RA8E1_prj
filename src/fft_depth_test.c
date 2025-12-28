@@ -293,55 +293,189 @@ void fft_2d_hyperram(
     }
     xprintf("\n");
 
-    // ========== 列方向FFT ==========
-    // 列アクセスは転置して行として処理（HyperRAMは16バイト境界制約があるため）
+    // ========== 列方向FFT（転置方式） ==========
+    static float transposed_real[256];
+    static float transposed_imag[256];
+
+    if ((rows * cols) > 256)
+    {
+        xprintf("[FFT] ERROR: Size exceeds 256 limit for transpose\n");
+        return;
+    }
+
+    // 行優先で読み込み、列優先に転置
+    for (int r = 0; r < rows; r++)
+    {
+        uint32_t row_offset_real = hyperram_output_real_offset + (uint32_t)(r * cols) * sizeof(float);
+        uint32_t row_offset_imag = hyperram_output_imag_offset + (uint32_t)(r * cols) * sizeof(float);
+
+        hyperram_b_read(work_real, (void *)row_offset_real, (uint32_t)(cols) * sizeof(float));
+        hyperram_b_read(work_imag, (void *)row_offset_imag, (uint32_t)(cols) * sizeof(float));
+
+        // 転置: transposed[c][r] = work[r][c]
+        for (int c = 0; c < cols; c++)
+        {
+            transposed_real[c * rows + r] = work_real[c];
+            transposed_imag[c * rows + r] = work_imag[c];
+        }
+    }
+
     xprintf("[FFT-HyperRAM] Processing cols (0/%d)...\r", cols);
+
+    // 列ごとにFFT実行（転置済みなので連続メモリアクセス）
     for (int c = 0; c < cols; c++)
     {
-        // 全行から列c要素を抽出（行全体を読んで列要素を取得）
-        for (int r = 0; r < rows; r++)
-        {
-            uint32_t row_offset_real = hyperram_output_real_offset + (uint32_t)(r * cols) * sizeof(float);
-            uint32_t row_offset_imag = hyperram_output_imag_offset + (uint32_t)(r * cols) * sizeof(float);
+        fft_1d_mve(&transposed_real[c * rows], &transposed_imag[c * rows], rows, is_inverse);
 
-            // 行全体を読み込み
-            hyperram_b_read(work_real, (void *)row_offset_real, (uint32_t)(cols) * sizeof(float));
-            hyperram_b_read(work_imag, (void *)row_offset_imag, (uint32_t)(cols) * sizeof(float));
-
-            // 列c要素のみ抽出
-            col_real[r] = work_real[c];
-            col_imag[r] = work_imag[c];
-        }
-
-        // 列方向1D FFT実行
-        fft_1d_mve(col_real, col_imag, rows, is_inverse);
-
-        // 結果を書き戻し（各行の列c位置を更新）
-        for (int r = 0; r < rows; r++)
-        {
-            uint32_t row_offset_real = hyperram_output_real_offset + (uint32_t)(r * cols) * sizeof(float);
-            uint32_t row_offset_imag = hyperram_output_imag_offset + (uint32_t)(r * cols) * sizeof(float);
-
-            // 行全体を読み込み
-            hyperram_b_read(work_real, (void *)row_offset_real, (uint32_t)(cols) * sizeof(float));
-            hyperram_b_read(work_imag, (void *)row_offset_imag, (uint32_t)(cols) * sizeof(float));
-
-            // 列c要素のみ更新
-            work_real[c] = col_real[r];
-            work_imag[c] = col_imag[r];
-
-            // 行全体を書き戻し
-            hyperram_b_write(work_real, (void *)row_offset_real, (uint32_t)(cols) * sizeof(float));
-            hyperram_b_write(work_imag, (void *)row_offset_imag, (uint32_t)(cols) * sizeof(float));
-        }
-
-        // 進捗表示（10列ごと）
         if ((c + 1) % 10 == 0 || c == cols - 1)
         {
             xprintf("[FFT-HyperRAM] Processing cols (%d/%d)...\r", c + 1, cols);
         }
     }
-    xprintf("\n[FFT-HyperRAM] Complete!\n");
+    xprintf("\n");
+
+    // 逆転置して行優先に戻し、HyperRAMに書き込み
+    for (int r = 0; r < rows; r++)
+    {
+        // 逆転置: work[r][c] = transposed[c][r]
+        for (int c = 0; c < cols; c++)
+        {
+            work_real[c] = transposed_real[c * rows + r];
+            work_imag[c] = transposed_imag[c * rows + r];
+        }
+
+        uint32_t row_offset_real = hyperram_output_real_offset + (uint32_t)(r * cols) * sizeof(float);
+        uint32_t row_offset_imag = hyperram_output_imag_offset + (uint32_t)(r * cols) * sizeof(float);
+
+        hyperram_b_write(work_real, (void *)row_offset_real, (uint32_t)(cols) * sizeof(float));
+        hyperram_b_write(work_imag, (void *)row_offset_imag, (uint32_t)(cols) * sizeof(float));
+    }
+
+    xprintf("[FFT-HyperRAM] Complete!\n");
+}
+
+/* ROW処理のみ実行（デバッグ用） */
+void fft_2d_hyperram_row_only(
+    uint32_t hyperram_input_real_offset,
+    uint32_t hyperram_input_imag_offset,
+    uint32_t hyperram_output_real_offset,
+    uint32_t hyperram_output_imag_offset,
+    int rows, int cols, bool is_inverse)
+{
+    static float work_real[256];
+    static float work_imag[256];
+
+    if (cols > 256 || rows > 256)
+    {
+        xprintf("[FFT] ERROR: Size exceeds 256 limit\n");
+        return;
+    }
+
+    xprintf("[FFT-HyperRAM] Processing rows only (0/%d)...\r", rows);
+    for (int r = 0; r < rows; r++)
+    {
+        uint32_t row_offset_real = hyperram_input_real_offset + (uint32_t)(r * cols) * sizeof(float);
+        uint32_t row_offset_imag = hyperram_input_imag_offset + (uint32_t)(r * cols) * sizeof(float);
+
+        hyperram_b_read(work_real, (void *)row_offset_real, (uint32_t)(cols) * sizeof(float));
+        hyperram_b_read(work_imag, (void *)row_offset_imag, (uint32_t)(cols) * sizeof(float));
+
+        fft_1d_mve(work_real, work_imag, cols, is_inverse);
+
+        uint32_t out_row_offset_real = hyperram_output_real_offset + (uint32_t)(r * cols) * sizeof(float);
+        uint32_t out_row_offset_imag = hyperram_output_imag_offset + (uint32_t)(r * cols) * sizeof(float);
+
+        hyperram_b_write(work_real, (void *)out_row_offset_real, (uint32_t)(cols) * sizeof(float));
+        hyperram_b_write(work_imag, (void *)out_row_offset_imag, (uint32_t)(cols) * sizeof(float));
+
+        if ((r + 1) % 10 == 0 || r == rows - 1)
+        {
+            xprintf("[FFT-HyperRAM] Processing rows only (%d/%d)...\r", r + 1, rows);
+        }
+    }
+    xprintf("\n[FFT-HyperRAM] ROW processing complete!\n");
+}
+
+/* COL処理のみ実行（デバッグ用）- 転置方式 */
+void fft_2d_hyperram_col_only(
+    uint32_t hyperram_input_real_offset,
+    uint32_t hyperram_input_imag_offset,
+    uint32_t hyperram_output_real_offset,
+    uint32_t hyperram_output_imag_offset,
+    int rows, int cols, bool is_inverse)
+{
+    // 転置バッファ（RAM上に全データを一時保持）
+    static float transposed_real[256];
+    static float transposed_imag[256];
+    static float work_real[256];
+    static float work_imag[256];
+
+    if (cols > 256 || rows > 256 || (rows * cols) > 256)
+    {
+        xprintf("[FFT] ERROR: Size exceeds 256 limit\n");
+        return;
+    }
+
+    xprintf("[FFT-HyperRAM] Reading and transposing matrix...\n");
+
+    // 行優先で読み込み、列優先に転置
+    for (int r = 0; r < rows; r++)
+    {
+        uint32_t row_offset_real = hyperram_output_real_offset + (uint32_t)(r * cols) * sizeof(float);
+        uint32_t row_offset_imag = hyperram_output_imag_offset + (uint32_t)(r * cols) * sizeof(float);
+
+        hyperram_b_read(work_real, (void *)row_offset_real, (uint32_t)(cols) * sizeof(float));
+        hyperram_b_read(work_imag, (void *)row_offset_imag, (uint32_t)(cols) * sizeof(float));
+
+        // 転置: transposed[c][r] = work[r][c]
+        for (int c = 0; c < cols; c++)
+        {
+            transposed_real[c * rows + r] = work_real[c];
+            transposed_imag[c * rows + r] = work_imag[c];
+        }
+    }
+
+    // デバッグ: 転置直後の最初の列（16要素）を表示
+    xprintf("[DEBUG] Transposed column 0 (before FFT):\n");
+    for (int i = 0; i < 16; i++)
+    {
+        xprintf("  [%d] = %.6f\n", i, transposed_real[i]);
+    }
+
+    xprintf("[FFT-HyperRAM] Processing cols (0/%d)...\r", cols);
+
+    // 列ごとにFFT実行（転置済みなので連続メモリアクセス）
+    for (int c = 0; c < cols; c++)
+    {
+        fft_1d_mve(&transposed_real[c * rows], &transposed_imag[c * rows], rows, is_inverse);
+
+        if ((c + 1) % 10 == 0 || c == cols - 1)
+        {
+            xprintf("[FFT-HyperRAM] Processing cols (%d/%d)...\r", c + 1, cols);
+        }
+    }
+    xprintf("\n");
+
+    xprintf("[FFT-HyperRAM] Transposing back and writing...\n");
+
+    // 逆転置して行優先に戻し、HyperRAMに書き込み
+    for (int r = 0; r < rows; r++)
+    {
+        // 逆転置: work[r][c] = transposed[c][r]
+        for (int c = 0; c < cols; c++)
+        {
+            work_real[c] = transposed_real[c * rows + r];
+            work_imag[c] = transposed_imag[c * rows + r];
+        }
+
+        uint32_t row_offset_real = hyperram_output_real_offset + (uint32_t)(r * cols) * sizeof(float);
+        uint32_t row_offset_imag = hyperram_output_imag_offset + (uint32_t)(r * cols) * sizeof(float);
+
+        hyperram_b_write(work_real, (void *)row_offset_real, (uint32_t)(cols) * sizeof(float));
+        hyperram_b_write(work_imag, (void *)row_offset_imag, (uint32_t)(cols) * sizeof(float));
+    }
+
+    xprintf("[FFT-HyperRAM] COL processing complete!\n");
 }
 
 /* 行列表示（デバッグ用） */
@@ -538,6 +672,7 @@ void fft_test_hyperram_round_trip(void)
     static float input_real[FFT_TEST_POINTS];
     static float input_imag[FFT_TEST_POINTS];
     static float output_real[FFT_TEST_POINTS];
+    static float intermediate_real[FFT_TEST_POINTS];
 
     // テストデータ生成（疑似乱数パターン）
     memset(input_imag, 0, FFT_TEST_POINTS * sizeof(float));
@@ -555,14 +690,12 @@ void fft_test_hyperram_round_trip(void)
     }
 
     xprintf("[FFT] Input: Pseudo-random pattern\n");
-    // マトリックス表示をスキップしてデバッグ
-    // fft_print_matrix("Input (Real)", input_real, FFT_TEST_SIZE, FFT_TEST_SIZE, 8);
 
     // HyperRAMに入力データを書き込み
     hyperram_b_write(input_real, (void *)FFT_REAL_OFFSET, FFT_TEST_POINTS * sizeof(float));
     hyperram_b_write(input_imag, (void *)FFT_IMAG_OFFSET, FFT_TEST_POINTS * sizeof(float));
 
-    // Forward FFT（HyperRAM経由）
+    // Forward FFT（HyperRAM経由、転置方式）
     uint32_t start = xTaskGetTickCount();
     fft_2d_hyperram(
         FFT_REAL_OFFSET,
@@ -574,7 +707,7 @@ void fft_test_hyperram_round_trip(void)
 
     xprintf("[FFT] Forward FFT completed in %u ms (HyperRAM-based)\n", mid - start);
 
-    // Inverse FFT（HyperRAM経由）
+    // Inverse FFT（HyperRAM経由、転置方式）
     fft_2d_hyperram(
         FFT_REAL_OFFSET,
         FFT_IMAG_OFFSET,
@@ -587,28 +720,20 @@ void fft_test_hyperram_round_trip(void)
 
     // HyperRAMから結果を読み出し
     hyperram_b_read(output_real, (void *)FFT_REAL_OFFSET, FFT_TEST_POINTS * sizeof(float));
-
-    // マトリックス表示をスキップしてデバッグ
-    // fft_print_matrix("Output (Real)", output_real, FFT_TEST_SIZE, FFT_TEST_SIZE, 8);
-
-    // 精度評価（RMSE計算）
     float rmse = fft_calculate_rmse(output_real, input_real, FFT_TEST_POINTS);
     xprintf("[FFT] Round-trip RMSE: %.6e (lower is better)\n", rmse);
 
     if (rmse < 1e-5f)
     {
         xprintf("[FFT] PASS: Excellent precision (RMSE < 1e-5)\n");
-        xprintf("[FFT] HyperRAM integration working correctly!\n");
     }
     else if (rmse < 1e-3f)
     {
         xprintf("[FFT] PASS: Good precision (RMSE < 1e-3)\n");
-        xprintf("[FFT] HyperRAM integration working correctly!\n");
     }
     else
     {
         xprintf("[FFT] WARNING: Low precision (RMSE >= 1e-3)\n");
-        xprintf("[FFT] Check HyperRAM read/write operations\n");
     }
 
     xprintf("========== Test 4 Complete ==========\n");

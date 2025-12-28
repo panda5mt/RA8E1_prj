@@ -42,6 +42,22 @@ void fft_2d_hyperram(
     uint32_t hyperram_output_imag_offset,
     int rows, int cols, bool is_inverse);
 
+/* デバッグ用：ROW処理のみ */
+void fft_2d_hyperram_row_only(
+    uint32_t hyperram_input_real_offset,
+    uint32_t hyperram_input_imag_offset,
+    uint32_t hyperram_output_real_offset,
+    uint32_t hyperram_output_imag_offset,
+    int rows, int cols, bool is_inverse);
+
+/* デバッグ用：COL処理のみ */
+void fft_2d_hyperram_col_only(
+    uint32_t hyperram_input_real_offset,
+    uint32_t hyperram_input_imag_offset,
+    uint32_t hyperram_output_real_offset,
+    uint32_t hyperram_output_imag_offset,
+    int rows, int cols, bool is_inverse);
+
 /* ユーティリティ */
 void fft_print_matrix(const char *label, float *data, int rows, int cols, int max_display);
 float fft_calculate_rmse(float *data1, float *data2, int size);
