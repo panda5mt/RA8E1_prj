@@ -2,6 +2,8 @@
 #include "hyperram_integ.h"
 #include "putchar_ra8usb.h"
 #include "fft_depth_test.h"
+#include "FreeRTOS.h"
+#include "task.h"
 #include <string.h>
 #include <math.h>
 
@@ -1864,6 +1866,10 @@ void main_thread3_entry(void *pvParameters)
 #else
     xprintf("[Thread3] Depth reconstruction: Simple (row integration) - Low quality, <1ms/frame\n");
 #endif
+
+    // スタック使用量を測定
+    UBaseType_t stack_high_water = uxTaskGetStackHighWaterMark(NULL);
+    xprintf("[Thread3] Stack high water mark:\n %d bytes remaining\n", stack_high_water * sizeof(StackType_t));
 
     // スタック上の静的バッファ
     uint8_t yuv_lines[3][FRAME_WIDTH * 2]; // 3行分のYUV422データ

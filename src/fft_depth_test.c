@@ -24,6 +24,12 @@ static float g_fft_buffer_original[FFT_TEST_POINTS];
 static float g_fft_col_real[FFT_TEST_SIZE];
 static float g_fft_col_imag[FFT_TEST_SIZE];
 
+/* 128×128 FFT用グローバルバッファ（スタックオーバーフロー回避） */
+static float g_large_fft_row_buffer[128];
+static float g_large_fft_rmse_values[5];
+static uint32_t g_large_fft_forward_times[5];
+static uint32_t g_large_fft_inverse_times[5];
+
 /* 三角関数テーブルの初期化 */
 static void init_trig_tables(int N)
 {
@@ -255,8 +261,6 @@ void fft_2d_hyperram(
     // RAM上に1行/1列分の作業バッファのみ確保（最大256要素）
     static float work_real[256];
     static float work_imag[256];
-    static float col_real[256];
-    static float col_imag[256];
 
     if (cols > 256 || rows > 256)
     {
@@ -294,8 +298,8 @@ void fft_2d_hyperram(
     xprintf("\n");
 
     // ========== 列方向FFT（転置方式） ==========
-    static float transposed_real[256];
-    static float transposed_imag[256];
+    static float transposed_real[1024]; // 32×32ブロック用に拡張
+    static float transposed_imag[1024]; // 32×32ブロック用に拡張
 
     if ((rows * cols) > 256)
     {
@@ -352,6 +356,149 @@ void fft_2d_hyperram(
     }
 
     xprintf("[FFT-HyperRAM] Complete!\n");
+}
+
+/* ブロック処理版2D FFT (32×32ブロック単位で処理) */
+void fft_2d_hyperram_blocked(
+    uint32_t hyperram_input_real_offset,
+    uint32_t hyperram_input_imag_offset,
+    uint32_t hyperram_output_real_offset,
+    uint32_t hyperram_output_imag_offset,
+    int rows, int cols, bool is_inverse)
+{
+    const int BLOCK_SIZE = 32;
+    static float block_real[32 * 32]; // 4KB
+    static float block_imag[32 * 32]; // 4KB
+    static float work_real[32];
+    static float work_imag[32];
+
+    xprintf("[FFT-Blocked] Processing %dx%d in %dx%d blocks\n", rows, cols, BLOCK_SIZE, BLOCK_SIZE);
+
+    // ========== フェーズ1: 行方向FFT（全体） ==========
+    xprintf("[FFT-Blocked] Phase 1: Row FFTs (0/%d)...\r", rows);
+    for (int r = 0; r < rows; r++)
+    {
+        uint32_t row_offset_real = hyperram_input_real_offset + (uint32_t)(r * cols) * sizeof(float);
+        uint32_t row_offset_imag = hyperram_input_imag_offset + (uint32_t)(r * cols) * sizeof(float);
+
+        // 行全体を32要素ずつ読み込んでFFT
+        for (int block_col = 0; block_col < cols; block_col += BLOCK_SIZE)
+        {
+            int block_width = (cols - block_col < BLOCK_SIZE) ? (cols - block_col) : BLOCK_SIZE;
+
+            hyperram_b_read(work_real, (void *)(row_offset_real + (uint32_t)block_col * sizeof(float)),
+                            (uint32_t)block_width * sizeof(float));
+            hyperram_b_read(work_imag, (void *)(row_offset_imag + (uint32_t)block_col * sizeof(float)),
+                            (uint32_t)block_width * sizeof(float));
+
+            // このセグメントは後で列FFT時に処理するため、一旦そのまま書き戻し
+            uint32_t out_offset_real = hyperram_output_real_offset + (uint32_t)(r * cols + block_col) * sizeof(float);
+            uint32_t out_offset_imag = hyperram_output_imag_offset + (uint32_t)(r * cols + block_col) * sizeof(float);
+
+            hyperram_b_write(work_real, (void *)out_offset_real, (uint32_t)block_width * sizeof(float));
+            hyperram_b_write(work_imag, (void *)out_offset_imag, (uint32_t)block_width * sizeof(float));
+        }
+
+        if ((r + 1) % 10 == 0 || r == rows - 1)
+        {
+            xprintf("[FFT-Blocked] Phase 1: Row FFTs (%d/%d)...\r", r + 1, rows);
+        }
+    }
+    xprintf("\n");
+
+    // 実際の行FFT処理
+    xprintf("[FFT-Blocked] Computing row FFTs (0/%d)...\r", rows);
+    for (int r = 0; r < rows; r++)
+    {
+        uint32_t row_offset_real = hyperram_output_real_offset + (uint32_t)(r * cols) * sizeof(float);
+        uint32_t row_offset_imag = hyperram_output_imag_offset + (uint32_t)(r * cols) * sizeof(float);
+
+        // 行全体を読み込み（最大128要素）
+        hyperram_b_read(work_real, (void *)row_offset_real, (uint32_t)cols * sizeof(float));
+        hyperram_b_read(work_imag, (void *)row_offset_imag, (uint32_t)cols * sizeof(float));
+
+        // 行FFT実行
+        fft_1d_mve(work_real, work_imag, cols, is_inverse);
+
+        // 結果を書き戻し
+        hyperram_b_write(work_real, (void *)row_offset_real, (uint32_t)cols * sizeof(float));
+        hyperram_b_write(work_imag, (void *)row_offset_imag, (uint32_t)cols * sizeof(float));
+
+        if ((r + 1) % 10 == 0 || r == rows - 1)
+        {
+            xprintf("[FFT-Blocked] Computing row FFTs (%d/%d)...\r", r + 1, rows);
+        }
+    }
+    xprintf("\n");
+
+    // ========== フェーズ2: 列方向FFT（32×32ブロック単位） ==========
+    int num_blocks_row = (rows + BLOCK_SIZE - 1) / BLOCK_SIZE;
+    int num_blocks_col = (cols + BLOCK_SIZE - 1) / BLOCK_SIZE;
+
+    xprintf("[FFT-Blocked] Phase 2: Column FFTs in %d blocks\n", num_blocks_row * num_blocks_col);
+
+    for (int block_r = 0; block_r < num_blocks_row; block_r++)
+    {
+        for (int block_c = 0; block_c < num_blocks_col; block_c++)
+        {
+            int start_row = block_r * BLOCK_SIZE;
+            int start_col = block_c * BLOCK_SIZE;
+            int block_height = (start_row + BLOCK_SIZE > rows) ? (rows - start_row) : BLOCK_SIZE;
+            int block_width = (start_col + BLOCK_SIZE > cols) ? (cols - start_col) : BLOCK_SIZE;
+
+            // ブロックをRAMに読み込み
+            for (int r = 0; r < block_height; r++)
+            {
+                uint32_t row_offset_real = hyperram_output_real_offset +
+                                           (uint32_t)((start_row + r) * cols + start_col) * sizeof(float);
+                uint32_t row_offset_imag = hyperram_output_imag_offset +
+                                           (uint32_t)((start_row + r) * cols + start_col) * sizeof(float);
+
+                hyperram_b_read(&block_real[r * BLOCK_SIZE], (void *)row_offset_real,
+                                (uint32_t)block_width * sizeof(float));
+                hyperram_b_read(&block_imag[r * BLOCK_SIZE], (void *)row_offset_imag,
+                                (uint32_t)block_width * sizeof(float));
+            }
+
+            // 列ごとにFFT実行
+            for (int c = 0; c < block_width; c++)
+            {
+                // 列データを抽出
+                for (int r = 0; r < block_height; r++)
+                {
+                    work_real[r] = block_real[r * BLOCK_SIZE + c];
+                    work_imag[r] = block_imag[r * BLOCK_SIZE + c];
+                }
+
+                // 列FFT実行
+                fft_1d_mve(work_real, work_imag, block_height, is_inverse);
+
+                // 結果を戻す
+                for (int r = 0; r < block_height; r++)
+                {
+                    block_real[r * BLOCK_SIZE + c] = work_real[r];
+                    block_imag[r * BLOCK_SIZE + c] = work_imag[r];
+                }
+            }
+
+            // ブロックをHyperRAMに書き戻し
+            for (int r = 0; r < block_height; r++)
+            {
+                uint32_t row_offset_real = hyperram_output_real_offset +
+                                           (uint32_t)((start_row + r) * cols + start_col) * sizeof(float);
+                uint32_t row_offset_imag = hyperram_output_imag_offset +
+                                           (uint32_t)((start_row + r) * cols + start_col) * sizeof(float);
+
+                hyperram_b_write(&block_real[r * BLOCK_SIZE], (void *)row_offset_real,
+                                 (uint32_t)block_width * sizeof(float));
+                hyperram_b_write(&block_imag[r * BLOCK_SIZE], (void *)row_offset_imag,
+                                 (uint32_t)block_width * sizeof(float));
+            }
+
+            xprintf("[FFT-Blocked] Block (%d,%d) complete\r", block_r, block_c);
+        }
+    }
+    xprintf("\n[FFT-Blocked] All blocks complete!\n");
 }
 
 /* ROW処理のみ実行（デバッグ用） */
@@ -788,6 +935,178 @@ void fft_test_hyperram_round_trip(void)
     xprintf("========== Test 4 Complete ==========\n");
 }
 
+/* 128×128大規模FFT→IFFT往復テスト（ブロック処理版） */
+void fft_test_hyperram_128x128(void)
+{
+    xprintf("\n========================================\n");
+    xprintf("  Test 5: 128x128 HyperRAM FFT (Blocked)\n");
+    xprintf("========================================\n");
+
+    const int FFT_SIZE = 128;
+    const int FFT_ELEMENTS = 16384; // 128×128
+    // NOTE:
+    // hyperram_b_write() はオフセット(0x00起点)指定で、実機のHyperRAM容量外/アドレス変換外だと
+    // R_OSPI_B_Write() 側でハングすることがあります。
+    // 既存の16x16テストは 0x200000 付近が動作実績ありなので、その近傍に配置します。
+    const uint32_t BASE_OFFSET = 0x210000;                     // 2MB+64KB
+    const uint32_t INPUT_REAL_OFFSET = BASE_OFFSET + 0x00000;  // 64KB
+    const uint32_t INPUT_IMAG_OFFSET = BASE_OFFSET + 0x10000;  // 64KB
+    const uint32_t OUTPUT_REAL_OFFSET = BASE_OFFSET + 0x20000; // 64KB
+    const uint32_t OUTPUT_IMAG_OFFSET = BASE_OFFSET + 0x30000; // 64KB
+    const uint32_t WORK_REAL_OFFSET = BASE_OFFSET + 0x40000;   // 64KB
+    const uint32_t WORK_IMAG_OFFSET = BASE_OFFSET + 0x50000;   // 64KB
+
+    // 5パターンでテスト
+    const char *pattern_names[5] = {
+        "Linear", "Quadratic", "2D Sine", "Pseudo-random", "Step"};
+
+    for (int iter = 0; iter < 5; iter++)
+    {
+        xprintf("\n[FFT-128] Iteration %d: %s pattern\n", iter + 1, pattern_names[iter]);
+        vTaskDelay(pdMS_TO_TICKS(10));
+
+        xprintf("[FFT-128] Generating pattern...\n");
+
+        // パターン生成
+        for (int i = 0; i < FFT_ELEMENTS; i++)
+        {
+            float val = 0.0f;
+            int y = i / FFT_SIZE;
+            int x = i % FFT_SIZE;
+
+            switch (iter)
+            {
+            case 0: // Linear
+                val = (float)(i % 100) / 100.0f;
+                break;
+            case 1: // Quadratic
+                val = (float)((i * i) % 200) / 200.0f;
+                break;
+            case 2: // 2D Sine
+                val = sinf((float)x / 16.0f) * sinf((float)y / 16.0f);
+                break;
+            case 3: // Pseudo-random
+                val = (float)((i * 17 + 31) % 100) / 100.0f;
+                break;
+            case 4: // Step
+                val = ((x / 32) % 2 == 0 && (y / 32) % 2 == 0) ? 1.0f : 0.0f;
+                break;
+            }
+
+            g_large_fft_row_buffer[x] = val;
+
+            // 1行分（128要素）貯まったらHyperRAMに書き込み
+            if (x == (FFT_SIZE - 1))
+            {
+                uint32_t row_offset = INPUT_REAL_OFFSET + (uint32_t)(y * FFT_SIZE) * sizeof(float);
+                fsp_err_t werr = hyperram_b_write(g_large_fft_row_buffer, (void *)row_offset, FFT_SIZE * sizeof(float));
+                if (FSP_SUCCESS != werr)
+                {
+                    xprintf("[FFT-128] ERROR: hyperram_b_write failed at row %d (err=%d)\n", y, (int)werr);
+                    return;
+                }
+
+                if (y == 0)
+                {
+                    xprintf("[FFT-128] Pattern: row 1/%d written\n", FFT_SIZE);
+                }
+
+                // 毎行書き込み後に遅延（HyperRAM競合回避）
+                vTaskDelay(pdMS_TO_TICKS(2));
+
+                // 進捗表示（16行ごと）
+                if ((y + 1) % 16 == 0)
+                {
+                    xprintf("[FFT-128] Pattern: row %d/%d\r", y + 1, FFT_SIZE);
+                }
+            }
+        }
+        xprintf("\n[FFT-128] Pattern generation complete\n");
+
+        // 虚部ゼロ初期化
+        xprintf("[FFT-128] Initializing imaginary part...\n");
+        for (int i = 0; i < FFT_SIZE; i++)
+        {
+            g_large_fft_row_buffer[i] = 0.0f;
+        }
+        for (int row = 0; row < FFT_SIZE; row++)
+        {
+            hyperram_b_write(g_large_fft_row_buffer,
+                             (void *)(INPUT_IMAG_OFFSET + (uint32_t)(row * FFT_SIZE) * sizeof(float)),
+                             FFT_SIZE * sizeof(float));
+        }
+
+        xprintf("[FFT-128] Pattern ready, starting forward FFT...\n");
+        vTaskDelay(pdMS_TO_TICKS(10));
+
+        uint32_t time_start = R_GPT0->GTCNT;
+
+        // ブロック処理版FFT
+        fft_2d_hyperram_blocked(INPUT_REAL_OFFSET, INPUT_IMAG_OFFSET,
+                                OUTPUT_REAL_OFFSET, OUTPUT_IMAG_OFFSET,
+                                FFT_SIZE, FFT_SIZE, false);
+
+        uint32_t time_forward = R_GPT0->GTCNT - time_start;
+        g_large_fft_forward_times[iter] = time_forward;
+
+        xprintf("[FFT-128] Forward FFT complete (%lu us)\n", time_forward / 240);
+        vTaskDelay(pdMS_TO_TICKS(10));
+
+        // 逆FFT
+        xprintf("[FFT-128] Starting inverse FFT...\n");
+        time_start = R_GPT0->GTCNT;
+
+        fft_2d_hyperram_blocked(OUTPUT_REAL_OFFSET, OUTPUT_IMAG_OFFSET,
+                                WORK_REAL_OFFSET, WORK_IMAG_OFFSET,
+                                FFT_SIZE, FFT_SIZE, true);
+
+        uint32_t time_inverse = R_GPT0->GTCNT - time_start;
+        g_large_fft_inverse_times[iter] = time_inverse;
+
+        xprintf("[FFT-128] Inverse FFT complete (%lu us)\n", time_inverse / 240);
+        vTaskDelay(pdMS_TO_TICKS(10));
+
+        // RMSE計算
+        float sum_sq_error = 0.0f;
+        for (int row = 0; row < FFT_SIZE; row++)
+        {
+            hyperram_b_read(g_large_fft_row_buffer,
+                            (void *)(WORK_REAL_OFFSET + (uint32_t)(row * FFT_SIZE) * sizeof(float)),
+                            FFT_SIZE * sizeof(float));
+
+            float original_row[FFT_SIZE];
+            hyperram_b_read(original_row,
+                            (void *)(INPUT_REAL_OFFSET + (uint32_t)(row * FFT_SIZE) * sizeof(float)),
+                            FFT_SIZE * sizeof(float));
+
+            for (int col = 0; col < FFT_SIZE; col++)
+            {
+                float diff = g_large_fft_row_buffer[col] - original_row[col];
+                sum_sq_error += diff * diff;
+            }
+        }
+
+        float rmse = sqrtf(sum_sq_error / FFT_ELEMENTS);
+        g_large_fft_rmse_values[iter] = rmse;
+
+        xprintf("[FFT-128] Iteration %d: RMSE = %.6f\n", iter + 1, rmse);
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
+
+    // サマリー
+    xprintf("\n[FFT-128] ========== Summary ==========\n");
+    for (int i = 0; i < 5; i++)
+    {
+        xprintf("[FFT-128] %s: RMSE=%.6f, Forward=%lu us, Inverse=%lu us\n",
+                pattern_names[i],
+                g_large_fft_rmse_values[i],
+                g_large_fft_forward_times[i] / 240,
+                g_large_fft_inverse_times[i] / 240);
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+    xprintf("========== Test 5 Complete ==========\n");
+}
+
 /* 全テスト実行 */
 void fft_depth_test_all(void)
 {
@@ -812,7 +1131,10 @@ void fft_depth_test_all(void)
     fft_test_round_trip();
     vTaskDelay(pdMS_TO_TICKS(500));
 
-    fft_test_hyperram_round_trip();
+    // fft_test_hyperram_round_trip();  // Test 4: 16×16はメモリ圧迫のため無効化
+    // vTaskDelay(pdMS_TO_TICKS(500));
+
+    fft_test_hyperram_128x128(); // Test 5: 128×128ブロック処理版
 
     xprintf("\n========================================\n");
     xprintf("  All FFT Tests Complete\n");

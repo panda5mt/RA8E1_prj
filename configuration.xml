@@ -1204,7 +1204,7 @@
       <property id="config.awsfreertos.thread.include_vtaskdelay" value="config.awsfreertos.thread.include_vtaskdelay.enabled"/>
       <property id="config.awsfreertos.thread.include_xtaskgetschedulerstate" value="config.awsfreertos.thread.include_xtaskgetschedulerstate.enabled"/>
       <property id="config.awsfreertos.thread.include_xtaskgetcurrenttaskhandle" value="config.awsfreertos.thread.include_xtaskgetcurrenttaskhandle.enabled"/>
-      <property id="config.awsfreertos.thread.include_uxtaskgetstackhighwatermark" value="config.awsfreertos.thread.include_uxtaskgetstackhighwatermark.disabled"/>
+      <property id="config.awsfreertos.thread.include_uxtaskgetstackhighwatermark" value="config.awsfreertos.thread.include_uxtaskgetstackhighwatermark.enabled"/>
       <property id="config.awsfreertos.thread.include_xtaskgetidletaskhandle" value="config.awsfreertos.thread.include_xtaskgetidletaskhandle.disabled"/>
       <property id="config.awsfreertos.thread.include_etaskgetstate" value="config.awsfreertos.thread.include_etaskgetstate.disabled"/>
       <property id="config.awsfreertos.thread.include_xeventgroupsetbitfromisr" value="config.awsfreertos.thread.include_xeventgroupsetbitfromisr.enabled"/>

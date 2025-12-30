@@ -270,17 +270,15 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
         uint32_t adr = (uint32_t)dest_p8 + offset;
         adr = ((adr & 0xfffffff0) << 6) | (adr & 0x0f);
         adr += (uint32_t)HYPERRAM_BASE_ADDR;
-
-        taskENTER_CRITICAL();
         err = R_OSPI_B_Write(&g_ospi0_ctrl,
                              (uint8_t const *const)(src_p8 + offset),
                              (uint8_t *const)adr,
                              batch_size);
+
         if (FSP_SUCCESS != err)
         {
             break;
         }
-        taskEXIT_CRITICAL();
 
         offset += batch_size;
     }
@@ -291,12 +289,10 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
         uint32_t adr = (uint32_t)dest_p8 + offset;
         adr = ((adr & 0xfffffff0) << 6) | (adr & 0x0f);
         adr += (uint32_t)HYPERRAM_BASE_ADDR;
-        taskENTER_CRITICAL();
         err = R_OSPI_B_Write(&g_ospi0_ctrl,
                              (uint8_t const *const)(src_p8 + offset),
                              (uint8_t *const)adr,
                              remaining);
-        taskEXIT_CRITICAL();
     }
 
     // ミューテックス解放
