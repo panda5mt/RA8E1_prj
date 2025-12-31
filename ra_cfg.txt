@@ -38,7 +38,7 @@ FSP Configuration
     Clocks: MSTP Change Delays: Enabled
     Clocks: Settling Delay (us): 150
     Main Oscillator Wait Time: 8163 cycles
-    Cache settings: Data cache: Enabled
+    Cache settings: Data cache: Disabled
     I/O Ports: Voltage Mode: VCC: High (VCC >= 2.7 V)
     I/O Ports: Voltage Mode: VCC2: Low (VCC2 < 2.7 V)
     
@@ -840,7 +840,7 @@ FSP Configuration
     Parameter Checking: Enable
     DMAC Support: Enable
     Autocalibration Support: Disable
-    Memory-mapping Support: Prefetch Function: Enable
+    Memory-mapping Support: Prefetch Function: Disable
     Memory-mapping Support: Combination Function: 64 Bytes
     Memory-mapping Support: XiP Support: Disable
     DOTF Support: Disable
@@ -1121,8 +1121,8 @@ FSP Configuration
       Command Sets: Erase Sizes: Sector Erase: 0
       Command Sets: Erase Sizes: Block Erase: 0
       Command Sets: Initial Mode: Protocol Mode: Dual data rate OPI (8D-8D-8D)
-      Command Sets: Initial Mode: Frame Format: xSPI Profile 1.0
-      Command Sets: Initial Mode: Latency Mode: Variable (DQS)
+      Command Sets: Initial Mode: Frame Format: Standard
+      Command Sets: Initial Mode: Latency Mode: Fixed
       Command Sets: Initial Mode: Address Length: 4 bytes
       Command Sets: Initial Mode: Address MSB Mask: 0xE0
       Command Sets: Initial Mode: Command Code Length: 2 bytes
