@@ -1832,20 +1832,23 @@ void main_thread3_entry(void *pvParameters)
 
     // OctalRAMテスト
     vTaskDelay(pdMS_TO_TICKS(3000));
-    // char test_data[16] = "DEADBEEF1234567\0";
-    // char read_data[16] = {0};
-    // for (int i = 0; i < 65536; i += 16)
-    // {
-    //     hyperram_b_write(test_data, (void *)i, sizeof(test_data));
-    // }
+    char test_data[16] = "DEADBEEF1234567\0";
+    char read_data[16] = {0};
 
-    // for (int i = 0; i < 65536; i += 16)
-    // {
-    //     hyperram_b_read(&read_data[i], (void *)i, sizeof(test_data));
-    //     xprintf("[Thread3] HyperRAM test read at offset %d: %s\n", i, &read_data[i]);
-    //     vTaskDelay(pdMS_TO_TICKS(10));
-    // }
-    // // hyperram_b_read(read_data, (void *)HYPERRAM_BASE_ADDR, sizeof(test_data));
+    for (int i = 0; i < 65536; i += 16)
+    {
+        hyperram_b_write(&test_data[0], (void *)i, sizeof(test_data));
+    }
+
+    for (int i = 0; i < 65536; i += 16)
+    {
+        read_data[0] = '\0';
+        hyperram_b_read(&read_data[0], (void *)i, sizeof(test_data));
+        xprintf("[Thread3] HyperRAM test read at offset %d: %s\n", i, read_data);
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+
+    // hyperram_b_read(read_data, (void *)HYPERRAM_BASE_ADDR, sizeof(test_data));
 
     xprintf("[Thread3] Shape from Shading (p,q gradient) processor started\n");
 

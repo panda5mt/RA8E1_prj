@@ -33,7 +33,7 @@ ospi_b_xspi_command_set_t g_command_sets[] =
 
         /* 8D-8D-8D example with inverted lower command byte. */
         [0] = {.protocol = SPI_FLASH_PROTOCOL_8D_8D_8D,
-               //.latency_mode = OSPI_B_LATENCY_MODE_FIXED,
+               .latency_mode = OSPI_B_LATENCY_MODE_VARIABLE,
                .frame_format = OSPI_B_FRAME_FORMAT_STANDARD,
                .command_bytes = OSPI_RAM_COMMAND_BYTES,
                .address_bytes = SPI_FLASH_ADDRESS_BYTES_4,
@@ -44,8 +44,8 @@ ospi_b_xspi_command_set_t g_command_sets[] =
                //.status_needs_address = false,
                //.status_address_bytes = 0,
                .address_msb_mask = 0xE0,
-               .read_dummy_cycles = OSPI_RAM_LATENCY_CYCLES + 1,
-               .program_dummy_cycles = OSPI_RAM_LATENCY_CYCLES,
+               .read_dummy_cycles = OSPI_RAM_READ_LATENCY_CYCLES,
+               .program_dummy_cycles = OSPI_RAM_WRITE_LATENCY_CYCLES,
 
                .status_dummy_cycles = 0,
                .p_erase_commands = NULL}};
@@ -174,7 +174,7 @@ fsp_err_t hyperram_init(void)
 
     xprintf("[OSPI] init Ok\n");
 
-    R_XSPI0->WRAPCFG_b.DSSFTCS1 = 3U;
+    R_XSPI0->WRAPCFG_b.DSSFTCS1 = 1U;
 
     // /* Configure DDR sampling window extend */
     R_XSPI0->LIOCFGCS_b[1].DDRSMPEX = 4U;
@@ -198,7 +198,7 @@ fsp_err_t hyperram_init(void)
                          OSPI_B_COMMAND_READ_ID, OSPI_RAM_COMMAND_BYTES,
                          0x00000000, 4,
                          0x00, 2,
-                         OSPI_RAM_LATENCY_CYCLES, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
+                         OSPI_RAM_READ_LATENCY_CYCLES, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
     if (FSP_SUCCESS != err)
     {
         xprintf("[OSPI] direct transfer error!\n");
@@ -211,7 +211,7 @@ fsp_err_t hyperram_init(void)
                          OSPI_B_COMMAND_READ_REGISTER, OSPI_RAM_COMMAND_BYTES,
                          0x00040000, 4,
                          0x00, 2,
-                         OSPI_RAM_LATENCY_CYCLES, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
+                         OSPI_RAM_READ_LATENCY_CYCLES, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
     if (FSP_SUCCESS != err)
     {
         xprintf("[OSPI] direct transfer error!\n");

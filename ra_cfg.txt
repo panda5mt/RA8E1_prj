@@ -840,7 +840,7 @@ FSP Configuration
     Parameter Checking: Enable
     DMAC Support: Enable
     Autocalibration Support: Disable
-    Memory-mapping Support: Prefetch Function: Enable
+    Memory-mapping Support: Prefetch Function: Disable
     Memory-mapping Support: Combination Function: 64 Bytes
     Memory-mapping Support: XiP Support: Disable
     DOTF Support: Disable

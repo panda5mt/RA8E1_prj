@@ -22,7 +22,9 @@ extern "C"
 #define OSPI_B_COMMAND_WRITE_ENABLE (0x00)     // NONE
 #define OSPI_B_COMMAND_WRITE_DISABLE (0x00)    // NONE
 
-#define OSPI_RAM_LATENCY_CYCLES (7U) /* Max latency cycles in DDR mode */
+#define OSPI_RAM_READ_LATENCY_CYCLES (8U)  /* Max latency cycles in DDR mode */
+#define OSPI_RAM_WRITE_LATENCY_CYCLES (8U) /* Max latency cycles in DDR mode */
+
 #define OSPI_RAM_COMMAND_BYTES (2U)
 
 #define HYPERRAM_SIZE (8 * 1024 * 1024U) /* 8MB */

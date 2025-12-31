@@ -785,7 +785,7 @@
       <property id="config.driver.ospi_b.param_checking_enable" value="config.driver.ospi_b.param_checking_enable.enabled"/>
       <property id="config.driver.ospi_b.dmac_support" value="config.driver.ospi_b.dmac_support.enabled"/>
       <property id="config.driver.ospi_b.autocalibration_support" value="config.driver.ospi_b.autocalibration_support.disabled"/>
-      <property id="config.driver.ospi_b.prefetch_function" value="config.driver.ospi_b.prefetch_function.enabled"/>
+      <property id="config.driver.ospi_b.prefetch_function" value="config.driver.ospi_b.prefetch_function.disabled"/>
       <property id="config.driver.ospi_b.combination_function" value="config.driver.ospi_b.combination_function.64_BYTE"/>
       <property id="config.driver.ospi_b.xip_support" value="config.driver.ospi_b.xip_support.disabled"/>
       <property id="config.driver.ospi_b.dotf_support" value="config.driver.ospi_b.dotf_support.disabled"/>
