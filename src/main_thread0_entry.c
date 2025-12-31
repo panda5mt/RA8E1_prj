@@ -101,9 +101,6 @@ void main_thread0_entry(void *pvParameters)
 
     while (1)
     {
-        vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-    {
         // カメラキャプチャ実行
         cam_capture();
 

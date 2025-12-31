@@ -14,7 +14,102 @@
 #include "lwip/autoip.h"
 #endif
 
+#include <stdint.h>
+
 #include "ra/fsp/src/bsp/mcu/all/bsp_io.h"
+
+typedef enum
+{
+    YUV422_ORDER_UNKNOWN = 0,
+    YUV422_ORDER_YUYV = 1,        /* [Y0 U0 Y1 V0] */
+    YUV422_ORDER_UYVY = 2,        /* [U0 Y0 V0 Y1] */
+    YUV422_ORDER_VYUY = 3,        /* [V0 Y1 U0 Y0] */
+    YUV422_ORDER_YUYV_SWAP_Y = 4, /* swap Y within each pair: output (Y1,Y0) */
+    YUV422_ORDER_UYVY_SWAP_Y = 5  /* swap Y within each pair: output (Y1,Y0) */
+} yuv422_order_t;
+
+/*
+ * YUV422バイト順の固定設定（MATLAB側は変更しない前提）
+ * CEU設定が CB0Y0CR0Y1 (= UYVY) のため、デフォルトは UYVY。
+ * もし「Y成分っぽいが、偶奇ピクセルが入れ替わって見える」場合は
+ *   - YUV422_ORDER_UYVY_SWAP_Y
+ *   - YUV422_ORDER_YUYV_SWAP_Y
+ * を試してください（Yのみを入れ替えます）。
+ */
+#ifndef UDP_GRAYSCALE_YUV422_ORDER
+#define UDP_GRAYSCALE_YUV422_ORDER YUV422_ORDER_UYVY_SWAP_Y
+#endif
+
+static const yuv422_order_t g_yuv422_order_fixed = (yuv422_order_t)UDP_GRAYSCALE_YUV422_ORDER;
+
+/*
+ * 4px束の順番補正（グレースケール送信のみ）
+ * 0: 無効
+ * 1: 4px(=4バイト)ごとに [0..1] と [2..3] を入れ替え (Y2 Y3 Y0 Y1 型)
+ */
+#ifndef UDP_GRAYSCALE_REORDER_4PX_MODE
+#define UDP_GRAYSCALE_REORDER_4PX_MODE 1
+#endif
+
+static inline void reorder_grayscale_4px(uint8_t *buf, uint32_t n)
+{
+#if UDP_GRAYSCALE_REORDER_4PX_MODE == 1
+    /* n is expected to be multiple of 4 (chunk_size=512 is OK) */
+    for (uint32_t i = 0; i + 3U < n; i += 4U)
+    {
+        uint8_t a0 = buf[i];
+        uint8_t a1 = buf[i + 1U];
+        buf[i] = buf[i + 2U];
+        buf[i + 1U] = buf[i + 3U];
+        buf[i + 2U] = a0;
+        buf[i + 3U] = a1;
+    }
+#else
+    (void)buf;
+    (void)n;
+#endif
+}
+
+static void extract_y_from_yuv422(const uint8_t *yuv, uint8_t *y_out, uint32_t y_bytes, yuv422_order_t order)
+{
+    /* y_bytes must be even: 2 pixels at a time */
+    for (uint32_t i = 0; i < y_bytes; i += 2)
+    {
+        uint32_t yuv_idx = i * 2U;
+        if (order == YUV422_ORDER_UYVY)
+        {
+            /* [U0 Y0 V0 Y1] */
+            y_out[i] = yuv[yuv_idx + 1];
+            y_out[i + 1] = yuv[yuv_idx + 3];
+        }
+        else if (order == YUV422_ORDER_UYVY_SWAP_Y)
+        {
+            /* [U0 Y0 V0 Y1] but swap Y: (Y1,Y0) */
+            y_out[i] = yuv[yuv_idx + 3];
+            y_out[i + 1] = yuv[yuv_idx + 1];
+        }
+        else if (order == YUV422_ORDER_VYUY)
+        {
+            /* [V0 Y1 U0 Y0] */
+            y_out[i] = yuv[yuv_idx + 3];
+            y_out[i + 1] = yuv[yuv_idx + 1];
+        }
+        else if (order == YUV422_ORDER_YUYV_SWAP_Y)
+        {
+            /* [Y0 U0 Y1 V0] but swap Y: (Y1,Y0) */
+            y_out[i] = yuv[yuv_idx + 2];
+            y_out[i + 1] = yuv[yuv_idx + 0];
+        }
+        else
+        {
+            /* default YUYV: [Y0 U0 Y1 V0] */
+            y_out[i] = yuv[yuv_idx + 0];
+            y_out[i + 1] = yuv[yuv_idx + 2];
+        }
+    }
+
+    reorder_grayscale_4px(y_out, y_bytes);
+}
 
 #define UDP_PORT_DEST 9000
 #define FRAME_SIZE (320 * 240 * 2)    // YUV422 = 2 bytes/pixel
@@ -125,6 +220,13 @@ static void udp_send_timer_cb(void *arg)
         uint32_t remaining_bytes = ctx->photo_size - ctx->sent_bytes;
         send_size = (remaining_bytes < ctx->chunk_size) ? remaining_bytes : ctx->chunk_size;
 
+        /* Y成分抽出は2ピクセル(=2バイト)単位で行うため偶数に丸める */
+        send_size &= ~(size_t)1U;
+#if UDP_GRAYSCALE_REORDER_4PX_MODE == 1
+        /* 4px束並び替えを行う場合、4バイト境界に揃える */
+        send_size &= ~(size_t)3U;
+#endif
+
         // ヘッダー + データのサイズでバッファを確保
         size_t total_packet_size = sizeof(udp_photo_header_t) + send_size;
         p = pbuf_alloc(PBUF_TRANSPORT, (u16_t)total_packet_size, PBUF_RAM);
@@ -151,9 +253,32 @@ static void udp_send_timer_cb(void *arg)
             // パケットにヘッダーをコピー
             memcpy(p->payload, &header, sizeof(udp_photo_header_t));
 
-            // HyperRAMから深度マップを読み込み（DEPTH_OFFSET + sent_bytes）
+            // HyperRAMからYUV422データを読み込み、Y成分のみを抽出してグレースケール送信
             uint8_t *dest_ptr = (uint8_t *)p->payload + sizeof(udp_photo_header_t);
-            hyperram_b_read(dest_ptr, (void *)(DEPTH_OFFSET + ctx->sent_bytes), send_size); // 深度マップ（8bit grayscale）
+
+            // YUV422から必要なバイト数の2倍を読み込む（Y成分は2バイトごと）
+            uint8_t yuv_buffer[1024]; // 一時バッファ（最大512バイトのグレースケール = 1024バイトのYUV422）
+            uint32_t yuv_read_size = (uint32_t)(send_size * 2U);
+            uint32_t yuv_offset = (uint32_t)(ctx->sent_bytes * 2U); // グレースケールオフセットをYUV422オフセットに変換
+
+            if (yuv_read_size > sizeof(yuv_buffer))
+            {
+                /* 想定外（chunk_size変更など）: バッファに収まる範囲へ制限 */
+                yuv_read_size = (uint32_t)sizeof(yuv_buffer);
+                send_size = (size_t)(yuv_read_size / 2U);
+            }
+
+            fsp_err_t read_err = hyperram_b_read(yuv_buffer, (void *)(0 + yuv_offset), yuv_read_size);
+            if (FSP_SUCCESS != read_err)
+            {
+                xprintf("[UDP] HyperRAM read error: %d\n", read_err);
+                pbuf_free(p);
+                sys_timeout((ctx->interval_ms > 0) ? ctx->interval_ms : 1, udp_send_timer_cb, ctx);
+                return;
+            }
+
+            extract_y_from_yuv422(yuv_buffer, dest_ptr, (uint32_t)send_size, g_yuv422_order_fixed);
+
             err_t e = udp_sendto(ctx->pcb, p, &ctx->dest_ip, ctx->port);
             pbuf_free(p);
 
@@ -216,8 +341,8 @@ static void udp_send_timer_cb(void *arg)
             ctx->current_frame++;
             ctx->is_frame_complete = true;
 
-            // total_frames == -1 (0xFFFFFFFF) なら無制限ループ
-            bool is_unlimited = (ctx->total_frames == (uint32_t)-1);
+            // total_frames == UINT32_MAX (0xFFFFFFFF) なら無制限ループ
+            bool is_unlimited = (ctx->total_frames == UINT32_MAX);
 
             if (is_unlimited || ctx->current_frame < ctx->total_frames)
             {
@@ -402,21 +527,21 @@ void main_thread1_entry(void *pvParameters)
         ctx->port = UDP_PORT_DEST;
         ctx->interval_ms = 0; /* 0ms間隔（lwIPタスクに余裕を持たせたい場合は3ms） */
 
-        // 動画データ送信モード（深度マップ送信：8bit grayscale）
+        // 動画データ送信モード（グレースケール送信：Y成分のみ）
         ctx->is_video_mode = true;
         ctx->is_photo_mode = false;
         ctx->photo_data = (uint8_t *)HYPERRAM_BASE_ADDR; // 使用しない（hyperram_b_readで直接指定）
-        ctx->photo_size = 320 * 240;                     // 深度マップ: 320x240x1 = 76,800 bytes
+        ctx->photo_size = 320 * 240;                     // グレースケール: 320x240x1 = 76,800 bytes
         ctx->sent_bytes = 0;
         ctx->chunk_size = 512; // 512バイトずつ送信
 
         // マルチフレーム設定
         ctx->current_frame = 0;
-        ctx->total_frames = -1;     // 無制限フレーム送信
-        ctx->frame_interval_ms = 2; // フレーム間2ms待機（thread0と同期、高速化）
+        ctx->total_frames = UINT32_MAX; // 無制限フレーム送信
+        ctx->frame_interval_ms = 2;     // フレーム間2ms待機（thread0と同期、高速化）
         ctx->is_frame_complete = false;
 
-        xprintf("[VIDEO] Starting monochrome transmission: %d bytes/frame, %d chunks/frame\n",
+        xprintf("[VIDEO] Starting grayscale transmission (Y component): %d bytes/frame, %d chunks/frame\n",
                 ctx->photo_size, (ctx->photo_size + ctx->chunk_size - 1) / ctx->chunk_size);
 
         /* 1発目をスケジュール（ネットワーク安定化のため500ms待機） */

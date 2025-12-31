@@ -189,9 +189,9 @@ function img_handle = process_complete_frame_fast(packets, total_chunks, total_s
     % 画像表示更新（深度マップをjetカラーマップで表示）
     if isempty(img_handle) || ~ishandle(img_handle)
         img_handle = imshow(depth_map, [], 'Parent', ax);
-        colormap(ax, jet); % jetカラーマップで深度を可視化（青=遠、赤=近）
-        colorbar(ax);
-        set(ax, 'Title', text('String', 'Shape from Shading: Depth Map', 'FontSize', 10));
+        colormap(ax, gray(256)); % 通常のグレースケール表示
+        colorbar(ax, 'off');
+        set(ax, 'Title', text('String', 'Grayscale Frame', 'FontSize', 10));
     else
         img_handle.CData = depth_map;  % 直接プロパティアクセス
     end

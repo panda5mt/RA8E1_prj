@@ -1832,200 +1832,37 @@ void main_thread3_entry(void *pvParameters)
 
     // OctalRAMテスト
     vTaskDelay(pdMS_TO_TICKS(3000));
-    char test_data[16] = "DEADBEEF1234567\0";
-    char read_data[16] = {0};
+    // char test_data[16] = "DEADBEEF1234567\0";
+    // char read_data[16] = {0};
 
-    for (int i = 0; i < 65536; i += 16)
-    {
-        hyperram_b_write(&test_data[0], (void *)i, sizeof(test_data));
-    }
+    // for (int i = 0; i < 65536; i += 16)
+    // {
+    //     hyperram_b_write(&test_data[0], (void *)i, sizeof(test_data));
+    // }
 
-    for (int i = 0; i < 65536; i += 16)
-    {
-        read_data[0] = '\0';
-        hyperram_b_read(&read_data[0], (void *)i, sizeof(test_data));
-        xprintf("[Thread3] HyperRAM test read at offset %d: %s\n", i, read_data);
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
+    // for (int i = 0; i < 65536; i += 16)
+    // {
+    //     read_data[0] = '\0';
+    //     hyperram_b_read(&read_data[0], (void *)i, sizeof(test_data));
+    //     xprintf("[Thread3] HyperRAM test read at offset %d: %s\n", i, read_data);
+    //     vTaskDelay(pdMS_TO_TICKS(10));
+    // }
 
     // hyperram_b_read(read_data, (void *)HYPERRAM_BASE_ADDR, sizeof(test_data));
 
-    xprintf("[Thread3] Shape from Shading (p,q gradient) processor started\n");
+    xprintf("[Thread3] YUV transmission mode - depth processing disabled\n");
+    xprintf("[Thread3] Thread1 will transmit raw YUV422 color data directly from HyperRAM\n");
 
-    // 光源パラメータの設定例
-    // ========================================
-    // 例1: 垂直光源（デフォルト、真上からの照明）
-    update_light_source(0.0f, 0.0f, 1.0f);
+    // YUV送信モードでは深度処理を行わず、thread1がYUV422データを直接送信
+    // thread0がカメラからYUV422データをHyperRAMに書き込み
+    // thread1がHyperRAMからYUV422データを読み出してUDP送信
+    // thread3は待機状態（将来的な拡張用に予約）
 
-    // 例2: 斜め上から（右上から30度）
-    // update_light_source(0.5f, 0.3f, 1.0f);
-
-    // 例3: 左上から
-    // update_light_source(-0.5f, 0.3f, 1.0f);
-
-    // 例4: 前方やや上から（カメラに向かって）
-    // update_light_source(0.0f, -0.5f, 1.0f);
-
-    // 将来的にセンサーを使う場合:
-    // float sensor_x, sensor_y, sensor_z;
-    // read_light_sensors(&sensor_x, &sensor_y, &sensor_z);
-    // update_light_source(sensor_x, sensor_y, sensor_z);
-    // ========================================
-
-    float ps, qs, ts;
-    get_light_source(&ps, &qs, &ts);
-    xprintf("[Thread3] Light source: ps=%.2f, qs=%.2f, ts=%.2f\n", ps, qs, ts);
-
-#if USE_HELIUM_MVE
-    xprintf("[Thread3] Helium MVE acceleration ENABLED\n");
-#else
-    xprintf("[Thread3] Helium MVE acceleration DISABLED (standard implementation)\n");
-#endif
-
-#if USE_DEPTH_METHOD == 1
-    xprintf("[Thread3] Depth reconstruction: Multigrid (Poisson solver) - Medium quality, ~0.5-2sec/frame\n");
-#else
-    xprintf("[Thread3] Depth reconstruction: Simple (row integration) - Low quality, <1ms/frame\n");
-#endif
-
-    // スタック使用量を測定
-    UBaseType_t stack_high_water = uxTaskGetStackHighWaterMark(NULL);
-    xprintf("[Thread3] Stack high water mark:\n %d bytes remaining\n", stack_high_water * sizeof(StackType_t));
-
-    // スタック上の静的バッファ
-    uint8_t yuv_lines[3][FRAME_WIDTH * 2]; // 3行分のYUV422データ
-    uint8_t y_lines[3][FRAME_WIDTH];       // 3行分のY成分
-    uint8_t edge_line[FRAME_WIDTH];        // エッジ検出結果（1行）
-    uint8_t yuv_out[FRAME_WIDTH * 2];      // 出力用YUV422（1行）
-
-    xprintf("[Thread3] Sobel buffers ready\n");
-
-    // まず少し待機してシステムを安定させる
-    vTaskDelay(pdMS_TO_TICKS(2000));
-
-    // ========== FFT動作テスト実行 ==========
-    xprintf("\n[Thread3] Starting 2D FFT/IFFT test suite...\n");
-    fft_depth_test_all();
-    xprintf("[Thread3] FFT tests complete, proceeding to main loop\n\n");
-    // =========================================
+    xprintf("[Thread3] Entering idle loop (YUV pass-through mode)\n");
 
     while (1)
     {
-        int prev_idx = 0;
-        int curr_idx = 1;
-        int next_idx = 2;
-        int curr_row_idx = 0;
-        int next_row_idx = (FRAME_HEIGHT > 1) ? 1 : 0;
-
-        int loaded_row = -1;
-        fsp_err_t preload_err = load_y_line_from_hyperram(curr_row_idx,
-                                                          yuv_lines[curr_idx],
-                                                          y_lines[curr_idx],
-                                                          &loaded_row);
-        if (FSP_SUCCESS != preload_err)
-        {
-            xprintf("[Thread3] Read error at line %d: %d\n", loaded_row, preload_err);
-            goto next_frame;
-        }
-        curr_row_idx = loaded_row;
-        duplicate_line_buffer(yuv_lines[prev_idx], y_lines[prev_idx],
-                              yuv_lines[curr_idx], y_lines[curr_idx]);
-
-        preload_err = load_y_line_from_hyperram(next_row_idx,
-                                                yuv_lines[next_idx],
-                                                y_lines[next_idx],
-                                                &loaded_row);
-        if (FSP_SUCCESS != preload_err)
-        {
-            xprintf("[Thread3] Read error at line %d: %d\n", loaded_row, preload_err);
-            goto next_frame;
-        }
-        next_row_idx = loaded_row;
-
-        // フレーム全体を行単位で処理
-        for (int y = 0; y < FRAME_HEIGHT; y++)
-        {
-            // p, q勾配を計算（Shape from Shading）
-            // yuv_outに直接 [q0 p0 q1 p1 ...] 形式で640バイト書き込まれる
-            compute_pq_gradients(y_lines[prev_idx], y_lines[curr_idx], y_lines[next_idx], yuv_out);
-
-            // HyperRAMのGRADIENT_OFFSETに書き込み（そのまま640バイト）
-            uint32_t write_offset = GRADIENT_OFFSET + (y * FRAME_WIDTH * 2);
-            fsp_err_t write_err = hyperram_b_write(yuv_out, (void *)write_offset, FRAME_WIDTH * 2);
-            if (FSP_SUCCESS != write_err)
-            {
-                xprintf("[Thread3] Write error at line %d: %d\n", y, write_err);
-                goto next_frame;
-            }
-
-#if USE_DEPTH_METHOD == 0
-            // 簡易版のみ：行ごとに深度マップを書き込み
-#if USE_SIMPLE_DIRECT_P
-            reconstruct_depth_simple_direct(write_offset, edge_line);
-#else
-            reconstruct_depth_simple(yuv_out, edge_line);
-#endif
-            uint32_t depth_offset = DEPTH_OFFSET + (y * FRAME_WIDTH);
-            fsp_err_t depth_write_err = hyperram_b_write(edge_line, (void *)depth_offset, FRAME_WIDTH);
-            if (FSP_SUCCESS != depth_write_err)
-            {
-                xprintf("[Thread3] Depth write error at line %d: %d\n", y, depth_write_err);
-                goto next_frame;
-            }
-#endif
-
-            if (y < FRAME_HEIGHT - 1)
-            {
-                int recycled_idx = prev_idx;
-                prev_idx = curr_idx;
-                curr_idx = next_idx;
-                next_idx = recycled_idx;
-                curr_row_idx = next_row_idx;
-
-                int next_request = y + 2;
-                if (next_request >= FRAME_HEIGHT)
-                {
-                    duplicate_line_buffer(yuv_lines[next_idx], y_lines[next_idx],
-                                          yuv_lines[curr_idx], y_lines[curr_idx]);
-                    next_row_idx = curr_row_idx;
-                }
-                else
-                {
-                    int next_loaded = -1;
-                    fsp_err_t next_err = load_y_line_from_hyperram(next_request,
-                                                                   yuv_lines[next_idx],
-                                                                   y_lines[next_idx],
-                                                                   &next_loaded);
-                    if (FSP_SUCCESS != next_err)
-                    {
-                        xprintf("[Thread3] Read error at line %d: %d\n", next_loaded, next_err);
-                        goto next_frame;
-                    }
-                    next_row_idx = next_loaded;
-                }
-            }
-
-            // 10行ごとにスケジューラに時間を与える
-            if ((y % 10) == 0)
-            {
-                vTaskDelay(pdMS_TO_TICKS(1));
-            }
-        }
-
-    next_frame:
-#if USE_DEPTH_METHOD == 1
-        // マルチグリッド深度マップ（ポアソン方程式反復解法）
-        xprintf("[Thread3] Frame complete, starting Multigrid reconstruction\n");
-        uint32_t mg_start = xTaskGetTickCount();
-        reconstruct_depth_multigrid();
-        uint32_t mg_end = xTaskGetTickCount();
-        xprintf("[Thread3] Multigrid processing time: %u ms\n", (mg_end - mg_start));
-        xprintf("[Thread3] Depth map ready for transmission\n");
-        vTaskDelay(pdMS_TO_TICKS(200));
-#else
-        // 簡易版は行ごとに書き込み済み
-        xprintf("[Thread3] Simple depth map complete\n");
-        vTaskDelay(pdMS_TO_TICKS(200));
-#endif
+        // 待機モード：CPUリソースを他のスレッドに譲る
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
