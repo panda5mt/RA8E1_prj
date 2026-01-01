@@ -328,7 +328,11 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
         {
             break;
         }
-
+        while (!ospi_b_dma_sent)
+        {
+            vTaskDelay(pdMS_TO_TICKS(10));
+        }
+        ospi_b_dma_sent = false;
         offset += write_size;
     }
 

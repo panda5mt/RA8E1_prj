@@ -1194,8 +1194,8 @@ FSP Configuration
         Number of Transfers: 64
         Number of Blocks (Valid only in Repeat,Block or Repeat-Block Mode): 1
         Activation Source: No ELC Trigger
-        Callback: NULL
-        Transfer End Interrupt Priority: Disabled
+        Callback: ospi_dmac_cb
+        Transfer End Interrupt Priority: Priority 10
         Interrupt Frequency: Interrupt after all transfers have completed
         Offset value (Valid only when address mode is Offset addition): 0
         Source Buffer Size: 0
