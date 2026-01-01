@@ -484,15 +484,41 @@ void main_thread1_entry(void *pvParameters)
     {
 #if LWIP_AUTOIP
         xprintf("[LwIP] DHCP timeout: AutoIP start...\n");
-        netifapi_autoip_start(&netif);
-        (void)xSemaphoreTake(g_ip_ready_sem, pdMS_TO_TICKS(10000));
-        if (!ip4_addr_isany_val(*netif_ip4_addr(&netif)))
+
+        /* AutoIP can occasionally time out; retry a couple times. */
+        const uint32_t autoip_timeout_ms = 10000U;
+        const uint32_t autoip_retries = 2U;
+        bool got_ip = false;
+
+        for (uint32_t attempt = 0; attempt <= autoip_retries; attempt++)
+        {
+            if (attempt > 0)
+            {
+                xprintf("[LwIP] AutoIP retry %lu/%lu...\n",
+                        (unsigned long)attempt,
+                        (unsigned long)autoip_retries);
+            }
+
+            /* (Re)start AutoIP negotiation. */
+            netifapi_autoip_stop(&netif);
+            vTaskDelay(pdMS_TO_TICKS(50));
+            netifapi_autoip_start(&netif);
+
+            (void)xSemaphoreTake(g_ip_ready_sem, pdMS_TO_TICKS(autoip_timeout_ms));
+            if (!ip4_addr_isany_val(*netif_ip4_addr(&netif)))
+            {
+                got_ip = true;
+                break;
+            }
+        }
+
+        if (got_ip)
         {
             xprintf("[LwIP] AutoIP IP: %s\n", ip4addr_ntoa(netif_ip4_addr(&netif)));
         }
         else
         {
-            xprintf("[LwIP] AutoIP timeout\n");
+            xprintf("[LwIP] AutoIP timeout (retries=%lu)\n", (unsigned long)autoip_retries);
         }
 #else
         xprintf("[LwIP] DHCP timeout (AUTOIP disabled)\n");

@@ -37,9 +37,9 @@ ospi_b_xspi_command_set_t g_command_sets[] =
         /* 8D-8D-8D example with inverted lower command byte. */
         [0] = {.protocol = SPI_FLASH_PROTOCOL_8D_8D_8D,
                .latency_mode = OSPI_B_LATENCY_MODE_VARIABLE,
-               .frame_format = OSPI_B_FRAME_FORMAT_STANDARD,
+               .frame_format = OSPI_B_FRAME_FORMAT_XSPI_PROFILE_1,
                .command_bytes = OSPI_RAM_COMMAND_BYTES,
-               .address_bytes = SPI_FLASH_ADDRESS_BYTES_4,
+               .address_bytes = SPI_FLASH_ADDRESS_BYTES_4, // UPTO 16bytes
                .read_command = OSPI_B_COMMAND_READ,
                .program_command = OSPI_B_COMMAND_WRITE,
                .write_enable_command = OSPI_B_COMMAND_WRITE_ENABLE,
