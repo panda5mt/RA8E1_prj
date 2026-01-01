@@ -260,6 +260,28 @@ uint8_t hyperram_get_addr_remap_shift(void)
 }
 
 /* Note: Mutex is created in hyperram_timing_optimization() */
+fsp_err_t hyperram_word_write(uint32_t addr, uint32_t data)
+{
+    fsp_err_t err = FSP_SUCCESS;
+    err = ospi_raw_trans(&g_ospi0_trans,
+                         OSPI_B_COMMAND_WRITE, OSPI_RAM_COMMAND_BYTES,
+                         addr, 4,
+                         data, 4,
+                         OSPI_RAM_WRITE_LATENCY_CYCLES, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
+    return err;
+}
+
+uint32_t hyperram_word_read(uint32_t addr)
+{
+    fsp_err_t err = FSP_SUCCESS;
+    err = ospi_raw_trans(&g_ospi0_trans,
+                         OSPI_B_COMMAND_READ, OSPI_RAM_COMMAND_BYTES,
+                         addr, 4,
+                         0x00, 4,
+                         OSPI_RAM_READ_LATENCY_CYCLES, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
+
+    return g_ospi0_trans.data;
+}
 
 fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_length)
 {
