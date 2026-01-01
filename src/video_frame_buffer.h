@@ -12,7 +12,7 @@
  * Defaults keep legacy behavior (base=0, no movement).
  */
 #ifndef VIDEO_FRAME_BASE_OFFSET_DEFAULT
-#define VIDEO_FRAME_BASE_OFFSET_DEFAULT (0U)
+#define VIDEO_FRAME_BASE_OFFSET_DEFAULT (3U * 1024U * 1024U)
 #endif
 
 /* If non-zero, Thread0 advances the base offset after each frame write. */

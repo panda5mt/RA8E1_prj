@@ -39,7 +39,7 @@ ospi_b_xspi_command_set_t g_command_sets[] =
                .latency_mode = OSPI_B_LATENCY_MODE_VARIABLE,
                .frame_format = OSPI_B_FRAME_FORMAT_XSPI_PROFILE_1,
                .command_bytes = OSPI_RAM_COMMAND_BYTES,
-               .address_bytes = SPI_FLASH_ADDRESS_BYTES_4, // UPTO 16bytes
+               .address_bytes = SPI_FLASH_ADDRESS_BYTES_4,
                .read_command = OSPI_B_COMMAND_READ,
                .program_command = OSPI_B_COMMAND_WRITE,
                .write_enable_command = OSPI_B_COMMAND_WRITE_ENABLE,
@@ -314,13 +314,16 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
         uint32_t adr = (uint32_t)dest_p8 + offset;
         adr = hyperram_addr_convert_u32(adr);
         adr += (uint32_t)HYPERRAM_BASE_ADDR;
-        taskENTER_CRITICAL();
-
+        /*
+         * Do not call OSPI driver APIs inside a critical section (interrupts disabled).
+         * The driver may rely on interrupts/DMA completion, and disabling interrupts here
+         * can lead to hangs especially under many small transfers (e.g. transpose/FFT).
+         * Thread-safety is handled by the mutex.
+         */
         err = R_OSPI_B_Write(&g_ospi0_ctrl,
                              (uint8_t const *const)(src_p8 + offset),
                              (uint8_t *const)adr,
                              write_size);
-        taskEXIT_CRITICAL();
         if (FSP_SUCCESS != err)
         {
             break;

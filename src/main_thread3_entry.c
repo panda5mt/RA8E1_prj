@@ -1851,7 +1851,7 @@ void main_thread3_entry(void *pvParameters)
     // hyperram_b_read(read_data, (void *)HYPERRAM_BASE_ADDR, sizeof(test_data));
 
     xprintf("[Thread3] YUV transmission mode - depth processing disabled\n");
-    xprintf("[Thread3] Thread1 will transmit raw YUV422 color data directly from HyperRAM\n");
+    xprintf("[Thread3] Thread1 will transmit\n raw YUV422 color data directly from HyperRAM\n");
 
     // YUV送信モードでは深度処理を行わず、thread1がYUV422データを直接送信
     // thread0がカメラからYUV422データをHyperRAMに書き込み
