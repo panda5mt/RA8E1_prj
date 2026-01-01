@@ -9,6 +9,10 @@
 #include "hyperram_integ.h"
 #include "r_ospi_b.h"
 #include <arm_acle.h>
+#include "video_frame_buffer.h"
+
+/* Published HyperRAM base offset for the most recently written camera frame. */
+volatile uint32_t g_video_frame_base_offset = (uint32_t)VIDEO_FRAME_BASE_OFFSET_DEFAULT;
 
 // #define VGA_WIDTH (256)
 // #define VGA_HEIGHT (256)
@@ -99,16 +103,28 @@ void main_thread0_entry(void *pvParameters)
     // icache_enable_global();
     dcache_disable_global();
 
+    uint32_t next_write_base = video_frame_align_u32((uint32_t)VIDEO_FRAME_BASE_OFFSET_DEFAULT);
+
     while (1)
     {
         // カメラキャプチャ実行
         cam_capture();
 
         // HyperRAMに書き込み（動画ストリーミング用）
-        err = hyperram_b_write(image_p8, 0x00, VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL);
+        const uint32_t frame_bytes = (uint32_t)(VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL);
+
+        err = hyperram_b_write(image_p8, (void *)next_write_base, frame_bytes);
         if (FSP_SUCCESS != err)
         {
             xprintf("[OSPI] HyperRAM write error!\n");
+        }
+        else
+        {
+            /* Publish the base where this frame now lives. */
+            g_video_frame_base_offset = next_write_base;
+
+            /* Advance the write base for the next frame (optional). */
+            next_write_base = video_frame_next_base_u32(next_write_base, frame_bytes);
         }
 
         // フレーム間隔：動画ストリーミングのフレームレートに合わせる

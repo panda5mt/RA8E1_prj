@@ -2,6 +2,7 @@
 #include "putchar_ra8usb.h"
 #include "hal_data.h"
 #include "hyperram_integ.h"
+#include "video_frame_buffer.h"
 
 #include "lwip/tcpip.h"
 #include "lwip/netif.h"
@@ -153,6 +154,9 @@ typedef struct
     uint32_t total_frames;
     uint32_t frame_interval_ms; // フレーム間の待機時間
     bool is_frame_complete;
+
+    /* HyperRAM base offset for the current video frame (snapshotted). */
+    uint32_t frame_base_offset;
 } udp_send_ctx_t;
 static void udp_send_timer_cb(void *arg);
 
@@ -216,6 +220,12 @@ static void udp_send_timer_cb(void *arg)
 
     if (ctx->is_video_mode || ctx->is_photo_mode)
     {
+        /* Snapshot base at the start of each frame to avoid mid-frame base changes. */
+        if (ctx->is_video_mode && (ctx->sent_bytes == 0U))
+        {
+            ctx->frame_base_offset = (uint32_t)g_video_frame_base_offset;
+        }
+
         // 動画・写真データモード：512バイトずつ送信
         uint32_t remaining_bytes = ctx->photo_size - ctx->sent_bytes;
         send_size = (remaining_bytes < ctx->chunk_size) ? remaining_bytes : ctx->chunk_size;
@@ -268,7 +278,8 @@ static void udp_send_timer_cb(void *arg)
                 send_size = (size_t)(yuv_read_size / 2U);
             }
 
-            fsp_err_t read_err = hyperram_b_read(yuv_buffer, (void *)(0 + yuv_offset), yuv_read_size);
+            uint32_t base = ctx->is_video_mode ? ctx->frame_base_offset : 0U;
+            fsp_err_t read_err = hyperram_b_read(yuv_buffer, (void *)(base + yuv_offset), yuv_read_size);
             if (FSP_SUCCESS != read_err)
             {
                 xprintf("[UDP] HyperRAM read error: %d\n", read_err);
@@ -348,6 +359,7 @@ static void udp_send_timer_cb(void *arg)
             {
                 // 次のフレームがある：フレーム間インターバルで待機
                 ctx->sent_bytes = 0; // 次フレーム用にリセット
+                ctx->frame_base_offset = (uint32_t)g_video_frame_base_offset;
                 should_continue = true;
                 next_interval = ctx->frame_interval_ms; // フレーム間は長めの間隔
                 // ログ出力を削減（100フレームごと）
@@ -540,6 +552,7 @@ void main_thread1_entry(void *pvParameters)
         ctx->total_frames = UINT32_MAX; // 無制限フレーム送信
         ctx->frame_interval_ms = 2;     // フレーム間2ms待機（thread0と同期、高速化）
         ctx->is_frame_complete = false;
+        ctx->frame_base_offset = (uint32_t)g_video_frame_base_offset;
 
         xprintf("[VIDEO] Starting grayscale transmission (Y component): %d bytes/frame, %d chunks/frame\n",
                 ctx->photo_size, (ctx->photo_size + ctx->chunk_size - 1) / ctx->chunk_size);

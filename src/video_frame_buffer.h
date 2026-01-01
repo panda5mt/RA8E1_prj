@@ -1,0 +1,51 @@
+#pragma once
+
+#include <stdint.h>
+#include "hyperram_integ.h"
+
+/*
+ * Video frame storage base offset within HyperRAM.
+ *
+ * - Thread0 writes a captured YUV422 frame to (base + 0).
+ * - Thread1 reads from the same base while streaming over UDP.
+ *
+ * Defaults keep legacy behavior (base=0, no movement).
+ */
+#ifndef VIDEO_FRAME_BASE_OFFSET_DEFAULT
+#define VIDEO_FRAME_BASE_OFFSET_DEFAULT (0U)
+#endif
+
+/* If non-zero, Thread0 advances the base offset after each frame write. */
+#ifndef VIDEO_FRAME_BASE_OFFSET_STEP
+#define VIDEO_FRAME_BASE_OFFSET_STEP (0U)
+#endif
+
+/* Keep base aligned to 16 bytes to match address conversion granularity. */
+#ifndef VIDEO_FRAME_BASE_OFFSET_ALIGN
+#define VIDEO_FRAME_BASE_OFFSET_ALIGN (16U)
+#endif
+
+#if (VIDEO_FRAME_BASE_OFFSET_ALIGN & (VIDEO_FRAME_BASE_OFFSET_ALIGN - 1U))
+#error VIDEO_FRAME_BASE_OFFSET_ALIGN must be power-of-two.
+#endif
+
+extern volatile uint32_t g_video_frame_base_offset;
+
+static inline uint32_t video_frame_align_u32(uint32_t x)
+{
+    return x & ~(VIDEO_FRAME_BASE_OFFSET_ALIGN - 1U);
+}
+
+static inline uint32_t video_frame_next_base_u32(uint32_t current_base, uint32_t frame_bytes)
+{
+    uint32_t next = current_base + (uint32_t)VIDEO_FRAME_BASE_OFFSET_STEP;
+    next = video_frame_align_u32(next);
+
+    /* Keep the whole frame inside the 8MB HyperRAM logical space. */
+    if ((next + frame_bytes) > (uint32_t)HYPERRAM_SIZE)
+    {
+        next = video_frame_align_u32((uint32_t)VIDEO_FRAME_BASE_OFFSET_DEFAULT);
+    }
+
+    return next;
+}
