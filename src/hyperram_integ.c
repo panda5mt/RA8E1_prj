@@ -263,9 +263,20 @@ uint8_t hyperram_get_addr_remap_shift(void)
 fsp_err_t hyperram_word_write(uint32_t addr, uint32_t data)
 {
     fsp_err_t err = FSP_SUCCESS;
+
+    /* Keep semantics consistent with hyperram_b_read/write: addr is a logical offset. */
+    if ((addr & 0x0FU) > 0x0CU)
+    {
+        /* This 4-byte access would cross a 16-byte address-conversion block. */
+        xprintf("[HyperRAM-W] ERROR: word_write crosses 16B boundary (addr=0x%08lx)\n", (unsigned long)addr);
+        return FSP_ERR_INVALID_ARGUMENT;
+    }
+
+    uint32_t converted_addr = hyperram_addr_convert_u32(addr);
+
     err = ospi_raw_trans(&g_ospi0_trans,
                          OSPI_B_COMMAND_WRITE, OSPI_RAM_COMMAND_BYTES,
-                         addr, 4,
+                         converted_addr, 4,
                          data, 4,
                          OSPI_RAM_WRITE_LATENCY_CYCLES, SPI_FLASH_DIRECT_TRANSFER_DIR_WRITE);
     return err;
@@ -274,11 +285,28 @@ fsp_err_t hyperram_word_write(uint32_t addr, uint32_t data)
 uint32_t hyperram_word_read(uint32_t addr)
 {
     fsp_err_t err = FSP_SUCCESS;
+
+    /* Keep semantics consistent with hyperram_b_read/write: addr is a logical offset. */
+    if ((addr & 0x0FU) > 0x0CU)
+    {
+        /* This 4-byte access would cross a 16-byte address-conversion block. */
+        xprintf("[HyperRAM-R] ERROR: word_read crosses 16B boundary (addr=0x%08lx)\n", (unsigned long)addr);
+        return 0xFFFFFFFFu;
+    }
+
+    uint32_t converted_addr = hyperram_addr_convert_u32(addr);
+
     err = ospi_raw_trans(&g_ospi0_trans,
                          OSPI_B_COMMAND_READ, OSPI_RAM_COMMAND_BYTES,
-                         addr, 4,
+                         converted_addr, 4,
                          0x00, 4,
                          OSPI_RAM_READ_LATENCY_CYCLES, SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
+
+    if (FSP_SUCCESS != err)
+    {
+        xprintf("[HyperRAM-R] ERROR: word_read failed (err=%d addr=0x%08lx)\n", (int)err, (unsigned long)addr);
+        return 0xFFFFFFFFu;
+    }
 
     return g_ospi0_trans.data;
 }

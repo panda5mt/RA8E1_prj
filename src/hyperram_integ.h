@@ -74,6 +74,13 @@ extern "C"
     fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_length);
     fsp_err_t hyperram_b_read(void *p_dest, const void *p_src, uint32_t total_length);
 
+    /*
+     * 4-byte fixed access (diagnostics).
+     * addr is a logical HyperRAM byte offset (same addressing as hyperram_b_read/write).
+     */
+    fsp_err_t hyperram_word_write(uint32_t addr, uint32_t data);
+    uint32_t hyperram_word_read(uint32_t addr);
+
 #ifdef __cplusplus
 }
 #endif
