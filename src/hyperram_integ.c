@@ -365,24 +365,10 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
         adr = hyperram_addr_convert_u32(adr);
         adr += (uint32_t)HYPERRAM_BASE_ADDR;
         /*
-         * Do not call OSPI driver APIs inside a critical section (interrupts disabled).
-         * The driver may rely on interrupts/DMA completion, and disabling interrupts here
-         * can lead to hangs especially under many small transfers (e.g. transpose/FFT).
-         * Thread-safety is handled by the mutex.
+         * Use CPU writes to the memory-mapped window (memcpy) instead of R_OSPI_B_Write.
+         * Keep address conversion + mutex + 16B-boundary chunking unchanged.
          */
-        err = R_OSPI_B_Write(&g_ospi0_ctrl,
-                             (uint8_t const *const)(src_p8 + offset),
-                             (uint8_t *const)adr,
-                             write_size);
-        if (FSP_SUCCESS != err)
-        {
-            break;
-        }
-        while (!ospi_b_dma_sent)
-        {
-            vTaskDelay(pdMS_TO_TICKS(10));
-        }
-        ospi_b_dma_sent = false;
+        memcpy((void *)adr, (const void *)(src_p8 + offset), write_size);
         offset += write_size;
     }
 
