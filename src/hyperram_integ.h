@@ -37,7 +37,7 @@ extern "C"
  * Default keeps current behavior (shift=6).
  */
 #ifndef HYPERRAM_ADDR_REMAP_SHIFT_DEFAULT
-#define HYPERRAM_ADDR_REMAP_SHIFT_DEFAULT (6U)
+#define HYPERRAM_ADDR_REMAP_SHIFT_DEFAULT (0U)
 #endif
 
     extern volatile uint8_t g_hyperram_addr_remap_shift;

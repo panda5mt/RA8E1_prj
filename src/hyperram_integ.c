@@ -222,6 +222,9 @@ fsp_err_t hyperram_init(void)
     }
     xprintf("CR=0x%04x\n", g_ospi0_trans.data);
 
+    // アドレス変換
+    R_XSPI0->CMCFGCS[1].CMCFG0_b.ARYAMD = 1; // Array address mode
+
     // 正常終了
     xprintf("[OSPI] RW init end\n");
     xprintf("[HyperRAM] addr remap shift (runtime) = %u (default=%u)\n",
