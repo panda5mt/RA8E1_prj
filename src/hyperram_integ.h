@@ -29,30 +29,9 @@ extern "C"
 
 #define HYPERRAM_SIZE (8 * 1024 * 1024U) /* 8MB */
 
-/* HyperRAM address conversion (16-byte granular).
- *
- * converted = ((addr & ~0xF) << shift) | (addr & 0xF)
- *
- * The shift can be tuned at runtime to validate the correct mapping.
- * Default keeps current behavior (shift=6).
- */
-#ifndef HYPERRAM_ADDR_REMAP_SHIFT_DEFAULT
-#define HYPERRAM_ADDR_REMAP_SHIFT_DEFAULT (0U)
-#endif
-
     extern volatile uint8_t g_hyperram_addr_remap_shift;
     void hyperram_set_addr_remap_shift(uint8_t shift);
     uint8_t hyperram_get_addr_remap_shift(void);
-
-    static inline uint32_t hyperram_addr_convert_u32(uint32_t addr)
-    {
-        uint32_t shift = (uint32_t)g_hyperram_addr_remap_shift;
-        if (shift > 28U)
-        {
-            shift = 28U;
-        }
-        return ((addr & 0xFFFFFFF0u) << shift) | (addr & 0x0Fu);
-    }
 
     extern bool ospi_b_dma_sent;
     extern spi_flash_direct_transfer_t g_ospi0_trans;

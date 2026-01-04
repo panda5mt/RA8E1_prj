@@ -18,9 +18,6 @@ spi_flash_direct_transfer_t g_ospi0_trans;
 bool ospi_b_dma_sent = false;
 static bool g_ospi_initialized = false;
 
-/* Runtime-adjustable HyperRAM address remap shift. */
-volatile uint8_t g_hyperram_addr_remap_shift = (uint8_t)HYPERRAM_ADDR_REMAP_SHIFT_DEFAULT;
-
 /* HyperRAMスレッドセーフアクセス管理（ミューテックスベース） */
 static SemaphoreHandle_t g_hyperram_mutex = NULL;
 spi_flash_erase_command_t g_command_erase_sets[] =
@@ -227,9 +224,7 @@ fsp_err_t hyperram_init(void)
 
     // 正常終了
     xprintf("[OSPI] RW init end\n");
-    xprintf("[HyperRAM] addr remap shift (runtime) = %u (default=%u)\n",
-            (unsigned)g_hyperram_addr_remap_shift,
-            (unsigned)HYPERRAM_ADDR_REMAP_SHIFT_DEFAULT);
+
     g_ospi_initialized = true;
 
     // スレッドセーフアクセス用ミューテックス作成（優先度継承付き）
@@ -245,21 +240,6 @@ fsp_err_t hyperram_init(void)
     }
 
     return err;
-}
-
-void hyperram_set_addr_remap_shift(uint8_t shift)
-{
-    /* Prevent undefined behavior for shifts >= 32. */
-    if (shift > 28U)
-    {
-        shift = 28U;
-    }
-    g_hyperram_addr_remap_shift = shift;
-}
-
-uint8_t hyperram_get_addr_remap_shift(void)
-{
-    return g_hyperram_addr_remap_shift;
 }
 
 /* Note: Mutex is created in hyperram_timing_optimization() */
@@ -297,7 +277,7 @@ uint32_t hyperram_word_read(uint32_t addr)
         return 0xFFFFFFFFu;
     }
 
-    uint32_t converted_addr = hyperram_addr_convert_u32(addr);
+    uint32_t converted_addr = addr;
 
     err = ospi_raw_trans(&g_ospi0_trans,
                          OSPI_B_COMMAND_READ, OSPI_RAM_COMMAND_BYTES,
@@ -365,7 +345,6 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
         }
 
         uint32_t adr = (uint32_t)dest_p8 + offset;
-        adr = hyperram_addr_convert_u32(adr);
         adr += (uint32_t)HYPERRAM_BASE_ADDR;
         /*
          * Use CPU writes to the memory-mapped window (memcpy) instead of R_OSPI_B_Write.
@@ -423,7 +402,7 @@ fsp_err_t hyperram_b_read(void *p_dest, const void *p_src, uint32_t total_length
             read_size = to_block_end;
         }
 
-        uint32_t converted_addr = hyperram_addr_convert_u32(base_addr);
+        uint32_t converted_addr = base_addr;
         // taskENTER_CRITICAL();
         memcpy(dest_p8 + current_offset,
                (uint8_t *)HYPERRAM_BASE_ADDR + converted_addr, read_size);
