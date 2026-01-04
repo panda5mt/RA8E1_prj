@@ -255,7 +255,7 @@ fsp_err_t hyperram_word_write(uint32_t addr, uint32_t data)
         return FSP_ERR_INVALID_ARGUMENT;
     }
 
-    uint32_t converted_addr = hyperram_addr_convert_u32(addr);
+    uint32_t converted_addr = addr;
 
     err = ospi_raw_trans(&g_ospi0_trans,
                          OSPI_B_COMMAND_WRITE, OSPI_RAM_COMMAND_BYTES,
