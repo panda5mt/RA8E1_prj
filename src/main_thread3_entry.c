@@ -3,6 +3,7 @@
 #include "projdefs.h"
 #include "putchar_ra8usb.h"
 #include "fft_depth_test.h"
+#include "verify_mode.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include <string.h>
@@ -1829,6 +1830,43 @@ static void reconstruct_depth_multigrid(void)
 void main_thread3_entry(void *pvParameters)
 {
     FSP_PARAMETER_NOT_USED(pvParameters);
+
+#if APP_MODE_FFT_VERIFY
+    /* Ensure printf output works even though thread0 is idle. */
+    xdev_out(putchar_ra8usb);
+    xprintf("[Thread3] APP_MODE_FFT_VERIFY=1: FFT verification mode\n");
+
+    /* Match normal camera path which disables D-cache; avoids stale reads in mmap regions. */
+    __DSB();
+    __DMB();
+    SCB_CleanDCache();
+    SCB_InvalidateDCache();
+    SCB_DisableDCache();
+    __DSB();
+    __ISB();
+
+    fsp_err_t err = hyperram_init();
+    if (FSP_SUCCESS != err)
+    {
+        xprintf("[Thread3] HyperRAM init error\n");
+        while (1)
+        {
+            vTaskDelay(pdMS_TO_TICKS(1000));
+        }
+    }
+
+#if APP_MODE_FFT_VERIFY_RUN_FFT128
+    fft_test_hyperram_128x128();
+#else
+    fft_depth_test_all();
+#endif
+
+    xprintf("[Thread3] FFT verification complete\n");
+    while (1)
+    {
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+#endif
 
     // OctalRAMテスト
     vTaskDelay(pdMS_TO_TICKS(3000));

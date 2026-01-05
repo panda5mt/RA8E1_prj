@@ -3,6 +3,7 @@
 #include "hal_data.h"
 #include "hyperram_integ.h"
 #include "video_frame_buffer.h"
+#include "verify_mode.h"
 
 #include "lwip/tcpip.h"
 #include "lwip/netif.h"
@@ -18,6 +19,19 @@
 #include <stdint.h>
 
 #include "ra/fsp/src/bsp/mcu/all/bsp_io.h"
+
+#if APP_MODE_FFT_VERIFY
+void main_thread1_entry(void *pvParameters)
+{
+    FSP_PARAMETER_NOT_USED(pvParameters);
+    xprintf("[Thread1] APP_MODE_FFT_VERIFY=1: UDP/LwIP disabled\n");
+    while (1)
+    {
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+}
+
+#else
 
 typedef enum
 {
@@ -593,3 +607,5 @@ forever:
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
+
+#endif /* APP_MODE_FFT_VERIFY */

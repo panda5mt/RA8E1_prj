@@ -6,8 +6,32 @@
 #include "r_ospi_b.h"
 #include "r_spi_flash_api.h"
 #include <string.h>
+#include <stdint.h>
+#include "verify_mode.h"
 #include "FreeRTOS.h"
 #include "semphr.h"
+
+/*
+ * Debug aid: verify memory-mapped HyperRAM writes by immediate read-back.
+ * Enabled by default in FFT verification mode to help quantify/mitigate persistent mismatches.
+ */
+#ifndef HYPERRAM_WRITE_VERIFY
+#if defined(APP_MODE_FFT_VERIFY) && (APP_MODE_FFT_VERIFY != 0)
+#define HYPERRAM_WRITE_VERIFY 1
+#else
+#define HYPERRAM_WRITE_VERIFY 0
+#endif
+#endif
+
+#ifndef HYPERRAM_WRITE_VERIFY_RETRIES
+/* Number of re-write attempts after the initial write when mismatch is detected. */
+#define HYPERRAM_WRITE_VERIFY_RETRIES 1
+#endif
+
+#ifndef HYPERRAM_WRITE_VERIFY_LOG
+/* 0: silent (preferred). 1: print per-call summary when retries/failures occurred. */
+#define HYPERRAM_WRITE_VERIFY_LOG 0
+#endif
 
 /* Flash device timing */
 #define OSPI_B_TIME_UNIT (BSP_DELAY_UNITS_MICROSECONDS)
@@ -20,6 +44,11 @@ static bool g_ospi_initialized = false;
 
 /* HyperRAMスレッドセーフアクセス管理（ミューテックスベース） */
 static SemaphoreHandle_t g_hyperram_mutex = NULL;
+
+/* HyperRAM write verify/retry counters (for diagnostics). */
+static volatile uint32_t g_hyperram_wv_mismatch_chunks = 0;
+static volatile uint32_t g_hyperram_wv_retries = 0;
+static volatile uint32_t g_hyperram_wv_failed_chunks = 0;
 spi_flash_erase_command_t g_command_erase_sets[] =
     {
         [0] = {
@@ -326,6 +355,12 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
     const uint32_t batch_size = 16;
     uint32_t offset = 0;
 
+#if HYPERRAM_WRITE_VERIFY
+    uint32_t verify_retries_used = 0;
+    uint32_t verify_mismatch_chunks = 0;
+    uint32_t verify_failed_chunks = 0;
+#endif
+
     while (offset < total_length)
     {
         uint32_t remaining = total_length - offset;
@@ -346,17 +381,172 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
 
         uint32_t adr = (uint32_t)dest_p8 + offset;
         adr += (uint32_t)HYPERRAM_BASE_ADDR;
+
         /*
-         * Use CPU writes to the memory-mapped window (memcpy) instead of R_OSPI_B_Write.
-         * Keep address conversion + mutex + 16B-boundary chunking unchanged.
+         * IMPORTANT:
+         * Avoid memcpy() here. Depending on the libc implementation and optimization level,
+         * memcpy may generate byte/halfword accesses and/or unaligned transfers. Some OSPI
+         * memory-mapped devices/controllers behave poorly with sub-word writes, leading to
+         * persistent read-back mismatches.
+         *
+         * Prefer 32-bit aligned volatile accesses when possible; otherwise fall back to
+         * explicit byte-wise volatile writes.
          */
-        memcpy((void *)adr, (const void *)(src_p8 + offset), write_size);
+        const uint8_t *src = (const uint8_t *)(src_p8 + offset);
+        volatile uint8_t *dst8 = (volatile uint8_t *)adr;
+
+#if HYPERRAM_WRITE_VERIFY
+        uint32_t attempt = 0;
+        bool ok = false;
+
+        while (true)
+        {
+            /* Write the chunk. */
+            if ((((uintptr_t)src | (uintptr_t)dst8 | (uintptr_t)write_size) & 0x3u) == 0u)
+            {
+                const uint32_t *src32 = (const uint32_t *)src;
+                volatile uint32_t *dst32 = (volatile uint32_t *)dst8;
+                uint32_t words = write_size >> 2;
+                for (uint32_t i = 0; i < words; i++)
+                {
+                    dst32[i] = src32[i];
+                }
+            }
+            else
+            {
+                for (uint32_t i = 0; i < write_size; i++)
+                {
+                    dst8[i] = src[i];
+                }
+            }
+
+            /* Ensure writes reach the memory-mapped window before we verify. */
+            __DSB();
+            __ISB();
+
+            /* Read-back and compare. */
+            uint8_t rb[16];
+
+            if ((((uintptr_t)dst8 | (uintptr_t)write_size) & 0x3u) == 0u)
+            {
+                const volatile uint32_t *src32 = (const volatile uint32_t *)dst8;
+                uint32_t *rb32 = (uint32_t *)rb;
+                uint32_t words = write_size >> 2;
+                for (uint32_t i = 0; i < words; i++)
+                {
+                    rb32[i] = src32[i];
+                }
+            }
+            else
+            {
+                for (uint32_t i = 0; i < write_size; i++)
+                {
+                    rb[i] = dst8[i];
+                }
+            }
+
+            ok = true;
+            for (uint32_t i = 0; i < write_size; i++)
+            {
+                if (rb[i] != src[i])
+                {
+                    ok = false;
+                    break;
+                }
+            }
+
+            if (ok)
+            {
+                break;
+            }
+
+            verify_mismatch_chunks++;
+            if (attempt >= (uint32_t)HYPERRAM_WRITE_VERIFY_RETRIES)
+            {
+                verify_failed_chunks++;
+                break;
+            }
+
+            attempt++;
+            verify_retries_used++;
+        }
+#else
+        if ((((uintptr_t)src | (uintptr_t)dst8 | (uintptr_t)write_size) & 0x3u) == 0u)
+        {
+            const uint32_t *src32 = (const uint32_t *)src;
+            volatile uint32_t *dst32 = (volatile uint32_t *)dst8;
+            uint32_t words = write_size >> 2;
+            for (uint32_t i = 0; i < words; i++)
+            {
+                dst32[i] = src32[i];
+            }
+        }
+        else
+        {
+            for (uint32_t i = 0; i < write_size; i++)
+            {
+                dst8[i] = src[i];
+            }
+        }
+#endif
         offset += write_size;
     }
+
+    /* Ensure all posted writes to the memory-mapped window complete. */
+    __DSB();
+    __ISB();
+
+#if HYPERRAM_WRITE_VERIFY
+    /* Accumulate into global counters under the same mutex protection. */
+    g_hyperram_wv_mismatch_chunks += verify_mismatch_chunks;
+    g_hyperram_wv_retries += verify_retries_used;
+    g_hyperram_wv_failed_chunks += verify_failed_chunks;
+#endif
+
+#if HYPERRAM_WRITE_VERIFY && HYPERRAM_WRITE_VERIFY_LOG
+    if ((verify_retries_used != 0u) || (verify_failed_chunks != 0u))
+    {
+        xprintf("[HyperRAM-W] verify: retries=%lu mismatch_chunks=%lu failed_chunks=%lu len=%lu\n",
+                (unsigned long)verify_retries_used,
+                (unsigned long)verify_mismatch_chunks,
+                (unsigned long)verify_failed_chunks,
+                (unsigned long)total_length);
+    }
+#elif HYPERRAM_WRITE_VERIFY
+    (void)verify_retries_used;
+    (void)verify_mismatch_chunks;
+    (void)verify_failed_chunks;
+#endif
 
     // ミューテックス解放
     xSemaphoreGive(g_hyperram_mutex);
     return err;
+}
+
+void hyperram_write_verify_counters_reset(void)
+{
+    /* Best-effort reset; ok if a write is in-flight (diagnostics only). */
+    g_hyperram_wv_mismatch_chunks = 0;
+    g_hyperram_wv_retries = 0;
+    g_hyperram_wv_failed_chunks = 0;
+}
+
+void hyperram_write_verify_counters_get(uint32_t *p_mismatch_chunks,
+                                        uint32_t *p_retries,
+                                        uint32_t *p_failed_chunks)
+{
+    if (p_mismatch_chunks)
+    {
+        *p_mismatch_chunks = g_hyperram_wv_mismatch_chunks;
+    }
+    if (p_retries)
+    {
+        *p_retries = g_hyperram_wv_retries;
+    }
+    if (p_failed_chunks)
+    {
+        *p_failed_chunks = g_hyperram_wv_failed_chunks;
+    }
 }
 
 fsp_err_t hyperram_b_read(void *p_dest, const void *p_src, uint32_t total_length)
@@ -403,13 +593,34 @@ fsp_err_t hyperram_b_read(void *p_dest, const void *p_src, uint32_t total_length
         }
 
         uint32_t converted_addr = base_addr;
-        // taskENTER_CRITICAL();
-        memcpy(dest_p8 + current_offset,
-               (uint8_t *)HYPERRAM_BASE_ADDR + converted_addr, read_size);
-        // taskEXIT_CRITICAL();
+        const volatile uint8_t *src8 = (const volatile uint8_t *)((uintptr_t)HYPERRAM_BASE_ADDR + (uintptr_t)converted_addr);
+        uint8_t *dst = (uint8_t *)(dest_p8 + current_offset);
+
+        /* Prefer 32-bit aligned volatile loads when possible; else byte loads. */
+        if ((((uintptr_t)src8 | (uintptr_t)dst | (uintptr_t)read_size) & 0x3u) == 0u)
+        {
+            const volatile uint32_t *src32 = (const volatile uint32_t *)src8;
+            uint32_t *dst32 = (uint32_t *)dst;
+            uint32_t words = read_size >> 2;
+            for (uint32_t i = 0; i < words; i++)
+            {
+                dst32[i] = src32[i];
+            }
+        }
+        else
+        {
+            for (uint32_t i = 0; i < read_size; i++)
+            {
+                dst[i] = src8[i];
+            }
+        }
         current_offset += read_size;
         remaining_size -= read_size;
     }
+
+    /* Serialize subsequent code vs. memory-mapped reads. */
+    __DSB();
+    __ISB();
 
     // ミューテックス解放
     xSemaphoreGive(g_hyperram_mutex);

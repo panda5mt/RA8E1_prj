@@ -10,6 +10,7 @@
 #include "r_ospi_b.h"
 #include <arm_acle.h>
 #include "video_frame_buffer.h"
+#include "verify_mode.h"
 
 /* Published HyperRAM base offset for the most recently written camera frame. */
 volatile uint32_t g_video_frame_base_offset = (uint32_t)VIDEO_FRAME_BASE_OFFSET_DEFAULT;
@@ -75,6 +76,14 @@ void main_thread0_entry(void *pvParameters)
     //  init UART & printf
     xdev_out(putchar_ra8usb);
     xprintf("START\n");
+
+#if APP_MODE_FFT_VERIFY
+    xprintf("[Thread0] APP_MODE_FFT_VERIFY=1: camera disabled\n");
+    while (1)
+    {
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+#endif
     // init DVP camera
 
     cam_init(DEV_OV5642);
