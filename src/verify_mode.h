@@ -43,12 +43,25 @@
 #define APP_MODE_FFT_VERIFY_FFT256_PATTERN_START 3
 #endif
 
+/*
+ * Input read-back comparison after each row write.
+ * NOTE: This is separate from HyperRAM write-verify (WV) inside hyperram_b_write().
+ * Keeping WV+RMSE but disabling this read-back makes Test5/Test6 much faster.
+ */
+#ifndef APP_MODE_FFT_VERIFY_FFT256_INPUT_READBACK
+#define APP_MODE_FFT_VERIFY_FFT256_INPUT_READBACK 0
+#endif
+
 #ifndef APP_MODE_FFT_VERIFY_FFT128_PATTERN_COUNT
 #define APP_MODE_FFT_VERIFY_FFT128_PATTERN_COUNT 1
 #endif
 
 #ifndef APP_MODE_FFT_VERIFY_FFT128_PATTERN_START
 #define APP_MODE_FFT_VERIFY_FFT128_PATTERN_START 3
+#endif
+
+#ifndef APP_MODE_FFT_VERIFY_FFT128_INPUT_READBACK
+#define APP_MODE_FFT_VERIFY_FFT128_INPUT_READBACK 0
 #endif
 
 /*
@@ -104,4 +117,8 @@
  */
 #ifndef APP_MODE_FFT_TRANSPOSE_TILE
 #define APP_MODE_FFT_TRANSPOSE_TILE 128
+#endif
+
+#if (APP_MODE_FFT_TRANSPOSE_TILE > 128)
+#error "APP_MODE_FFT_TRANSPOSE_TILE > 128 is not supported (SRAM usage too high)"
 #endif
