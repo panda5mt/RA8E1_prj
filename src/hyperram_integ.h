@@ -59,6 +59,10 @@ extern "C"
                                             uint32_t *p_retries,
                                             uint32_t *p_failed_chunks);
 
+    /* Build-time configuration introspection (for logs). */
+    uint32_t hyperram_write_verify_is_enabled(void);
+    uint32_t hyperram_write_verify_retries(void);
+
     /*
      * 4-byte fixed access (diagnostics).
      * addr is a logical HyperRAM byte offset (same addressing as hyperram_b_read/write).

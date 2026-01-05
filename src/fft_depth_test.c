@@ -1071,6 +1071,9 @@ void fft_test_hyperram_128x128(void)
 
     /* Reset HyperRAM write-verify counters (B2 diagnostics) for this test run. */
     hyperram_write_verify_counters_reset();
+    xprintf("[WV] en=%d r=%d\n",
+            (unsigned long)hyperram_write_verify_is_enabled(),
+            (unsigned long)hyperram_write_verify_retries());
 
     for (int iter = 0; iter < 5; iter++)
     {
@@ -1373,7 +1376,7 @@ void fft_test_hyperram_128x128(void)
         uint32_t retries = 0;
         uint32_t failed_chunks = 0;
         hyperram_write_verify_counters_get(&mismatch_chunks, &retries, &failed_chunks);
-        xprintf("[FFT-128] HyperRAM-W verify: mismatch_chunks=%d\n retries=%d\n failed_chunks=%d\n",
+        xprintf("[WV] mism=%d retry=%d fail=%d\n",
                 (unsigned long)mismatch_chunks,
                 (unsigned long)retries,
                 (unsigned long)failed_chunks);

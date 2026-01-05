@@ -549,6 +549,16 @@ void hyperram_write_verify_counters_get(uint32_t *p_mismatch_chunks,
     }
 }
 
+uint32_t hyperram_write_verify_is_enabled(void)
+{
+    return (uint32_t)HYPERRAM_WRITE_VERIFY;
+}
+
+uint32_t hyperram_write_verify_retries(void)
+{
+    return (uint32_t)HYPERRAM_WRITE_VERIFY_RETRIES;
+}
+
 fsp_err_t hyperram_b_read(void *p_dest, const void *p_src, uint32_t total_length)
 {
     fsp_err_t err = FSP_SUCCESS;
