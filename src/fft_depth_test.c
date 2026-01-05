@@ -101,20 +101,52 @@ static inline void fft_1d_cmsis_cfft_f32(float *real, float *imag, int N, bool i
         return;
     }
 
+#if USE_HELIUM_MVE
+    int i;
+    for (i = 0; i <= N - 4; i += 4)
+    {
+        float32x4x2_t tmp;
+        tmp.val[0] = vld1q_f32(&real[i]);
+        tmp.val[1] = vld1q_f32(&imag[i]);
+        /* Store interleaved: [re0,im0,re1,im1,re2,im2,re3,im3] */
+        vst2q_f32(&g_cfft_io[2 * i], tmp);
+    }
+    for (; i < N; i++)
+    {
+        g_cfft_io[2 * i + 0] = real[i];
+        g_cfft_io[2 * i + 1] = imag[i];
+    }
+#else
     for (int i = 0; i < N; i++)
     {
         g_cfft_io[2 * i + 0] = real[i];
         g_cfft_io[2 * i + 1] = imag[i];
     }
+#endif
 
     /* bitReverseFlag=1 => output in natural order. Inverse scaling is handled inside CMSIS. */
     arm_cfft_f32(S, g_cfft_io, is_inverse ? 1U : 0U, 1U);
 
+#if USE_HELIUM_MVE
+    for (i = 0; i <= N - 4; i += 4)
+    {
+        float32x4x2_t tmp = vld2q_f32(&g_cfft_io[2 * i]);
+        /* Load de-interleaved: real in val[0], imag in val[1] */
+        vst1q_f32(&real[i], tmp.val[0]);
+        vst1q_f32(&imag[i], tmp.val[1]);
+    }
+    for (; i < N; i++)
+    {
+        real[i] = g_cfft_io[2 * i + 0];
+        imag[i] = g_cfft_io[2 * i + 1];
+    }
+#else
     for (int i = 0; i < N; i++)
     {
         real[i] = g_cfft_io[2 * i + 0];
         imag[i] = g_cfft_io[2 * i + 1];
     }
+#endif
 }
 
 /* スタティックバッファ（動的メモリ割り当て回避） */
