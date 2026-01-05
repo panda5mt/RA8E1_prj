@@ -43,6 +43,29 @@ void fft_2d_hyperram(
     uint32_t hyperram_output_imag_offset,
     int rows, int cols, bool is_inverse);
 
+/* HyperRAMベース2D FFT/IFFT（32x32ブロック処理：128x128で実績あり） */
+void fft_2d_hyperram_blocked(
+    uint32_t hyperram_input_real_offset,
+    uint32_t hyperram_input_imag_offset,
+    uint32_t hyperram_output_real_offset,
+    uint32_t hyperram_output_imag_offset,
+    int rows, int cols, bool is_inverse);
+
+/*
+ * HyperRAMベース「真の」2D FFT/IFFT（rows点×cols点）。
+ * - 行FFT(cols点) → 転置(HyperRAM上) → 行FFT(rows点) → 逆転置
+ * - 追加の作業領域として、転置用の tmp_real/tmp_imag（サイズ=rows*cols要素）が必要です。
+ *   例: 128x128なら tmp_real/tmp_imag それぞれ64KB。
+ */
+void fft_2d_hyperram_full(
+    uint32_t hyperram_input_real_offset,
+    uint32_t hyperram_input_imag_offset,
+    uint32_t hyperram_output_real_offset,
+    uint32_t hyperram_output_imag_offset,
+    uint32_t hyperram_tmp_real_offset,
+    uint32_t hyperram_tmp_imag_offset,
+    int rows, int cols, bool is_inverse);
+
 /* デバッグ用：ROW処理のみ */
 void fft_2d_hyperram_row_only(
     uint32_t hyperram_input_real_offset,

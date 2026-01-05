@@ -18,3 +18,12 @@
 #ifndef APP_MODE_FFT_VERIFY_RUN_FFT128
 #define APP_MODE_FFT_VERIFY_RUN_FFT128 1
 #endif
+
+/*
+ * When verification mode is enabled, select the 128x128 2D FFT implementation:
+ * - 0: BLOCKED (32x32 blocks; good for round-trip sanity)
+ * - 1: FULL (true 128x128 spectrum via HyperRAM transpose)
+ */
+#ifndef APP_MODE_FFT_VERIFY_USE_FFT128_FULL
+#define APP_MODE_FFT_VERIFY_USE_FFT128_FULL 1
+#endif

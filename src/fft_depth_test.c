@@ -1,5 +1,6 @@
 #include "fft_depth_test.h"
 #include "putchar_ra8usb.h"
+#include "verify_mode.h"
 #include <math.h>
 #include <string.h>
 
@@ -29,6 +30,125 @@ static float g_large_fft_row_buffer[128];
 static float g_large_fft_rmse_values[5];
 static uint32_t g_large_fft_forward_times[5];
 static uint32_t g_large_fft_inverse_times[5];
+
+/* 128x128 spectrum inspection buffers (SRAM) */
+static float g_spec_row_real[128];
+static float g_spec_row_imag[128];
+
+typedef struct
+{
+    float mag;
+    uint16_t x;
+    uint16_t y;
+} fft_spec_peak_t;
+
+static void fft_spec_peaks_init(fft_spec_peak_t *peaks, int n)
+{
+    for (int i = 0; i < n; i++)
+    {
+        peaks[i].mag = -1.0f;
+        peaks[i].x = 0;
+        peaks[i].y = 0;
+    }
+}
+
+static void fft_spec_peaks_consider(fft_spec_peak_t *peaks, int n, uint16_t x, uint16_t y, float mag)
+{
+    if (n <= 0)
+    {
+        return;
+    }
+
+    if (!(mag > peaks[n - 1].mag))
+    {
+        return;
+    }
+
+    int insert_at = n - 1;
+    while (insert_at > 0 && mag > peaks[insert_at - 1].mag)
+    {
+        peaks[insert_at] = peaks[insert_at - 1];
+        insert_at--;
+    }
+
+    peaks[insert_at].mag = mag;
+    peaks[insert_at].x = x;
+    peaks[insert_at].y = y;
+}
+
+static void fft_spec_print_top_peaks_hyperram(uint32_t out_real_offset,
+                                              uint32_t out_imag_offset,
+                                              int rows,
+                                              int cols,
+                                              int topk)
+{
+    if (rows <= 0 || cols <= 0 || cols > 128)
+    {
+        xprintf("[FFT-128][Spec] invalid dims rows=%d cols=%d\n", rows, cols);
+        return;
+    }
+
+    fft_spec_peak_t peaks[8];
+    if (topk > (int)(sizeof(peaks) / sizeof(peaks[0])))
+    {
+        topk = (int)(sizeof(peaks) / sizeof(peaks[0]));
+    }
+
+    fft_spec_peaks_init(peaks, topk);
+
+    float dc_mag = 0.0f;
+    uint32_t skipped_nonfinite = 0;
+
+    for (int y = 0; y < rows; y++)
+    {
+        uint32_t row_off = (uint32_t)(y * cols) * sizeof(float);
+        fsp_err_t rerr = hyperram_b_read(g_spec_row_real, (void *)(out_real_offset + row_off), (uint32_t)cols * sizeof(float));
+        if (FSP_SUCCESS != rerr)
+        {
+            xprintf("[FFT-128][Spec] ERROR: read real row %d (err=%d)\n", y, (int)rerr);
+            return;
+        }
+        fsp_err_t ierr = hyperram_b_read(g_spec_row_imag, (void *)(out_imag_offset + row_off), (uint32_t)cols * sizeof(float));
+        if (FSP_SUCCESS != ierr)
+        {
+            xprintf("[FFT-128][Spec] ERROR: read imag row %d (err=%d)\n", y, (int)ierr);
+            return;
+        }
+
+        for (int x = 0; x < cols; x++)
+        {
+            float re = g_spec_row_real[x];
+            float im = g_spec_row_imag[x];
+            if (!isfinite(re) || !isfinite(im))
+            {
+                skipped_nonfinite++;
+                continue;
+            }
+            float mag = sqrtf(re * re + im * im);
+
+            if (y == 0 && x == 0)
+            {
+                dc_mag = mag;
+                continue;
+            }
+
+            fft_spec_peaks_consider(peaks, topk, (uint16_t)x, (uint16_t)y, mag);
+        }
+    }
+
+    xprintf("[FFT-128][Spec] DC |X(0,0)|=%.3e skip_nf=%d\n",
+            dc_mag,
+            (unsigned long)skipped_nonfinite);
+
+    for (int i = 0; i < topk; i++)
+    {
+        xprintf("[FFT-128][Spec] #%d (ky=%d kx=%d) |X|=%.3e\n",
+                i + 1,
+                (unsigned long)peaks[i].y,
+                (unsigned long)peaks[i].x,
+                peaks[i].mag);
+    }
+}
 
 /* =========================
  * Float sanitization helpers (Inf/NaN avoidance)
@@ -596,6 +716,156 @@ void fft_2d_hyperram_blocked(
     }
 }
 
+/*
+ * HyperRAM上の行優先行列(in_rows x in_cols)を、outに転置して書き出す。
+ * outは(out_rows=in_cols, out_cols=in_rows)の行優先。
+ * 32x32タイルでSRAM使用量を抑える。
+ */
+static void hyperram_transpose_tiled(
+    uint32_t in_real_offset,
+    uint32_t in_imag_offset,
+    uint32_t out_real_offset,
+    uint32_t out_imag_offset,
+    int in_rows,
+    int in_cols)
+{
+    enum
+    {
+        TILE = 32
+    };
+
+    static float tile_real[32 * 32];
+    static float tile_imag[32 * 32];
+    static float col_real[32];
+    static float col_imag[32];
+
+    for (int tr = 0; tr < in_rows; tr += TILE)
+    {
+        for (int tc = 0; tc < in_cols; tc += TILE)
+        {
+            int th = (tr + TILE > in_rows) ? (in_rows - tr) : TILE;
+            int tw = (tc + TILE > in_cols) ? (in_cols - tc) : TILE;
+
+            /* Read tile (th x tw) */
+            for (int r = 0; r < th; r++)
+            {
+                uint32_t src_row_real = in_real_offset + (uint32_t)((tr + r) * in_cols + tc) * sizeof(float);
+                uint32_t src_row_imag = in_imag_offset + (uint32_t)((tr + r) * in_cols + tc) * sizeof(float);
+                hyperram_b_read(&tile_real[r * TILE], (void *)src_row_real, (uint32_t)tw * sizeof(float));
+                hyperram_b_read(&tile_imag[r * TILE], (void *)src_row_imag, (uint32_t)tw * sizeof(float));
+            }
+
+            /* Write transposed tile: out[(tc+c)][(tr+r)] = in[(tr+r)][(tc+c)] */
+            for (int c = 0; c < tw; c++)
+            {
+                for (int r = 0; r < th; r++)
+                {
+                    col_real[r] = tile_real[r * TILE + c];
+                    col_imag[r] = tile_imag[r * TILE + c];
+                }
+
+                uint32_t dst_row_real = out_real_offset + (uint32_t)((tc + c) * in_rows + tr) * sizeof(float);
+                uint32_t dst_row_imag = out_imag_offset + (uint32_t)((tc + c) * in_rows + tr) * sizeof(float);
+                hyperram_b_write(col_real, (void *)dst_row_real, (uint32_t)th * sizeof(float));
+                hyperram_b_write(col_imag, (void *)dst_row_imag, (uint32_t)th * sizeof(float));
+            }
+        }
+    }
+}
+
+/*
+ * 真の2D FFT/IFFT（rows点×cols点）。
+ * 行FFT(cols点)の後、HyperRAM上で転置して列FFT(rows点)を行FFTとして実行。
+ */
+void fft_2d_hyperram_full(
+    uint32_t hyperram_input_real_offset,
+    uint32_t hyperram_input_imag_offset,
+    uint32_t hyperram_output_real_offset,
+    uint32_t hyperram_output_imag_offset,
+    uint32_t hyperram_tmp_real_offset,
+    uint32_t hyperram_tmp_imag_offset,
+    int rows, int cols, bool is_inverse)
+{
+    static float row_real[256];
+    static float row_imag[256];
+    fft_sanitize_stats_t san = {0u, 0u};
+
+    if ((rows <= 0) || (cols <= 0))
+    {
+        xprintf("[FFT-Full] ERROR: invalid size\n");
+        return;
+    }
+    if ((rows > 256) || (cols > 256))
+    {
+        xprintf("[FFT-Full] ERROR: size exceeds 256 limit\n");
+        return;
+    }
+
+    xprintf("[FFT-Full] %s %dx%d\n", is_inverse ? "IFFT" : "FFT", rows, cols);
+
+    /* Phase 1: row FFTs (length=cols) -> output */
+    for (int r = 0; r < rows; r++)
+    {
+        uint32_t in_row_real = hyperram_input_real_offset + (uint32_t)(r * cols) * sizeof(float);
+        uint32_t in_row_imag = hyperram_input_imag_offset + (uint32_t)(r * cols) * sizeof(float);
+        uint32_t out_row_real = hyperram_output_real_offset + (uint32_t)(r * cols) * sizeof(float);
+        uint32_t out_row_imag = hyperram_output_imag_offset + (uint32_t)(r * cols) * sizeof(float);
+
+        hyperram_b_read(row_real, (void *)in_row_real, (uint32_t)cols * sizeof(float));
+        hyperram_b_read(row_imag, (void *)in_row_imag, (uint32_t)cols * sizeof(float));
+
+        fft_sanitize_complex_vec(row_real, row_imag, cols, &san);
+        fft_1d_mve(row_real, row_imag, cols, is_inverse);
+        fft_sanitize_complex_vec(row_real, row_imag, cols, &san);
+
+        hyperram_b_write(row_real, (void *)out_row_real, (uint32_t)cols * sizeof(float));
+        hyperram_b_write(row_imag, (void *)out_row_imag, (uint32_t)cols * sizeof(float));
+    }
+
+    /* Phase 2: transpose output(rows x cols) -> tmp(cols x rows) */
+    hyperram_transpose_tiled(
+        hyperram_output_real_offset,
+        hyperram_output_imag_offset,
+        hyperram_tmp_real_offset,
+        hyperram_tmp_imag_offset,
+        rows,
+        cols);
+
+    /* Phase 3: row FFTs on tmp (length=rows) i.e., original column FFTs */
+    for (int r = 0; r < cols; r++)
+    {
+        uint32_t tmp_row_real = hyperram_tmp_real_offset + (uint32_t)(r * rows) * sizeof(float);
+        uint32_t tmp_row_imag = hyperram_tmp_imag_offset + (uint32_t)(r * rows) * sizeof(float);
+
+        hyperram_b_read(row_real, (void *)tmp_row_real, (uint32_t)rows * sizeof(float));
+        hyperram_b_read(row_imag, (void *)tmp_row_imag, (uint32_t)rows * sizeof(float));
+
+        fft_sanitize_complex_vec(row_real, row_imag, rows, &san);
+        fft_1d_mve(row_real, row_imag, rows, is_inverse);
+        fft_sanitize_complex_vec(row_real, row_imag, rows, &san);
+
+        hyperram_b_write(row_real, (void *)tmp_row_real, (uint32_t)rows * sizeof(float));
+        hyperram_b_write(row_imag, (void *)tmp_row_imag, (uint32_t)rows * sizeof(float));
+    }
+
+    /* Phase 4: transpose back tmp(cols x rows) -> output(rows x cols) */
+    hyperram_transpose_tiled(
+        hyperram_tmp_real_offset,
+        hyperram_tmp_imag_offset,
+        hyperram_output_real_offset,
+        hyperram_output_imag_offset,
+        cols,
+        rows);
+
+    if ((san.nonfinite != 0u) || (san.clipped != 0u))
+    {
+        xprintf("[SAN] %s nf=%u clip=%u\n",
+                is_inverse ? "inv" : "fwd",
+                (unsigned int)san.nonfinite,
+                (unsigned int)san.clipped);
+    }
+}
+
 /* ROW処理のみ実行（デバッグ用） */
 void fft_2d_hyperram_row_only(
     uint32_t hyperram_input_real_offset,
@@ -1048,7 +1318,11 @@ void fft_test_hyperram_round_trip(void)
 void fft_test_hyperram_128x128(void)
 {
     xprintf("\n========================================\n");
+#if defined(APP_MODE_FFT_VERIFY_USE_FFT128_FULL) && (APP_MODE_FFT_VERIFY_USE_FFT128_FULL != 0)
+    xprintf("  Test 5: 128x128 HyperRAM FFT (FULL)\n");
+#else
     xprintf("  Test 5: 128x128 HyperRAM FFT (Blocked)\n");
+#endif
     xprintf("========================================\n");
 
     const int FFT_SIZE = 128;
@@ -1064,6 +1338,10 @@ void fft_test_hyperram_128x128(void)
     const uint32_t OUTPUT_IMAG_OFFSET = BASE_OFFSET + 0x30000; // 64KB
     const uint32_t WORK_REAL_OFFSET = BASE_OFFSET + 0x40000;   // 64KB
     const uint32_t WORK_IMAG_OFFSET = BASE_OFFSET + 0x50000;   // 64KB
+#if defined(APP_MODE_FFT_VERIFY_USE_FFT128_FULL) && (APP_MODE_FFT_VERIFY_USE_FFT128_FULL != 0)
+    const uint32_t TMP_REAL_OFFSET = BASE_OFFSET + 0x60000; // 64KB
+    const uint32_t TMP_IMAG_OFFSET = BASE_OFFSET + 0x70000; // 64KB
+#endif
 
     // 5パターンでテスト
     const char *pattern_names[5] = {
@@ -1273,10 +1551,18 @@ void fft_test_hyperram_128x128(void)
 
         uint32_t time_start = R_GPT0->GTCNT;
 
+#if defined(APP_MODE_FFT_VERIFY_USE_FFT128_FULL) && (APP_MODE_FFT_VERIFY_USE_FFT128_FULL != 0)
+        // FULL版（真の128x128スペクトル）
+        fft_2d_hyperram_full(INPUT_REAL_OFFSET, INPUT_IMAG_OFFSET,
+                             OUTPUT_REAL_OFFSET, OUTPUT_IMAG_OFFSET,
+                             TMP_REAL_OFFSET, TMP_IMAG_OFFSET,
+                             FFT_SIZE, FFT_SIZE, false);
+#else
         // ブロック処理版FFT
         fft_2d_hyperram_blocked(INPUT_REAL_OFFSET, INPUT_IMAG_OFFSET,
                                 OUTPUT_REAL_OFFSET, OUTPUT_IMAG_OFFSET,
                                 FFT_SIZE, FFT_SIZE, false);
+#endif
 
         uint32_t time_forward = R_GPT0->GTCNT - time_start;
         g_large_fft_forward_times[iter] = time_forward;
@@ -1284,13 +1570,32 @@ void fft_test_hyperram_128x128(void)
         xprintf("[FFT-128] Forward FFT complete (%d us)\n", time_forward / 240);
         vTaskDelay(pdMS_TO_TICKS(10));
 
+#if defined(APP_MODE_FFT_VERIFY_USE_FFT128_FULL) && (APP_MODE_FFT_VERIFY_USE_FFT128_FULL != 0)
+        /*
+         * Spectrum sanity check (depth-estimation needs the true 2D spectrum).
+         * Only for the 2D Sine pattern iteration to keep logs short.
+         */
+        if (iter == 2)
+        {
+            xprintf("[FFT-128][Spec] Top peaks (after forward FFT)\n");
+            fft_spec_print_top_peaks_hyperram(OUTPUT_REAL_OFFSET, OUTPUT_IMAG_OFFSET, FFT_SIZE, FFT_SIZE, 4);
+        }
+#endif
+
         // 逆FFT
         xprintf("[FFT-128] Starting inverse FFT...\n");
         time_start = R_GPT0->GTCNT;
 
+#if defined(APP_MODE_FFT_VERIFY_USE_FFT128_FULL) && (APP_MODE_FFT_VERIFY_USE_FFT128_FULL != 0)
+        fft_2d_hyperram_full(OUTPUT_REAL_OFFSET, OUTPUT_IMAG_OFFSET,
+                             WORK_REAL_OFFSET, WORK_IMAG_OFFSET,
+                             TMP_REAL_OFFSET, TMP_IMAG_OFFSET,
+                             FFT_SIZE, FFT_SIZE, true);
+#else
         fft_2d_hyperram_blocked(OUTPUT_REAL_OFFSET, OUTPUT_IMAG_OFFSET,
                                 WORK_REAL_OFFSET, WORK_IMAG_OFFSET,
                                 FFT_SIZE, FFT_SIZE, true);
+#endif
 
         uint32_t time_inverse = R_GPT0->GTCNT - time_start;
         g_large_fft_inverse_times[iter] = time_inverse;
