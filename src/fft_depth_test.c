@@ -1391,8 +1391,12 @@ void fft_test_hyperram_128x128(void)
                 val = (float)((i * i) % 200) / 200.0f;
                 break;
             case 2: // 2D Sine
-                val = sinf((float)x / 16.0f) * sinf((float)y / 16.0f);
-                break;
+            {
+                /* True period-16 2D sine: peaks near (±8, ±8) for N=128 */
+                const float k = (2.0f * 3.14159265f) / 16.0f;
+                val = sinf(k * (float)x) * sinf(k * (float)y);
+            }
+            break;
             case 3: // Pseudo-random
                 val = (float)((i * 17 + 31) % 100) / 100.0f;
                 break;
