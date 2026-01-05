@@ -28,6 +28,7 @@ void fft_test_sine_wave(void);           // 正弦波テスト
 void fft_test_round_trip(void);          // FFT→IFFT往復テスト
 void fft_test_hyperram_round_trip(void); // HyperRAMベースFFT→IFFT往復テスト
 void fft_test_hyperram_128x128(void);    // 128×128大規模FFT→IFFTテスト（ブロック処理）
+void fft_test_hyperram_256x256(void);    // 256×256大規模FFT→IFFTテスト（FULL版）
 
 /* 1D FFT/IFFT (MVE最適化版) */
 void fft_1d_mve(float *real, float *imag, int N, bool is_inverse);

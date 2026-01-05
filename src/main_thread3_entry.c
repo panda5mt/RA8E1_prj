@@ -1855,7 +1855,9 @@ void main_thread3_entry(void *pvParameters)
         }
     }
 
-#if APP_MODE_FFT_VERIFY_RUN_FFT128
+#if APP_MODE_FFT_VERIFY_RUN_FFT256
+    fft_test_hyperram_256x256();
+#elif APP_MODE_FFT_VERIFY_RUN_FFT128
     fft_test_hyperram_128x128();
 #else
     fft_depth_test_all();

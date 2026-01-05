@@ -16,7 +16,12 @@
 
 /* When verification mode is enabled, run 128x128 FFT test in thread3. */
 #ifndef APP_MODE_FFT_VERIFY_RUN_FFT128
-#define APP_MODE_FFT_VERIFY_RUN_FFT128 1
+#define APP_MODE_FFT_VERIFY_RUN_FFT128 0
+#endif
+
+/* When verification mode is enabled, optionally run 256x256 FFT test in thread3. */
+#ifndef APP_MODE_FFT_VERIFY_RUN_FFT256
+#define APP_MODE_FFT_VERIFY_RUN_FFT256 1
 #endif
 
 /*

@@ -17,6 +17,7 @@
 static float cos_table[MAX_FFT_SIZE / 2];
 static float sin_table[MAX_FFT_SIZE / 2];
 static bool trig_table_initialized = false;
+static int trig_table_N = 0;
 
 /* スタティックバッファ（動的メモリ割り当て回避） */
 static float g_fft_buffer_real[FFT_TEST_POINTS];
@@ -31,9 +32,9 @@ static float g_large_fft_rmse_values[5];
 static uint32_t g_large_fft_forward_times[5];
 static uint32_t g_large_fft_inverse_times[5];
 
-/* 128x128 spectrum inspection buffers (SRAM) */
-static float g_spec_row_real[128];
-static float g_spec_row_imag[128];
+/* Spectrum inspection buffers (SRAM) */
+static float g_spec_row_real[256];
+static float g_spec_row_imag[256];
 
 typedef struct
 {
@@ -82,7 +83,7 @@ static void fft_spec_print_top_peaks_hyperram(uint32_t out_real_offset,
                                               int cols,
                                               int topk)
 {
-    if (rows <= 0 || cols <= 0 || cols > 128)
+    if (rows <= 0 || cols <= 0 || cols > 256)
     {
         xprintf("[FFT-128][Spec] invalid dims rows=%d cols=%d\n", rows, cols);
         return;
@@ -257,7 +258,7 @@ static inline void fft_scan_f32_vec(const float *v, int n, fft_sanitize_stats_t 
 /* 三角関数テーブルの初期化 */
 static void init_trig_tables(int N)
 {
-    if (trig_table_initialized && N <= MAX_FFT_SIZE)
+    if (trig_table_initialized && (trig_table_N == N) && (N <= MAX_FFT_SIZE))
     {
         return;
     }
@@ -270,6 +271,7 @@ static void init_trig_tables(int N)
     }
 
     trig_table_initialized = true;
+    trig_table_N = N;
 }
 
 /* ビット反転インデックス計算 */
@@ -1680,6 +1682,316 @@ void fft_test_hyperram_128x128(void)
     xprintf("========== Test 5 Complete ==========\n");
 
     /* Print a single-line summary of write-verify behavior (C1). */
+    {
+        uint32_t mismatch_chunks = 0;
+        uint32_t retries = 0;
+        uint32_t failed_chunks = 0;
+        hyperram_write_verify_counters_get(&mismatch_chunks, &retries, &failed_chunks);
+        xprintf("[WV] mism=%d retry=%d fail=%d\n",
+                (unsigned long)mismatch_chunks,
+                (unsigned long)retries,
+                (unsigned long)failed_chunks);
+    }
+}
+
+/* 256×256大規模FFT→IFFT往復テスト（FULL版） */
+void fft_test_hyperram_256x256(void)
+{
+    xprintf("\n========================================\n");
+    xprintf("  Test 6: 256x256 HyperRAM FFT (FULL)\n");
+    xprintf("========================================\n");
+
+    const int FFT_SIZE = 256;
+    const int FFT_ELEMENTS = 65536; // 256×256
+
+    /*
+     * Buffer layout (each plane is 256x256 float = 0x40000 bytes):
+     * 8 planes => 0x200000 bytes total.
+     * HyperRAM is 8MB, and verify-mode disables camera/UDP, so this should fit.
+     */
+    const uint32_t BASE_OFFSET = 0x300000; // keep away from multigrid/test areas
+    const uint32_t PLANE_SIZE = 0x40000;   // 256*256*4
+
+    const uint32_t INPUT_REAL_OFFSET = BASE_OFFSET + 0 * PLANE_SIZE;
+    const uint32_t INPUT_IMAG_OFFSET = BASE_OFFSET + 1 * PLANE_SIZE;
+    const uint32_t OUTPUT_REAL_OFFSET = BASE_OFFSET + 2 * PLANE_SIZE;
+    const uint32_t OUTPUT_IMAG_OFFSET = BASE_OFFSET + 3 * PLANE_SIZE;
+    const uint32_t WORK_REAL_OFFSET = BASE_OFFSET + 4 * PLANE_SIZE;
+    const uint32_t WORK_IMAG_OFFSET = BASE_OFFSET + 5 * PLANE_SIZE;
+    const uint32_t TMP_REAL_OFFSET = BASE_OFFSET + 6 * PLANE_SIZE;
+    const uint32_t TMP_IMAG_OFFSET = BASE_OFFSET + 7 * PLANE_SIZE;
+
+    const char *pattern_names[5] = {
+        "Linear", "Quadratic", "2D Sine", "Pseudo-random", "Step"};
+
+    hyperram_write_verify_counters_reset();
+    xprintf("[WV] en=%d r=%d\n",
+            (unsigned long)hyperram_write_verify_is_enabled(),
+            (unsigned long)hyperram_write_verify_retries());
+
+    static float row_buf[256];
+    static float rb_row[256];
+    static float rb_row2[256];
+    static float original_row[256];
+    static float zero_imag[256];
+    for (int i = 0; i < FFT_SIZE; i++)
+    {
+        zero_imag[i] = 0.0f;
+    }
+
+    for (int iter = 0; iter < 5; iter++)
+    {
+        xprintf("\n[FFT-256] Iteration %d:\n %s pattern\n", iter + 1, pattern_names[iter]);
+        vTaskDelay(pdMS_TO_TICKS(10));
+
+        /* Input write + read-back verify summary */
+        uint32_t rb_mismatch_rows = 0;
+        uint32_t rb_mismatch_words = 0;
+        uint32_t rb_nonfinite = 0;
+        uint32_t rb_clipped = 0;
+        uint32_t rb_transient_rows = 0;
+        uint32_t rb_persistent_rows = 0;
+        uint32_t rb_unstable_rows = 0;
+        int rb_first_row = -1;
+        int rb_first_col = -1;
+        uint32_t rb_first_exp_u = 0;
+        uint32_t rb_first_got_u = 0;
+
+        xprintf("[FFT-256] Generating pattern...\n");
+
+        for (int y = 0; y < FFT_SIZE; y++)
+        {
+            for (int x = 0; x < FFT_SIZE; x++)
+            {
+                int i = y * FFT_SIZE + x;
+                float val = 0.0f;
+
+                switch (iter)
+                {
+                case 0: // Linear
+                    val = (float)(i % 100) / 100.0f;
+                    break;
+                case 1: // Quadratic
+                    val = (float)((i * i) % 200) / 200.0f;
+                    break;
+                case 2: // 2D Sine (period 16)
+                {
+                    const float k = (2.0f * 3.14159265f) / 16.0f;
+                    val = sinf(k * (float)x) * sinf(k * (float)y);
+                }
+                break;
+                case 3: // Pseudo-random
+                    val = (float)((i * 17 + 31) % 100) / 100.0f;
+                    break;
+                case 4: // Step
+                    val = ((x / 32) % 2 == 0 && (y / 32) % 2 == 0) ? 1.0f : 0.0f;
+                    break;
+                }
+
+                row_buf[x] = val;
+            }
+
+            uint32_t row_off = INPUT_REAL_OFFSET + (uint32_t)(y * FFT_SIZE) * sizeof(float);
+            fsp_err_t werr = hyperram_b_write(row_buf, (void *)row_off, (uint32_t)FFT_SIZE * sizeof(float));
+            if (FSP_SUCCESS != werr)
+            {
+                xprintf("[FFT-256] ERROR: hyperram_b_write failed at row %d (err=%d)\n", y, (int)werr);
+                return;
+            }
+
+            __DSB();
+            __ISB();
+
+            fsp_err_t rerr = hyperram_b_read(rb_row, (void *)row_off, (uint32_t)FFT_SIZE * sizeof(float));
+            if (FSP_SUCCESS != rerr)
+            {
+                xprintf("[FFT-256] ERROR: hyperram_b_read failed at row %d (err=%d)\n", y, (int)rerr);
+                return;
+            }
+
+            {
+                fft_sanitize_stats_t st = {0};
+                fft_scan_f32_vec(rb_row, FFT_SIZE, &st);
+                rb_nonfinite += st.nonfinite;
+                rb_clipped += st.clipped;
+            }
+
+            bool row_has_mismatch = false;
+            for (int col = 0; col < FFT_SIZE; col++)
+            {
+                uint32_t exp_u = fft_f32_to_u32(row_buf[col]);
+                uint32_t got_u = fft_f32_to_u32(rb_row[col]);
+                if (exp_u != got_u)
+                {
+                    rb_mismatch_words++;
+                    row_has_mismatch = true;
+                    if (rb_first_row < 0)
+                    {
+                        rb_first_row = y;
+                        rb_first_col = col;
+                        rb_first_exp_u = exp_u;
+                        rb_first_got_u = got_u;
+                    }
+                }
+            }
+
+            if (row_has_mismatch)
+            {
+                rb_mismatch_rows++;
+
+                fsp_err_t rerr2 = hyperram_b_read(rb_row2, (void *)row_off, (uint32_t)FFT_SIZE * sizeof(float));
+                if (FSP_SUCCESS == rerr2)
+                {
+                    bool same_as_first = true;
+                    bool same_as_expected = true;
+                    for (int col = 0; col < FFT_SIZE; col++)
+                    {
+                        uint32_t exp_u = fft_f32_to_u32(row_buf[col]);
+                        uint32_t got1_u = fft_f32_to_u32(rb_row[col]);
+                        uint32_t got2_u = fft_f32_to_u32(rb_row2[col]);
+                        if (got1_u != got2_u)
+                        {
+                            same_as_first = false;
+                        }
+                        if (got2_u != exp_u)
+                        {
+                            same_as_expected = false;
+                        }
+                    }
+
+                    if (same_as_expected)
+                    {
+                        rb_transient_rows++;
+                    }
+                    else if (same_as_first)
+                    {
+                        rb_persistent_rows++;
+                    }
+                    else
+                    {
+                        rb_unstable_rows++;
+                    }
+                }
+            }
+
+            /* Write imag=0 for this row */
+            uint32_t irow_off = INPUT_IMAG_OFFSET + (uint32_t)(y * FFT_SIZE) * sizeof(float);
+            for (int x = 0; x < FFT_SIZE; x++)
+            {
+                row_buf[x] = 0.0f;
+            }
+            hyperram_b_write(row_buf, (void *)irow_off, (uint32_t)FFT_SIZE * sizeof(float));
+
+            if (y == 0)
+            {
+                xprintf("[FFT-256] Pattern: row 1/%d written\n", FFT_SIZE);
+            }
+            if ((y + 1) % 32 == 0)
+            {
+                xprintf("[FFT-256] Pattern: row %d/%d\r", y + 1, FFT_SIZE);
+            }
+            vTaskDelay(pdMS_TO_TICKS(2));
+        }
+
+        xprintf("\n[FFT-256] Pattern generation complete\n");
+        if ((rb_mismatch_rows | rb_mismatch_words | rb_nonfinite | rb_clipped) != 0u)
+        {
+            xprintf("[FFT-256] Input RB: rows=%d words=%d\n nf=%d clip=%d\n",
+                    (unsigned long)rb_mismatch_rows,
+                    (unsigned long)rb_mismatch_words,
+                    (unsigned long)rb_nonfinite,
+                    (unsigned long)rb_clipped);
+            xprintf("[FFT-256] Input RB classify: trans=%d\n pers=%d unstab=%d\n",
+                    (unsigned long)rb_transient_rows,
+                    (unsigned long)rb_persistent_rows,
+                    (unsigned long)rb_unstable_rows);
+            if (rb_first_row >= 0)
+            {
+                uint32_t off = INPUT_REAL_OFFSET + (uint32_t)(rb_first_row * FFT_SIZE + rb_first_col) * sizeof(float);
+                xprintf("[FFT-256] First mismatch: row=%d col=%d\n off=0x%08x exp=0x%08x got=0x%08x\n",
+                        rb_first_row,
+                        rb_first_col,
+                        (unsigned long)off,
+                        (unsigned long)rb_first_exp_u,
+                        (unsigned long)rb_first_got_u);
+            }
+        }
+
+        xprintf("[FFT-256] Starting forward FFT...\n");
+        vTaskDelay(pdMS_TO_TICKS(10));
+
+        uint32_t t0 = R_GPT0->GTCNT;
+        fft_2d_hyperram_full(INPUT_REAL_OFFSET, INPUT_IMAG_OFFSET,
+                             OUTPUT_REAL_OFFSET, OUTPUT_IMAG_OFFSET,
+                             TMP_REAL_OFFSET, TMP_IMAG_OFFSET,
+                             FFT_SIZE, FFT_SIZE, false);
+        uint32_t tf = R_GPT0->GTCNT - t0;
+        xprintf("[FFT-256] Forward FFT complete (%d us)\n", tf / 240);
+
+        if (iter == 2)
+        {
+            xprintf("[FFT-256][Spec] Top peaks (after forward FFT)\n");
+            fft_spec_print_top_peaks_hyperram(OUTPUT_REAL_OFFSET, OUTPUT_IMAG_OFFSET, FFT_SIZE, FFT_SIZE, 4);
+        }
+
+        xprintf("[FFT-256] Starting inverse FFT...\n");
+        t0 = R_GPT0->GTCNT;
+        fft_2d_hyperram_full(OUTPUT_REAL_OFFSET, OUTPUT_IMAG_OFFSET,
+                             WORK_REAL_OFFSET, WORK_IMAG_OFFSET,
+                             TMP_REAL_OFFSET, TMP_IMAG_OFFSET,
+                             FFT_SIZE, FFT_SIZE, true);
+        uint32_t ti = R_GPT0->GTCNT - t0;
+        xprintf("[FFT-256] Inverse FFT complete (%d us)\n", ti / 240);
+
+        /* RMSE */
+        double sum_sq_error = 0.0;
+        uint32_t rmse_nonfinite = 0;
+        uint32_t rmse_clipped = 0;
+
+        for (int row = 0; row < FFT_SIZE; row++)
+        {
+            uint32_t woff = WORK_REAL_OFFSET + (uint32_t)(row * FFT_SIZE) * sizeof(float);
+            uint32_t ioff = INPUT_REAL_OFFSET + (uint32_t)(row * FFT_SIZE) * sizeof(float);
+            hyperram_b_read(row_buf, (void *)woff, (uint32_t)FFT_SIZE * sizeof(float));
+            hyperram_b_read(original_row, (void *)ioff, (uint32_t)FFT_SIZE * sizeof(float));
+
+            fft_sanitize_stats_t st = {0};
+            fft_sanitize_complex_vec(row_buf, zero_imag, FFT_SIZE, &st);
+            fft_sanitize_complex_vec(original_row, zero_imag, FFT_SIZE, &st);
+            rmse_nonfinite += st.nonfinite;
+            rmse_clipped += st.clipped;
+
+            for (int col = 0; col < FFT_SIZE; col++)
+            {
+                float a = row_buf[col];
+                float b = original_row[col];
+                if (!isfinite(a) || !isfinite(b))
+                {
+                    continue;
+                }
+                float d = a - b;
+                sum_sq_error += (double)d * (double)d;
+            }
+        }
+
+        float rmse = sqrtf((float)(sum_sq_error / (double)FFT_ELEMENTS));
+        if ((rmse_nonfinite | rmse_clipped) != 0u)
+        {
+            xprintf("[FFT-256] Iteration %d: RMSE = %.9f (rmse_san nf=%d clip=%d)\n",
+                    iter + 1,
+                    rmse,
+                    (unsigned long)rmse_nonfinite,
+                    (unsigned long)rmse_clipped);
+        }
+        else
+        {
+            xprintf("[FFT-256] Iteration %d: RMSE = %.9f\n", iter + 1, rmse);
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
+
+    xprintf("========== Test 6 Complete ==========\n");
     {
         uint32_t mismatch_chunks = 0;
         uint32_t retries = 0;
