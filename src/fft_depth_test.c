@@ -2367,10 +2367,17 @@ void fft_test_hyperram_256x256(void)
         uint32_t retries = 0;
         uint32_t failed_chunks = 0;
         hyperram_write_verify_counters_get(&mismatch_chunks, &retries, &failed_chunks);
-        xprintf("[WV] mism=%d retry=%d fail=%d\n",
+        uint32_t chunks_mismatched = 0;
+        uint32_t retry_ok_chunks = 0;
+        uint32_t safe_chunks = 0;
+        hyperram_write_verify_detail_get(&chunks_mismatched, &retry_ok_chunks, &safe_chunks);
+        xprintf("[WV] mism=%d retry=%d fail=%d\n(chunk_mism=%d retry_ok=%d safe=%d)\n",
                 (int)mismatch_chunks,
                 (int)retries,
-                (int)failed_chunks);
+                (int)failed_chunks,
+                (int)chunks_mismatched,
+                (int)retry_ok_chunks,
+                (int)safe_chunks);
     }
 }
 

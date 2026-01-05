@@ -59,6 +59,11 @@ extern "C"
                                             uint32_t *p_retries,
                                             uint32_t *p_failed_chunks);
 
+    /* More detailed WV stats (per chunk classification). */
+    void hyperram_write_verify_detail_get(uint32_t *p_chunks_mismatched,
+                                          uint32_t *p_retry_ok_chunks,
+                                          uint32_t *p_safe_fallback_used_chunks);
+
     /* Build-time configuration introspection (for logs). */
     uint32_t hyperram_write_verify_is_enabled(void);
     uint32_t hyperram_write_verify_retries(void);

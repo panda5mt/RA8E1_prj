@@ -86,6 +86,11 @@ static volatile uint32_t g_hyperram_wv_mismatch_chunks = 0;
 static volatile uint32_t g_hyperram_wv_retries = 0;
 static volatile uint32_t g_hyperram_wv_failed_chunks = 0;
 
+/* Detailed per-chunk WV classification counters (diagnostics). */
+static volatile uint32_t g_hyperram_wv_chunks_mismatched = 0;
+static volatile uint32_t g_hyperram_wv_chunks_retry_ok = 0;
+static volatile uint32_t g_hyperram_wv_chunks_safe_fallback_used = 0;
+
 #if HYPERRAM_WRITE_VERIFY && HYPERRAM_UNSAFE_RW_CROSS_16B
 static bool hyperram_wv_safe_rewrite_verify(const uint8_t *src,
                                             volatile uint8_t *dst8,
@@ -133,11 +138,12 @@ static bool hyperram_wv_safe_rewrite_verify(const uint8_t *src,
         __DSB();
         __ISB();
 
-        uint8_t rb[16];
+        uint32_t rb32_aligned[(16u + 3u) / 4u];
+        uint8_t *rb = (uint8_t *)rb32_aligned;
         if ((((uintptr_t)sub_dst8 | (uintptr_t)sub_size) & 0x3u) == 0u)
         {
             const volatile uint32_t *src32 = (const volatile uint32_t *)sub_dst8;
-            uint32_t *rb32 = (uint32_t *)rb;
+            uint32_t *rb32 = rb32_aligned;
             uint32_t words = sub_size >> 2;
             for (uint32_t i = 0; i < words; i++)
             {
@@ -482,6 +488,20 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
     uint32_t verify_retries_used = 0;
     uint32_t verify_mismatch_chunks = 0;
     uint32_t verify_failed_chunks = 0;
+
+    uint32_t verify_chunks_mismatched = 0;
+    uint32_t verify_chunks_retry_ok = 0;
+    uint32_t verify_chunks_safe_fallback_used = 0;
+
+#if HYPERRAM_WV_WAIT_MMAP_IDLE
+    /*
+     * Adaptive mitigation:
+     * If we see a mismatch, enable a short "mmap idle wait" window for the
+     * subsequent chunks. This reduces bursty mismatches caused by reading back
+     * too early under contention, without paying the wait cost all the time.
+     */
+    uint32_t verify_wait_budget = 0;
+#endif
 #endif
 
     while (offset < total_length)
@@ -528,6 +548,9 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
         bool ok = false;
         bool wait_before_verify = false;
 
+        bool chunk_mismatched = false;
+        bool chunk_used_safe_fallback = false;
+
         while (true)
         {
             /* Write the chunk. */
@@ -550,11 +573,26 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
             }
 
 #if HYPERRAM_WV_WAIT_MMAP_IDLE
-            /* Only wait when the previous attempt detected a mismatch. */
-            if (wait_before_verify)
+            /*
+             * Wait policy:
+             * - Always wait before verify on a retry attempt.
+             * - Additionally, after any mismatch, wait for a short window of
+             *   subsequent chunks (verify_wait_budget) to reduce mismatch bursts.
+             */
+            if (wait_before_verify
+#if HYPERRAM_WRITE_VERIFY
+                || (verify_wait_budget != 0u && attempt == 0u)
+#endif
+            )
             {
                 ospi_wait_mmap_idle();
                 wait_before_verify = false;
+#if HYPERRAM_WRITE_VERIFY
+                if ((verify_wait_budget != 0u) && (attempt == 0u))
+                {
+                    verify_wait_budget--;
+                }
+#endif
             }
 #endif
             /* Ensure writes reach the memory-mapped window before we verify. */
@@ -562,12 +600,13 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
             __ISB();
 
             /* Read-back and compare. */
-            uint8_t rb[HYPERRAM_RW_CHUNK_SIZE];
+            uint32_t rb32_aligned[(HYPERRAM_RW_CHUNK_SIZE + 3u) / 4u];
+            uint8_t *rb = (uint8_t *)rb32_aligned;
 
             if ((((uintptr_t)dst8 | (uintptr_t)write_size) & 0x3u) == 0u)
             {
                 const volatile uint32_t *src32 = (const volatile uint32_t *)dst8;
-                uint32_t *rb32 = (uint32_t *)rb;
+                uint32_t *rb32 = rb32_aligned;
                 uint32_t words = write_size >> 2;
                 for (uint32_t i = 0; i < words; i++)
                 {
@@ -594,11 +633,25 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
 
             if (ok)
             {
+                if (chunk_mismatched && (attempt != 0u) && !chunk_used_safe_fallback)
+                {
+                    verify_chunks_retry_ok++;
+                }
                 break;
             }
 
             verify_mismatch_chunks++;
+            if (!chunk_mismatched)
+            {
+                chunk_mismatched = true;
+                verify_chunks_mismatched++;
+            }
+
             wait_before_verify = true;
+#if HYPERRAM_WV_WAIT_MMAP_IDLE
+            /* Enable short wait window for subsequent chunks. */
+            verify_wait_budget = 32u;
+#endif
             if (attempt >= (uint32_t)HYPERRAM_WRITE_VERIFY_RETRIES)
             {
 #if HYPERRAM_UNSAFE_RW_CROSS_16B
@@ -606,6 +659,8 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
                  * Do not increase retry count further; instead, fall back to a
                  * safe 16-byte non-crossing rewrite+verify for this chunk.
                  */
+                chunk_used_safe_fallback = true;
+                verify_chunks_safe_fallback_used++;
                 if (hyperram_wv_safe_rewrite_verify(src, dst8, write_size))
                 {
                     ok = true;
@@ -650,6 +705,10 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
     g_hyperram_wv_mismatch_chunks += verify_mismatch_chunks;
     g_hyperram_wv_retries += verify_retries_used;
     g_hyperram_wv_failed_chunks += verify_failed_chunks;
+
+    g_hyperram_wv_chunks_mismatched += verify_chunks_mismatched;
+    g_hyperram_wv_chunks_retry_ok += verify_chunks_retry_ok;
+    g_hyperram_wv_chunks_safe_fallback_used += verify_chunks_safe_fallback_used;
 #endif
 
 #if HYPERRAM_WRITE_VERIFY && HYPERRAM_WRITE_VERIFY_LOG
@@ -678,6 +737,10 @@ void hyperram_write_verify_counters_reset(void)
     g_hyperram_wv_mismatch_chunks = 0;
     g_hyperram_wv_retries = 0;
     g_hyperram_wv_failed_chunks = 0;
+
+    g_hyperram_wv_chunks_mismatched = 0;
+    g_hyperram_wv_chunks_retry_ok = 0;
+    g_hyperram_wv_chunks_safe_fallback_used = 0;
 }
 
 void hyperram_write_verify_counters_get(uint32_t *p_mismatch_chunks,
@@ -796,4 +859,22 @@ void ospi_dmac_cb(transfer_callback_args_t *p_args)
     FSP_PARAMETER_NOT_USED(p_args);
     ospi_b_dma_sent = true;
     // xprintf("OSPI DMAC transfer done.\n");
+}
+
+void hyperram_write_verify_detail_get(uint32_t *p_chunks_mismatched,
+                                      uint32_t *p_retry_ok_chunks,
+                                      uint32_t *p_safe_fallback_used_chunks)
+{
+    if (p_chunks_mismatched)
+    {
+        *p_chunks_mismatched = g_hyperram_wv_chunks_mismatched;
+    }
+    if (p_retry_ok_chunks)
+    {
+        *p_retry_ok_chunks = g_hyperram_wv_chunks_retry_ok;
+    }
+    if (p_safe_fallback_used_chunks)
+    {
+        *p_safe_fallback_used_chunks = g_hyperram_wv_chunks_safe_fallback_used;
+    }
 }
