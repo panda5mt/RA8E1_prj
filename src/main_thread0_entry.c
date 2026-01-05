@@ -77,7 +77,7 @@ void main_thread0_entry(void *pvParameters)
     xdev_out(putchar_ra8usb);
     xprintf("START\n");
 
-#if APP_MODE_FFT_VERIFY
+#if APP_MODE_FFT_VERIFY && APP_MODE_FFT_VERIFY_DISABLE_CAMERA
     xprintf("[Thread0] APP_MODE_FFT_VERIFY=1: camera disabled\n");
     while (1)
     {

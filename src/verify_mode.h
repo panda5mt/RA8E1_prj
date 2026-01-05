@@ -4,14 +4,24 @@
  * Verification mode switch.
  *
  * Set APP_MODE_FFT_VERIFY to 1 to:
- * - Stop camera capture in thread0
- * - Stop UDP/LwIP in thread1
  * - Run FFT verification in thread3
  *
  * Default is 0 (normal camera + UDP operation).
  */
 #ifndef APP_MODE_FFT_VERIFY
-#define APP_MODE_FFT_VERIFY 1
+#define APP_MODE_FFT_VERIFY 0
+#endif
+
+/*
+ * Optional behavior while APP_MODE_FFT_VERIFY=1.
+ * Keep defaults conservative for dedicated benchmarking, but allow coexistence.
+ */
+#ifndef APP_MODE_FFT_VERIFY_DISABLE_CAMERA
+#define APP_MODE_FFT_VERIFY_DISABLE_CAMERA 1
+#endif
+
+#ifndef APP_MODE_FFT_VERIFY_DISABLE_UDP
+#define APP_MODE_FFT_VERIFY_DISABLE_UDP 1
 #endif
 
 /* When verification mode is enabled, run 128x128 FFT test in thread3. */

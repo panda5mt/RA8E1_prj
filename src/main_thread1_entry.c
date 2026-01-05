@@ -20,7 +20,7 @@
 
 #include "ra/fsp/src/bsp/mcu/all/bsp_io.h"
 
-#if APP_MODE_FFT_VERIFY
+#if APP_MODE_FFT_VERIFY && APP_MODE_FFT_VERIFY_DISABLE_UDP
 void main_thread1_entry(void *pvParameters)
 {
     FSP_PARAMETER_NOT_USED(pvParameters);
@@ -293,11 +293,20 @@ static void udp_send_timer_cb(void *arg)
             }
 
             uint32_t base = ctx->is_video_mode ? ctx->frame_base_offset : 0U;
-            fsp_err_t read_err = hyperram_b_read(yuv_buffer, (void *)(base + yuv_offset), yuv_read_size);
+            /*
+             * IMPORTANT:
+             * This callback runs on lwIP's tcpip_thread. Never block it for seconds.
+             * If HyperRAM is busy (e.g. camera frame write / WV retries), reschedule
+             * quickly and try again.
+             */
+            fsp_err_t read_err = hyperram_b_read_timed(yuv_buffer, (void *)(base + yuv_offset), yuv_read_size, 0);
             if (FSP_SUCCESS != read_err)
             {
-                xprintf("[UDP] HyperRAM read error: %d\n", read_err);
                 pbuf_free(p);
+                if (FSP_ERR_TIMEOUT != read_err)
+                {
+                    xprintf("[UDP] HyperRAM read error: %d\n", read_err);
+                }
                 sys_timeout((ctx->interval_ms > 0) ? ctx->interval_ms : 1, udp_send_timer_cb, ctx);
                 return;
             }

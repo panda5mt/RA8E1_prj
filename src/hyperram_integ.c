@@ -454,6 +454,12 @@ uint32_t hyperram_word_read(uint32_t addr)
 
 fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_length)
 {
+    /* Preserve legacy behavior: block up to 5 seconds. */
+    return hyperram_b_write_timed(p_src, p_dest, total_length, pdMS_TO_TICKS(5000));
+}
+
+fsp_err_t hyperram_b_write_timed(const void *p_src, void *p_dest, uint32_t total_length, TickType_t wait_ticks)
+{
     fsp_err_t err = FSP_SUCCESS;
 
     if (g_hyperram_mutex == NULL)
@@ -462,13 +468,9 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
         return FSP_ERR_NOT_INITIALIZED;
     }
 
-    // 大きい書き込み（1KB以上）のみログ出力
-    // bool verbose = (total_length >= 1024);
-
-    // ミューテックス取得（最大5秒待機 - カメラの大きな書き込みに対応）
-    if (xSemaphoreTake(g_hyperram_mutex, pdMS_TO_TICKS(5000)) != pdTRUE)
+    /* Mutex acquire: caller-controlled wait. */
+    if (xSemaphoreTake(g_hyperram_mutex, wait_ticks) != pdTRUE)
     {
-        // xprintf("[HyperRAM-W] Mutex timeout after 5s!\n");
         return FSP_ERR_TIMEOUT;
     }
 
@@ -773,6 +775,12 @@ uint32_t hyperram_write_verify_retries(void)
 
 fsp_err_t hyperram_b_read(void *p_dest, const void *p_src, uint32_t total_length)
 {
+    /* Preserve legacy behavior: block up to 5 seconds. */
+    return hyperram_b_read_timed(p_dest, p_src, total_length, pdMS_TO_TICKS(5000));
+}
+
+fsp_err_t hyperram_b_read_timed(void *p_dest, const void *p_src, uint32_t total_length, TickType_t wait_ticks)
+{
     fsp_err_t err = FSP_SUCCESS;
 
     if (g_hyperram_mutex == NULL)
@@ -781,10 +789,9 @@ fsp_err_t hyperram_b_read(void *p_dest, const void *p_src, uint32_t total_length
         return FSP_ERR_NOT_INITIALIZED;
     }
 
-    // ミューテックス取得（最大5秒待機）
-    if (xSemaphoreTake(g_hyperram_mutex, pdMS_TO_TICKS(5000)) != pdTRUE)
+    /* Mutex acquire: caller-controlled wait. */
+    if (xSemaphoreTake(g_hyperram_mutex, wait_ticks) != pdTRUE)
     {
-        xprintf("[HyperRAM-R] Mutex timeout after 5s!\n");
         return FSP_ERR_TIMEOUT;
     }
 

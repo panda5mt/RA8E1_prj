@@ -53,6 +53,14 @@ extern "C"
     fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_length);
     fsp_err_t hyperram_b_read(void *p_dest, const void *p_src, uint32_t total_length);
 
+    /*
+     * Timed variants:
+     * Allow callers (e.g. lwIP tcpip_thread) to avoid long blocking waits.
+     * wait_ticks == 0 returns immediately if the mutex is busy.
+     */
+    fsp_err_t hyperram_b_write_timed(const void *p_src, void *p_dest, uint32_t total_length, TickType_t wait_ticks);
+    fsp_err_t hyperram_b_read_timed(void *p_dest, const void *p_src, uint32_t total_length, TickType_t wait_ticks);
+
     /* Debug/diagnostics: HyperRAM write verify (read-back + retry) counters. */
     void hyperram_write_verify_counters_reset(void);
     void hyperram_write_verify_counters_get(uint32_t *p_mismatch_chunks,
