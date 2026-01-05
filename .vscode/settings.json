@@ -3,7 +3,14 @@
   "cmake.configureOnEdit": true,
   "cmake.options.statusBarVisibility": "visible",
   "cmake.sourceDirectory": "${workspaceFolder}",
-  "cmake.buildDirectory": "${workspaceFolder}/build/${buildType}",
+  "cmake.buildDirectory": "${workspaceFolder}/build/Release",
+  "cmake.buildType": "Release",
+  "cmake.buildTarget": "all",
+  "cmake.defaultBuildTarget": "all",
+  "cmake.configureArgs": [
+    "-DCMAKE_TOOLCHAIN_FILE=${workspaceFolder}/cmake/llvm.cmake",
+    "-DCMAKE_BUILD_TYPE=Release"
+  ],
   "cmake.preferredGenerators": [
     "Ninja",
     "MinGW Makefiles",

@@ -4,9 +4,13 @@ cmake_minimum_required(VERSION 3.16.4)
 
 set(CMAKE_SYSTEM_NAME Generic)
 
-set(CMAKE_CONFIGURATION_TYPES Debug Release RelWithDebInfo MinSizeRel)
-
-cmake_minimum_required(VERSION 3.16.4)
+# CMAKE_CONFIGURATION_TYPES is only meaningful for multi-config generators
+# (e.g. Ninja Multi-Config / Visual Studio). For single-config generators
+# like Ninja, the build type is controlled by CMAKE_BUILD_TYPE.
+get_property(_is_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+if(_is_multi_config)
+	set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo;MinSizeRel" CACHE STRING "Supported build types" FORCE)
+endif()
 
 # Project configuration
 project(RA8E1_prj
@@ -39,6 +43,14 @@ list(APPEND RASC_RELEASE_WITH_DEBUG_INFO "-O3")
 # If required user can amend RASC generated flags here, e.g. list(REMOVE_ITEM RASC_CMAKE_C_FLAGS "-Wall")
 
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/GeneratedSrc.cmake)
+
+# Optional: Release-only LTO for additional speed (can help inlining across translation units).
+# Keep this opt-in/disableable because some toolchains/linker setups may not support LTO.
+option(APP_ENABLE_LTO "Enable link-time optimization (Release only)" ON)
+if (APP_ENABLE_LTO)
+	target_compile_options(${PROJECT_NAME}.elf PRIVATE $<$<CONFIG:Release>:-flto>)
+	target_link_options(${PROJECT_NAME}.elf PRIVATE $<$<CONFIG:Release>:-flto>)
+endif()
 
 # CMSIS-DSP enables float16 kernels when __ARM_FP16_FORMAT_IEEE is defined.
 # Renesas LLVM clang does not accept -mfp16-format=ieee, so we define the macro directly.

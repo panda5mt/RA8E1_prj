@@ -217,8 +217,8 @@ static inline bool fft_1d_cmsis_cfft_f16(float *real, float *imag, int N, bool i
         float32x4_t im0 = vld1q_f32(&imag[i + 0]);
         float32x4_t im1 = vld1q_f32(&imag[i + 4]);
 
-        float16x8_t r16;
-        float16x8_t im16;
+        float16x8_t r16 = vdupq_n_f16((float16_t)0);
+        float16x8_t im16 = vdupq_n_f16((float16_t)0);
         r16 = vcvtbq_f16_f32(r16, r0);
         r16 = vcvttq_f16_f32(r16, r1);
         im16 = vcvtbq_f16_f32(im16, im0);
