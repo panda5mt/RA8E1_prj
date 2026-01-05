@@ -85,9 +85,12 @@ static void fft_spec_print_top_peaks_hyperram(uint32_t out_real_offset,
 {
     if (rows <= 0 || cols <= 0 || cols > 256)
     {
-        xprintf("[FFT-128][Spec] invalid dims rows=%d cols=%d\n", rows, cols);
+        xprintf("[FFT][Spec] invalid dims rows=%d cols=%d\n", rows, cols);
         return;
     }
+
+    const bool square = (rows == cols);
+    const int n = square ? rows : cols;
 
     fft_spec_peak_t peaks[8];
     if (topk > (int)(sizeof(peaks) / sizeof(peaks[0])))
@@ -106,13 +109,27 @@ static void fft_spec_print_top_peaks_hyperram(uint32_t out_real_offset,
         fsp_err_t rerr = hyperram_b_read(g_spec_row_real, (void *)(out_real_offset + row_off), (uint32_t)cols * sizeof(float));
         if (FSP_SUCCESS != rerr)
         {
-            xprintf("[FFT-128][Spec] ERROR: read real row %d (err=%d)\n", y, (int)rerr);
+            if (square)
+            {
+                xprintf("[FFT-%d][Spec] ERROR: read real row %d (err=%d)\n", n, y, (int)rerr);
+            }
+            else
+            {
+                xprintf("[FFT-%dx%d][Spec] ERROR: read real row %d (err=%d)\n", rows, cols, y, (int)rerr);
+            }
             return;
         }
         fsp_err_t ierr = hyperram_b_read(g_spec_row_imag, (void *)(out_imag_offset + row_off), (uint32_t)cols * sizeof(float));
         if (FSP_SUCCESS != ierr)
         {
-            xprintf("[FFT-128][Spec] ERROR: read imag row %d (err=%d)\n", y, (int)ierr);
+            if (square)
+            {
+                xprintf("[FFT-%d][Spec] ERROR: read imag row %d (err=%d)\n", n, y, (int)ierr);
+            }
+            else
+            {
+                xprintf("[FFT-%dx%d][Spec] ERROR: read imag row %d (err=%d)\n", rows, cols, y, (int)ierr);
+            }
             return;
         }
 
@@ -137,17 +154,43 @@ static void fft_spec_print_top_peaks_hyperram(uint32_t out_real_offset,
         }
     }
 
-    xprintf("[FFT-128][Spec] DC |X(0,0)|=%.3e skip_nf=%d\n",
-            dc_mag,
-            (unsigned long)skipped_nonfinite);
+    if (square)
+    {
+        xprintf("[FFT-%d][Spec] DC |X(0,0)|=%.3e skip_nf=%d\n",
+                n,
+                dc_mag,
+                (unsigned long)skipped_nonfinite);
+    }
+    else
+    {
+        xprintf("[FFT-%dx%d][Spec] DC |X(0,0)|=%.3e skip_nf=%d\n",
+                rows,
+                cols,
+                dc_mag,
+                (unsigned long)skipped_nonfinite);
+    }
 
     for (int i = 0; i < topk; i++)
     {
-        xprintf("[FFT-128][Spec] #%d (ky=%d kx=%d) |X|=%.3e\n",
-                i + 1,
-                (unsigned long)peaks[i].y,
-                (unsigned long)peaks[i].x,
-                peaks[i].mag);
+        if (square)
+        {
+            xprintf("[FFT-%d][Spec] #%d (ky=%d kx=%d) |X|=%.3e\n",
+                    n,
+                    i + 1,
+                    (unsigned long)peaks[i].y,
+                    (unsigned long)peaks[i].x,
+                    peaks[i].mag);
+        }
+        else
+        {
+            xprintf("[FFT-%dx%d][Spec] #%d (ky=%d kx=%d) |X|=%.3e\n",
+                    rows,
+                    cols,
+                    i + 1,
+                    (unsigned long)peaks[i].y,
+                    (unsigned long)peaks[i].x,
+                    peaks[i].mag);
+        }
     }
 }
 
@@ -253,6 +296,83 @@ static inline void fft_scan_f32_vec(const float *v, int n, fft_sanitize_stats_t 
             st->clipped++;
         }
     }
+}
+
+/* =========================
+ * Timing helpers (DWT cycle counter preferred)
+ * ========================= */
+
+typedef struct
+{
+    uint32_t row_fft_cycles;
+    uint32_t xpose1_cycles;
+    uint32_t col_fft_cycles;
+    uint32_t xpose2_cycles;
+} fft_full_phase_cycles_t;
+
+static volatile fft_full_phase_cycles_t g_fft_full_last_cycles;
+static bool g_fft_timing_inited = false;
+static bool g_fft_timing_use_dwt = false;
+
+static void fft_full_phase_cycles_clear(void)
+{
+    g_fft_full_last_cycles.row_fft_cycles = 0u;
+    g_fft_full_last_cycles.xpose1_cycles = 0u;
+    g_fft_full_last_cycles.col_fft_cycles = 0u;
+    g_fft_full_last_cycles.xpose2_cycles = 0u;
+}
+
+static void fft_timing_init_once(void)
+{
+    if (g_fft_timing_inited)
+    {
+        return;
+    }
+
+#if defined(DWT) && defined(CoreDebug) && defined(DWT_CTRL_CYCCNTENA_Msk) && defined(CoreDebug_DEMCR_TRCENA_Msk)
+    /* Enable trace subsystem and cycle counter. */
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    DWT->CYCCNT = 0u;
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+    g_fft_timing_use_dwt = ((DWT->CTRL & DWT_CTRL_CYCCNTENA_Msk) != 0u);
+#else
+    g_fft_timing_use_dwt = false;
+#endif
+
+    g_fft_timing_inited = true;
+}
+
+static inline uint32_t fft_cycles_now(void)
+{
+    if (g_fft_timing_use_dwt)
+    {
+#if defined(DWT)
+        return DWT->CYCCNT;
+#else
+        return 0u;
+#endif
+    }
+
+    /* Fallback: use RTOS ticks (coarse). */
+    return (uint32_t)xTaskGetTickCount();
+}
+
+static inline uint32_t fft_cycles_to_us(uint32_t cycles_or_ticks)
+{
+    if (g_fft_timing_use_dwt)
+    {
+        uint32_t hz = (uint32_t)SystemCoreClock;
+        uint32_t cycles_per_us = hz / 1000000u;
+        if (cycles_per_us == 0u)
+        {
+            return 0u;
+        }
+        return (uint32_t)(((uint64_t)cycles_or_ticks + ((uint64_t)cycles_per_us / 2u)) / (uint64_t)cycles_per_us);
+    }
+
+    /* ticks -> ms -> us (approx) */
+    uint32_t ms = cycles_or_ticks * (uint32_t)portTICK_PERIOD_MS;
+    return ms * 1000u;
 }
 
 /* 三角関数テーブルの初期化 */
@@ -805,7 +925,11 @@ void fft_2d_hyperram_full(
 
     xprintf("[FFT-Full] %s %dx%d\n", is_inverse ? "IFFT" : "FFT", rows, cols);
 
+    fft_timing_init_once();
+    fft_full_phase_cycles_clear();
+
     /* Phase 1: row FFTs (length=cols) -> output */
+    uint32_t t_phase = fft_cycles_now();
     for (int r = 0; r < rows; r++)
     {
         uint32_t in_row_real = hyperram_input_real_offset + (uint32_t)(r * cols) * sizeof(float);
@@ -823,8 +947,10 @@ void fft_2d_hyperram_full(
         hyperram_b_write(row_real, (void *)out_row_real, (uint32_t)cols * sizeof(float));
         hyperram_b_write(row_imag, (void *)out_row_imag, (uint32_t)cols * sizeof(float));
     }
+    g_fft_full_last_cycles.row_fft_cycles = (uint32_t)(fft_cycles_now() - t_phase);
 
     /* Phase 2: transpose output(rows x cols) -> tmp(cols x rows) */
+    t_phase = fft_cycles_now();
     hyperram_transpose_tiled(
         hyperram_output_real_offset,
         hyperram_output_imag_offset,
@@ -832,8 +958,10 @@ void fft_2d_hyperram_full(
         hyperram_tmp_imag_offset,
         rows,
         cols);
+    g_fft_full_last_cycles.xpose1_cycles = (uint32_t)(fft_cycles_now() - t_phase);
 
     /* Phase 3: row FFTs on tmp (length=rows) i.e., original column FFTs */
+    t_phase = fft_cycles_now();
     for (int r = 0; r < cols; r++)
     {
         uint32_t tmp_row_real = hyperram_tmp_real_offset + (uint32_t)(r * rows) * sizeof(float);
@@ -849,8 +977,10 @@ void fft_2d_hyperram_full(
         hyperram_b_write(row_real, (void *)tmp_row_real, (uint32_t)rows * sizeof(float));
         hyperram_b_write(row_imag, (void *)tmp_row_imag, (uint32_t)rows * sizeof(float));
     }
+    g_fft_full_last_cycles.col_fft_cycles = (uint32_t)(fft_cycles_now() - t_phase);
 
     /* Phase 4: transpose back tmp(cols x rows) -> output(rows x cols) */
+    t_phase = fft_cycles_now();
     hyperram_transpose_tiled(
         hyperram_tmp_real_offset,
         hyperram_tmp_imag_offset,
@@ -858,6 +988,7 @@ void fft_2d_hyperram_full(
         hyperram_output_imag_offset,
         cols,
         rows);
+    g_fft_full_last_cycles.xpose2_cycles = (uint32_t)(fft_cycles_now() - t_phase);
 
     if ((san.nonfinite != 0u) || (san.clipped != 0u))
     {
@@ -1555,7 +1686,8 @@ void fft_test_hyperram_128x128(void)
         xprintf("[FFT-128] Pattern ready, starting forward FFT...\n");
         vTaskDelay(pdMS_TO_TICKS(10));
 
-        uint32_t time_start = R_GPT0->GTCNT;
+        fft_timing_init_once();
+        uint32_t t0 = fft_cycles_now();
 
 #if defined(APP_MODE_FFT_VERIFY_USE_FFT128_FULL) && (APP_MODE_FFT_VERIFY_USE_FFT128_FULL != 0)
         // FULL版（真の128x128スペクトル）
@@ -1570,10 +1702,25 @@ void fft_test_hyperram_128x128(void)
                                 FFT_SIZE, FFT_SIZE, false);
 #endif
 
-        uint32_t time_forward = R_GPT0->GTCNT - time_start;
-        g_large_fft_forward_times[iter] = time_forward;
+        uint32_t tf_us = fft_cycles_to_us((uint32_t)(fft_cycles_now() - t0));
+        g_large_fft_forward_times[iter] = tf_us;
 
-        xprintf("[FFT-128] Forward FFT complete (%d us)\n", time_forward / 240);
+#if defined(APP_MODE_FFT_VERIFY_USE_FFT128_FULL) && (APP_MODE_FFT_VERIFY_USE_FFT128_FULL != 0)
+        {
+            uint32_t row_us = fft_cycles_to_us(g_fft_full_last_cycles.row_fft_cycles);
+            uint32_t x1_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose1_cycles);
+            uint32_t col_us = fft_cycles_to_us(g_fft_full_last_cycles.col_fft_cycles);
+            uint32_t x2_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose2_cycles);
+            xprintf("[FFT-128] Forward FFT complete (%u us) [row=%u x1=%u col=%u x2=%u]\n",
+                    (unsigned long)tf_us,
+                    (unsigned long)row_us,
+                    (unsigned long)x1_us,
+                    (unsigned long)col_us,
+                    (unsigned long)x2_us);
+        }
+#else
+        xprintf("[FFT-128] Forward FFT complete (%u us)\n", (unsigned long)tf_us);
+#endif
         vTaskDelay(pdMS_TO_TICKS(10));
 
 #if defined(APP_MODE_FFT_VERIFY_USE_FFT128_FULL) && (APP_MODE_FFT_VERIFY_USE_FFT128_FULL != 0)
@@ -1590,7 +1737,7 @@ void fft_test_hyperram_128x128(void)
 
         // 逆FFT
         xprintf("[FFT-128] Starting inverse FFT...\n");
-        time_start = R_GPT0->GTCNT;
+        t0 = fft_cycles_now();
 
 #if defined(APP_MODE_FFT_VERIFY_USE_FFT128_FULL) && (APP_MODE_FFT_VERIFY_USE_FFT128_FULL != 0)
         fft_2d_hyperram_full(OUTPUT_REAL_OFFSET, OUTPUT_IMAG_OFFSET,
@@ -1603,10 +1750,25 @@ void fft_test_hyperram_128x128(void)
                                 FFT_SIZE, FFT_SIZE, true);
 #endif
 
-        uint32_t time_inverse = R_GPT0->GTCNT - time_start;
-        g_large_fft_inverse_times[iter] = time_inverse;
+        uint32_t ti_us = fft_cycles_to_us((uint32_t)(fft_cycles_now() - t0));
+        g_large_fft_inverse_times[iter] = ti_us;
 
-        xprintf("[FFT-128] Inverse FFT complete (%d us)\n", time_inverse / 240);
+#if defined(APP_MODE_FFT_VERIFY_USE_FFT128_FULL) && (APP_MODE_FFT_VERIFY_USE_FFT128_FULL != 0)
+        {
+            uint32_t row_us = fft_cycles_to_us(g_fft_full_last_cycles.row_fft_cycles);
+            uint32_t x1_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose1_cycles);
+            uint32_t col_us = fft_cycles_to_us(g_fft_full_last_cycles.col_fft_cycles);
+            uint32_t x2_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose2_cycles);
+            xprintf("[FFT-128] Inverse FFT complete (%u us) [row=%u x1=%u col=%u x2=%u]\n",
+                    (unsigned long)ti_us,
+                    (unsigned long)row_us,
+                    (unsigned long)x1_us,
+                    (unsigned long)col_us,
+                    (unsigned long)x2_us);
+        }
+#else
+        xprintf("[FFT-128] Inverse FFT complete (%u us)\n", (unsigned long)ti_us);
+#endif
         vTaskDelay(pdMS_TO_TICKS(10));
 
         // RMSE計算
@@ -1675,8 +1837,8 @@ void fft_test_hyperram_128x128(void)
         xprintf("[FFT-128] %s: RMSE=%.9f,\n Forward=%d us, Inverse=%d us\n",
                 pattern_names[i],
                 g_large_fft_rmse_values[i],
-                g_large_fft_forward_times[i] / 240,
-                g_large_fft_inverse_times[i] / 240);
+                g_large_fft_forward_times[i],
+                g_large_fft_inverse_times[i]);
         vTaskDelay(pdMS_TO_TICKS(10));
     }
     xprintf("========== Test 5 Complete ==========\n");
@@ -1920,13 +2082,26 @@ void fft_test_hyperram_256x256(void)
         xprintf("[FFT-256] Starting forward FFT...\n");
         vTaskDelay(pdMS_TO_TICKS(10));
 
-        uint32_t t0 = R_GPT0->GTCNT;
+        fft_timing_init_once();
+        uint32_t t0 = fft_cycles_now();
         fft_2d_hyperram_full(INPUT_REAL_OFFSET, INPUT_IMAG_OFFSET,
                              OUTPUT_REAL_OFFSET, OUTPUT_IMAG_OFFSET,
                              TMP_REAL_OFFSET, TMP_IMAG_OFFSET,
                              FFT_SIZE, FFT_SIZE, false);
-        uint32_t tf = R_GPT0->GTCNT - t0;
-        xprintf("[FFT-256] Forward FFT complete (%d us)\n", tf / 240);
+        uint32_t tf_cycles = (uint32_t)(fft_cycles_now() - t0);
+        uint32_t tf_us = fft_cycles_to_us(tf_cycles);
+        {
+            uint32_t row_us = fft_cycles_to_us(g_fft_full_last_cycles.row_fft_cycles);
+            uint32_t x1_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose1_cycles);
+            uint32_t col_us = fft_cycles_to_us(g_fft_full_last_cycles.col_fft_cycles);
+            uint32_t x2_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose2_cycles);
+            xprintf("[FFT-256] Forward FFT complete (%u us) [row=%u x1=%u col=%u x2=%u]\n",
+                    (unsigned long)tf_us,
+                    (unsigned long)row_us,
+                    (unsigned long)x1_us,
+                    (unsigned long)col_us,
+                    (unsigned long)x2_us);
+        }
 
         if (iter == 2)
         {
@@ -1935,13 +2110,25 @@ void fft_test_hyperram_256x256(void)
         }
 
         xprintf("[FFT-256] Starting inverse FFT...\n");
-        t0 = R_GPT0->GTCNT;
+        t0 = fft_cycles_now();
         fft_2d_hyperram_full(OUTPUT_REAL_OFFSET, OUTPUT_IMAG_OFFSET,
                              WORK_REAL_OFFSET, WORK_IMAG_OFFSET,
                              TMP_REAL_OFFSET, TMP_IMAG_OFFSET,
                              FFT_SIZE, FFT_SIZE, true);
-        uint32_t ti = R_GPT0->GTCNT - t0;
-        xprintf("[FFT-256] Inverse FFT complete (%d us)\n", ti / 240);
+        uint32_t ti_cycles = (uint32_t)(fft_cycles_now() - t0);
+        uint32_t ti_us = fft_cycles_to_us(ti_cycles);
+        {
+            uint32_t row_us = fft_cycles_to_us(g_fft_full_last_cycles.row_fft_cycles);
+            uint32_t x1_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose1_cycles);
+            uint32_t col_us = fft_cycles_to_us(g_fft_full_last_cycles.col_fft_cycles);
+            uint32_t x2_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose2_cycles);
+            xprintf("[FFT-256] Inverse FFT complete (%u us) [row=%u x1=%u col=%u x2=%u]\n",
+                    (unsigned long)ti_us,
+                    (unsigned long)row_us,
+                    (unsigned long)x1_us,
+                    (unsigned long)col_us,
+                    (unsigned long)x2_us);
+        }
 
         /* RMSE */
         double sum_sq_error = 0.0;

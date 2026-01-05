@@ -30,5 +30,5 @@
  * - 1: FULL (true 128x128 spectrum via HyperRAM transpose)
  */
 #ifndef APP_MODE_FFT_VERIFY_USE_FFT128_FULL
-#define APP_MODE_FFT_VERIFY_USE_FFT128_FULL 1
+#define APP_MODE_FFT_VERIFY_USE_FFT128_FULL 0
 #endif
