@@ -68,6 +68,13 @@ static float twiddle_stage_imag[MAX_FFT_SIZE / 2];
 /* Interleaved complex scratch for CMSIS CFFT: [re0, im0, re1, im1, ...] */
 static FFT_ALIGN16 float g_cfft_io[2 * MAX_FFT_SIZE];
 
+/* Optional float16 CFFT scratch/instance (requires CMSIS float16 support). */
+#if defined(ARM_FLOAT16_SUPPORTED)
+static FFT_ALIGN16 float16_t g_cfft_io_f16[2 * MAX_FFT_SIZE];
+static arm_cfft_instance_f16 g_cfft_inst_f16;
+static int g_cfft_inst_f16_N = 0;
+#endif
+
 static arm_cfft_instance_f32 g_cfft_inst_f32;
 static int g_cfft_inst_N = 0;
 
@@ -92,6 +99,29 @@ static inline const arm_cfft_instance_f32 *fft_get_cfft_instance_f32(int N)
 
     return &g_cfft_inst_f32;
 }
+
+#if defined(ARM_FLOAT16_SUPPORTED)
+static inline const arm_cfft_instance_f16 *fft_get_cfft_instance_f16(int N)
+{
+    if (!(N == 256))
+    {
+        return NULL;
+    }
+
+    if (g_cfft_inst_f16_N != N)
+    {
+        arm_status st = arm_cfft_init_f16(&g_cfft_inst_f16, (uint16_t)N);
+        if (st != ARM_MATH_SUCCESS)
+        {
+            g_cfft_inst_f16_N = 0;
+            return NULL;
+        }
+        g_cfft_inst_f16_N = N;
+    }
+
+    return &g_cfft_inst_f16;
+}
+#endif
 
 static inline void fft_1d_cmsis_cfft_f32(float *real, float *imag, int N, bool is_inverse)
 {
@@ -148,6 +178,78 @@ static inline void fft_1d_cmsis_cfft_f32(float *real, float *imag, int N, bool i
     }
 #endif
 }
+
+#if defined(ARM_FLOAT16_SUPPORTED)
+/*
+ * Float16 trial path:
+ * - Pack split real/imag into interleaved f32 (existing optimized path)
+ * - Convert to interleaved f16, run CFFT f16
+ * - Convert back to f32 and unpack
+ *
+ * This keeps logic identical to f32 path (aside from quantization).
+ */
+static inline bool fft_1d_cmsis_cfft_f16(float *real, float *imag, int N, bool is_inverse)
+{
+    const arm_cfft_instance_f16 *S = fft_get_cfft_instance_f16(N);
+    if (!S)
+    {
+        return false;
+    }
+
+    /* Pack into interleaved f32 using existing code path. */
+#if USE_HELIUM_MVE
+    int i;
+    for (i = 0; i <= N - 4; i += 4)
+    {
+        float32x4x2_t tmp;
+        tmp.val[0] = vld1q_f32(&real[i]);
+        tmp.val[1] = vld1q_f32(&imag[i]);
+        vst2q_f32(&g_cfft_io[2 * i], tmp);
+    }
+    for (; i < N; i++)
+    {
+        g_cfft_io[2 * i + 0] = real[i];
+        g_cfft_io[2 * i + 1] = imag[i];
+    }
+#else
+    for (int i = 0; i < N; i++)
+    {
+        g_cfft_io[2 * i + 0] = real[i];
+        g_cfft_io[2 * i + 1] = imag[i];
+    }
+#endif
+
+    arm_float_to_f16((const float32_t *)g_cfft_io, g_cfft_io_f16, (uint32_t)(2 * N));
+
+    /* bitReverseFlag=1 => output in natural order. Inverse scaling is handled inside CMSIS. */
+    arm_cfft_f16(S, g_cfft_io_f16, is_inverse ? 1U : 0U, 1U);
+
+    arm_f16_to_float(g_cfft_io_f16, (float32_t *)g_cfft_io, (uint32_t)(2 * N));
+
+    /* Unpack back to split arrays. */
+#if USE_HELIUM_MVE
+    for (i = 0; i <= N - 4; i += 4)
+    {
+        float32x4x2_t tmp = vld2q_f32(&g_cfft_io[2 * i]);
+        vst1q_f32(&real[i], tmp.val[0]);
+        vst1q_f32(&imag[i], tmp.val[1]);
+    }
+    for (; i < N; i++)
+    {
+        real[i] = g_cfft_io[2 * i + 0];
+        imag[i] = g_cfft_io[2 * i + 1];
+    }
+#else
+    for (int i = 0; i < N; i++)
+    {
+        real[i] = g_cfft_io[2 * i + 0];
+        imag[i] = g_cfft_io[2 * i + 1];
+    }
+#endif
+
+    return true;
+}
+#endif
 
 /* スタティックバッファ（動的メモリ割り当て回避） */
 static float g_fft_buffer_real[FFT_TEST_POINTS];
@@ -673,6 +775,15 @@ void fft_1d_mve(float *real, float *imag, int N, bool is_inverse)
     /* Hot sizes: use CMSIS-DSP CFFT (math-correct + MVE-optimized). */
     if ((N == 128) || (N == 256))
     {
+#if defined(ARM_FLOAT16_SUPPORTED)
+        if (N == 256)
+        {
+            if (fft_1d_cmsis_cfft_f16(real, imag, N, is_inverse))
+            {
+                return;
+            }
+        }
+#endif
         fft_1d_cmsis_cfft_f32(real, imag, N, is_inverse);
         return;
     }
