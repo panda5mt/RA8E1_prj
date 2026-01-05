@@ -4,6 +4,24 @@
 #include <math.h>
 #include <string.h>
 
+#if defined(APP_MODE_FFT_VERIFY_VERBOSE) && (APP_MODE_FFT_VERIFY_VERBOSE == 0)
+#define FFT_LOG(...) ((void)0)
+#else
+#define FFT_LOG(...) xprintf(__VA_ARGS__)
+#endif
+
+static inline void fft_verify_delay_ms(uint32_t ms)
+{
+#if defined(APP_MODE_FFT_VERIFY_USE_DELAYS) && (APP_MODE_FFT_VERIFY_USE_DELAYS == 0)
+    (void)ms;
+#else
+    if (ms > 0u)
+    {
+        // vTaskdelay(pdMS_TO_TICKS(ms));
+    }
+#endif
+}
+
 // Helium MVE (ARM M-profile Vector Extension) support
 #if defined(__ARM_FEATURE_MVE) && (__ARM_FEATURE_MVE > 0)
 #include <arm_mve.h>
@@ -156,14 +174,14 @@ static void fft_spec_print_top_peaks_hyperram(uint32_t out_real_offset,
 
     if (square)
     {
-        xprintf("[FFT-%d][Spec] DC |X(0,0)|=%.3e skip_nf=%d\n",
+        xprintf("[FFT-%d][Spec] DC |X(0,0)|=%.3e skip_nf=%lu\n",
                 n,
                 dc_mag,
                 (unsigned long)skipped_nonfinite);
     }
     else
     {
-        xprintf("[FFT-%dx%d][Spec] DC |X(0,0)|=%.3e skip_nf=%d\n",
+        xprintf("[FFT-%dx%d][Spec] DC |X(0,0)|=%.3e skip_nf=%lu\n",
                 rows,
                 cols,
                 dc_mag,
@@ -923,7 +941,7 @@ void fft_2d_hyperram_full(
         return;
     }
 
-    xprintf("[FFT-Full] %s %dx%d\n", is_inverse ? "IFFT" : "FFT", rows, cols);
+    FFT_LOG("[FFT-Full] %s %dx%d\n", is_inverse ? "IFFT" : "FFT", rows, cols);
 
     fft_timing_init_once();
     fft_full_phase_cycles_clear();
@@ -1370,7 +1388,7 @@ void fft_test_hyperram_round_trip(void)
             // 32要素ごとにタスクスイッチを許可（ウォッチドッグ対策）
             if (i > 0 && (i % 32) == 0)
             {
-                vTaskDelay(pdMS_TO_TICKS(1));
+                // vTaskdelay(pdMS_TO_TICKS(1));
             }
         }
 
@@ -1482,14 +1500,14 @@ void fft_test_hyperram_128x128(void)
 
     /* Reset HyperRAM write-verify counters (B2 diagnostics) for this test run. */
     hyperram_write_verify_counters_reset();
-    xprintf("[WV] en=%d r=%d\n",
+    FFT_LOG("[WV] en=%lu r=%lu\n",
             (unsigned long)hyperram_write_verify_is_enabled(),
             (unsigned long)hyperram_write_verify_retries());
 
     for (int iter = 0; iter < 5; iter++)
     {
         xprintf("\n[FFT-128] Iteration %d:\n %s pattern\n", iter + 1, pattern_names[iter]);
-        vTaskDelay(pdMS_TO_TICKS(10));
+        // vTaskdelay(pdMS_TO_TICKS(10));
 
         xprintf("[FFT-128] Generating pattern...\n");
 
@@ -1632,29 +1650,35 @@ void fft_test_hyperram_128x128(void)
 
                 if (y == 0)
                 {
-                    xprintf("[FFT-128] Pattern: row 1/%d written\n", FFT_SIZE);
+                    if (APP_MODE_FFT_VERIFY_VERBOSE)
+                    {
+                        xprintf("[FFT-128] Pattern: row 1/%d written\n", FFT_SIZE);
+                    }
                 }
 
                 // 毎行書き込み後に遅延（HyperRAM競合回避）
-                vTaskDelay(pdMS_TO_TICKS(2));
+                fft_verify_delay_ms((uint32_t)APP_MODE_FFT_VERIFY_ROW_DELAY_MS);
 
                 // 進捗表示（16行ごと）
                 if ((y + 1) % 16 == 0)
                 {
-                    xprintf("[FFT-128] Pattern: row %d/%d\r", y + 1, FFT_SIZE);
+                    if (APP_MODE_FFT_VERIFY_VERBOSE)
+                    {
+                        xprintf("[FFT-128] Pattern: row %d/%d\r", y + 1, FFT_SIZE);
+                    }
                 }
             }
         }
-        xprintf("\n[FFT-128] Pattern generation complete\n");
+        FFT_LOG("\n[FFT-128] Pattern generation complete\n");
 
         if ((rb_mismatch_rows | rb_mismatch_words | rb_nonfinite | rb_clipped) != 0u)
         {
-            xprintf("[FFT-128] Input RB: rows=%d words=%d\n nf=%d clip=%d\n",
+            xprintf("[FFT-128] Input RB: rows=%lu words=%lu\n nf=%lu clip=%lu\n",
                     (unsigned long)rb_mismatch_rows,
                     (unsigned long)rb_mismatch_words,
                     (unsigned long)rb_nonfinite,
                     (unsigned long)rb_clipped);
-            xprintf("[FFT-128] Input RB classify: trans=%d\n pers=%d unstab=%d\n",
+            xprintf("[FFT-128] Input RB classify: trans=%lu\n pers=%lu unstab=%lu\n",
                     (unsigned long)rb_transient_rows,
                     (unsigned long)rb_persistent_rows,
                     (unsigned long)rb_unstable_rows);
@@ -1683,8 +1707,8 @@ void fft_test_hyperram_128x128(void)
                              FFT_SIZE * sizeof(float));
         }
 
-        xprintf("[FFT-128] Pattern ready, starting forward FFT...\n");
-        vTaskDelay(pdMS_TO_TICKS(10));
+        FFT_LOG("[FFT-128] Pattern ready, starting forward FFT...\n");
+        fft_verify_delay_ms((uint32_t)APP_MODE_FFT_VERIFY_PHASE_DELAY_MS);
 
         fft_timing_init_once();
         uint32_t t0 = fft_cycles_now();
@@ -1711,17 +1735,17 @@ void fft_test_hyperram_128x128(void)
             uint32_t x1_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose1_cycles);
             uint32_t col_us = fft_cycles_to_us(g_fft_full_last_cycles.col_fft_cycles);
             uint32_t x2_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose2_cycles);
-            xprintf("[FFT-128] Forward FFT complete (%u us) [row=%u x1=%u col=%u x2=%u]\n",
-                    (unsigned long)tf_us,
+            FFT_LOG("[FFT-128] Forward FFT complete (%lu us)\n", (unsigned long)tf_us);
+            FFT_LOG("[FFT-128] phases: row=%lu x1=%lu col=%lu x2=%lu\n",
                     (unsigned long)row_us,
                     (unsigned long)x1_us,
                     (unsigned long)col_us,
                     (unsigned long)x2_us);
         }
 #else
-        xprintf("[FFT-128] Forward FFT complete (%u us)\n", (unsigned long)tf_us);
+        FFT_LOG("[FFT-128] Forward FFT complete (%lu us)\n", (unsigned long)tf_us);
 #endif
-        vTaskDelay(pdMS_TO_TICKS(10));
+        fft_verify_delay_ms((uint32_t)APP_MODE_FFT_VERIFY_PHASE_DELAY_MS);
 
 #if defined(APP_MODE_FFT_VERIFY_USE_FFT128_FULL) && (APP_MODE_FFT_VERIFY_USE_FFT128_FULL != 0)
         /*
@@ -1730,13 +1754,16 @@ void fft_test_hyperram_128x128(void)
          */
         if (iter == 2)
         {
-            xprintf("[FFT-128][Spec] Top peaks (after forward FFT)\n");
-            fft_spec_print_top_peaks_hyperram(OUTPUT_REAL_OFFSET, OUTPUT_IMAG_OFFSET, FFT_SIZE, FFT_SIZE, 4);
+            if (APP_MODE_FFT_VERIFY_VERBOSE)
+            {
+                xprintf("[FFT-128][Spec] Top peaks (after forward FFT)\n");
+                fft_spec_print_top_peaks_hyperram(OUTPUT_REAL_OFFSET, OUTPUT_IMAG_OFFSET, FFT_SIZE, FFT_SIZE, 4);
+            }
         }
 #endif
 
         // 逆FFT
-        xprintf("[FFT-128] Starting inverse FFT...\n");
+        FFT_LOG("[FFT-128] Starting inverse FFT...\n");
         t0 = fft_cycles_now();
 
 #if defined(APP_MODE_FFT_VERIFY_USE_FFT128_FULL) && (APP_MODE_FFT_VERIFY_USE_FFT128_FULL != 0)
@@ -1759,17 +1786,17 @@ void fft_test_hyperram_128x128(void)
             uint32_t x1_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose1_cycles);
             uint32_t col_us = fft_cycles_to_us(g_fft_full_last_cycles.col_fft_cycles);
             uint32_t x2_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose2_cycles);
-            xprintf("[FFT-128] Inverse FFT complete (%u us) [row=%u x1=%u col=%u x2=%u]\n",
-                    (unsigned long)ti_us,
+            FFT_LOG("[FFT-128] Inverse FFT complete (%lu us)\n", (unsigned long)ti_us);
+            FFT_LOG("[FFT-128] phases: row=%lu x1=%lu col=%lu x2=%lu\n",
                     (unsigned long)row_us,
                     (unsigned long)x1_us,
                     (unsigned long)col_us,
                     (unsigned long)x2_us);
         }
 #else
-        xprintf("[FFT-128] Inverse FFT complete (%u us)\n", (unsigned long)ti_us);
+        FFT_LOG("[FFT-128] Inverse FFT complete (%lu us)\n", (unsigned long)ti_us);
 #endif
-        vTaskDelay(pdMS_TO_TICKS(10));
+        fft_verify_delay_ms((uint32_t)APP_MODE_FFT_VERIFY_PHASE_DELAY_MS);
 
         // RMSE計算
         double sum_sq_error = 0.0;
@@ -1827,7 +1854,7 @@ void fft_test_hyperram_128x128(void)
         {
             xprintf("[FFT-128] Iteration %d: RMSE = %.9f\n", iter + 1, rmse);
         }
-        vTaskDelay(pdMS_TO_TICKS(50));
+        fft_verify_delay_ms((uint32_t)APP_MODE_FFT_VERIFY_ITER_DELAY_MS);
     }
 
     // サマリー
@@ -1839,7 +1866,7 @@ void fft_test_hyperram_128x128(void)
                 g_large_fft_rmse_values[i],
                 g_large_fft_forward_times[i],
                 g_large_fft_inverse_times[i]);
-        vTaskDelay(pdMS_TO_TICKS(10));
+        fft_verify_delay_ms((uint32_t)APP_MODE_FFT_VERIFY_PHASE_DELAY_MS);
     }
     xprintf("========== Test 5 Complete ==========\n");
 
@@ -1887,7 +1914,7 @@ void fft_test_hyperram_256x256(void)
         "Linear", "Quadratic", "2D Sine", "Pseudo-random", "Step"};
 
     hyperram_write_verify_counters_reset();
-    xprintf("[WV] en=%d r=%d\n",
+    FFT_LOG("[WV] en=%lu r=%lu\n",
             (unsigned long)hyperram_write_verify_is_enabled(),
             (unsigned long)hyperram_write_verify_retries());
 
@@ -1903,8 +1930,8 @@ void fft_test_hyperram_256x256(void)
 
     for (int iter = 0; iter < 5; iter++)
     {
-        xprintf("\n[FFT-256] Iteration %d:\n %s pattern\n", iter + 1, pattern_names[iter]);
-        vTaskDelay(pdMS_TO_TICKS(10));
+        FFT_LOG("\n[FFT-256] Iteration %d:\n %s pattern\n", iter + 1, pattern_names[iter]);
+        fft_verify_delay_ms((uint32_t)APP_MODE_FFT_VERIFY_PHASE_DELAY_MS);
 
         /* Input write + read-back verify summary */
         uint32_t rb_mismatch_rows = 0;
@@ -1919,7 +1946,7 @@ void fft_test_hyperram_256x256(void)
         uint32_t rb_first_exp_u = 0;
         uint32_t rb_first_got_u = 0;
 
-        xprintf("[FFT-256] Generating pattern...\n");
+        FFT_LOG("[FFT-256] Generating pattern...\n");
 
         for (int y = 0; y < FFT_SIZE; y++)
         {
@@ -2046,24 +2073,30 @@ void fft_test_hyperram_256x256(void)
 
             if (y == 0)
             {
-                xprintf("[FFT-256] Pattern: row 1/%d written\n", FFT_SIZE);
+                if (APP_MODE_FFT_VERIFY_VERBOSE)
+                {
+                    xprintf("[FFT-256] Pattern: row 1/%d written\n", FFT_SIZE);
+                }
             }
             if ((y + 1) % 32 == 0)
             {
-                xprintf("[FFT-256] Pattern: row %d/%d\r", y + 1, FFT_SIZE);
+                if (APP_MODE_FFT_VERIFY_VERBOSE)
+                {
+                    xprintf("[FFT-256] Pattern: row %d/%d\r", y + 1, FFT_SIZE);
+                }
             }
-            vTaskDelay(pdMS_TO_TICKS(2));
+            fft_verify_delay_ms((uint32_t)APP_MODE_FFT_VERIFY_ROW_DELAY_MS);
         }
 
-        xprintf("\n[FFT-256] Pattern generation complete\n");
+        FFT_LOG("\n[FFT-256] Pattern generation complete\n");
         if ((rb_mismatch_rows | rb_mismatch_words | rb_nonfinite | rb_clipped) != 0u)
         {
-            xprintf("[FFT-256] Input RB: rows=%d words=%d\n nf=%d clip=%d\n",
+            xprintf("[FFT-256] Input RB: rows=%lu words=%lu\n nf=%lu clip=%lu\n",
                     (unsigned long)rb_mismatch_rows,
                     (unsigned long)rb_mismatch_words,
                     (unsigned long)rb_nonfinite,
                     (unsigned long)rb_clipped);
-            xprintf("[FFT-256] Input RB classify: trans=%d\n pers=%d unstab=%d\n",
+            xprintf("[FFT-256] Input RB classify: trans=%lu\n pers=%lu unstab=%lu\n",
                     (unsigned long)rb_transient_rows,
                     (unsigned long)rb_persistent_rows,
                     (unsigned long)rb_unstable_rows);
@@ -2079,8 +2112,8 @@ void fft_test_hyperram_256x256(void)
             }
         }
 
-        xprintf("[FFT-256] Starting forward FFT...\n");
-        vTaskDelay(pdMS_TO_TICKS(10));
+        FFT_LOG("[FFT-256] Starting forward FFT...\n");
+        fft_verify_delay_ms((uint32_t)APP_MODE_FFT_VERIFY_PHASE_DELAY_MS);
 
         fft_timing_init_once();
         uint32_t t0 = fft_cycles_now();
@@ -2095,21 +2128,21 @@ void fft_test_hyperram_256x256(void)
             uint32_t x1_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose1_cycles);
             uint32_t col_us = fft_cycles_to_us(g_fft_full_last_cycles.col_fft_cycles);
             uint32_t x2_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose2_cycles);
-            xprintf("[FFT-256] Forward FFT complete (%u us) [row=%u x1=%u col=%u x2=%u]\n",
-                    (unsigned long)tf_us,
+            FFT_LOG("[FFT-256] Forward FFT complete (%lu us)\n", (unsigned long)tf_us);
+            FFT_LOG("[FFT-256] phases: row=%lu x1=%lu col=%lu x2=%lu\n",
                     (unsigned long)row_us,
                     (unsigned long)x1_us,
                     (unsigned long)col_us,
                     (unsigned long)x2_us);
         }
 
-        if (iter == 2)
+        if ((iter == 2) && APP_MODE_FFT_VERIFY_VERBOSE)
         {
             xprintf("[FFT-256][Spec] Top peaks (after forward FFT)\n");
             fft_spec_print_top_peaks_hyperram(OUTPUT_REAL_OFFSET, OUTPUT_IMAG_OFFSET, FFT_SIZE, FFT_SIZE, 4);
         }
 
-        xprintf("[FFT-256] Starting inverse FFT...\n");
+        FFT_LOG("[FFT-256] Starting inverse FFT...\n");
         t0 = fft_cycles_now();
         fft_2d_hyperram_full(OUTPUT_REAL_OFFSET, OUTPUT_IMAG_OFFSET,
                              WORK_REAL_OFFSET, WORK_IMAG_OFFSET,
@@ -2122,8 +2155,8 @@ void fft_test_hyperram_256x256(void)
             uint32_t x1_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose1_cycles);
             uint32_t col_us = fft_cycles_to_us(g_fft_full_last_cycles.col_fft_cycles);
             uint32_t x2_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose2_cycles);
-            xprintf("[FFT-256] Inverse FFT complete (%u us) [row=%u x1=%u col=%u x2=%u]\n",
-                    (unsigned long)ti_us,
+            FFT_LOG("[FFT-256] Inverse FFT complete (%lu us)\n", (unsigned long)ti_us);
+            FFT_LOG("[FFT-256] phases: row=%lu x1=%lu col=%lu x2=%lu\n",
                     (unsigned long)row_us,
                     (unsigned long)x1_us,
                     (unsigned long)col_us,
@@ -2175,7 +2208,7 @@ void fft_test_hyperram_256x256(void)
             xprintf("[FFT-256] Iteration %d: RMSE = %.9f\n", iter + 1, rmse);
         }
 
-        vTaskDelay(pdMS_TO_TICKS(50));
+        // vTaskdelay(pdMS_TO_TICKS(50));
     }
 
     xprintf("========== Test 6 Complete ==========\n");
@@ -2204,19 +2237,19 @@ void fft_depth_test_all(void)
 #endif
     xprintf("========================================\n");
     xprintf("[FFT] Waiting for HyperRAM access...\n");
-    vTaskDelay(pdMS_TO_TICKS(200)); // Camera Captureの書き込みサイクル待ち
+    // vTaskdelay(pdMS_TO_TICKS(200)); // Camera Captureの書き込みサイクル待ち
 
     fft_test_impulse();
-    vTaskDelay(pdMS_TO_TICKS(500));
+    // vTaskdelay(pdMS_TO_TICKS(500));
 
     fft_test_sine_wave();
-    vTaskDelay(pdMS_TO_TICKS(500));
+    // vTaskdelay(pdMS_TO_TICKS(500));
 
     fft_test_round_trip();
-    vTaskDelay(pdMS_TO_TICKS(500));
+    // vTaskdelay(pdMS_TO_TICKS(500));
 
     // fft_test_hyperram_round_trip();  // Test 4: 16×16はメモリ圧迫のため無効化
-    // vTaskDelay(pdMS_TO_TICKS(500));
+    // // vTaskdelay(pdMS_TO_TICKS(500));
 
     fft_test_hyperram_128x128(); // Test 5: 128×128ブロック処理版
 

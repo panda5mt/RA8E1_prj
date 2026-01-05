@@ -32,3 +32,31 @@
 #ifndef APP_MODE_FFT_VERIFY_USE_FFT128_FULL
 #define APP_MODE_FFT_VERIFY_USE_FFT128_FULL 0
 #endif
+
+/*
+ * Verification-mode logging/pace controls.
+ * - Set VERBOSE=0 to reduce UART/USB CDC log traffic.
+ * - Set USE_DELAYS=0 to remove vTaskDelay() pacing in test loops.
+ *   (Useful for performance measurement. If HyperRAM becomes unstable,
+ *    restore delays or reduce bus contention.)
+ */
+#ifndef APP_MODE_FFT_VERIFY_VERBOSE
+#define APP_MODE_FFT_VERIFY_VERBOSE 1
+#endif
+
+#ifndef APP_MODE_FFT_VERIFY_USE_DELAYS
+#define APP_MODE_FFT_VERIFY_USE_DELAYS 1
+#endif
+
+/* Delay values (ms) used when APP_MODE_FFT_VERIFY_USE_DELAYS=1 */
+#ifndef APP_MODE_FFT_VERIFY_ROW_DELAY_MS
+#define APP_MODE_FFT_VERIFY_ROW_DELAY_MS 2
+#endif
+
+#ifndef APP_MODE_FFT_VERIFY_PHASE_DELAY_MS
+#define APP_MODE_FFT_VERIFY_PHASE_DELAY_MS 10
+#endif
+
+#ifndef APP_MODE_FFT_VERIFY_ITER_DELAY_MS
+#define APP_MODE_FFT_VERIFY_ITER_DELAY_MS 50
+#endif
