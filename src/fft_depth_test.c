@@ -871,13 +871,13 @@ static void hyperram_transpose_tiled(
 {
     enum
     {
-        TILE = 32
+        TILE = APP_MODE_FFT_TRANSPOSE_TILE
     };
 
-    static float tile_real[32 * 32];
-    static float tile_imag[32 * 32];
-    static float col_real[32];
-    static float col_imag[32];
+    static float tile_real[TILE * TILE];
+    static float tile_imag[TILE * TILE];
+    static float col_real[TILE];
+    static float col_imag[TILE];
 
     for (int tr = 0; tr < in_rows; tr += TILE)
     {

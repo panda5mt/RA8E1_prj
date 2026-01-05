@@ -60,3 +60,13 @@
 #ifndef APP_MODE_FFT_VERIFY_ITER_DELAY_MS
 #define APP_MODE_FFT_VERIFY_ITER_DELAY_MS 50
 #endif
+
+/*
+ * Tile size used by hyperram_transpose_tiled() in the FULL 2D FFT.
+ * Typical options: 32 or 64.
+ * - Larger tiles reduce transaction overhead (often faster)
+ * - Larger tiles use more SRAM for the tile buffers
+ */
+#ifndef APP_MODE_FFT_TRANSPOSE_TILE
+#define APP_MODE_FFT_TRANSPOSE_TILE 64
+#endif
