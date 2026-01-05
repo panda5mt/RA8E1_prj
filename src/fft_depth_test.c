@@ -365,6 +365,85 @@ static inline float fft_u32_to_f32(uint32_t x)
 
 static inline void fft_sanitize_complex_vec(float *real, float *imag, int n, fft_sanitize_stats_t *st)
 {
+#if USE_HELIUM_MVE
+    int i = 0;
+    const uint32x4_t exp_mask = vdupq_n_u32(0xFFu);
+    const float32x4_t zf = vdupq_n_f32(0.0f);
+    const int32x4_t exp_clip_thr = vdupq_n_s32((int32_t)(FFT_SANITIZE_MAX_EXP + 1u));
+    const uint32x4_t v_ones = vdupq_n_u32(1u);
+    const uint32x4_t v_zeros = vdupq_n_u32(0u);
+
+    for (; i <= n - 4; i += 4)
+    {
+        float32x4_t r = vld1q_f32(&real[i]);
+        float32x4_t im = vld1q_f32(&imag[i]);
+
+        uint32x4_t ur = vreinterpretq_u32_f32(r);
+        uint32x4_t ui = vreinterpretq_u32_f32(im);
+
+        uint32x4_t er = vandq_u32(vshrq_n_u32(ur, 23), exp_mask);
+        uint32x4_t ei = vandq_u32(vshrq_n_u32(ui, 23), exp_mask);
+
+        mve_pred16_t p_nf_r = vcmpeqq_n_u32(er, 0xFFu);
+        mve_pred16_t p_nf_i = vcmpeqq_n_u32(ei, 0xFFu);
+        /* MVE headers/toolchain may not provide unsigned-32 gt compares; exponent is 0..255, so signed compare is safe. */
+        mve_pred16_t p_clip_r = vcmpgeq(vreinterpretq_s32_u32(er), exp_clip_thr);
+        mve_pred16_t p_clip_i = vcmpgeq(vreinterpretq_s32_u32(ei), exp_clip_thr);
+
+        mve_pred16_t p_bad_r = (mve_pred16_t)(p_nf_r | p_clip_r);
+        mve_pred16_t p_bad_i = (mve_pred16_t)(p_nf_i | p_clip_i);
+
+        /* Zero only bad lanes (leave others unchanged). */
+        vstrwq_p_f32(&real[i], zf, p_bad_r);
+        vstrwq_p_f32(&imag[i], zf, p_bad_i);
+
+        if (st)
+        {
+            st->nonfinite += (uint32_t)vaddvq(vpselq(v_ones, v_zeros, p_nf_r));
+            st->nonfinite += (uint32_t)vaddvq(vpselq(v_ones, v_zeros, p_nf_i));
+            st->clipped += (uint32_t)vaddvq(vpselq(v_ones, v_zeros, p_clip_r));
+            st->clipped += (uint32_t)vaddvq(vpselq(v_ones, v_zeros, p_clip_i));
+        }
+    }
+
+    for (; i < n; i++)
+    {
+        uint32_t ur = fft_f32_to_u32(real[i]);
+        uint32_t ui = fft_f32_to_u32(imag[i]);
+
+        uint32_t er = (ur >> 23) & 0xFFu;
+        uint32_t ei = (ui >> 23) & 0xFFu;
+
+        if (er == 0xFFu)
+        {
+            ur = 0u;
+            if (st)
+                st->nonfinite++;
+        }
+        else if (er > FFT_SANITIZE_MAX_EXP)
+        {
+            ur = 0u;
+            if (st)
+                st->clipped++;
+        }
+
+        if (ei == 0xFFu)
+        {
+            ui = 0u;
+            if (st)
+                st->nonfinite++;
+        }
+        else if (ei > FFT_SANITIZE_MAX_EXP)
+        {
+            ui = 0u;
+            if (st)
+                st->clipped++;
+        }
+
+        real[i] = fft_u32_to_f32(ur);
+        imag[i] = fft_u32_to_f32(ui);
+    }
+#else
     for (int i = 0; i < n; i++)
     {
         uint32_t ur = fft_f32_to_u32(real[i]);
@@ -403,6 +482,7 @@ static inline void fft_sanitize_complex_vec(float *real, float *imag, int n, fft
         real[i] = fft_u32_to_f32(ur);
         imag[i] = fft_u32_to_f32(ui);
     }
+#endif
 }
 
 /* Non-mutating scan for non-finite/outlier floats (for diagnostics).
