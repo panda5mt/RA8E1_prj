@@ -2210,7 +2210,7 @@ void fft_test_hyperram_256x256(void)
         float rmse = sqrtf((float)(sum_sq_error / (double)FFT_ELEMENTS));
         if ((rmse_nonfinite | rmse_clipped) != 0u)
         {
-            xprintf("[FFT-256] Iteration %d: RMSE = %.9f (rmse_san nf=%d clip=%d)\n",
+            xprintf("[FFT-256] Iteration %d: RMSE = %.9f (rmse_san nf=%lu clip=%lu)\n",
                     iter + 1,
                     rmse,
                     (unsigned long)rmse_nonfinite,
@@ -2230,7 +2230,7 @@ void fft_test_hyperram_256x256(void)
         uint32_t retries = 0;
         uint32_t failed_chunks = 0;
         hyperram_write_verify_counters_get(&mismatch_chunks, &retries, &failed_chunks);
-        xprintf("[WV] mism=%d retry=%d fail=%d\n",
+        xprintf("[WV] mism=%lu retry=%lu fail=%lu\n",
                 (unsigned long)mismatch_chunks,
                 (unsigned long)retries,
                 (unsigned long)failed_chunks);

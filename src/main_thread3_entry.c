@@ -780,7 +780,7 @@ static void reconstruct_depth_simple_direct(uint32_t gradient_line_offset, uint8
         fsp_err_t err = hyperram_b_read(chunk, (void *)(gradient_line_offset + offset), chunk_size);
         if (FSP_SUCCESS != err)
         {
-            xprintf("[Thread3] Direct depth read failed at offset=%lu err=%d\n",
+            xprintf("[Thread3] Direct depth read failed at offset=%d err=%d\n",
                     (unsigned long)(gradient_line_offset + offset), err);
             memset(depth_line + pixel, 0, FRAME_WIDTH - pixel);
             return;
@@ -1856,7 +1856,19 @@ void main_thread3_entry(void *pvParameters)
     }
 
 #if APP_MODE_FFT_VERIFY_RUN_FFT256
-    fft_test_hyperram_256x256();
+    {
+        int runs = (int)APP_MODE_FFT_VERIFY_FFT256_RUNS;
+        if (runs <= 0)
+        {
+            runs = 1;
+        }
+
+        for (int run = 1; run <= runs; run++)
+        {
+            xprintf("\n[Thread3] Test 6 repeat %d/%d\n", run, runs);
+            fft_test_hyperram_256x256();
+        }
+    }
 #elif APP_MODE_FFT_VERIFY_RUN_FFT128
     fft_test_hyperram_128x128();
 #else

@@ -24,6 +24,11 @@
 #define APP_MODE_FFT_VERIFY_RUN_FFT256 1
 #endif
 
+/* When running the 256x256 FFT test (Test 6), repeat it this many times. */
+#ifndef APP_MODE_FFT_VERIFY_FFT256_RUNS
+#define APP_MODE_FFT_VERIFY_FFT256_RUNS 10
+#endif
+
 /*
  * When verification mode is enabled, select the 128x128 2D FFT implementation:
  * - 0: BLOCKED (32x32 blocks; good for round-trip sanity)
