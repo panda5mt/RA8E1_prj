@@ -4,10 +4,17 @@
 #include <math.h>
 #include <string.h>
 
-#if defined(APP_MODE_FFT_VERIFY_VERBOSE) && (APP_MODE_FFT_VERIFY_VERBOSE == 0)
-#define FFT_LOG(...) ((void)0)
-#else
+/*
+ * Logging helpers:
+ * - FFT_LOG: always-on (keep minimal progress/timing visible)
+ * - FFT_VLOG: verbose-only (suppress when APP_MODE_FFT_VERIFY_VERBOSE=0)
+ */
 #define FFT_LOG(...) xprintf(__VA_ARGS__)
+
+#if defined(APP_MODE_FFT_VERIFY_VERBOSE) && (APP_MODE_FFT_VERIFY_VERBOSE == 0)
+#define FFT_VLOG(...) ((void)0)
+#else
+#define FFT_VLOG(...) xprintf(__VA_ARGS__)
 #endif
 
 static inline void fft_verify_delay_ms(uint32_t ms)
@@ -941,7 +948,7 @@ void fft_2d_hyperram_full(
         return;
     }
 
-    FFT_LOG("[FFT-Full] %s %dx%d\n", is_inverse ? "IFFT" : "FFT", rows, cols);
+    FFT_VLOG("[FFT-Full] %s %dx%d\n", is_inverse ? "IFFT" : "FFT", rows, cols);
 
     fft_timing_init_once();
     fft_full_phase_cycles_clear();
@@ -1669,7 +1676,7 @@ void fft_test_hyperram_128x128(void)
                 }
             }
         }
-        FFT_LOG("\n[FFT-128] Pattern generation complete\n");
+        FFT_VLOG("\n[FFT-128] Pattern generation complete\n");
 
         if ((rb_mismatch_rows | rb_mismatch_words | rb_nonfinite | rb_clipped) != 0u)
         {
@@ -1707,7 +1714,7 @@ void fft_test_hyperram_128x128(void)
                              FFT_SIZE * sizeof(float));
         }
 
-        FFT_LOG("[FFT-128] Pattern ready, starting forward FFT...\n");
+        FFT_VLOG("[FFT-128] Pattern ready, starting forward FFT...\n");
         fft_verify_delay_ms((uint32_t)APP_MODE_FFT_VERIFY_PHASE_DELAY_MS);
 
         fft_timing_init_once();
@@ -1736,11 +1743,11 @@ void fft_test_hyperram_128x128(void)
             uint32_t col_us = fft_cycles_to_us(g_fft_full_last_cycles.col_fft_cycles);
             uint32_t x2_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose2_cycles);
             FFT_LOG("[FFT-128] Forward FFT complete (%lu us)\n", (unsigned long)tf_us);
-            FFT_LOG("[FFT-128] phases: row=%lu x1=%lu col=%lu x2=%lu\n",
-                    (unsigned long)row_us,
-                    (unsigned long)x1_us,
-                    (unsigned long)col_us,
-                    (unsigned long)x2_us);
+            FFT_VLOG("[FFT-128] phases: row=%lu x1=%lu col=%lu x2=%lu\n",
+                     (unsigned long)row_us,
+                     (unsigned long)x1_us,
+                     (unsigned long)col_us,
+                     (unsigned long)x2_us);
         }
 #else
         FFT_LOG("[FFT-128] Forward FFT complete (%lu us)\n", (unsigned long)tf_us);
@@ -1763,7 +1770,7 @@ void fft_test_hyperram_128x128(void)
 #endif
 
         // 逆FFT
-        FFT_LOG("[FFT-128] Starting inverse FFT...\n");
+        FFT_VLOG("[FFT-128] Starting inverse FFT...\n");
         t0 = fft_cycles_now();
 
 #if defined(APP_MODE_FFT_VERIFY_USE_FFT128_FULL) && (APP_MODE_FFT_VERIFY_USE_FFT128_FULL != 0)
@@ -1787,11 +1794,11 @@ void fft_test_hyperram_128x128(void)
             uint32_t col_us = fft_cycles_to_us(g_fft_full_last_cycles.col_fft_cycles);
             uint32_t x2_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose2_cycles);
             FFT_LOG("[FFT-128] Inverse FFT complete (%lu us)\n", (unsigned long)ti_us);
-            FFT_LOG("[FFT-128] phases: row=%lu x1=%lu col=%lu x2=%lu\n",
-                    (unsigned long)row_us,
-                    (unsigned long)x1_us,
-                    (unsigned long)col_us,
-                    (unsigned long)x2_us);
+            FFT_VLOG("[FFT-128] phases: row=%lu x1=%lu col=%lu x2=%lu\n",
+                     (unsigned long)row_us,
+                     (unsigned long)x1_us,
+                     (unsigned long)col_us,
+                     (unsigned long)x2_us);
         }
 #else
         FFT_LOG("[FFT-128] Inverse FFT complete (%lu us)\n", (unsigned long)ti_us);
@@ -1946,7 +1953,7 @@ void fft_test_hyperram_256x256(void)
         uint32_t rb_first_exp_u = 0;
         uint32_t rb_first_got_u = 0;
 
-        FFT_LOG("[FFT-256] Generating pattern...\n");
+        FFT_VLOG("[FFT-256] Generating pattern...\n");
 
         for (int y = 0; y < FFT_SIZE; y++)
         {
@@ -2088,7 +2095,7 @@ void fft_test_hyperram_256x256(void)
             fft_verify_delay_ms((uint32_t)APP_MODE_FFT_VERIFY_ROW_DELAY_MS);
         }
 
-        FFT_LOG("\n[FFT-256] Pattern generation complete\n");
+        FFT_VLOG("\n[FFT-256] Pattern generation complete\n");
         if ((rb_mismatch_rows | rb_mismatch_words | rb_nonfinite | rb_clipped) != 0u)
         {
             xprintf("[FFT-256] Input RB: rows=%lu words=%lu\n nf=%lu clip=%lu\n",
@@ -2112,7 +2119,7 @@ void fft_test_hyperram_256x256(void)
             }
         }
 
-        FFT_LOG("[FFT-256] Starting forward FFT...\n");
+        FFT_VLOG("[FFT-256] Starting forward FFT...\n");
         fft_verify_delay_ms((uint32_t)APP_MODE_FFT_VERIFY_PHASE_DELAY_MS);
 
         fft_timing_init_once();
@@ -2123,18 +2130,21 @@ void fft_test_hyperram_256x256(void)
                              FFT_SIZE, FFT_SIZE, false);
         uint32_t tf_cycles = (uint32_t)(fft_cycles_now() - t0);
         uint32_t tf_us = fft_cycles_to_us(tf_cycles);
+        FFT_LOG("[FFT-256] Forward FFT complete (%lu us)\n", (unsigned long)tf_us);
+
+#if !defined(APP_MODE_FFT_VERIFY_VERBOSE) || (APP_MODE_FFT_VERIFY_VERBOSE != 0)
         {
             uint32_t row_us = fft_cycles_to_us(g_fft_full_last_cycles.row_fft_cycles);
             uint32_t x1_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose1_cycles);
             uint32_t col_us = fft_cycles_to_us(g_fft_full_last_cycles.col_fft_cycles);
             uint32_t x2_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose2_cycles);
-            FFT_LOG("[FFT-256] Forward FFT complete (%lu us)\n", (unsigned long)tf_us);
-            FFT_LOG("[FFT-256] phases: row=%lu x1=%lu col=%lu x2=%lu\n",
-                    (unsigned long)row_us,
-                    (unsigned long)x1_us,
-                    (unsigned long)col_us,
-                    (unsigned long)x2_us);
+            FFT_VLOG("[FFT-256] phases: row=%lu x1=%lu col=%lu x2=%lu\n",
+                     (unsigned long)row_us,
+                     (unsigned long)x1_us,
+                     (unsigned long)col_us,
+                     (unsigned long)x2_us);
         }
+#endif
 
         if ((iter == 2) && APP_MODE_FFT_VERIFY_VERBOSE)
         {
@@ -2142,7 +2152,7 @@ void fft_test_hyperram_256x256(void)
             fft_spec_print_top_peaks_hyperram(OUTPUT_REAL_OFFSET, OUTPUT_IMAG_OFFSET, FFT_SIZE, FFT_SIZE, 4);
         }
 
-        FFT_LOG("[FFT-256] Starting inverse FFT...\n");
+        FFT_VLOG("[FFT-256] Starting inverse FFT...\n");
         t0 = fft_cycles_now();
         fft_2d_hyperram_full(OUTPUT_REAL_OFFSET, OUTPUT_IMAG_OFFSET,
                              WORK_REAL_OFFSET, WORK_IMAG_OFFSET,
@@ -2150,18 +2160,21 @@ void fft_test_hyperram_256x256(void)
                              FFT_SIZE, FFT_SIZE, true);
         uint32_t ti_cycles = (uint32_t)(fft_cycles_now() - t0);
         uint32_t ti_us = fft_cycles_to_us(ti_cycles);
+        FFT_LOG("[FFT-256] Inverse FFT complete (%lu us)\n", (unsigned long)ti_us);
+
+#if !defined(APP_MODE_FFT_VERIFY_VERBOSE) || (APP_MODE_FFT_VERIFY_VERBOSE != 0)
         {
             uint32_t row_us = fft_cycles_to_us(g_fft_full_last_cycles.row_fft_cycles);
             uint32_t x1_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose1_cycles);
             uint32_t col_us = fft_cycles_to_us(g_fft_full_last_cycles.col_fft_cycles);
             uint32_t x2_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose2_cycles);
-            FFT_LOG("[FFT-256] Inverse FFT complete (%lu us)\n", (unsigned long)ti_us);
-            FFT_LOG("[FFT-256] phases: row=%lu x1=%lu col=%lu x2=%lu\n",
-                    (unsigned long)row_us,
-                    (unsigned long)x1_us,
-                    (unsigned long)col_us,
-                    (unsigned long)x2_us);
+            FFT_VLOG("[FFT-256] phases: row=%lu x1=%lu col=%lu x2=%lu\n",
+                     (unsigned long)row_us,
+                     (unsigned long)x1_us,
+                     (unsigned long)col_us,
+                     (unsigned long)x2_us);
         }
+#endif
 
         /* RMSE */
         double sum_sq_error = 0.0;

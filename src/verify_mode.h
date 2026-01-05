@@ -41,11 +41,11 @@
  *    restore delays or reduce bus contention.)
  */
 #ifndef APP_MODE_FFT_VERIFY_VERBOSE
-#define APP_MODE_FFT_VERIFY_VERBOSE 1
+#define APP_MODE_FFT_VERIFY_VERBOSE 0
 #endif
 
 #ifndef APP_MODE_FFT_VERIFY_USE_DELAYS
-#define APP_MODE_FFT_VERIFY_USE_DELAYS 1
+#define APP_MODE_FFT_VERIFY_USE_DELAYS 0
 #endif
 
 /* Delay values (ms) used when APP_MODE_FFT_VERIFY_USE_DELAYS=1 */
