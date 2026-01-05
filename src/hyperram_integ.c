@@ -33,6 +33,28 @@
 #define HYPERRAM_WRITE_VERIFY_LOG 0
 #endif
 
+/*
+ * EXPERIMENT (unsafe): increase the memory-mapped RW chunk size.
+ *
+ * IMPORTANT:
+ * This project uses an OSPI address conversion that is effectively 16-byte granular.
+ * The safe path never crosses a 16-byte boundary within one contiguous RW chunk.
+ *
+ * To intentionally test what happens when we do cross boundaries (potentially faster
+ * but may corrupt/interleave data), enable the following switch.
+ */
+#ifndef HYPERRAM_UNSAFE_RW_CROSS_16B
+#define HYPERRAM_UNSAFE_RW_CROSS_16B 1
+#endif
+
+#ifndef HYPERRAM_RW_CHUNK_SIZE
+#if HYPERRAM_UNSAFE_RW_CROSS_16B
+#define HYPERRAM_RW_CHUNK_SIZE 64U
+#else
+#define HYPERRAM_RW_CHUNK_SIZE 16U
+#endif
+#endif
+
 /* Flash device timing */
 #define OSPI_B_TIME_UNIT (BSP_DELAY_UNITS_MICROSECONDS)
 #define OSPI_B_TIME_RESET_SETUP (2U)    /*  Type 50ns */
@@ -268,6 +290,12 @@ fsp_err_t hyperram_init(void)
         xprintf("[HyperRAM] Mutex-based thread-safe access initialized\n");
     }
 
+#if defined(APP_MODE_FFT_VERIFY) && (APP_MODE_FFT_VERIFY != 0)
+    xprintf("[HyperRAM] mmap RW chunk=%dB cross16=%d\n",
+            (unsigned long)HYPERRAM_RW_CHUNK_SIZE,
+            (unsigned long)HYPERRAM_UNSAFE_RW_CROSS_16B);
+#endif
+
     return err;
 }
 
@@ -352,7 +380,7 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
      * Copying/writing 64 bytes contiguously would span 4 interleaved 16-byte blocks,
      * which can manifest as 4x repeating patterns in image data.
      */
-    const uint32_t batch_size = 16;
+    const uint32_t batch_size = (uint32_t)HYPERRAM_RW_CHUNK_SIZE;
     uint32_t offset = 0;
 
 #if HYPERRAM_WRITE_VERIFY
@@ -373,11 +401,16 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
         {
             write_size = batch_size;
         }
+
+#if !HYPERRAM_UNSAFE_RW_CROSS_16B
         if (write_size > to_block_end)
         {
             /* Do not cross a 16-byte address-conversion block. */
             write_size = to_block_end;
         }
+#else
+        (void)to_block_end;
+#endif
 
         uint32_t adr = (uint32_t)dest_p8 + offset;
         adr += (uint32_t)HYPERRAM_BASE_ADDR;
@@ -425,7 +458,7 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
             __ISB();
 
             /* Read-back and compare. */
-            uint8_t rb[16];
+            uint8_t rb[HYPERRAM_RW_CHUNK_SIZE];
 
             if ((((uintptr_t)dst8 | (uintptr_t)write_size) & 0x3u) == 0u)
             {
@@ -506,7 +539,7 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
 #if HYPERRAM_WRITE_VERIFY && HYPERRAM_WRITE_VERIFY_LOG
     if ((verify_retries_used != 0u) || (verify_failed_chunks != 0u))
     {
-        xprintf("[HyperRAM-W] verify: retries=%lu mismatch_chunks=%lu failed_chunks=%lu len=%lu\n",
+        xprintf("[HyperRAM-W] verify: retries=%d mismatch_chunks=%d\n failed_chunks=%d len=%d\n",
                 (unsigned long)verify_retries_used,
                 (unsigned long)verify_mismatch_chunks,
                 (unsigned long)verify_failed_chunks,
@@ -593,14 +626,19 @@ fsp_err_t hyperram_b_read(void *p_dest, const void *p_src, uint32_t total_length
         uint32_t to_block_end = 16U - in_block;
         uint32_t read_size = remaining_size;
 
-        if (read_size > 16U)
+        if (read_size > (uint32_t)HYPERRAM_RW_CHUNK_SIZE)
         {
-            read_size = 16U;
+            read_size = (uint32_t)HYPERRAM_RW_CHUNK_SIZE;
         }
+
+#if !HYPERRAM_UNSAFE_RW_CROSS_16B
         if (read_size > to_block_end)
         {
             read_size = to_block_end;
         }
+#else
+        (void)to_block_end;
+#endif
 
         uint32_t converted_addr = base_addr;
         const volatile uint8_t *src8 = (const volatile uint8_t *)((uintptr_t)HYPERRAM_BASE_ADDR + (uintptr_t)converted_addr);
