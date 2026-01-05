@@ -11,15 +11,37 @@
 #
 
 # The directory containing this script; used to locate the configuration.xml
-# and Config.cmake irrespective of the caller directory
-set(SCRIPT_DIR ${CMAKE_SCRIPT_MODE_FILE}/..)
-set(RASC_CONFIG_FILE ${SCRIPT_DIR}/../configuration.xml)
+# and Config.cmake irrespective of the caller directory.
+# Note: CMAKE_SCRIPT_MODE_FILE is the full path to this file.
+get_filename_component(SCRIPT_DIR "${CMAKE_SCRIPT_MODE_FILE}" DIRECTORY)
+set(RASC_CONFIG_FILE "${SCRIPT_DIR}/../configuration.xml")
 
-include(${SCRIPT_DIR}/../Config.cmake)
+include("${SCRIPT_DIR}/../Config.cmake")
 
-execute_process(COMMAND ${RASC_EXE_PATH} -nosplash --launcher.suppressErrors --generate --devicefamily ra --compiler LLVMARM --toolchainversion ${CMAKE_C_COMPILER_VERSION} ${RASC_CONFIG_FILE}
-    RESULT_VARIABLE RASC_EXIT_CODE)
+# In -P script mode, CMAKE_C_COMPILER_VERSION is frequently unset.
+# If it's empty, the next argument would be consumed as the toolchain version
+# and the configuration.xml would not be provided to RASC.
+if(DEFINED CMAKE_C_COMPILER_VERSION AND NOT "${CMAKE_C_COMPILER_VERSION}" STREQUAL "")
+    set(RASC_TOOLCHAIN_VERSION "${CMAKE_C_COMPILER_VERSION}")
+else()
+    # Keep in sync with the toolchain version used by the CMake build/link step.
+    set(RASC_TOOLCHAIN_VERSION "21.1.1")
+endif()
+
+execute_process(
+    COMMAND ${RASC_EXE_PATH} -nosplash --launcher.suppressErrors --generate --devicefamily ra --compiler LLVMARM --toolchainversion ${RASC_TOOLCHAIN_VERSION} ${RASC_CONFIG_FILE}
+    RESULT_VARIABLE RASC_EXIT_CODE
+    OUTPUT_VARIABLE RASC_STDOUT
+    ERROR_VARIABLE RASC_STDERR
+)
 
 if(NOT RASC_EXIT_CODE EQUAL "0")
+    message(STATUS "RASC exited with code: ${RASC_EXIT_CODE}")
+    if(NOT "${RASC_STDOUT}" STREQUAL "")
+        message(STATUS "RASC stdout:\n${RASC_STDOUT}")
+    endif()
+    if(NOT "${RASC_STDERR}" STREQUAL "")
+        message(STATUS "RASC stderr:\n${RASC_STDERR}")
+    endif()
     message(FATAL_ERROR "Failed to run RASC generate command")
 endif()

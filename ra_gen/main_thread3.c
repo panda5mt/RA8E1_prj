@@ -4,9 +4,9 @@
 #if 1
                 static StaticTask_t main_thread3_memory;
                 #if defined(__ARMCC_VERSION)           /* AC6 compiler */
-                static uint8_t main_thread3_stack[32768] BSP_PLACE_IN_SECTION(BSP_UNINIT_SECTION_PREFIX ".stack.thread") BSP_ALIGN_VARIABLE(BSP_STACK_ALIGNMENT);
+                static uint8_t main_thread3_stack[24576] BSP_PLACE_IN_SECTION(BSP_UNINIT_SECTION_PREFIX ".stack.thread") BSP_ALIGN_VARIABLE(BSP_STACK_ALIGNMENT);
                 #else
-                static uint8_t main_thread3_stack[32768] BSP_PLACE_IN_SECTION(BSP_UNINIT_SECTION_PREFIX ".stack.main_thread3") BSP_ALIGN_VARIABLE(BSP_STACK_ALIGNMENT);
+                static uint8_t main_thread3_stack[24576] BSP_PLACE_IN_SECTION(BSP_UNINIT_SECTION_PREFIX ".stack.main_thread3") BSP_ALIGN_VARIABLE(BSP_STACK_ALIGNMENT);
                 #endif
                 #endif
                 TaskHandle_t main_thread3;
@@ -36,7 +36,7 @@ extern uint32_t g_fsp_common_thread_count;
                     #endif
                         main_thread3_func,
                         (const char *)"Main Thread3",
-                        32768/4, // In words, not bytes
+                        24576/4, // In words, not bytes
                         (void *) &main_thread3_parameters, //pvParameters
                         1,
                         #if 1

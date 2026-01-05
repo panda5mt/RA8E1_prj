@@ -56,6 +56,17 @@ endif()
 # Renesas LLVM clang does not accept -mfp16-format=ieee, so we define the macro directly.
 target_compile_definitions(${PROJECT_NAME}.elf PRIVATE __ARM_FP16_FORMAT_IEEE)
 
+# Optional: run FFT verification (thread3) while keeping camera + UDP running.
+# This is useful for coexistence testing under real bus contention.
+option(APP_FFT_VERIFY_COEXIST "Run FFT verify without stopping camera/UDP" OFF)
+if (APP_FFT_VERIFY_COEXIST)
+	target_compile_definitions(${PROJECT_NAME}.elf PRIVATE
+		APP_MODE_FFT_VERIFY=1
+		APP_MODE_FFT_VERIFY_DISABLE_CAMERA=0
+		APP_MODE_FFT_VERIFY_DISABLE_UDP=0
+	)
+endif()
+
 # Add xprintf include path
 target_include_directories(${PROJECT_NAME}.elf
     PRIVATE
