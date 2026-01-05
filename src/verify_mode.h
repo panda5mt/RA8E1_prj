@@ -103,5 +103,5 @@
  * - Larger tiles use more SRAM for the tile buffers
  */
 #ifndef APP_MODE_FFT_TRANSPOSE_TILE
-#define APP_MODE_FFT_TRANSPOSE_TILE 64
+#define APP_MODE_FFT_TRANSPOSE_TILE 128
 #endif

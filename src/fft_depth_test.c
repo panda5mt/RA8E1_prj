@@ -1921,14 +1921,14 @@ void fft_test_hyperram_128x128(void)
         if ((rmse_nonfinite | rmse_clipped) != 0u)
         {
             xprintf("[FFT-128] Iteration %d: RMSE = %.9f (rmse_san nf=%d clip=%d)\n",
-                    iter + 1,
+                    p + 1,
                     rmse,
-                    (unsigned long)rmse_nonfinite,
-                    (unsigned long)rmse_clipped);
+                    (int)rmse_nonfinite,
+                    (int)rmse_clipped);
         }
         else
         {
-            xprintf("[FFT-128] Iteration %d: RMSE = %.9f\n", iter + 1, rmse);
+            xprintf("[FFT-128] Iteration %d: RMSE = %.9f\n", p + 1, rmse);
         }
         fft_verify_delay_ms((uint32_t)APP_MODE_FFT_VERIFY_ITER_DELAY_MS);
     }
@@ -2328,14 +2328,14 @@ void fft_test_hyperram_256x256(void)
         if ((rmse_nonfinite | rmse_clipped) != 0u)
         {
             xprintf("[FFT-256] Iteration %d: RMSE = %.9f (rmse_san nf=%d clip=%d)\n",
-                    iter + 1,
+                    p + 1,
                     rmse,
-                    (unsigned long)rmse_nonfinite,
-                    (unsigned long)rmse_clipped);
+                    (int)rmse_nonfinite,
+                    (int)rmse_clipped);
         }
         else
         {
-            xprintf("[FFT-256] Iteration %d: RMSE = %.9f\n", iter + 1, rmse);
+            xprintf("[FFT-256] Iteration %d: RMSE = %.9f\n", p + 1, rmse);
         }
 
         // vTaskdelay(pdMS_TO_TICKS(50));
