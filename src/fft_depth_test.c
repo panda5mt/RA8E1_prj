@@ -4,6 +4,9 @@
 #include <math.h>
 #include <string.h>
 
+/* CMSIS-DSP (for MVE-optimized CFFT) */
+#include "arm_math.h"
+
 /*
  * Logging helpers:
  * - FFT_LOG: always-on (keep minimal progress/timing visible)
@@ -41,6 +44,12 @@ static inline void fft_verify_delay_ms(uint32_t ms)
 #define USE_HELIUM_MVE 0
 #endif
 
+#if defined(__GNUC__)
+#define FFT_ALIGN16 __attribute__((aligned(16)))
+#else
+#define FFT_ALIGN16
+#endif
+
 /* 三角関数テーブル（事前計算で高速化） */
 #define MAX_FFT_SIZE 256
 static float cos_table[MAX_FFT_SIZE / 2];
@@ -55,6 +64,58 @@ static int bitrev_table_N = 0;
 /* Per-stage twiddle buffers (contiguous), sized for MAX_FFT_SIZE. */
 static float twiddle_stage_real[MAX_FFT_SIZE / 2];
 static float twiddle_stage_imag[MAX_FFT_SIZE / 2];
+
+/* Interleaved complex scratch for CMSIS CFFT: [re0, im0, re1, im1, ...] */
+static FFT_ALIGN16 float g_cfft_io[2 * MAX_FFT_SIZE];
+
+static arm_cfft_instance_f32 g_cfft_inst_f32;
+static int g_cfft_inst_N = 0;
+
+static inline const arm_cfft_instance_f32 *fft_get_cfft_instance_f32(int N)
+{
+    if (!((N == 128) || (N == 256)))
+    {
+        return NULL;
+    }
+
+    if (g_cfft_inst_N != N)
+    {
+        /* For MVE, CMSIS recommends using arm_cfft_init_f32 rather than const structs. */
+        arm_status st = arm_cfft_init_f32(&g_cfft_inst_f32, (uint16_t)N);
+        if (st != ARM_MATH_SUCCESS)
+        {
+            g_cfft_inst_N = 0;
+            return NULL;
+        }
+        g_cfft_inst_N = N;
+    }
+
+    return &g_cfft_inst_f32;
+}
+
+static inline void fft_1d_cmsis_cfft_f32(float *real, float *imag, int N, bool is_inverse)
+{
+    const arm_cfft_instance_f32 *S = fft_get_cfft_instance_f32(N);
+    if (!S)
+    {
+        return;
+    }
+
+    for (int i = 0; i < N; i++)
+    {
+        g_cfft_io[2 * i + 0] = real[i];
+        g_cfft_io[2 * i + 1] = imag[i];
+    }
+
+    /* bitReverseFlag=1 => output in natural order. Inverse scaling is handled inside CMSIS. */
+    arm_cfft_f32(S, g_cfft_io, is_inverse ? 1U : 0U, 1U);
+
+    for (int i = 0; i < N; i++)
+    {
+        real[i] = g_cfft_io[2 * i + 0];
+        imag[i] = g_cfft_io[2 * i + 1];
+    }
+}
 
 /* スタティックバッファ（動的メモリ割り当て回避） */
 static float g_fft_buffer_real[FFT_TEST_POINTS];
@@ -497,6 +558,13 @@ static void init_bitrev_table(int N)
 /* 1D FFT (Danielson-Lanczos法、MVE最適化版) */
 void fft_1d_mve(float *real, float *imag, int N, bool is_inverse)
 {
+    /* Hot sizes: use CMSIS-DSP CFFT (math-correct + MVE-optimized). */
+    if ((N == 128) || (N == 256))
+    {
+        fft_1d_cmsis_cfft_f32(real, imag, N, is_inverse);
+        return;
+    }
+
     // 三角関数テーブル初期化
     init_trig_tables(N);
 
