@@ -14,6 +14,14 @@
  */
 #define FFT_LOG(...) xprintf(__VA_ARGS__)
 
+/*
+ * Diagnostic one-time logs (build caps, selected FFT path).
+ * Default off to minimize runtime logging and keep benchmarks clean.
+ */
+#ifndef FFT_DIAG_LOG
+#define FFT_DIAG_LOG 0
+#endif
+
 #if defined(APP_MODE_FFT_VERIFY_VERBOSE) && (APP_MODE_FFT_VERIFY_VERBOSE == 0)
 #define FFT_VLOG(...) ((void)0)
 #else
@@ -24,8 +32,10 @@
 static bool g_fft_print_phases_once_done = false;
 #endif
 
+#if FFT_DIAG_LOG
 static bool g_fft_print_build_caps_once = false;
 static bool g_fft_print_fft256_path_once = false;
+#endif
 
 static inline void fft_verify_delay_ms(uint32_t ms)
 {
@@ -798,6 +808,8 @@ void fft_1d_mve(float *real, float *imag, int N, bool is_inverse)
         {
 #if defined(ARM_FLOAT16_SUPPORTED)
             bool used_f16 = fft_1d_cmsis_cfft_f16(real, imag, N, is_inverse);
+
+#if FFT_DIAG_LOG
             if (!g_fft_print_fft256_path_once)
             {
                 g_fft_print_fft256_path_once = true;
@@ -808,17 +820,20 @@ void fft_1d_mve(float *real, float *imag, int N, bool is_inverse)
 #endif
                 FFT_LOG("[FFT] fft256: path=%s pack_mve=%d\n", used_f16 ? "f16" : "f32_fallback", cap_fft_f16_pack_mve);
             }
+#endif
 
             if (used_f16)
             {
                 return;
             }
 #else
+#if FFT_DIAG_LOG
             if (!g_fft_print_fft256_path_once)
             {
                 g_fft_print_fft256_path_once = true;
                 FFT_LOG("[FFT] fft256: path=f32 (no_f16_build)\n");
             }
+#endif
 #endif
         }
 
@@ -2309,6 +2324,7 @@ void fft_test_hyperram_256x256(void)
     xprintf("  Test 6: 256x256 HyperRAM FFT (FULL)\n");
     xprintf("========================================\n");
 
+#if FFT_DIAG_LOG
     if (!g_fft_print_build_caps_once)
     {
         g_fft_print_build_caps_once = true;
@@ -2340,6 +2356,7 @@ void fft_test_hyperram_256x256(void)
         FFT_LOG("[FFT] caps: ARM_DSP_BUILT_WITH_GCC=%d\n", cap_dsp_gcc);
         FFT_LOG("[FFT] caps: FFT_F16_PACK_MVE=%d\n", cap_fft_f16_pack_mve);
     }
+#endif
 
     const int FFT_SIZE = 256;
     const int FFT_ELEMENTS = 65536; // 256×256
