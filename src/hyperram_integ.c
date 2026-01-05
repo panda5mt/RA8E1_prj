@@ -55,6 +55,20 @@
 #endif
 #endif
 
+/*
+ * When verifying memory-mapped writes, optionally wait for the OSPI mmap engine
+ * to become idle before reading back / retrying.
+ * This adds little overhead in the common case, but can reduce rare persistent
+ * mismatches (fail=1) under high bus contention.
+ */
+#ifndef HYPERRAM_WV_WAIT_MMAP_IDLE
+#if HYPERRAM_UNSAFE_RW_CROSS_16B
+#define HYPERRAM_WV_WAIT_MMAP_IDLE 1
+#else
+#define HYPERRAM_WV_WAIT_MMAP_IDLE 0
+#endif
+#endif
+
 /* Flash device timing */
 #define OSPI_B_TIME_UNIT (BSP_DELAY_UNITS_MICROSECONDS)
 #define OSPI_B_TIME_RESET_SETUP (2U)    /*  Type 50ns */
@@ -71,6 +85,87 @@ static SemaphoreHandle_t g_hyperram_mutex = NULL;
 static volatile uint32_t g_hyperram_wv_mismatch_chunks = 0;
 static volatile uint32_t g_hyperram_wv_retries = 0;
 static volatile uint32_t g_hyperram_wv_failed_chunks = 0;
+
+#if HYPERRAM_WRITE_VERIFY && HYPERRAM_UNSAFE_RW_CROSS_16B
+static bool hyperram_wv_safe_rewrite_verify(const uint8_t *src,
+                                            volatile uint8_t *dst8,
+                                            uint32_t write_size)
+{
+    uint32_t sub_offset = 0;
+
+    while (sub_offset < write_size)
+    {
+        uint32_t sub_remaining = write_size - sub_offset;
+        uintptr_t base_addr = (uintptr_t)(dst8 + sub_offset);
+        uint32_t in_block = (uint32_t)(base_addr & 0x0FU);
+        uint32_t to_block_end = 16U - in_block;
+        uint32_t sub_size = sub_remaining;
+
+        if (sub_size > to_block_end)
+        {
+            sub_size = to_block_end;
+        }
+
+        const uint8_t *sub_src = src + sub_offset;
+        volatile uint8_t *sub_dst8 = dst8 + sub_offset;
+
+        if ((((uintptr_t)sub_src | (uintptr_t)sub_dst8 | (uintptr_t)sub_size) & 0x3u) == 0u)
+        {
+            const uint32_t *src32 = (const uint32_t *)sub_src;
+            volatile uint32_t *dst32 = (volatile uint32_t *)sub_dst8;
+            uint32_t words = sub_size >> 2;
+            for (uint32_t i = 0; i < words; i++)
+            {
+                dst32[i] = src32[i];
+            }
+        }
+        else
+        {
+            for (uint32_t i = 0; i < sub_size; i++)
+            {
+                sub_dst8[i] = sub_src[i];
+            }
+        }
+
+#if HYPERRAM_WV_WAIT_MMAP_IDLE
+        ospi_wait_mmap_idle();
+#endif
+        __DSB();
+        __ISB();
+
+        uint8_t rb[16];
+        if ((((uintptr_t)sub_dst8 | (uintptr_t)sub_size) & 0x3u) == 0u)
+        {
+            const volatile uint32_t *src32 = (const volatile uint32_t *)sub_dst8;
+            uint32_t *rb32 = (uint32_t *)rb;
+            uint32_t words = sub_size >> 2;
+            for (uint32_t i = 0; i < words; i++)
+            {
+                rb32[i] = src32[i];
+            }
+        }
+        else
+        {
+            for (uint32_t i = 0; i < sub_size; i++)
+            {
+                rb[i] = sub_dst8[i];
+            }
+        }
+
+        for (uint32_t i = 0; i < sub_size; i++)
+        {
+            if (rb[i] != sub_src[i])
+            {
+                return false;
+            }
+        }
+
+        sub_offset += sub_size;
+    }
+
+    return true;
+}
+#endif
 spi_flash_erase_command_t g_command_erase_sets[] =
     {
         [0] = {
@@ -292,8 +387,8 @@ fsp_err_t hyperram_init(void)
 
 #if defined(APP_MODE_FFT_VERIFY) && (APP_MODE_FFT_VERIFY != 0)
     xprintf("[HyperRAM] mmap RW chunk=%dB cross16=%d\n",
-            (unsigned long)HYPERRAM_RW_CHUNK_SIZE,
-            (unsigned long)HYPERRAM_UNSAFE_RW_CROSS_16B);
+            (int)HYPERRAM_RW_CHUNK_SIZE,
+            (int)HYPERRAM_UNSAFE_RW_CROSS_16B);
 #endif
 
     return err;
@@ -431,6 +526,7 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
 #if HYPERRAM_WRITE_VERIFY
         uint32_t attempt = 0;
         bool ok = false;
+        bool wait_before_verify = false;
 
         while (true)
         {
@@ -453,6 +549,14 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
                 }
             }
 
+#if HYPERRAM_WV_WAIT_MMAP_IDLE
+            /* Only wait when the previous attempt detected a mismatch. */
+            if (wait_before_verify)
+            {
+                ospi_wait_mmap_idle();
+                wait_before_verify = false;
+            }
+#endif
             /* Ensure writes reach the memory-mapped window before we verify. */
             __DSB();
             __ISB();
@@ -494,8 +598,20 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
             }
 
             verify_mismatch_chunks++;
+            wait_before_verify = true;
             if (attempt >= (uint32_t)HYPERRAM_WRITE_VERIFY_RETRIES)
             {
+#if HYPERRAM_UNSAFE_RW_CROSS_16B
+                /*
+                 * Do not increase retry count further; instead, fall back to a
+                 * safe 16-byte non-crossing rewrite+verify for this chunk.
+                 */
+                if (hyperram_wv_safe_rewrite_verify(src, dst8, write_size))
+                {
+                    ok = true;
+                    break;
+                }
+#endif
                 verify_failed_chunks++;
                 break;
             }
@@ -540,10 +656,10 @@ fsp_err_t hyperram_b_write(const void *p_src, void *p_dest, uint32_t total_lengt
     if ((verify_retries_used != 0u) || (verify_failed_chunks != 0u))
     {
         xprintf("[HyperRAM-W] verify: retries=%d mismatch_chunks=%d\n failed_chunks=%d len=%d\n",
-                (unsigned long)verify_retries_used,
-                (unsigned long)verify_mismatch_chunks,
-                (unsigned long)verify_failed_chunks,
-                (unsigned long)total_length);
+                (int)verify_retries_used,
+                (int)verify_mismatch_chunks,
+                (int)verify_failed_chunks,
+                (int)total_length);
     }
 #elif HYPERRAM_WRITE_VERIFY
     (void)verify_retries_used;

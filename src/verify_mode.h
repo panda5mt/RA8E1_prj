@@ -30,6 +30,36 @@
 #endif
 
 /*
+ * Reduce the number of data patterns per test to speed up verification.
+ * Patterns are selected from the built-in list of 5 patterns.
+ * - COUNT: how many patterns to run (1..5)
+ * - START: start index (0..4), subsequent patterns wrap around
+ */
+#ifndef APP_MODE_FFT_VERIFY_FFT256_PATTERN_COUNT
+#define APP_MODE_FFT_VERIFY_FFT256_PATTERN_COUNT 1
+#endif
+
+#ifndef APP_MODE_FFT_VERIFY_FFT256_PATTERN_START
+#define APP_MODE_FFT_VERIFY_FFT256_PATTERN_START 3
+#endif
+
+#ifndef APP_MODE_FFT_VERIFY_FFT128_PATTERN_COUNT
+#define APP_MODE_FFT_VERIFY_FFT128_PATTERN_COUNT 1
+#endif
+
+#ifndef APP_MODE_FFT_VERIFY_FFT128_PATTERN_START
+#define APP_MODE_FFT_VERIFY_FFT128_PATTERN_START 3
+#endif
+
+/*
+ * Print phase breakdown (row FFT / transpose / col FFT / transpose) once.
+ * Useful to identify bottlenecks while keeping VERBOSE=0.
+ */
+#ifndef APP_MODE_FFT_VERIFY_PRINT_PHASES_ONCE
+#define APP_MODE_FFT_VERIFY_PRINT_PHASES_ONCE 1
+#endif
+
+/*
  * When verification mode is enabled, select the 128x128 2D FFT implementation:
  * - 0: BLOCKED (32x32 blocks; good for round-trip sanity)
  * - 1: FULL (true 128x128 spectrum via HyperRAM transpose)

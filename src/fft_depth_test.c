@@ -17,6 +17,10 @@
 #define FFT_VLOG(...) xprintf(__VA_ARGS__)
 #endif
 
+#if defined(APP_MODE_FFT_VERIFY_PRINT_PHASES_ONCE) && (APP_MODE_FFT_VERIFY_PRINT_PHASES_ONCE != 0)
+static bool g_fft_print_phases_once_done = false;
+#endif
+
 static inline void fft_verify_delay_ms(uint32_t ms)
 {
 #if defined(APP_MODE_FFT_VERIFY_USE_DELAYS) && (APP_MODE_FFT_VERIFY_USE_DELAYS == 0)
@@ -43,6 +47,14 @@ static float cos_table[MAX_FFT_SIZE / 2];
 static float sin_table[MAX_FFT_SIZE / 2];
 static bool trig_table_initialized = false;
 static int trig_table_N = 0;
+
+/* Precomputed bit-reversal indices for current trig_table_N. */
+static uint16_t bitrev_table[MAX_FFT_SIZE];
+static int bitrev_table_N = 0;
+
+/* Per-stage twiddle buffers (contiguous), sized for MAX_FFT_SIZE. */
+static float twiddle_stage_real[MAX_FFT_SIZE / 2];
+static float twiddle_stage_imag[MAX_FFT_SIZE / 2];
 
 /* スタティックバッファ（動的メモリ割り当て回避） */
 static float g_fft_buffer_real[FFT_TEST_POINTS];
@@ -181,14 +193,14 @@ static void fft_spec_print_top_peaks_hyperram(uint32_t out_real_offset,
 
     if (square)
     {
-        xprintf("[FFT-%d][Spec] DC |X(0,0)|=%.3e skip_nf=%lu\n",
+        xprintf("[FFT-%d][Spec] DC |X(0,0)|=%.3e skip_nf=%d\n",
                 n,
                 dc_mag,
                 (unsigned long)skipped_nonfinite);
     }
     else
     {
-        xprintf("[FFT-%dx%d][Spec] DC |X(0,0)|=%.3e skip_nf=%lu\n",
+        xprintf("[FFT-%dx%d][Spec] DC |X(0,0)|=%.3e skip_nf=%d\n",
                 rows,
                 cols,
                 dc_mag,
@@ -408,15 +420,31 @@ static void init_trig_tables(int N)
         return;
     }
 
+    if ((N <= 0) || (N > MAX_FFT_SIZE))
+    {
+        return;
+    }
+
+    /* Require power-of-two sizes. */
+    if ((N & (N - 1)) != 0)
+    {
+        return;
+    }
+
+    const float two_pi_over_N = 2.0f * (float)M_PI / (float)N;
+
     for (int i = 0; i < N / 2; i++)
     {
-        float angle = 2.0f * M_PI * i / N;
+        float angle = two_pi_over_N * (float)i;
         cos_table[i] = cosf(angle);
         sin_table[i] = sinf(angle);
     }
 
     trig_table_initialized = true;
     trig_table_N = N;
+
+    /* Also build bit-reversal table for this N (used by fft_1d_mve). */
+    bitrev_table_N = 0;
 }
 
 /* ビット反転インデックス計算 */
@@ -431,25 +459,57 @@ static int bit_reverse(int i, int log2n)
     return reversed;
 }
 
+static inline int fft_log2_pow2_u32(uint32_t n)
+{
+    int log2n = 0;
+    while (n > 1u)
+    {
+        n >>= 1;
+        log2n++;
+    }
+    return log2n;
+}
+
+static void init_bitrev_table(int N)
+{
+    if ((N <= 0) || (N > MAX_FFT_SIZE))
+    {
+        return;
+    }
+    if (bitrev_table_N == N)
+    {
+        return;
+    }
+
+    int log2n = fft_log2_pow2_u32((uint32_t)N);
+    for (int i = 0; i < N; i++)
+    {
+        bitrev_table[i] = (uint16_t)bit_reverse(i, log2n);
+    }
+    bitrev_table_N = N;
+}
+
 /* 1D FFT (Danielson-Lanczos法、MVE最適化版) */
 void fft_1d_mve(float *real, float *imag, int N, bool is_inverse)
 {
     // 三角関数テーブル初期化
     init_trig_tables(N);
 
-    // log2(N)を計算
-    int log2n = 0;
-    int temp = N;
-    while (temp > 1)
+    if ((N <= 0) || (N > MAX_FFT_SIZE))
     {
-        temp >>= 1;
-        log2n++;
+        return;
     }
+    if ((N & (N - 1)) != 0)
+    {
+        return;
+    }
+
+    init_bitrev_table(N);
 
     // ビット反転並び替え
     for (int i = 0; i < N; i++)
     {
-        int j = bit_reverse(i, log2n);
+        int j = (int)bitrev_table[i];
         if (i < j)
         {
             // 実数部交換
@@ -470,6 +530,14 @@ void fft_1d_mve(float *real, float *imag, int N, bool is_inverse)
         int halfStep = step / 2;
         int tableStep = N / step;
 
+        /* Build contiguous twiddle arrays for this stage (twiddles depend only on m). */
+        for (int m = 0; m < halfStep; m++)
+        {
+            int index = m * tableStep; /* Always < N/2 for radix-2 stages. */
+            twiddle_stage_real[m] = cos_table[index];
+            twiddle_stage_imag[m] = is_inverse ? sin_table[index] : -sin_table[index];
+        }
+
         for (int k = 0; k < N; k += step)
         {
 #if USE_HELIUM_MVE
@@ -477,23 +545,8 @@ void fft_1d_mve(float *real, float *imag, int N, bool is_inverse)
             int m;
             for (m = 0; m < halfStep - 3; m += 4)
             {
-                // 回転係数インデックス計算
-                int idx[4];
-                for (int v = 0; v < 4; v++)
-                {
-                    idx[v] = (m + v) * tableStep % (N / 2);
-                }
-
-                // 回転係数をベクトルにロード
-                float w_real[4], w_imag[4];
-                for (int v = 0; v < 4; v++)
-                {
-                    w_real[v] = cos_table[idx[v]];
-                    w_imag[v] = is_inverse ? sin_table[idx[v]] : -sin_table[idx[v]];
-                }
-
-                float32x4_t w_real_vec = vld1q_f32(w_real);
-                float32x4_t w_imag_vec = vld1q_f32(w_imag);
+                float32x4_t w_real_vec = vld1q_f32(&twiddle_stage_real[m]);
+                float32x4_t w_imag_vec = vld1q_f32(&twiddle_stage_imag[m]);
 
                 // インデックス計算
                 int i = k + m;
@@ -539,9 +592,8 @@ void fft_1d_mve(float *real, float *imag, int N, bool is_inverse)
                 int j = i + halfStep;
 
                 // 回転係数
-                int index = m * tableStep % (N / 2);
-                float w_real = cos_table[index];
-                float w_imag = is_inverse ? sin_table[index] : -sin_table[index];
+                float w_real = twiddle_stage_real[m];
+                float w_imag = twiddle_stage_imag[m];
 
                 // バタフライ計算
                 float t_real = w_real * real[j] - w_imag * imag[j];
@@ -558,7 +610,7 @@ void fft_1d_mve(float *real, float *imag, int N, bool is_inverse)
     // 逆FFTの場合はスケーリング
     if (is_inverse)
     {
-        float scale = 1.0f / N;
+        float scale = 1.0f / (float)N;
 #if USE_HELIUM_MVE
         float32x4_t scale_vec = vdupq_n_f32(scale);
         int i;
@@ -1252,7 +1304,7 @@ void fft_test_sine_wave(void)
     {
         for (int c = 0; c < FFT_TEST_SIZE; c++)
         {
-            float angle = 2.0f * M_PI * 2.0f * c / FFT_TEST_SIZE;
+            float angle = (4.0f * (float)M_PI) * ((float)c / (float)FFT_TEST_SIZE);
             real[r * FFT_TEST_SIZE + c] = sinf(angle);
         }
     }
@@ -1507,13 +1559,30 @@ void fft_test_hyperram_128x128(void)
 
     /* Reset HyperRAM write-verify counters (B2 diagnostics) for this test run. */
     hyperram_write_verify_counters_reset();
-    FFT_LOG("[WV] en=%lu r=%lu\n",
-            (unsigned long)hyperram_write_verify_is_enabled(),
-            (unsigned long)hyperram_write_verify_retries());
+    FFT_LOG("[WV] en=%d r=%d\n",
+            (int)hyperram_write_verify_is_enabled(),
+            (int)hyperram_write_verify_retries());
 
-    for (int iter = 0; iter < 5; iter++)
+    int pattern_count = (int)APP_MODE_FFT_VERIFY_FFT128_PATTERN_COUNT;
+    if (pattern_count <= 0)
     {
-        xprintf("\n[FFT-128] Iteration %d:\n %s pattern\n", iter + 1, pattern_names[iter]);
+        pattern_count = 1;
+    }
+    if (pattern_count > 5)
+    {
+        pattern_count = 5;
+    }
+
+    int pattern_start = (int)APP_MODE_FFT_VERIFY_FFT128_PATTERN_START;
+    if (pattern_start < 0)
+    {
+        pattern_start = 0;
+    }
+
+    for (int p = 0; p < pattern_count; p++)
+    {
+        int iter = (pattern_start + p) % 5;
+        xprintf("\n[FFT-128] Iteration %d:\n %s pattern\n", p + 1, pattern_names[iter]);
         // vTaskdelay(pdMS_TO_TICKS(10));
 
         xprintf("[FFT-128] Generating pattern...\n");
@@ -1680,12 +1749,12 @@ void fft_test_hyperram_128x128(void)
 
         if ((rb_mismatch_rows | rb_mismatch_words | rb_nonfinite | rb_clipped) != 0u)
         {
-            xprintf("[FFT-128] Input RB: rows=%lu words=%lu\n nf=%lu clip=%lu\n",
+            xprintf("[FFT-128] Input RB: rows=%d words=%d\n nf=%d clip=%d\n",
                     (unsigned long)rb_mismatch_rows,
                     (unsigned long)rb_mismatch_words,
                     (unsigned long)rb_nonfinite,
                     (unsigned long)rb_clipped);
-            xprintf("[FFT-128] Input RB classify: trans=%lu\n pers=%lu unstab=%lu\n",
+            xprintf("[FFT-128] Input RB classify: trans=%d\n pers=%d unstab=%d\n",
                     (unsigned long)rb_transient_rows,
                     (unsigned long)rb_persistent_rows,
                     (unsigned long)rb_unstable_rows);
@@ -1742,15 +1811,15 @@ void fft_test_hyperram_128x128(void)
             uint32_t x1_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose1_cycles);
             uint32_t col_us = fft_cycles_to_us(g_fft_full_last_cycles.col_fft_cycles);
             uint32_t x2_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose2_cycles);
-            FFT_LOG("[FFT-128] Forward FFT complete (%lu us)\n", (unsigned long)tf_us);
-            FFT_VLOG("[FFT-128] phases: row=%lu x1=%lu col=%lu x2=%lu\n",
+            FFT_LOG("[FFT-128] Forward FFT complete (%d us)\n", (unsigned long)tf_us);
+            FFT_VLOG("[FFT-128] phases: row=%d x1=%d\n col=%d x2=%d\n",
                      (unsigned long)row_us,
                      (unsigned long)x1_us,
                      (unsigned long)col_us,
                      (unsigned long)x2_us);
         }
 #else
-        FFT_LOG("[FFT-128] Forward FFT complete (%lu us)\n", (unsigned long)tf_us);
+        FFT_LOG("[FFT-128] Forward FFT complete (%d us)\n", (unsigned long)tf_us);
 #endif
         fft_verify_delay_ms((uint32_t)APP_MODE_FFT_VERIFY_PHASE_DELAY_MS);
 
@@ -1793,15 +1862,15 @@ void fft_test_hyperram_128x128(void)
             uint32_t x1_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose1_cycles);
             uint32_t col_us = fft_cycles_to_us(g_fft_full_last_cycles.col_fft_cycles);
             uint32_t x2_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose2_cycles);
-            FFT_LOG("[FFT-128] Inverse FFT complete (%lu us)\n", (unsigned long)ti_us);
-            FFT_VLOG("[FFT-128] phases: row=%lu x1=%lu col=%lu x2=%lu\n",
+            FFT_LOG("[FFT-128] Inverse FFT complete (%d us)\n", (unsigned long)ti_us);
+            FFT_VLOG("[FFT-128] phases: row=%d x1=%d\n col=%d x2=%d\n",
                      (unsigned long)row_us,
                      (unsigned long)x1_us,
                      (unsigned long)col_us,
                      (unsigned long)x2_us);
         }
 #else
-        FFT_LOG("[FFT-128] Inverse FFT complete (%lu us)\n", (unsigned long)ti_us);
+        FFT_LOG("[FFT-128] Inverse FFT complete (%d us)\n", (unsigned long)ti_us);
 #endif
         fft_verify_delay_ms((uint32_t)APP_MODE_FFT_VERIFY_PHASE_DELAY_MS);
 
@@ -1884,9 +1953,9 @@ void fft_test_hyperram_128x128(void)
         uint32_t failed_chunks = 0;
         hyperram_write_verify_counters_get(&mismatch_chunks, &retries, &failed_chunks);
         xprintf("[WV] mism=%d retry=%d fail=%d\n",
-                (unsigned long)mismatch_chunks,
-                (unsigned long)retries,
-                (unsigned long)failed_chunks);
+                (int)mismatch_chunks,
+                (int)retries,
+                (int)failed_chunks);
     }
 }
 
@@ -1921,9 +1990,9 @@ void fft_test_hyperram_256x256(void)
         "Linear", "Quadratic", "2D Sine", "Pseudo-random", "Step"};
 
     hyperram_write_verify_counters_reset();
-    FFT_LOG("[WV] en=%lu r=%lu\n",
-            (unsigned long)hyperram_write_verify_is_enabled(),
-            (unsigned long)hyperram_write_verify_retries());
+    FFT_LOG("[WV] en=%d r=%d\n",
+            (int)hyperram_write_verify_is_enabled(),
+            (int)hyperram_write_verify_retries());
 
     static float row_buf[256];
     static float rb_row[256];
@@ -1935,9 +2004,26 @@ void fft_test_hyperram_256x256(void)
         zero_imag[i] = 0.0f;
     }
 
-    for (int iter = 0; iter < 5; iter++)
+    int pattern_count = (int)APP_MODE_FFT_VERIFY_FFT256_PATTERN_COUNT;
+    if (pattern_count <= 0)
     {
-        FFT_LOG("\n[FFT-256] Iteration %d:\n %s pattern\n", iter + 1, pattern_names[iter]);
+        pattern_count = 1;
+    }
+    if (pattern_count > 5)
+    {
+        pattern_count = 5;
+    }
+
+    int pattern_start = (int)APP_MODE_FFT_VERIFY_FFT256_PATTERN_START;
+    if (pattern_start < 0)
+    {
+        pattern_start = 0;
+    }
+
+    for (int p = 0; p < pattern_count; p++)
+    {
+        int iter = (pattern_start + p) % 5;
+        FFT_LOG("\n[FFT-256] Iteration %d:\n %s pattern\n", p + 1, pattern_names[iter]);
         fft_verify_delay_ms((uint32_t)APP_MODE_FFT_VERIFY_PHASE_DELAY_MS);
 
         /* Input write + read-back verify summary */
@@ -2098,12 +2184,12 @@ void fft_test_hyperram_256x256(void)
         FFT_VLOG("\n[FFT-256] Pattern generation complete\n");
         if ((rb_mismatch_rows | rb_mismatch_words | rb_nonfinite | rb_clipped) != 0u)
         {
-            xprintf("[FFT-256] Input RB: rows=%lu words=%lu\n nf=%lu clip=%lu\n",
+            xprintf("[FFT-256] Input RB: rows=%d words=%d\n nf=%d clip=%d\n",
                     (unsigned long)rb_mismatch_rows,
                     (unsigned long)rb_mismatch_words,
                     (unsigned long)rb_nonfinite,
                     (unsigned long)rb_clipped);
-            xprintf("[FFT-256] Input RB classify: trans=%lu\n pers=%lu unstab=%lu\n",
+            xprintf("[FFT-256] Input RB classify: trans=%d\n pers=%d unstab=%d\n",
                     (unsigned long)rb_transient_rows,
                     (unsigned long)rb_persistent_rows,
                     (unsigned long)rb_unstable_rows);
@@ -2130,7 +2216,22 @@ void fft_test_hyperram_256x256(void)
                              FFT_SIZE, FFT_SIZE, false);
         uint32_t tf_cycles = (uint32_t)(fft_cycles_now() - t0);
         uint32_t tf_us = fft_cycles_to_us(tf_cycles);
-        FFT_LOG("[FFT-256] Forward FFT complete (%lu us)\n", (unsigned long)tf_us);
+        FFT_LOG("[FFT-256] Forward FFT complete (%d us)\n", (unsigned long)tf_us);
+
+#if defined(APP_MODE_FFT_VERIFY_PRINT_PHASES_ONCE) && (APP_MODE_FFT_VERIFY_PRINT_PHASES_ONCE != 0)
+        if (!g_fft_print_phases_once_done)
+        {
+            uint32_t row_us = fft_cycles_to_us(g_fft_full_last_cycles.row_fft_cycles);
+            uint32_t x1_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose1_cycles);
+            uint32_t col_us = fft_cycles_to_us(g_fft_full_last_cycles.col_fft_cycles);
+            uint32_t x2_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose2_cycles);
+            FFT_LOG("[FFT-256] phases(FWD): row=%d x1=%d\n col=%d x2=%d\n",
+                    (unsigned long)row_us,
+                    (unsigned long)x1_us,
+                    (unsigned long)col_us,
+                    (unsigned long)x2_us);
+        }
+#endif
 
 #if !defined(APP_MODE_FFT_VERIFY_VERBOSE) || (APP_MODE_FFT_VERIFY_VERBOSE != 0)
         {
@@ -2138,7 +2239,7 @@ void fft_test_hyperram_256x256(void)
             uint32_t x1_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose1_cycles);
             uint32_t col_us = fft_cycles_to_us(g_fft_full_last_cycles.col_fft_cycles);
             uint32_t x2_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose2_cycles);
-            FFT_VLOG("[FFT-256] phases: row=%lu x1=%lu col=%lu x2=%lu\n",
+            FFT_VLOG("[FFT-256] phases: row=%d x1=%d\n col=%d x2=%d\n",
                      (unsigned long)row_us,
                      (unsigned long)x1_us,
                      (unsigned long)col_us,
@@ -2160,7 +2261,23 @@ void fft_test_hyperram_256x256(void)
                              FFT_SIZE, FFT_SIZE, true);
         uint32_t ti_cycles = (uint32_t)(fft_cycles_now() - t0);
         uint32_t ti_us = fft_cycles_to_us(ti_cycles);
-        FFT_LOG("[FFT-256] Inverse FFT complete (%lu us)\n", (unsigned long)ti_us);
+        FFT_LOG("[FFT-256] Inverse FFT complete (%d us)\n", (unsigned long)ti_us);
+
+#if defined(APP_MODE_FFT_VERIFY_PRINT_PHASES_ONCE) && (APP_MODE_FFT_VERIFY_PRINT_PHASES_ONCE != 0)
+        if (!g_fft_print_phases_once_done)
+        {
+            uint32_t row_us = fft_cycles_to_us(g_fft_full_last_cycles.row_fft_cycles);
+            uint32_t x1_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose1_cycles);
+            uint32_t col_us = fft_cycles_to_us(g_fft_full_last_cycles.col_fft_cycles);
+            uint32_t x2_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose2_cycles);
+            FFT_LOG("[FFT-256] phases(INV): row=%d x1=%d\n col=%d x2=%d\n",
+                    (unsigned long)row_us,
+                    (unsigned long)x1_us,
+                    (unsigned long)col_us,
+                    (unsigned long)x2_us);
+            g_fft_print_phases_once_done = true;
+        }
+#endif
 
 #if !defined(APP_MODE_FFT_VERIFY_VERBOSE) || (APP_MODE_FFT_VERIFY_VERBOSE != 0)
         {
@@ -2168,7 +2285,7 @@ void fft_test_hyperram_256x256(void)
             uint32_t x1_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose1_cycles);
             uint32_t col_us = fft_cycles_to_us(g_fft_full_last_cycles.col_fft_cycles);
             uint32_t x2_us = fft_cycles_to_us(g_fft_full_last_cycles.xpose2_cycles);
-            FFT_VLOG("[FFT-256] phases: row=%lu x1=%lu col=%lu x2=%lu\n",
+            FFT_VLOG("[FFT-256] phases: row=%d x1=%d\n col=%d x2=%d\n",
                      (unsigned long)row_us,
                      (unsigned long)x1_us,
                      (unsigned long)col_us,
@@ -2210,7 +2327,7 @@ void fft_test_hyperram_256x256(void)
         float rmse = sqrtf((float)(sum_sq_error / (double)FFT_ELEMENTS));
         if ((rmse_nonfinite | rmse_clipped) != 0u)
         {
-            xprintf("[FFT-256] Iteration %d: RMSE = %.9f (rmse_san nf=%lu clip=%lu)\n",
+            xprintf("[FFT-256] Iteration %d: RMSE = %.9f (rmse_san nf=%d clip=%d)\n",
                     iter + 1,
                     rmse,
                     (unsigned long)rmse_nonfinite,
@@ -2230,10 +2347,10 @@ void fft_test_hyperram_256x256(void)
         uint32_t retries = 0;
         uint32_t failed_chunks = 0;
         hyperram_write_verify_counters_get(&mismatch_chunks, &retries, &failed_chunks);
-        xprintf("[WV] mism=%lu retry=%lu fail=%lu\n",
-                (unsigned long)mismatch_chunks,
-                (unsigned long)retries,
-                (unsigned long)failed_chunks);
+        xprintf("[WV] mism=%d retry=%d fail=%d\n",
+                (int)mismatch_chunks,
+                (int)retries,
+                (int)failed_chunks);
     }
 }
 
