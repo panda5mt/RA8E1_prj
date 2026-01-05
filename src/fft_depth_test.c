@@ -5,7 +5,7 @@
 #include <string.h>
 
 /* CMSIS-DSP (for MVE-optimized CFFT) */
-#include "arm_math.h"
+#include "arm_math_f16.h"
 
 /*
  * Logging helpers:
@@ -23,6 +23,9 @@
 #if defined(APP_MODE_FFT_VERIFY_PRINT_PHASES_ONCE) && (APP_MODE_FFT_VERIFY_PRINT_PHASES_ONCE != 0)
 static bool g_fft_print_phases_once_done = false;
 #endif
+
+static bool g_fft_print_build_caps_once = false;
+static bool g_fft_print_fft256_path_once = false;
 
 static inline void fft_verify_delay_ms(uint32_t ms)
 {
@@ -182,11 +185,9 @@ static inline void fft_1d_cmsis_cfft_f32(float *real, float *imag, int N, bool i
 #if defined(ARM_FLOAT16_SUPPORTED)
 /*
  * Float16 trial path:
- * - Pack split real/imag into interleaved f32 (existing optimized path)
- * - Convert to interleaved f16, run CFFT f16
- * - Convert back to f32 and unpack
- *
- * This keeps logic identical to f32 path (aside from quantization).
+ * - Pack split real/imag directly into interleaved f16
+ * - Run CFFT f16
+ * - Unpack interleaved f16 directly into split f32
  */
 static inline bool fft_1d_cmsis_cfft_f16(float *real, float *imag, int N, bool is_inverse)
 {
@@ -196,54 +197,72 @@ static inline bool fft_1d_cmsis_cfft_f16(float *real, float *imag, int N, bool i
         return false;
     }
 
-    /* Pack into interleaved f32 using existing code path. */
-#if USE_HELIUM_MVE
-    int i;
-    for (i = 0; i <= N - 4; i += 4)
+    /* Pack directly into interleaved f16 to avoid extra f32 scratch traffic. */
+#if USE_HELIUM_MVE && defined(ARM_MATH_MVE_FLOAT16)
+    int i = 0;
+    for (; i <= N - 8; i += 8)
     {
-        float32x4x2_t tmp;
-        tmp.val[0] = vld1q_f32(&real[i]);
-        tmp.val[1] = vld1q_f32(&imag[i]);
-        vst2q_f32(&g_cfft_io[2 * i], tmp);
+        float32x4_t r0 = vld1q_f32(&real[i + 0]);
+        float32x4_t r1 = vld1q_f32(&real[i + 4]);
+        float32x4_t im0 = vld1q_f32(&imag[i + 0]);
+        float32x4_t im1 = vld1q_f32(&imag[i + 4]);
+
+        float16x8_t r16;
+        float16x8_t im16;
+        r16 = vcvtbq_f16_f32(r16, r0);
+        r16 = vcvttq_f16_f32(r16, r1);
+        im16 = vcvtbq_f16_f32(im16, im0);
+        im16 = vcvttq_f16_f32(im16, im1);
+
+        float16x8x2_t tmp;
+        tmp.val[0] = r16;
+        tmp.val[1] = im16;
+        /* Store interleaved: [re0,im0,re1,im1,...,re7,im7] */
+        vst2q_f16(&g_cfft_io_f16[2 * i], tmp);
     }
     for (; i < N; i++)
     {
-        g_cfft_io[2 * i + 0] = real[i];
-        g_cfft_io[2 * i + 1] = imag[i];
+        g_cfft_io_f16[2 * i + 0] = (float16_t)real[i];
+        g_cfft_io_f16[2 * i + 1] = (float16_t)imag[i];
     }
 #else
     for (int i = 0; i < N; i++)
     {
-        g_cfft_io[2 * i + 0] = real[i];
-        g_cfft_io[2 * i + 1] = imag[i];
+        g_cfft_io_f16[2 * i + 0] = (float16_t)real[i];
+        g_cfft_io_f16[2 * i + 1] = (float16_t)imag[i];
     }
 #endif
-
-    arm_float_to_f16((const float32_t *)g_cfft_io, g_cfft_io_f16, (uint32_t)(2 * N));
 
     /* bitReverseFlag=1 => output in natural order. Inverse scaling is handled inside CMSIS. */
     arm_cfft_f16(S, g_cfft_io_f16, is_inverse ? 1U : 0U, 1U);
 
-    arm_f16_to_float(g_cfft_io_f16, (float32_t *)g_cfft_io, (uint32_t)(2 * N));
-
-    /* Unpack back to split arrays. */
-#if USE_HELIUM_MVE
-    for (i = 0; i <= N - 4; i += 4)
+    /* Unpack directly back to split f32 arrays. */
+#if USE_HELIUM_MVE && defined(ARM_MATH_MVE_FLOAT16)
+    i = 0;
+    for (; i <= N - 8; i += 8)
     {
-        float32x4x2_t tmp = vld2q_f32(&g_cfft_io[2 * i]);
-        vst1q_f32(&real[i], tmp.val[0]);
-        vst1q_f32(&imag[i], tmp.val[1]);
+        float16x8x2_t tmp = vld2q_f16(&g_cfft_io_f16[2 * i]);
+
+        float32x4_t r0 = vcvtbq_f32_f16(tmp.val[0]);
+        float32x4_t r1 = vcvttq_f32_f16(tmp.val[0]);
+        float32x4_t im0 = vcvtbq_f32_f16(tmp.val[1]);
+        float32x4_t im1 = vcvttq_f32_f16(tmp.val[1]);
+
+        vst1q_f32(&real[i + 0], r0);
+        vst1q_f32(&real[i + 4], r1);
+        vst1q_f32(&imag[i + 0], im0);
+        vst1q_f32(&imag[i + 4], im1);
     }
     for (; i < N; i++)
     {
-        real[i] = g_cfft_io[2 * i + 0];
-        imag[i] = g_cfft_io[2 * i + 1];
+        real[i] = (float)g_cfft_io_f16[2 * i + 0];
+        imag[i] = (float)g_cfft_io_f16[2 * i + 1];
     }
 #else
     for (int i = 0; i < N; i++)
     {
-        real[i] = g_cfft_io[2 * i + 0];
-        imag[i] = g_cfft_io[2 * i + 1];
+        real[i] = (float)g_cfft_io_f16[2 * i + 0];
+        imag[i] = (float)g_cfft_io_f16[2 * i + 1];
     }
 #endif
 
@@ -775,15 +794,34 @@ void fft_1d_mve(float *real, float *imag, int N, bool is_inverse)
     /* Hot sizes: use CMSIS-DSP CFFT (math-correct + MVE-optimized). */
     if ((N == 128) || (N == 256))
     {
-#if defined(ARM_FLOAT16_SUPPORTED)
         if (N == 256)
         {
-            if (fft_1d_cmsis_cfft_f16(real, imag, N, is_inverse))
+#if defined(ARM_FLOAT16_SUPPORTED)
+            bool used_f16 = fft_1d_cmsis_cfft_f16(real, imag, N, is_inverse);
+            if (!g_fft_print_fft256_path_once)
+            {
+                g_fft_print_fft256_path_once = true;
+#if USE_HELIUM_MVE && defined(ARM_MATH_MVE_FLOAT16)
+                const int cap_fft_f16_pack_mve = 1;
+#else
+                const int cap_fft_f16_pack_mve = 0;
+#endif
+                FFT_LOG("[FFT] fft256: path=%s pack_mve=%d\n", used_f16 ? "f16" : "f32_fallback", cap_fft_f16_pack_mve);
+            }
+
+            if (used_f16)
             {
                 return;
             }
-        }
+#else
+            if (!g_fft_print_fft256_path_once)
+            {
+                g_fft_print_fft256_path_once = true;
+                FFT_LOG("[FFT] fft256: path=f32 (no_f16_build)\n");
+            }
 #endif
+        }
+
         fft_1d_cmsis_cfft_f32(real, imag, N, is_inverse);
         return;
     }
@@ -2270,6 +2308,38 @@ void fft_test_hyperram_256x256(void)
     xprintf("\n========================================\n");
     xprintf("  Test 6: 256x256 HyperRAM FFT (FULL)\n");
     xprintf("========================================\n");
+
+    if (!g_fft_print_build_caps_once)
+    {
+        g_fft_print_build_caps_once = true;
+
+#if defined(ARM_FLOAT16_SUPPORTED)
+        const int cap_f16 = 1;
+#else
+        const int cap_f16 = 0;
+#endif
+
+#if defined(ARM_MATH_MVE_FLOAT16)
+        const int cap_mve_f16 = 1;
+#else
+        const int cap_mve_f16 = 0;
+#endif
+
+#if defined(ARM_DSP_BUILT_WITH_GCC)
+        const int cap_dsp_gcc = 1;
+#else
+        const int cap_dsp_gcc = 0;
+#endif
+
+        const int cap_fft_f16_pack_mve = (USE_HELIUM_MVE && cap_mve_f16) ? 1 : 0;
+
+        /* Split into short lines to avoid UART/log buffer corruption. */
+        FFT_LOG("[FFT] caps: USE_HELIUM_MVE=%d\n", (int)USE_HELIUM_MVE);
+        FFT_LOG("[FFT] caps: ARM_FLOAT16_SUPPORTED=%d\n", cap_f16);
+        FFT_LOG("[FFT] caps: ARM_MATH_MVE_FLOAT16=%d\n", cap_mve_f16);
+        FFT_LOG("[FFT] caps: ARM_DSP_BUILT_WITH_GCC=%d\n", cap_dsp_gcc);
+        FFT_LOG("[FFT] caps: FFT_F16_PACK_MVE=%d\n", cap_fft_f16_pack_mve);
+    }
 
     const int FFT_SIZE = 256;
     const int FFT_ELEMENTS = 65536; // 256×256
