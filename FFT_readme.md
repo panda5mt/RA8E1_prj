@@ -155,6 +155,98 @@ void write_input_256x256(const float *src_rowmajor_real)
 }
 ```
 
+---
+
+## 実運用に組み込む場合の“呼び出し場所”と最小ラッパ例
+
+「任意の 256x256 配列を与えて、FFT→IFFT を回して結果を取り出す」用途なら、
+`src/fft_depth_test.c` のテスト関数を直接いじるより、**自分用の関数を1つ作って**
+そこから `fft_2d_hyperram_full()` を呼ぶのが分かりやすいです。
+
+呼び出し場所の例:
+
+- FreeRTOS の任意タスク（例: 検証スレッド / main_thread3 など）
+  - 256x256 は処理時間もHyperRAM帯域もそれなりに使うので、lwIP tcpipスレッド等の“止めてはいけないスレッド”からは呼ばないのが無難です。
+- 既存のテストを使うだけなら `fft_test_hyperram_256x256()` を呼ぶ
+  - こちらは「内部でパターン生成→FFT→IFFT→RMSE」までやるデモ/診断用途です。
+
+### 最小ラッパ例（in/out をSRAM配列で渡す）
+
+この例は以下を行います:
+
+1) `in_real_rowmajor[256*256]` を HyperRAM に row ごと書き込み（imag=0）
+2) `fft_2d_hyperram_full()` で forward FFT
+3) `fft_2d_hyperram_full()` で inverse FFT
+4) 結果（復元後の real）を `out_real_rowmajor[256*256]` へ row ごと読み出し
+
+```c
+#include "fft_depth_test.h"
+#include "video_frame_buffer.h"
+
+enum { N = 256 };
+
+static void fft256_roundtrip(const float *in_real_rowmajor, float *out_real_rowmajor)
+{
+    const uint32_t frame_bytes = (uint32_t)(VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL);
+    const uint32_t base = fft256_pick_base_offset(frame_bytes);
+
+    const uint32_t PLANE_SIZE = 0x40000u; // 256*256*4
+    const uint32_t IN_REAL  = base + 0u * PLANE_SIZE;
+    const uint32_t IN_IMAG  = base + 1u * PLANE_SIZE;
+    const uint32_t OUT_REAL = base + 2u * PLANE_SIZE;
+    const uint32_t OUT_IMAG = base + 3u * PLANE_SIZE;
+    const uint32_t TMP_REAL = base + 6u * PLANE_SIZE;
+    const uint32_t TMP_IMAG = base + 7u * PLANE_SIZE;
+
+    static float row_real[256];
+    static float row_zero[256];
+    for (int i = 0; i < N; i++) row_zero[i] = 0.0f;
+
+    // 入力を書き込み（row単位）
+    for (int y = 0; y < N; y++)
+    {
+        for (int x = 0; x < N; x++)
+        {
+            row_real[x] = in_real_rowmajor[y * N + x];
+        }
+
+        uint32_t off_r = IN_REAL + (uint32_t)(y * N) * sizeof(float);
+        uint32_t off_i = IN_IMAG + (uint32_t)(y * N) * sizeof(float);
+        hyperram_b_write(row_real, (void *)off_r, (uint32_t)N * sizeof(float));
+        hyperram_b_write(row_zero, (void *)off_i, (uint32_t)N * sizeof(float));
+    }
+
+    // FFT（forward）
+    fft_2d_hyperram_full(IN_REAL, IN_IMAG,
+                         OUT_REAL, OUT_IMAG,
+                         TMP_REAL, TMP_IMAG,
+                         N, N, false);
+
+    // IFFT（inverse）: 復元結果を IN_* 側に戻す例
+    fft_2d_hyperram_full(OUT_REAL, OUT_IMAG,
+                         IN_REAL, IN_IMAG,
+                         TMP_REAL, TMP_IMAG,
+                         N, N, true);
+
+    // 出力を読み出し（row単位）
+    for (int y = 0; y < N; y++)
+    {
+        uint32_t off = IN_REAL + (uint32_t)(y * N) * sizeof(float);
+        hyperram_b_read(row_real, (void *)off, (uint32_t)N * sizeof(float));
+        for (int x = 0; x < N; x++)
+        {
+            out_real_rowmajor[y * N + x] = row_real[x];
+        }
+    }
+}
+```
+
+メモ:
+
+- `frame_bytes` の計算に `VGA_WIDTH/VGA_HEIGHT/BYTE_PER_PIXEL` を使っています（カメラ設定と合わせる前提）。
+  カメラ無関係にFFTだけ回す用途なら、`fft256_pick_base_offset()` を使わずに固定の安全領域（例: `0x400000`）を使ってもOKです。
+- 256x256 の FFT/IFFT は実行時間が長めなので、必要ならタスク側で優先度/周期を調整してください。
+
 ### 3) Forward FFT（256x256）
 
 ```c
