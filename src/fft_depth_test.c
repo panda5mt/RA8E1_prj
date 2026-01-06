@@ -1934,7 +1934,7 @@ void fft_test_hyperram_128x128(void)
     for (int p = 0; p < pattern_count; p++)
     {
         int iter = (pattern_start + p) % 5;
-        xprintf("\n[FFT-128] Iteration %d:\n %s pattern\n", p + 1, pattern_names[iter]);
+        xprintf("\n[FFT-128] Iter %d:\n %s pattern\n", p + 1, pattern_names[iter]);
         // vTaskdelay(pdMS_TO_TICKS(10));
 
         xprintf("[FFT-128] Generating pattern...\n");
@@ -2278,7 +2278,7 @@ void fft_test_hyperram_128x128(void)
 
         if ((rmse_nonfinite | rmse_clipped) != 0u)
         {
-            xprintf("[FFT-128] Iteration %d: RMSE = %.9f (rmse_san nf=%d clip=%d)\n",
+            xprintf("[FFT-128] Iter %d: RMSE = %.9f\n (rmse_san nf=%d\n clip=%d)\n",
                     p + 1,
                     rmse,
                     (int)rmse_nonfinite,
@@ -2286,7 +2286,7 @@ void fft_test_hyperram_128x128(void)
         }
         else
         {
-            xprintf("[FFT-128] Iteration %d: RMSE = %.9f\n", p + 1, rmse);
+            xprintf("[FFT-128] Iter %d: RMSE = %.9f\n", p + 1, rmse);
         }
         fft_verify_delay_ms((uint32_t)APP_MODE_FFT_VERIFY_ITER_DELAY_MS);
     }
@@ -2295,7 +2295,7 @@ void fft_test_hyperram_128x128(void)
     xprintf("\n[FFT-128] ========== Summary ==========\n");
     for (int i = 0; i < 5; i++)
     {
-        xprintf("[FFT-128] %s: RMSE=%.9f,\n Forward=%d us, Inverse=%d us\n",
+        xprintf("[FFT-128] %s:\n RMSE=%.9f,\n Forward=%d us, Inverse=%d us\n",
                 pattern_names[i],
                 g_large_fft_rmse_values[i],
                 g_large_fft_forward_times[i],
@@ -2417,7 +2417,7 @@ void fft_test_hyperram_256x256(void)
     for (int p = 0; p < pattern_count; p++)
     {
         int iter = (pattern_start + p) % 5;
-        FFT_LOG("\n[FFT-256] Iteration %d:\n %s pattern\n", p + 1, pattern_names[iter]);
+        FFT_LOG("\n[FFT-256] Iter %d:\n %s pattern\n", p + 1, pattern_names[iter]);
         fft_verify_delay_ms((uint32_t)APP_MODE_FFT_VERIFY_PHASE_DELAY_MS);
 
 #if APP_MODE_FFT_VERIFY_FFT256_INPUT_READBACK
@@ -2725,7 +2725,7 @@ void fft_test_hyperram_256x256(void)
         float rmse = sqrtf((float)(sum_sq_error / (double)FFT_ELEMENTS));
         if ((rmse_nonfinite | rmse_clipped) != 0u)
         {
-            xprintf("[FFT-256] Iteration %d: RMSE = %.9f (rmse_san nf=%d clip=%d)\n",
+            xprintf("[FFT-256] Iter %d: RMSE = %.9f\n (rmse_san nf=%d clip=%d)\n",
                     p + 1,
                     rmse,
                     (int)rmse_nonfinite,
@@ -2733,7 +2733,7 @@ void fft_test_hyperram_256x256(void)
         }
         else
         {
-            xprintf("[FFT-256] Iteration %d: RMSE = %.9f\n", p + 1, rmse);
+            xprintf("[FFT-256] Iter %d: RMSE = %.9f\n", p + 1, rmse);
         }
 
         // vTaskdelay(pdMS_TO_TICKS(50));
