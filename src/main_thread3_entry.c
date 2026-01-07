@@ -369,6 +369,24 @@ static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_s
     (void)load_y_line_from_hyperram_base(frame_base_offset, PQ128_Y0 + 0, yuv_tmp, y_curr);
     (void)load_y_line_from_hyperram_base(frame_base_offset, PQ128_Y0 + 1, yuv_tmp, y_next);
 
+    /*
+     * Contrast-invariant p,q (reduces albedo/brightness bias):
+     *   p = (I(x+1)-I(x-1)) / (I(x+1)+I(x-1)+eps)
+     *   q = (I(y+1)-I(y-1)) / (I(y+1)+I(y-1)+eps)
+     * Implemented in fixed-point with a scale factor.
+     *
+     * Additionally, mask near-saturated pixels to avoid highlight/clip bias.
+     */
+#ifndef PQ128_NORM_EPS
+#define PQ128_NORM_EPS (16)
+#endif
+#ifndef PQ128_NORM_SCALE
+#define PQ128_NORM_SCALE (256)
+#endif
+#ifndef PQ128_SAT_TH
+#define PQ128_SAT_TH (250)
+#endif
+
     for (int ry = 0; ry < PQ128_SIZE; ry++)
     {
         /* Compute p,q within ROI. Borders are set to 0. */
@@ -382,10 +400,37 @@ static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_s
             }
 
             int x = PQ128_X0 + rx;
-            int16_t dx = (int16_t)((int)y_curr[x + 1] - (int)y_curr[x - 1]);
-            int16_t dy = (int16_t)((int)y_next[x] - (int)y_prev[x]);
-            p_row[rx] = dx;
-            q_row[rx] = dy;
+            int i_xm1 = (int)y_curr[x - 1];
+            int i_xp1 = (int)y_curr[x + 1];
+            int i_ym1 = (int)y_prev[x];
+            int i_yp1 = (int)y_next[x];
+
+            bool sat_p = (i_xm1 >= PQ128_SAT_TH) || (i_xp1 >= PQ128_SAT_TH);
+            bool sat_q = (i_ym1 >= PQ128_SAT_TH) || (i_yp1 >= PQ128_SAT_TH);
+
+            if (sat_p)
+            {
+                p_row[rx] = 0;
+            }
+            else
+            {
+                int num = i_xp1 - i_xm1;
+                int den = i_xp1 + i_xm1 + PQ128_NORM_EPS;
+                int v = (num * PQ128_NORM_SCALE) / den;
+                p_row[rx] = (int16_t)clamp_i32(v, -32768, 32767);
+            }
+
+            if (sat_q)
+            {
+                q_row[rx] = 0;
+            }
+            else
+            {
+                int num = i_yp1 - i_ym1;
+                int den = i_yp1 + i_ym1 + PQ128_NORM_EPS;
+                int v = (num * PQ128_NORM_SCALE) / den;
+                q_row[rx] = (int16_t)clamp_i32(v, -32768, 32767);
+            }
         }
 
         uint32_t row_off = (uint32_t)ry * (uint32_t)PQ128_SIZE * (uint32_t)sizeof(int16_t);
