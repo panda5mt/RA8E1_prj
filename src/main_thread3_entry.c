@@ -51,6 +51,32 @@
 /* Align scratch to 16 bytes (matches base alignment granularity). */
 #define ALIGN16_U32(x) (((uint32_t)(x) + 15U) & ~15U)
 
+/* ---- Depth export (FC128 -> 320x240 u8) tunables ----
+ * By default the exporter normalizes per-frame (z_min..z_max) to [0..255], which can
+ * make even small variations look like strong "relative depth".
+ * Enable the options below to suppress that effect.
+ */
+#ifndef FC128_EXPORT_USE_ZMINMAX_EMA
+#define FC128_EXPORT_USE_ZMINMAX_EMA (0)
+#endif
+
+/* EMA step: new = old + (cur-old)/2^SHIFT. Smaller = smoother. */
+#ifndef FC128_EXPORT_ZMINMAX_EMA_SHIFT
+#define FC128_EXPORT_ZMINMAX_EMA_SHIFT (3)
+#endif
+
+/* Floor for normalization range. Larger values reduce contrast when the scene is flat.
+ * Units are the same as reconstructed Z.
+ */
+#ifndef FC128_EXPORT_RANGE_FLOOR
+#define FC128_EXPORT_RANGE_FLOOR (1.0e-6f)
+#endif
+
+/* Contrast around mid-gray (Q15). 32768=unchanged, 16384=half contrast. */
+#ifndef FC128_EXPORT_CONTRAST_Q15
+#define FC128_EXPORT_CONTRAST_Q15 (32768)
+#endif
+
 // ---- 128x128 p,q (int16) generation ----
 #define PQ128_SIZE (128)
 #define PQ128_X0 ((FRAME_WIDTH - PQ128_SIZE) / 2)
@@ -80,7 +106,7 @@
  *       p ~= (I/255) * (ps/ts), q ~= (I/255) * (qs/ts)
  */
 #ifndef PQ128_PQ_MODE
-#define PQ128_PQ_MODE (1)
+#define PQ128_PQ_MODE (2)
 #endif
 
 /* Scale for PQ128_PQ_MODE==1 (unnormalized central difference). */
@@ -91,6 +117,13 @@
 /* Scale applied to light-model p/q before storing to int16 (PQ128_PQ_MODE==3). */
 #ifndef PQ128_LIGHTMODEL_SCALE
 #define PQ128_LIGHTMODEL_SCALE (2048)
+#endif
+
+/* Forward declarations for light-model PQ mode (globals are defined later). */
+#if (PQ128_PQ_MODE == 3)
+static float g_light_ps;
+static float g_light_qs;
+static float g_light_ts;
 #endif
 
 #ifndef PQ128_SAT_TH
@@ -304,10 +337,35 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
         }
     }
 
-    float range = z_max - z_min;
-    if (range < 1.0e-6f)
+    float use_z_min = z_min;
+    float use_z_max = z_max;
+
+#if FC128_EXPORT_USE_ZMINMAX_EMA
     {
-        range = 1.0f;
+        static float s_zmin_ema = 0.0f;
+        static float s_zmax_ema = 0.0f;
+        static int s_ema_init = 0;
+        if (!s_ema_init)
+        {
+            s_zmin_ema = z_min;
+            s_zmax_ema = z_max;
+            s_ema_init = 1;
+        }
+        else
+        {
+            const float k = 1.0f / (float)(1U << FC128_EXPORT_ZMINMAX_EMA_SHIFT);
+            s_zmin_ema += (z_min - s_zmin_ema) * k;
+            s_zmax_ema += (z_max - s_zmax_ema) * k;
+        }
+        use_z_min = s_zmin_ema;
+        use_z_max = s_zmax_ema;
+    }
+#endif
+
+    float range = use_z_max - use_z_min;
+    if (range < FC128_EXPORT_RANGE_FLOOR)
+    {
+        range = FC128_EXPORT_RANGE_FLOOR;
     }
 
     uint8_t line[FRAME_WIDTH];
@@ -323,8 +381,24 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
 
             for (int x = 0; x < FC128_N; x++)
             {
-                float n = (row_z[x] - z_min) / range;
-                int out = (int)(n * 255.0f);
+                float n = (row_z[x] - use_z_min) / range;
+                if (n < 0.0f)
+                    n = 0.0f;
+                if (n > 1.0f)
+                    n = 1.0f;
+
+                /* Optional contrast reduction around mid-gray to suppress "relative depth". */
+                if (FC128_EXPORT_CONTRAST_Q15 != 32768)
+                {
+                    const float a = (float)FC128_EXPORT_CONTRAST_Q15 / 32768.0f;
+                    n = (n - 0.5f) * a + 0.5f;
+                    if (n < 0.0f)
+                        n = 0.0f;
+                    if (n > 1.0f)
+                        n = 1.0f;
+                }
+
+                int out = (int)(n * 255.0f + 0.5f);
                 if (out < 0)
                     out = 0;
                 if (out > 255)
@@ -842,6 +916,15 @@ static float g_light_ts = 1.0f; // 光源方向z成分（正規化された垂�
 /* Force light source to be straight above (0,0,1). */
 #ifndef FIX_LIGHT_SOURCE_OVERHEAD
 #define FIX_LIGHT_SOURCE_OVERHEAD (1)
+#endif
+
+/* NOTE:
+ * PQ128_PQ_MODE==3 (light-model overwrite) requires a non-overhead light direction.
+ * If FIX_LIGHT_SOURCE_OVERHEAD==1 then ps=qs=0 and p=q~=0, which tends to produce a flat
+ * (nearly constant) depth map (often appears all-blue with fixed [0..255] heatmap scaling).
+ */
+#if (PQ128_PQ_MODE == 3) && (FIX_LIGHT_SOURCE_OVERHEAD)
+#warning "PQ128_PQ_MODE=3 with FIX_LIGHT_SOURCE_OVERHEAD=1 will degenerate (p=q~=0). Disable overhead forcing or choose PQ128_PQ_MODE=0/1/2."
 #endif
 
 /* 光源パラメータを更新する関数
