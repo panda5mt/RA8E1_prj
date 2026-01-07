@@ -19,7 +19,7 @@
 #if defined(APP_MODE_FFT_VERIFY) && (APP_MODE_FFT_VERIFY != 0)
 #define HYPERRAM_WRITE_VERIFY 1
 #else
-#define HYPERRAM_WRITE_VERIFY 0
+#define HYPERRAM_WRITE_VERIFY 1
 #endif
 #endif
 
