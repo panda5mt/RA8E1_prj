@@ -82,6 +82,21 @@
 #define PQ128_X0 ((FRAME_WIDTH - PQ128_SIZE) / 2)
 #define PQ128_Y0 ((FRAME_HEIGHT - PQ128_SIZE) / 2)
 #define PQ128_PLANE_BYTES ((uint32_t)(PQ128_SIZE * PQ128_SIZE * (int)sizeof(int16_t)))
+
+/* Force p/q to 0 in an outer border of N pixels.
+ * N=1 zeros {0th, last} row/col (good for FFT periodic boundary artifacts).
+ */
+#ifndef PQ128_BORDER_ZERO_N
+#define PQ128_BORDER_ZERO_N (2)
+#endif
+
+#if (PQ128_BORDER_ZERO_N < 0)
+#error "PQ128_BORDER_ZERO_N must be >= 0"
+#endif
+
+#if (PQ128_BORDER_ZERO_N > (PQ128_SIZE / 2))
+#warning "PQ128_BORDER_ZERO_N is large; most/all ROI may become zero"
+#endif
 /* Store into the region immediately after the frame. This stays within the same fixed slot
  * because VIDEO_FRAME_BASE_OFFSET_STEP defaults to 0.
  */
@@ -724,10 +739,11 @@ static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_s
 #if PQ128_USE_TAPER && (PQ128_TAPER_WIDTH > 0)
         int32_t wy_q15 = (int32_t)s_taper_q15[ry];
 #endif
-        /* Compute p,q within ROI. Borders are set to 0. */
+        /* Compute p,q within ROI. Outer border is set to 0 (see PQ128_BORDER_ZERO_N). */
         for (int rx = 0; rx < PQ128_SIZE; rx++)
         {
-            if (ry == 0 || ry == (PQ128_SIZE - 1) || rx == 0 || rx == (PQ128_SIZE - 1))
+            if ((ry < PQ128_BORDER_ZERO_N) || (ry >= (PQ128_SIZE - PQ128_BORDER_ZERO_N)) ||
+                (rx < PQ128_BORDER_ZERO_N) || (rx >= (PQ128_SIZE - PQ128_BORDER_ZERO_N)))
             {
                 p_row[rx] = 0;
                 q_row[rx] = 0;
