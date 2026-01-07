@@ -132,12 +132,13 @@ static void extract_y_from_yuv422(const uint8_t *yuv, uint8_t *y_out, uint32_t y
 #define GRADIENT_OFFSET FRAME_SIZE    // p,q勾配マップオフセット（MONO_OFFSETと同じ位置）
 #define DEPTH_OFFSET (FRAME_SIZE * 2) // 深度マップオフセット（8bit grayscale: 320×240 = 76,800バイト）
 
-// ---- Optional debug: stream p or q instead of grayscale Y ----
+// ---- Optional debug: select what to stream in video mode ----
 // 0: normal grayscale (Y)
 // 1: stream p (dx) from Thread3 PQ128 buffer
 // 2: stream q (dy) from Thread3 PQ128 buffer
+// 3: stream depth (u8 320x240) from Thread3 FC output
 #ifndef UDP_VIDEO_SOURCE
-#define UDP_VIDEO_SOURCE 1 // default: p (dx)
+#define UDP_VIDEO_SOURCE 3 // default: depth (u8 320x240)
 #endif
 
 #define PQ128_SIZE (128)
@@ -243,6 +244,13 @@ typedef struct
 
     /* HyperRAM base offset for the current video frame (snapshotted). */
     uint32_t frame_base_offset;
+
+    /*
+     * For depth streaming, keep the last completed depth buffer snapshot.
+     * This avoids flicker to gray while the next depth is being computed.
+     */
+    uint32_t depth_base_offset;
+    uint32_t depth_seq_snapshot;
 } udp_send_ctx_t;
 static void udp_send_timer_cb(void *arg);
 
@@ -309,7 +317,20 @@ static void udp_send_timer_cb(void *arg)
         /* Snapshot base at the start of each frame to avoid mid-frame base changes. */
         if (ctx->is_video_mode && (ctx->sent_bytes == 0U))
         {
-            ctx->frame_base_offset = (uint32_t)g_video_frame_base_offset;
+            if (UDP_VIDEO_SOURCE == 3)
+            {
+                /* Depth: snapshot last completed depth; keep previous if not ready yet. */
+                uint32_t depth_seq = (uint32_t)g_depth_seq;
+                if (depth_seq != 0U)
+                {
+                    ctx->depth_seq_snapshot = depth_seq;
+                    ctx->depth_base_offset = (uint32_t)g_depth_base_offset;
+                }
+            }
+            else
+            {
+                ctx->frame_base_offset = (uint32_t)g_video_frame_base_offset;
+            }
         }
 
         // 動画・写真データモード：512バイトずつ送信
@@ -375,6 +396,31 @@ static void udp_send_timer_cb(void *arg)
             {
                 /* Stream PQ128 debug view as a 320x240 grayscale image. */
                 fill_pq_debug_chunk(dest_ptr, (uint32_t)send_size, (uint32_t)ctx->sent_bytes);
+            }
+            else if (UDP_VIDEO_SOURCE == 3)
+            {
+                /* Stream depth (already 8-bit grayscale) from HyperRAM. */
+                if (ctx->depth_seq_snapshot == 0U)
+                {
+                    memset(dest_ptr, 128, send_size);
+                }
+                else
+                {
+                    fsp_err_t derr = hyperram_b_read_timed(dest_ptr,
+                                                           (void *)(ctx->depth_base_offset + (uint32_t)DEPTH_OFFSET + (uint32_t)ctx->sent_bytes),
+                                                           (uint32_t)send_size,
+                                                           0);
+                    if (FSP_SUCCESS != derr)
+                    {
+                        pbuf_free(p);
+                        if (FSP_ERR_TIMEOUT != derr)
+                        {
+                            xprintf("[UDP] Depth read error: %d\n", derr);
+                        }
+                        sys_timeout((ctx->interval_ms > 0) ? ctx->interval_ms : 1, udp_send_timer_cb, ctx);
+                        return;
+                    }
+                }
             }
             else
             {
@@ -462,7 +508,20 @@ static void udp_send_timer_cb(void *arg)
             {
                 // 次のフレームがある：フレーム間インターバルで待機
                 ctx->sent_bytes = 0; // 次フレーム用にリセット
-                ctx->frame_base_offset = (uint32_t)g_video_frame_base_offset;
+                if (UDP_VIDEO_SOURCE == 3)
+                {
+                    /* Refresh snapshot if a new depth becomes available. */
+                    uint32_t depth_seq = (uint32_t)g_depth_seq;
+                    if (depth_seq != 0U)
+                    {
+                        ctx->depth_seq_snapshot = depth_seq;
+                        ctx->depth_base_offset = (uint32_t)g_depth_base_offset;
+                    }
+                }
+                else
+                {
+                    ctx->frame_base_offset = (uint32_t)g_video_frame_base_offset;
+                }
                 should_continue = true;
                 next_interval = ctx->frame_interval_ms; // フレーム間は長めの間隔
                 // ログ出力を削減（100フレームごと）

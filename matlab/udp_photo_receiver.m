@@ -186,12 +186,12 @@ function img_handle = process_complete_frame_fast(packets, total_chunks, total_s
     % 深度マップを可視化（8bit grayscale: 320×240）
     depth_map = extract_depth_map(frame_data, 320, 240);
     
-    % 画像表示更新（深度マップをjetカラーマップで表示）
+    % 画像表示更新（深度マップをヒートマップ表示）
     if isempty(img_handle) || ~ishandle(img_handle)
         img_handle = imshow(depth_map, [], 'Parent', ax);
-        colormap(ax, gray(256)); % 通常のグレースケール表示
-        colorbar(ax, 'off');
-        set(ax, 'Title', text('String', 'Grayscale Frame', 'FontSize', 10));
+        colormap(ax, parula(256));
+        colorbar(ax);
+        set(ax, 'Title', text('String', 'Depth (Heatmap)', 'FontSize', 10));
     else
         img_handle.CData = depth_map;  % 直接プロパティアクセス
     end

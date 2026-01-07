@@ -10,6 +10,7 @@
 #include <string.h>
 #include <math.h>
 #include <stdint.h>
+#include <float.h>
 
 // ========== 深度復元アルゴリズム切り替え ==========
 // 1 = マルチグリッド版（ポアソン方程式反復解法、中品質、中速: ~0.5-2秒/フレーム）
@@ -45,6 +46,11 @@
 #define GRADIENT_OFFSET FRAME_SIZE                  // p,q勾配マップを配置（2チャンネル×8bit）
 #define DEPTH_OFFSET (FRAME_SIZE * 2)               // 深度マップ（8bit grayscale: 320×240 = 76,800バイト）
 
+#define DEPTH_BYTES ((uint32_t)(FRAME_WIDTH * FRAME_HEIGHT))
+
+/* Align scratch to 16 bytes (matches base alignment granularity). */
+#define ALIGN16_U32(x) (((uint32_t)(x) + 15U) & ~15U)
+
 // ---- 128x128 p,q (int16) generation ----
 #define PQ128_SIZE (128)
 #define PQ128_X0 ((FRAME_WIDTH - PQ128_SIZE) / 2)
@@ -61,6 +67,234 @@
  */
 volatile uint32_t g_pq128_seq = 0;
 volatile uint32_t g_pq128_base_offset = 0;
+
+/* Published when a full depth frame write completes. */
+volatile uint32_t g_depth_seq = 0;
+volatile uint32_t g_depth_base_offset = 0;
+
+#ifndef ENABLE_FC128_DEPTH
+#define ENABLE_FC128_DEPTH 1
+#endif
+
+// ---- FC(FFT) scratch layout (float planes) ----
+#define FC128_N (128)
+#define FC128_PLANE_BYTES ((uint32_t)(FC128_N * FC128_N * (uint32_t)sizeof(float)))
+
+/*
+ * IMPORTANT:
+ * Do NOT overlap scratch with the exported 320x240 depth buffer.
+ * Depth occupies [DEPTH_OFFSET, DEPTH_OFFSET + DEPTH_BYTES).
+ */
+#define FC128_OFFSET_BASE ALIGN16_U32(DEPTH_OFFSET + DEPTH_BYTES)
+
+#define FC128_P_REAL (FC128_OFFSET_BASE + 0U * FC128_PLANE_BYTES)
+#define FC128_P_IMAG (FC128_OFFSET_BASE + 1U * FC128_PLANE_BYTES)
+#define FC128_Q_REAL (FC128_OFFSET_BASE + 2U * FC128_PLANE_BYTES)
+#define FC128_Q_IMAG (FC128_OFFSET_BASE + 3U * FC128_PLANE_BYTES)
+
+#define FC128_P_HAT_REAL (FC128_OFFSET_BASE + 4U * FC128_PLANE_BYTES)
+#define FC128_P_HAT_IMAG (FC128_OFFSET_BASE + 5U * FC128_PLANE_BYTES)
+#define FC128_Q_HAT_REAL (FC128_OFFSET_BASE + 6U * FC128_PLANE_BYTES)
+#define FC128_Q_HAT_IMAG (FC128_OFFSET_BASE + 7U * FC128_PLANE_BYTES)
+
+#define FC128_Z_HAT_REAL (FC128_OFFSET_BASE + 8U * FC128_PLANE_BYTES)
+#define FC128_Z_HAT_IMAG (FC128_OFFSET_BASE + 9U * FC128_PLANE_BYTES)
+
+#define FC128_Z_REAL (FC128_OFFSET_BASE + 10U * FC128_PLANE_BYTES)
+#define FC128_Z_IMAG (FC128_OFFSET_BASE + 11U * FC128_PLANE_BYTES)
+
+#define FC128_TMP_REAL (FC128_OFFSET_BASE + 12U * FC128_PLANE_BYTES)
+#define FC128_TMP_IMAG (FC128_OFFSET_BASE + 13U * FC128_PLANE_BYTES)
+
+static void fc128_build_float_planes_from_pq(uint32_t frame_base_offset)
+{
+    int16_t p_row_i16[FC128_N];
+    int16_t q_row_i16[FC128_N];
+    float row_f32[FC128_N];
+    float row_zero[FC128_N];
+    memset(row_zero, 0, sizeof(row_zero));
+
+    for (int y = 0; y < FC128_N; y++)
+    {
+        uint32_t row_i16_off = (uint32_t)y * (uint32_t)FC128_N * (uint32_t)sizeof(int16_t);
+        uint32_t row_f32_off = (uint32_t)y * (uint32_t)FC128_N * (uint32_t)sizeof(float);
+
+        (void)hyperram_b_read(p_row_i16, (void *)(frame_base_offset + PQ128_P_OFFSET + row_i16_off), (uint32_t)sizeof(p_row_i16));
+        (void)hyperram_b_read(q_row_i16, (void *)(frame_base_offset + PQ128_Q_OFFSET + row_i16_off), (uint32_t)sizeof(q_row_i16));
+
+        for (int x = 0; x < FC128_N; x++)
+        {
+            row_f32[x] = (float)p_row_i16[x];
+        }
+        (void)hyperram_b_write(row_f32, (void *)(frame_base_offset + FC128_P_REAL + row_f32_off), (uint32_t)sizeof(row_f32));
+        (void)hyperram_b_write(row_zero, (void *)(frame_base_offset + FC128_P_IMAG + row_f32_off), (uint32_t)sizeof(row_zero));
+
+        for (int x = 0; x < FC128_N; x++)
+        {
+            row_f32[x] = (float)q_row_i16[x];
+        }
+        (void)hyperram_b_write(row_f32, (void *)(frame_base_offset + FC128_Q_REAL + row_f32_off), (uint32_t)sizeof(row_f32));
+        (void)hyperram_b_write(row_zero, (void *)(frame_base_offset + FC128_Q_IMAG + row_f32_off), (uint32_t)sizeof(row_zero));
+    }
+}
+
+static void fc128_compute_zhat(uint32_t frame_base_offset)
+{
+    const float two_pi = 6.2831853071795864769f;
+    float u[FC128_N];
+    float v[FC128_N];
+    for (int k = 0; k < FC128_N; k++)
+    {
+        int kk = (k < (FC128_N / 2)) ? k : (k - FC128_N);
+        u[k] = two_pi * (float)kk / (float)FC128_N;
+    }
+    for (int l = 0; l < FC128_N; l++)
+    {
+        int ll = (l < (FC128_N / 2)) ? l : (l - FC128_N);
+        v[l] = two_pi * (float)ll / (float)FC128_N;
+    }
+
+    float p_re[FC128_N];
+    float p_im[FC128_N];
+    float q_re[FC128_N];
+    float q_im[FC128_N];
+    float z_re[FC128_N];
+    float z_im[FC128_N];
+
+    for (int y = 0; y < FC128_N; y++)
+    {
+        uint32_t row_off = (uint32_t)y * (uint32_t)FC128_N * (uint32_t)sizeof(float);
+        (void)hyperram_b_read(p_re, (void *)(frame_base_offset + FC128_P_HAT_REAL + row_off), (uint32_t)sizeof(p_re));
+        (void)hyperram_b_read(p_im, (void *)(frame_base_offset + FC128_P_HAT_IMAG + row_off), (uint32_t)sizeof(p_im));
+        (void)hyperram_b_read(q_re, (void *)(frame_base_offset + FC128_Q_HAT_REAL + row_off), (uint32_t)sizeof(q_re));
+        (void)hyperram_b_read(q_im, (void *)(frame_base_offset + FC128_Q_HAT_IMAG + row_off), (uint32_t)sizeof(q_im));
+
+        for (int x = 0; x < FC128_N; x++)
+        {
+            float uu = u[x];
+            float vv = v[y];
+            float denom = uu * uu + vv * vv;
+            if (denom < 1.0e-12f)
+            {
+                denom = 1.0f;
+            }
+
+            /* Z_hat = (-j*uu*P_hat - j*vv*Q_hat) / (uu^2 + vv^2)
+             * For A = a + j b, -j*uu*A = uu*b - j*(uu*a)
+             */
+            float real_num = uu * p_im[x] + vv * q_im[x];
+            float imag_num = -(uu * p_re[x] + vv * q_re[x]);
+            z_re[x] = real_num / denom;
+            z_im[x] = imag_num / denom;
+        }
+
+        (void)hyperram_b_write(z_re, (void *)(frame_base_offset + FC128_Z_HAT_REAL + row_off), (uint32_t)sizeof(z_re));
+        (void)hyperram_b_write(z_im, (void *)(frame_base_offset + FC128_Z_HAT_IMAG + row_off), (uint32_t)sizeof(z_im));
+    }
+}
+
+static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
+{
+    float row_z[FC128_N];
+    float z_min = FLT_MAX;
+    float z_max = -FLT_MAX;
+
+    for (int y = 0; y < FC128_N; y++)
+    {
+        uint32_t row_off = (uint32_t)y * (uint32_t)FC128_N * (uint32_t)sizeof(float);
+        (void)hyperram_b_read(row_z, (void *)(frame_base_offset + FC128_Z_REAL + row_off), (uint32_t)sizeof(row_z));
+        for (int x = 0; x < FC128_N; x++)
+        {
+            float v0 = row_z[x];
+            if (v0 < z_min)
+            {
+                z_min = v0;
+            }
+            if (v0 > z_max)
+            {
+                z_max = v0;
+            }
+        }
+    }
+
+    float range = z_max - z_min;
+    if (range < 1.0e-6f)
+    {
+        range = 1.0f;
+    }
+
+    uint8_t line[FRAME_WIDTH];
+    for (int y = 0; y < FRAME_HEIGHT; y++)
+    {
+        memset(line, 128, sizeof(line));
+
+        if (y >= PQ128_Y0 && y < (PQ128_Y0 + FC128_N))
+        {
+            int ry = y - PQ128_Y0;
+            uint32_t row_off = (uint32_t)ry * (uint32_t)FC128_N * (uint32_t)sizeof(float);
+            (void)hyperram_b_read(row_z, (void *)(frame_base_offset + FC128_Z_REAL + row_off), (uint32_t)sizeof(row_z));
+
+            for (int x = 0; x < FC128_N; x++)
+            {
+                float n = (row_z[x] - z_min) / range;
+                int out = (int)(n * 255.0f);
+                if (out < 0)
+                    out = 0;
+                if (out > 255)
+                    out = 255;
+                line[PQ128_X0 + x] = (uint8_t)out;
+            }
+        }
+
+        (void)hyperram_b_write(line, (void *)(frame_base_offset + DEPTH_OFFSET + (uint32_t)y * (uint32_t)FRAME_WIDTH), (uint32_t)sizeof(line));
+    }
+}
+
+static void fc128_compute_depth_and_store(uint32_t frame_base_offset, uint32_t frame_seq)
+{
+    g_depth_seq = 0;
+
+    fc128_build_float_planes_from_pq(frame_base_offset);
+
+    /* FFT(P) and FFT(Q) */
+    fft_2d_hyperram_full(
+        frame_base_offset + FC128_P_REAL,
+        frame_base_offset + FC128_P_IMAG,
+        frame_base_offset + FC128_P_HAT_REAL,
+        frame_base_offset + FC128_P_HAT_IMAG,
+        frame_base_offset + FC128_TMP_REAL,
+        frame_base_offset + FC128_TMP_IMAG,
+        FC128_N, FC128_N, false);
+
+    fft_2d_hyperram_full(
+        frame_base_offset + FC128_Q_REAL,
+        frame_base_offset + FC128_Q_IMAG,
+        frame_base_offset + FC128_Q_HAT_REAL,
+        frame_base_offset + FC128_Q_HAT_IMAG,
+        frame_base_offset + FC128_TMP_REAL,
+        frame_base_offset + FC128_TMP_IMAG,
+        FC128_N, FC128_N, false);
+
+    /* Build Z_hat */
+    fc128_compute_zhat(frame_base_offset);
+
+    /* IFFT(Z_hat) -> Z */
+    fft_2d_hyperram_full(
+        frame_base_offset + FC128_Z_HAT_REAL,
+        frame_base_offset + FC128_Z_HAT_IMAG,
+        frame_base_offset + FC128_Z_REAL,
+        frame_base_offset + FC128_Z_IMAG,
+        frame_base_offset + FC128_TMP_REAL,
+        frame_base_offset + FC128_TMP_IMAG,
+        FC128_N, FC128_N, true);
+
+    fc128_export_depth_u8_320x240(frame_base_offset);
+
+    __DMB();
+    g_depth_base_offset = frame_base_offset;
+    __DMB();
+    g_depth_seq = frame_seq;
+}
 
 static inline void reorder_grayscale_4px_line(uint8_t *buf, uint32_t n)
 {
@@ -2045,6 +2279,10 @@ void main_thread3_entry(void *pvParameters)
 
         uint32_t frame_base = (uint32_t)g_video_frame_base_offset;
         pq128_compute_and_store(frame_base, seq);
+
+#if ENABLE_FC128_DEPTH
+        fc128_compute_depth_and_store(frame_base, seq);
+#endif
         last_seq = seq;
 
         /* Yield; Thread0 capture interval is currently 500ms. */
