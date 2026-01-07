@@ -93,9 +93,7 @@ add_custom_command(
 )
 
 
-# RASC (Smart Configurator CLI) is typically available only on Windows via e2studio.
-# Guard these steps so Linux builds don't try to execute a Windows-only rasc.exe path.
-if(CMAKE_HOST_WIN32 AND DEFINED RENESAS_IDE AND RENESAS_IDE STREQUAL "e2studio" AND DEFINED RASC_EXE_PATH AND EXISTS "${RASC_EXE_PATH}")
+if ((NOT RENESAS_IDE) OR (NOT RENESAS_IDE STREQUAL "e2studio"))
 
 
 # Pre-build step: run RASC to generate project content if configuration.xml is changed
