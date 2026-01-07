@@ -15,6 +15,9 @@
 /* Published HyperRAM base offset for the most recently written camera frame. */
 volatile uint32_t g_video_frame_base_offset = (uint32_t)VIDEO_FRAME_BASE_OFFSET_DEFAULT;
 
+/* Published monotonic sequence for the most recently written camera frame. */
+volatile uint32_t g_video_frame_seq = 0;
+
 // #define VGA_WIDTH (256)
 // #define VGA_HEIGHT (256)
 // #define BYTE_PER_PIXEL (2)
@@ -131,6 +134,9 @@ void main_thread0_entry(void *pvParameters)
         {
             /* Publish the base where this frame now lives. */
             g_video_frame_base_offset = next_write_base;
+
+            /* Publish frame completion (lets consumers avoid mid-write reads). */
+            g_video_frame_seq++;
 
             /* Advance the write base for the next frame (optional). */
             next_write_base = video_frame_next_base_u32(next_write_base, frame_bytes);

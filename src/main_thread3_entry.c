@@ -6,8 +6,10 @@
 #include "verify_mode.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "video_frame_buffer.h"
 #include <string.h>
 #include <math.h>
+#include <stdint.h>
 
 // ========== 深度復元アルゴリズム切り替え ==========
 // 1 = マルチグリッド版（ポアソン方程式反復解法、中品質、中速: ~0.5-2秒/フレーム）
@@ -42,6 +44,131 @@
 #define FRAME_SIZE (FRAME_WIDTH * FRAME_HEIGHT * 2) // YUV422 = 2 bytes/pixel
 #define GRADIENT_OFFSET FRAME_SIZE                  // p,q勾配マップを配置（2チャンネル×8bit）
 #define DEPTH_OFFSET (FRAME_SIZE * 2)               // 深度マップ（8bit grayscale: 320×240 = 76,800バイト）
+
+// ---- 128x128 p,q (int16) generation ----
+#define PQ128_SIZE (128)
+#define PQ128_X0 ((FRAME_WIDTH - PQ128_SIZE) / 2)
+#define PQ128_Y0 ((FRAME_HEIGHT - PQ128_SIZE) / 2)
+#define PQ128_PLANE_BYTES ((uint32_t)(PQ128_SIZE * PQ128_SIZE * (int)sizeof(int16_t)))
+/* Store into the region immediately after the frame. This stays within the same fixed slot
+ * because VIDEO_FRAME_BASE_OFFSET_STEP defaults to 0.
+ */
+#define PQ128_P_OFFSET (GRADIENT_OFFSET)
+#define PQ128_Q_OFFSET (PQ128_P_OFFSET + PQ128_PLANE_BYTES)
+
+/* Published when a full p/q write completes.
+ * g_pq128_seq == g_video_frame_seq used for computation.
+ */
+volatile uint32_t g_pq128_seq = 0;
+volatile uint32_t g_pq128_base_offset = 0;
+
+static inline void reorder_grayscale_4px_line(uint8_t *buf, uint32_t n)
+{
+    /* Swap [0..1] with [2..3] within each 4px group (matches Thread1 grayscale send fix). */
+    for (uint32_t i = 0; i + 3U < n; i += 4U)
+    {
+        uint8_t a0 = buf[i];
+        uint8_t a1 = buf[i + 1U];
+        buf[i] = buf[i + 2U];
+        buf[i + 1U] = buf[i + 3U];
+        buf[i + 2U] = a0;
+        buf[i + 3U] = a1;
+    }
+}
+
+static void extract_y_line_uyvy_swap_y(const uint8_t *yuv, uint8_t *y_out, uint32_t width)
+{
+    /* UYVY: [U0 Y0 V0 Y1] but swap Y: output (Y1,Y0) to match current tuned grayscale view. */
+    for (uint32_t x = 0; x < width; x += 2U)
+    {
+        uint32_t yuv_idx = x * 2U;
+        y_out[x] = yuv[yuv_idx + 3U];
+        y_out[x + 1U] = yuv[yuv_idx + 1U];
+    }
+    reorder_grayscale_4px_line(y_out, width);
+}
+
+static inline int clamp_i32(int v, int lo, int hi)
+{
+    if (v < lo)
+    {
+        return lo;
+    }
+    if (v > hi)
+    {
+        return hi;
+    }
+    return v;
+}
+
+static fsp_err_t load_y_line_from_hyperram_base(uint32_t frame_base_offset,
+                                                int requested_row,
+                                                uint8_t yuv_line[FRAME_WIDTH * 2],
+                                                uint8_t y_line[FRAME_WIDTH])
+{
+    int row = clamp_i32(requested_row, 0, FRAME_HEIGHT - 1);
+    uint32_t offset = frame_base_offset + (uint32_t)row * (uint32_t)FRAME_WIDTH * 2U;
+    fsp_err_t err = hyperram_b_read(yuv_line, (void *)offset, FRAME_WIDTH * 2);
+    if (FSP_SUCCESS != err)
+    {
+        return err;
+    }
+
+    extract_y_line_uyvy_swap_y(yuv_line, y_line, (uint32_t)FRAME_WIDTH);
+    return FSP_SUCCESS;
+}
+
+static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_seq)
+{
+    uint8_t yuv_tmp[FRAME_WIDTH * 2];
+    uint8_t y_prev[FRAME_WIDTH];
+    uint8_t y_curr[FRAME_WIDTH];
+    uint8_t y_next[FRAME_WIDTH];
+    int16_t p_row[PQ128_SIZE];
+    int16_t q_row[PQ128_SIZE];
+
+    /* Mark as in-progress (consumer should wait for a non-zero stable seq). */
+    g_pq128_seq = 0;
+
+    /* Prime 3-line window around PQ128_Y0. */
+    (void)load_y_line_from_hyperram_base(frame_base_offset, PQ128_Y0 - 1, yuv_tmp, y_prev);
+    (void)load_y_line_from_hyperram_base(frame_base_offset, PQ128_Y0 + 0, yuv_tmp, y_curr);
+    (void)load_y_line_from_hyperram_base(frame_base_offset, PQ128_Y0 + 1, yuv_tmp, y_next);
+
+    for (int ry = 0; ry < PQ128_SIZE; ry++)
+    {
+        /* Compute p,q within ROI. Borders are set to 0. */
+        for (int rx = 0; rx < PQ128_SIZE; rx++)
+        {
+            if (ry == 0 || ry == (PQ128_SIZE - 1) || rx == 0 || rx == (PQ128_SIZE - 1))
+            {
+                p_row[rx] = 0;
+                q_row[rx] = 0;
+                continue;
+            }
+
+            int x = PQ128_X0 + rx;
+            int16_t dx = (int16_t)((int)y_curr[x + 1] - (int)y_curr[x - 1]);
+            int16_t dy = (int16_t)((int)y_next[x] - (int)y_prev[x]);
+            p_row[rx] = dx;
+            q_row[rx] = dy;
+        }
+
+        uint32_t row_off = (uint32_t)ry * (uint32_t)PQ128_SIZE * (uint32_t)sizeof(int16_t);
+        (void)hyperram_b_write(p_row, (void *)(frame_base_offset + PQ128_P_OFFSET + row_off), (uint32_t)PQ128_SIZE * (uint32_t)sizeof(int16_t));
+        (void)hyperram_b_write(q_row, (void *)(frame_base_offset + PQ128_Q_OFFSET + row_off), (uint32_t)PQ128_SIZE * (uint32_t)sizeof(int16_t));
+
+        /* Slide window: prev <- curr, curr <- next, next <- load(row+2). */
+        memcpy(y_prev, y_curr, FRAME_WIDTH);
+        memcpy(y_curr, y_next, FRAME_WIDTH);
+        (void)load_y_line_from_hyperram_base(frame_base_offset, PQ128_Y0 + ry + 2, yuv_tmp, y_next);
+    }
+
+    __DMB();
+    g_pq128_base_offset = frame_base_offset;
+    __DMB();
+    g_pq128_seq = frame_seq;
+}
 
 #if USE_DEPTH_METHOD == 1
 #define MG_WORK_OFFSET (DEPTH_OFFSET + FRAME_WIDTH * FRAME_HEIGHT)
@@ -1902,19 +2029,25 @@ void main_thread3_entry(void *pvParameters)
 
     // hyperram_b_read(read_data, (void *)HYPERRAM_BASE_ADDR, sizeof(test_data));
 
-    xprintf("[Thread3] YUV transmission mode - depth processing disabled\n");
-    xprintf("[Thread3] Thread1 will transmit\n raw YUV422 color data directly from HyperRAM\n");
+    xprintf("[Thread3] PQ128 mode: generating p/q (int16) in HyperRAM\n");
+    xprintf("[Thread3] ROI: %dx%d at (%d,%d) from Y (UYVY_SWAP_Y + 4px reorder)\n",
+            (int)PQ128_SIZE, (int)PQ128_SIZE, (int)PQ128_X0, (int)PQ128_Y0);
 
-    // YUV送信モードでは深度処理を行わず、thread1がYUV422データを直接送信
-    // thread0がカメラからYUV422データをHyperRAMに書き込み
-    // thread1がHyperRAMからYUV422データを読み出してUDP送信
-    // thread3は待機状態（将来的な拡張用に予約）
-
-    xprintf("[Thread3] Entering idle loop (YUV pass-through mode)\n");
-
+    uint32_t last_seq = 0;
     while (1)
     {
-        // 待機モード：CPUリソースを他のスレッドに譲る
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        uint32_t seq = g_video_frame_seq;
+        if (seq == 0 || seq == last_seq)
+        {
+            vTaskDelay(pdMS_TO_TICKS(10));
+            continue;
+        }
+
+        uint32_t frame_base = (uint32_t)g_video_frame_base_offset;
+        pq128_compute_and_store(frame_base, seq);
+        last_seq = seq;
+
+        /* Yield; Thread0 capture interval is currently 500ms. */
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }

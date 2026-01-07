@@ -132,6 +132,78 @@ static void extract_y_from_yuv422(const uint8_t *yuv, uint8_t *y_out, uint32_t y
 #define GRADIENT_OFFSET FRAME_SIZE    // p,q勾配マップオフセット（MONO_OFFSETと同じ位置）
 #define DEPTH_OFFSET (FRAME_SIZE * 2) // 深度マップオフセット（8bit grayscale: 320×240 = 76,800バイト）
 
+// ---- Optional debug: stream p or q instead of grayscale Y ----
+// 0: normal grayscale (Y)
+// 1: stream p (dx) from Thread3 PQ128 buffer
+// 2: stream q (dy) from Thread3 PQ128 buffer
+#ifndef UDP_VIDEO_SOURCE
+#define UDP_VIDEO_SOURCE 1 // default: p (dx)
+#endif
+
+#define PQ128_SIZE (128)
+#define PQ128_X0 ((320 - PQ128_SIZE) / 2)
+#define PQ128_Y0 ((240 - PQ128_SIZE) / 2)
+#define PQ128_PLANE_BYTES ((uint32_t)(PQ128_SIZE * PQ128_SIZE * (uint32_t)sizeof(int16_t)))
+#define PQ128_P_OFFSET (FRAME_SIZE) /* same as GRADIENT_OFFSET in Thread3 */
+#define PQ128_Q_OFFSET (PQ128_P_OFFSET + PQ128_PLANE_BYTES)
+
+static inline uint8_t pq16_to_u8(int16_t v)
+{
+    // Central difference range ~[-255..255]. Compress by /2 to map to [-127..127], then bias.
+    int x = ((int)v) / 2 + 128;
+    if (x < 0)
+        x = 0;
+    if (x > 255)
+        x = 255;
+    return (uint8_t)x;
+}
+
+static void fill_pq_debug_chunk(uint8_t *out, uint32_t out_bytes, uint32_t pixel_base)
+{
+    // If PQ isn't ready, paint mid-gray.
+    uint32_t seq = g_pq128_seq;
+    uint32_t pq_base = g_pq128_base_offset;
+    if (seq == 0U)
+    {
+        memset(out, 128, out_bytes);
+        return;
+    }
+
+    int16_t row_buf[PQ128_SIZE];
+    int cached_ry = -1;
+
+    for (uint32_t i = 0; i < out_bytes; i++)
+    {
+        uint32_t pix = pixel_base + i;
+        uint32_t x = pix % 320U;
+        uint32_t y = pix / 320U;
+        if (y >= 240U)
+        {
+            out[i] = 128;
+            continue;
+        }
+
+        if (x < (uint32_t)PQ128_X0 || x >= (uint32_t)(PQ128_X0 + PQ128_SIZE) ||
+            y < (uint32_t)PQ128_Y0 || y >= (uint32_t)(PQ128_Y0 + PQ128_SIZE))
+        {
+            out[i] = 128;
+            continue;
+        }
+
+        int rx = (int)x - PQ128_X0;
+        int ry = (int)y - PQ128_Y0;
+        if (ry != cached_ry)
+        {
+            uint32_t row_off = (uint32_t)ry * (uint32_t)PQ128_SIZE * (uint32_t)sizeof(int16_t);
+            uint32_t plane_off = (UDP_VIDEO_SOURCE == 2) ? PQ128_Q_OFFSET : PQ128_P_OFFSET;
+            (void)hyperram_b_read(row_buf, (void *)(pq_base + plane_off + row_off), (uint32_t)PQ128_SIZE * (uint32_t)sizeof(int16_t));
+            cached_ry = ry;
+        }
+
+        out[i] = pq16_to_u8(row_buf[rx]);
+    }
+}
+
 // UDP写真データチャンクヘッダー
 typedef struct __attribute__((packed))
 {
@@ -299,19 +371,27 @@ static void udp_send_timer_cb(void *arg)
              * If HyperRAM is busy (e.g. camera frame write / WV retries), reschedule
              * quickly and try again.
              */
-            fsp_err_t read_err = hyperram_b_read_timed(yuv_buffer, (void *)(base + yuv_offset), yuv_read_size, 0);
-            if (FSP_SUCCESS != read_err)
+            if (UDP_VIDEO_SOURCE == 1 || UDP_VIDEO_SOURCE == 2)
             {
-                pbuf_free(p);
-                if (FSP_ERR_TIMEOUT != read_err)
-                {
-                    xprintf("[UDP] HyperRAM read error: %d\n", read_err);
-                }
-                sys_timeout((ctx->interval_ms > 0) ? ctx->interval_ms : 1, udp_send_timer_cb, ctx);
-                return;
+                /* Stream PQ128 debug view as a 320x240 grayscale image. */
+                fill_pq_debug_chunk(dest_ptr, (uint32_t)send_size, (uint32_t)ctx->sent_bytes);
             }
+            else
+            {
+                fsp_err_t read_err = hyperram_b_read_timed(yuv_buffer, (void *)(base + yuv_offset), yuv_read_size, 0);
+                if (FSP_SUCCESS != read_err)
+                {
+                    pbuf_free(p);
+                    if (FSP_ERR_TIMEOUT != read_err)
+                    {
+                        xprintf("[UDP] HyperRAM read error: %d\n", read_err);
+                    }
+                    sys_timeout((ctx->interval_ms > 0) ? ctx->interval_ms : 1, udp_send_timer_cb, ctx);
+                    return;
+                }
 
-            extract_y_from_yuv422(yuv_buffer, dest_ptr, (uint32_t)send_size, g_yuv422_order_fixed);
+                extract_y_from_yuv422(yuv_buffer, dest_ptr, (uint32_t)send_size, g_yuv422_order_fixed);
+            }
 
             err_t e = udp_sendto(ctx->pcb, p, &ctx->dest_ip, ctx->port);
             pbuf_free(p);
