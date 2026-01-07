@@ -62,6 +62,93 @@
 #define PQ128_P_OFFSET (GRADIENT_OFFSET)
 #define PQ128_Q_OFFSET (PQ128_P_OFFSET + PQ128_PLANE_BYTES)
 
+/* PQ128 normalized-gradient parameters (compile-time tunables). */
+#ifndef PQ128_NORM_EPS
+#define PQ128_NORM_EPS (16)
+#endif
+
+#ifndef PQ128_NORM_SCALE
+#define PQ128_NORM_SCALE (256)
+#endif
+
+/* p,q computation mode (compile-time):
+ * 0 = normalized (default): v = (I1-I0) / (I1+I0+eps)  (uses LUT or division)
+ * 1 = strong approx (no normalization): v = (I1-I0) * PQ128_DIFF_SCALE
+ * 2 = strong approx (pow2 reciprocal): v = (I1-I0) * PQ128_NORM_SCALE / 2^floor(log2(den))
+ * 3 = strong approx (light-model, like fcmethod/img_test.c "--pq=light"):
+ *     p,q are overwritten from intensity and current light direction:
+ *       p ~= (I/255) * (ps/ts), q ~= (I/255) * (qs/ts)
+ */
+#ifndef PQ128_PQ_MODE
+#define PQ128_PQ_MODE (1)
+#endif
+
+/* Scale for PQ128_PQ_MODE==1 (unnormalized central difference). */
+#ifndef PQ128_DIFF_SCALE
+#define PQ128_DIFF_SCALE (1)
+#endif
+
+/* Scale applied to light-model p/q before storing to int16 (PQ128_PQ_MODE==3). */
+#ifndef PQ128_LIGHTMODEL_SCALE
+#define PQ128_LIGHTMODEL_SCALE (2048)
+#endif
+
+#ifndef PQ128_SAT_TH
+#define PQ128_SAT_TH (245)
+#endif
+
+/* Remove per-pixel division by using a reciprocal LUT (recommended for speed). */
+#ifndef PQ128_USE_RECIP_LUT
+#define PQ128_USE_RECIP_LUT (1)
+#endif
+
+/* Saturation handling: 0=hard mask (sat->0), 1=soft attenuation near saturation. */
+#ifndef PQ128_USE_SAT_SOFTMASK
+#define PQ128_USE_SAT_SOFTMASK (1)
+#endif
+
+/* Start attenuating when intensity approaches saturation threshold. */
+#ifndef PQ128_SAT_SOFT_START
+#define PQ128_SAT_SOFT_START (200)
+#endif
+
+/* Softmask curve: 0=linear, 1=quadratic (stronger suppression near saturation). */
+#ifndef PQ128_SAT_SOFT_POWER2
+#define PQ128_SAT_SOFT_POWER2 (1)
+#endif
+
+/* Denominator range: (I0+I1+eps), I in [0..255] */
+#ifndef PQ128_DEN_MAX
+#define PQ128_DEN_MAX (510 + PQ128_NORM_EPS)
+#endif
+
+/* Optional highlight compression (tone knee) before computing p/q.
+ * This reduces the impact of near-saturation highlights without adding per-pixel floating point.
+ */
+#ifndef PQ128_USE_INTENSITY_KNEE
+#define PQ128_USE_INTENSITY_KNEE (1)
+#endif
+
+/* Knee start (0..255). Values above this are compressed. */
+#ifndef PQ128_KNEE_START
+#define PQ128_KNEE_START (210)
+#endif
+
+/* Compression strength as right shift: 2 => /4, 3 => /8 (stronger). */
+#ifndef PQ128_KNEE_SHIFT
+#define PQ128_KNEE_SHIFT (8)
+#endif
+
+/* Edge taper (window) to reduce FFT wrap-around artifacts. */
+#ifndef PQ128_USE_TAPER
+#define PQ128_USE_TAPER (1)
+#endif
+
+/* Width (pixels) of the taper region from each edge. 0 disables taper. */
+#ifndef PQ128_TAPER_WIDTH
+#define PQ128_TAPER_WIDTH (16)
+#endif
+
 /* Published when a full p/q write completes.
  * g_pq128_seq == g_video_frame_seq used for computation.
  */
@@ -335,6 +422,144 @@ static inline int clamp_i32(int v, int lo, int hi)
     return v;
 }
 
+/* Compute Q15 weight based on saturation proximity (1.0 .. 0.0). */
+static inline int32_t pq128_sat_weight_q15(int i0, int i1)
+{
+    int mx = (i0 > i1) ? i0 : i1;
+    if (mx >= PQ128_SAT_TH)
+    {
+        return 0;
+    }
+
+#if PQ128_USE_SAT_SOFTMASK
+    if (mx <= PQ128_SAT_SOFT_START)
+    {
+        return (1 << 15);
+    }
+    int span = (PQ128_SAT_TH - PQ128_SAT_SOFT_START);
+    if (span <= 0)
+    {
+        return (1 << 15);
+    }
+    int num = (PQ128_SAT_TH - mx);
+    int32_t w = (int32_t)(((int64_t)num << 15) / (int64_t)span);
+    w = clamp_i32((int)w, 0, (1 << 15));
+#if PQ128_SAT_SOFT_POWER2
+    /* Quadratic falloff: w <- w^2 (Q15) */
+    w = (int32_t)(((int64_t)w * (int64_t)w + (1 << 14)) >> 15);
+#endif
+    return w;
+#else
+    return (1 << 15);
+#endif
+}
+
+#if PQ128_USE_INTENSITY_KNEE
+static void pq128_init_intensity_lut(uint8_t out_u8[256])
+{
+    for (int i = 0; i < 256; i++)
+    {
+        if (i <= PQ128_KNEE_START)
+        {
+            out_u8[i] = (uint8_t)i;
+        }
+        else
+        {
+            int y = PQ128_KNEE_START + ((i - PQ128_KNEE_START) >> PQ128_KNEE_SHIFT);
+            if (y > 255)
+            {
+                y = 255;
+            }
+            out_u8[i] = (uint8_t)y;
+        }
+    }
+}
+#endif
+
+#if (PQ128_PQ_MODE == 2)
+static inline int pq128_floor_log2_u32(uint32_t x)
+{
+    if (x == 0U)
+    {
+        return 0;
+    }
+#if defined(__GNUC__)
+    return 31 - __builtin_clz(x);
+#else
+    return 31 - (int)__CLZ(x);
+#endif
+}
+#endif
+
+#if (PQ128_PQ_MODE == 3)
+static inline int16_t pq128_lightmodel_pq_i16(int intensity_u8, int32_t ratio_q15)
+{
+    /* p_q15 ~= (I/255) * ratio_q15 */
+    int32_t pq_q15 = (int32_t)(((int64_t)intensity_u8 * (int64_t)ratio_q15 + 127) / 255);
+    int32_t v = (int32_t)(((int64_t)pq_q15 * (int64_t)PQ128_LIGHTMODEL_SCALE + (1 << 14)) >> 15);
+    return (int16_t)clamp_i32((int)v, -32768, 32767);
+}
+
+static void pq128_lightmodel_ratios_q15(int32_t *rp_out_q15, int32_t *rq_out_q15)
+{
+    float ps = g_light_ps;
+    float qs = g_light_qs;
+    float ts = g_light_ts;
+    if (fabsf(ts) < 1.0e-6f)
+    {
+        ts = (ts < 0.0f) ? -1.0f : 1.0f;
+    }
+    float rp = ps / ts;
+    float rq = qs / ts;
+
+    int32_t rp_q15 = (int32_t)(rp * 32768.0f);
+    int32_t rq_q15 = (int32_t)(rq * 32768.0f);
+    /* Clamp ratios to keep p/q within sane range. */
+    rp_q15 = clamp_i32((int)rp_q15, -(1 << 15), (1 << 15));
+    rq_q15 = clamp_i32((int)rq_q15, -(1 << 15), (1 << 15));
+    *rp_out_q15 = rp_q15;
+    *rq_out_q15 = rq_q15;
+}
+#endif
+
+#if PQ128_USE_TAPER && (PQ128_TAPER_WIDTH > 0)
+static void pq128_init_taper_lut_q15(uint16_t out_q15[PQ128_SIZE])
+{
+    /* Raised-cosine ramp from 0 at the very edge to 1 at distance >= PQ128_TAPER_WIDTH. */
+    const int W = PQ128_TAPER_WIDTH;
+    const float pi = 3.14159265358979323846f;
+
+    for (int i = 0; i < PQ128_SIZE; i++)
+    {
+        int d = i;
+        int d2 = (PQ128_SIZE - 1) - i;
+        if (d2 < d)
+        {
+            d = d2;
+        }
+
+        if (d >= W)
+        {
+            out_q15[i] = (uint16_t)(1U << 15);
+            continue;
+        }
+
+        float t = (float)d / (float)W; /* [0..1) */
+        float w = 0.5f - 0.5f * cosf(pi * t);
+        int32_t q15 = (int32_t)(w * 32768.0f + 0.5f);
+        if (q15 < 0)
+        {
+            q15 = 0;
+        }
+        if (q15 > (1 << 15))
+        {
+            q15 = (1 << 15);
+        }
+        out_q15[i] = (uint16_t)q15;
+    }
+}
+#endif
+
 static fsp_err_t load_y_line_from_hyperram_base(uint32_t frame_base_offset,
                                                 int requested_row,
                                                 uint8_t yuv_line[FRAME_WIDTH * 2],
@@ -370,25 +595,61 @@ static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_s
     (void)load_y_line_from_hyperram_base(frame_base_offset, PQ128_Y0 + 1, yuv_tmp, y_next);
 
     /*
-     * Contrast-invariant p,q (reduces albedo/brightness bias):
+     * p,q generation (selected by PQ128_PQ_MODE).
+     * Default is contrast-invariant (reduces albedo/brightness bias):
      *   p = (I(x+1)-I(x-1)) / (I(x+1)+I(x-1)+eps)
      *   q = (I(y+1)-I(y-1)) / (I(y+1)+I(y-1)+eps)
-     * Implemented in fixed-point with a scale factor.
-     *
-     * Additionally, mask near-saturated pixels to avoid highlight/clip bias.
+     * Strong-approx modes can be used for extra speed.
      */
-#ifndef PQ128_NORM_EPS
-#define PQ128_NORM_EPS (16)
+
+#if (PQ128_PQ_MODE == 0) && PQ128_USE_RECIP_LUT
+    /* Q15 reciprocal LUT for v = (num * PQ128_NORM_SCALE) / den.
+     * recip_q15[den] = (PQ128_NORM_SCALE<<15)/den
+     */
+    static bool s_recip_inited = false;
+    static uint32_t s_recip_q15[PQ128_DEN_MAX + 1];
+    if (!s_recip_inited)
+    {
+        s_recip_q15[0] = 0U;
+        for (int d = 1; d <= (int)PQ128_DEN_MAX; d++)
+        {
+            s_recip_q15[d] = (((uint32_t)PQ128_NORM_SCALE) << 15) / (uint32_t)d;
+        }
+        s_recip_inited = true;
+    }
 #endif
-#ifndef PQ128_NORM_SCALE
-#define PQ128_NORM_SCALE (256)
+
+#if PQ128_USE_INTENSITY_KNEE
+    static bool s_knee_inited = false;
+    static uint8_t s_knee_u8[256];
+    if (!s_knee_inited)
+    {
+        pq128_init_intensity_lut(s_knee_u8);
+        s_knee_inited = true;
+    }
 #endif
-#ifndef PQ128_SAT_TH
-#define PQ128_SAT_TH (250)
+
+#if PQ128_USE_TAPER && (PQ128_TAPER_WIDTH > 0)
+    static bool s_taper_inited = false;
+    static uint16_t s_taper_q15[PQ128_SIZE];
+    if (!s_taper_inited)
+    {
+        pq128_init_taper_lut_q15(s_taper_q15);
+        s_taper_inited = true;
+    }
+#endif
+
+#if (PQ128_PQ_MODE == 3)
+    int32_t rp_q15 = 0;
+    int32_t rq_q15 = 0;
+    pq128_lightmodel_ratios_q15(&rp_q15, &rq_q15);
 #endif
 
     for (int ry = 0; ry < PQ128_SIZE; ry++)
     {
+#if PQ128_USE_TAPER && (PQ128_TAPER_WIDTH > 0)
+        int32_t wy_q15 = (int32_t)s_taper_q15[ry];
+#endif
         /* Compute p,q within ROI. Borders are set to 0. */
         for (int rx = 0; rx < PQ128_SIZE; rx++)
         {
@@ -400,36 +661,142 @@ static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_s
             }
 
             int x = PQ128_X0 + rx;
-            int i_xm1 = (int)y_curr[x - 1];
-            int i_xp1 = (int)y_curr[x + 1];
-            int i_ym1 = (int)y_prev[x];
-            int i_yp1 = (int)y_next[x];
+            int raw_xm1 = (int)y_curr[x - 1];
+            int raw_xp1 = (int)y_curr[x + 1];
+            int raw_ym1 = (int)y_prev[x];
+            int raw_yp1 = (int)y_next[x];
 
-            bool sat_p = (i_xm1 >= PQ128_SAT_TH) || (i_xp1 >= PQ128_SAT_TH);
-            bool sat_q = (i_ym1 >= PQ128_SAT_TH) || (i_yp1 >= PQ128_SAT_TH);
+#if PQ128_USE_INTENSITY_KNEE
+            int i_xm1 = (int)s_knee_u8[(uint8_t)raw_xm1];
+            int i_xp1 = (int)s_knee_u8[(uint8_t)raw_xp1];
+            int i_ym1 = (int)s_knee_u8[(uint8_t)raw_ym1];
+            int i_yp1 = (int)s_knee_u8[(uint8_t)raw_yp1];
+#else
+            int i_xm1 = raw_xm1;
+            int i_xp1 = raw_xp1;
+            int i_ym1 = raw_ym1;
+            int i_yp1 = raw_yp1;
+#endif
 
-            if (sat_p)
+            /* Saturation detection should use raw intensity (before knee). */
+            int32_t w_p_q15 = pq128_sat_weight_q15(raw_xm1, raw_xp1);
+            int32_t w_q_q15 = pq128_sat_weight_q15(raw_ym1, raw_yp1);
+
+#if PQ128_USE_TAPER && (PQ128_TAPER_WIDTH > 0)
+            int32_t wx_q15 = (int32_t)s_taper_q15[rx];
+            int32_t w_taper_q15 = (int32_t)(((int64_t)wx_q15 * (int64_t)wy_q15 + (1 << 14)) >> 15);
+            w_p_q15 = (int32_t)(((int64_t)w_p_q15 * (int64_t)w_taper_q15 + (1 << 14)) >> 15);
+            w_q_q15 = (int32_t)(((int64_t)w_q_q15 * (int64_t)w_taper_q15 + (1 << 14)) >> 15);
+#endif
+
+            if (w_p_q15 == 0)
             {
                 p_row[rx] = 0;
             }
             else
             {
+#if (PQ128_PQ_MODE == 3)
+                int raw_c = (int)y_curr[x];
+#if PQ128_USE_INTENSITY_KNEE
+                int i_c = (int)s_knee_u8[(uint8_t)raw_c];
+#else
+                int i_c = raw_c;
+#endif
+                int32_t v = (int32_t)pq128_lightmodel_pq_i16(i_c, rp_q15);
+#else
                 int num = i_xp1 - i_xm1;
                 int den = i_xp1 + i_xm1 + PQ128_NORM_EPS;
-                int v = (num * PQ128_NORM_SCALE) / den;
-                p_row[rx] = (int16_t)clamp_i32(v, -32768, 32767);
+                if (den < 0)
+                {
+                    den = 0;
+                }
+                if (den > (int)PQ128_DEN_MAX)
+                {
+                    den = (int)PQ128_DEN_MAX;
+                }
+
+                int32_t v;
+#if (PQ128_PQ_MODE == 1)
+                (void)den;
+                v = (int32_t)((int32_t)num * (int32_t)PQ128_DIFF_SCALE);
+#elif (PQ128_PQ_MODE == 2)
+                if (den <= 0)
+                {
+                    v = 0;
+                }
+                else
+                {
+                    int sh = pq128_floor_log2_u32((uint32_t)den);
+                    v = (int32_t)(((int64_t)num * (int64_t)PQ128_NORM_SCALE) >> sh);
+                }
+#else
+#if PQ128_USE_RECIP_LUT
+                uint32_t recip = s_recip_q15[den];
+                v = (int32_t)(((int64_t)num * (int64_t)recip + (1 << 14)) >> 15);
+#else
+                v = (int32_t)((num * PQ128_NORM_SCALE) / den);
+#endif
+#endif
+#endif
+
+                /* Apply saturation attenuation weight. */
+                v = (int32_t)(((int64_t)v * (int64_t)w_p_q15 + (1 << 14)) >> 15);
+                p_row[rx] = (int16_t)clamp_i32((int)v, -32768, 32767);
             }
 
-            if (sat_q)
+            if (w_q_q15 == 0)
             {
                 q_row[rx] = 0;
             }
             else
             {
+#if (PQ128_PQ_MODE == 3)
+                int raw_c = (int)y_curr[x];
+#if PQ128_USE_INTENSITY_KNEE
+                int i_c = (int)s_knee_u8[(uint8_t)raw_c];
+#else
+                int i_c = raw_c;
+#endif
+                int32_t v = (int32_t)pq128_lightmodel_pq_i16(i_c, rq_q15);
+#else
                 int num = i_yp1 - i_ym1;
                 int den = i_yp1 + i_ym1 + PQ128_NORM_EPS;
-                int v = (num * PQ128_NORM_SCALE) / den;
-                q_row[rx] = (int16_t)clamp_i32(v, -32768, 32767);
+                if (den < 0)
+                {
+                    den = 0;
+                }
+                if (den > (int)PQ128_DEN_MAX)
+                {
+                    den = (int)PQ128_DEN_MAX;
+                }
+
+                int32_t v;
+#if (PQ128_PQ_MODE == 1)
+                (void)den;
+                v = (int32_t)((int32_t)num * (int32_t)PQ128_DIFF_SCALE);
+#elif (PQ128_PQ_MODE == 2)
+                if (den <= 0)
+                {
+                    v = 0;
+                }
+                else
+                {
+                    int sh = pq128_floor_log2_u32((uint32_t)den);
+                    v = (int32_t)(((int64_t)num * (int64_t)PQ128_NORM_SCALE) >> sh);
+                }
+#else
+#if PQ128_USE_RECIP_LUT
+                uint32_t recip = s_recip_q15[den];
+                v = (int32_t)(((int64_t)num * (int64_t)recip + (1 << 14)) >> 15);
+#else
+                v = (int32_t)((num * PQ128_NORM_SCALE) / den);
+#endif
+#endif
+#endif
+
+                /* Apply saturation attenuation weight. */
+                v = (int32_t)(((int64_t)v * (int64_t)w_q_q15 + (1 << 14)) >> 15);
+                q_row[rx] = (int16_t)clamp_i32((int)v, -32768, 32767);
             }
         }
 
@@ -472,6 +839,11 @@ static float g_light_ps = 0.0f; // 光源方向x成分
 static float g_light_qs = 0.0f; // 光源方向y成分
 static float g_light_ts = 1.0f; // 光源方向z成分（正規化された垂直光源）
 
+/* Force light source to be straight above (0,0,1). */
+#ifndef FIX_LIGHT_SOURCE_OVERHEAD
+#define FIX_LIGHT_SOURCE_OVERHEAD (1)
+#endif
+
 /* 光源パラメータを更新する関数
  * センサーからの入力または固定値を設定
  * 注意: 光源ベクトルは正規化されている必要があります
@@ -479,6 +851,14 @@ static float g_light_ts = 1.0f; // 光源方向z成分（正規化された垂�
  */
 void update_light_source(float ps, float qs, float ts)
 {
+#if FIX_LIGHT_SOURCE_OVERHEAD
+    (void)ps;
+    (void)qs;
+    (void)ts;
+    g_light_ps = 0.0f;
+    g_light_qs = 0.0f;
+    g_light_ts = 1.0f;
+#else
     // 正規化
     float magnitude = sqrtf(ps * ps + qs * qs + ts * ts);
     if (magnitude > 1e-6f)
@@ -494,6 +874,7 @@ void update_light_source(float ps, float qs, float ts)
         g_light_qs = 0.0f;
         g_light_ts = 1.0f;
     }
+#endif
 }
 
 /* 光源パラメータを取得する関数 */

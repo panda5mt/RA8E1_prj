@@ -189,8 +189,9 @@ function img_handle = process_complete_frame_fast(packets, total_chunks, total_s
     % 画像表示更新（深度マップをヒートマップ表示）
     if isempty(img_handle) || ~ishandle(img_handle)
         img_handle = imshow(depth_map, [], 'Parent', ax);
-        colormap(ax, parula(256));
+        colormap(ax, jet(256));
         colorbar(ax);
+        caxis(ax, [0 255]); % depthは8bitなので固定レンジで表示
         set(ax, 'Title', text('String', 'Depth (Heatmap)', 'FontSize', 10));
     else
         img_handle.CData = depth_map;  % 直接プロパティアクセス
