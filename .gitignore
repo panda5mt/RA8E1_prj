@@ -70,4 +70,4 @@ add_git.sh
 /.cache/
 compile_commands.json
 /fcmethod/
-FFT_readme.md
+FFT_readme.*
