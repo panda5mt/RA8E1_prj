@@ -84,7 +84,7 @@
  * Example: PQ128_SAMPLE_STRIDE_X=2, PQ128_SAMPLE_STRIDE_Y=1 samples a 256x128 region.
  */
 #ifndef PQ128_SAMPLE_STRIDE_X
-#define PQ128_SAMPLE_STRIDE_X (2)
+#define PQ128_SAMPLE_STRIDE_X (3)
 #endif
 
 #ifndef PQ128_SAMPLE_STRIDE_Y
