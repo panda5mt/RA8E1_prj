@@ -74,7 +74,14 @@
 
 /* Contrast around mid-gray (Q15). 32768=unchanged, 16384=half contrast. */
 #ifndef FC128_EXPORT_CONTRAST_Q15
-#define FC128_EXPORT_CONTRAST_Q15 (32768)
+#define FC128_EXPORT_CONTRAST_Q15 (32768 / 3 * 2)
+#endif
+
+/* Invert exported depth polarity (u8): out <- 255 - out.
+ * Useful when near/far appears swapped in the visualization.
+ */
+#ifndef FC128_EXPORT_INVERT
+#define FC128_EXPORT_INVERT (0)
 #endif
 
 // ---- 128x128 p,q (int16) generation ----
@@ -161,6 +168,19 @@
 #define PQ128_PQ_MODE (2)
 #endif
 
+/* Flip p/q sign if the reconstructed surface appears inverted.
+ * - Flip both (P=1,Q=1) for near/far inversion.
+ * - Flip only P for left-right inversion.
+ * - Flip only Q for up-down inversion.
+ */
+#ifndef PQ128_FLIP_P
+#define PQ128_FLIP_P (0)
+#endif
+
+#ifndef PQ128_FLIP_Q
+#define PQ128_FLIP_Q (0)
+#endif
+
 /* Scale for PQ128_PQ_MODE==1 (unnormalized central difference). */
 #ifndef PQ128_DIFF_SCALE
 #define PQ128_DIFF_SCALE (1)
@@ -200,6 +220,52 @@ static float g_light_ts;
 /* Softmask curve: 0=linear, 1=quadratic (stronger suppression near saturation). */
 #ifndef PQ128_SAT_SOFT_POWER2
 #define PQ128_SAT_SOFT_POWER2 (1)
+#endif
+
+/* Optional dark-region mask: suppress p/q when intensity is very low.
+ * Helps when deep colors (e.g. dark blue/red) have low luma (Y) so gradients are noisy.
+ */
+#ifndef PQ128_USE_DARK_SOFTMASK
+#define PQ128_USE_DARK_SOFTMASK (0)
+#endif
+
+/* Fully suppress when avg intensity <= TH. */
+#ifndef PQ128_DARK_TH
+#define PQ128_DARK_TH (4)
+#endif
+
+/* Full weight when avg intensity >= SOFT_END. */
+#ifndef PQ128_DARK_SOFT_END
+#define PQ128_DARK_SOFT_END (30)
+#endif
+
+/* Softmask curve: 0=linear, 1=quadratic (stronger suppression near dark). */
+#ifndef PQ128_DARK_SOFT_POWER2
+#define PQ128_DARK_SOFT_POWER2 (1)
+#endif
+
+/* Optional chroma-edge mask: suppress p/q near strong chroma transitions.
+ * This helps reduce false shape caused by albedo/color boundaries.
+ *
+ * NOTE: UYVY is 4:2:2 so chroma is shared per 2 pixels; we duplicate per-pixel.
+ */
+#ifndef PQ128_USE_CHROMA_EDGEMASK
+#define PQ128_USE_CHROMA_EDGEMASK (0)
+#endif
+
+/* Start suppressing when chroma-edge |C(x+1)-C(x-1)| exceeds this. */
+#ifndef PQ128_CHROMA_EDGE_START
+#define PQ128_CHROMA_EDGE_START (16)
+#endif
+
+/* Fully suppress when chroma-edge reaches this. */
+#ifndef PQ128_CHROMA_EDGE_TH
+#define PQ128_CHROMA_EDGE_TH (48)
+#endif
+
+/* Curve: 0=linear, 1=quadratic (stronger suppression near threshold). */
+#ifndef PQ128_CHROMA_EDGE_POWER2
+#define PQ128_CHROMA_EDGE_POWER2 (1)
 #endif
 
 /* Denominator range: (I0+I1+eps), I in [0..255] */
@@ -502,6 +568,10 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
                     vi = vmaxq_s32(vi, vzero_i32);
                     vi = vminq_s32(vi, vmax_i32);
 
+#if FC128_EXPORT_INVERT
+                    vi = vsubq_s32(vmax_i32, vi);
+#endif
+
                     int32_t out_i[4];
                     vst1q_s32(out_i, vi);
                     line[export_x0 + x + 0] = (uint8_t)out_i[0];
@@ -535,6 +605,10 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
                     out = 0;
                 if (out > 255)
                     out = 255;
+
+#if FC128_EXPORT_INVERT
+                out = 255 - out;
+#endif
                 line[export_x0 + x] = (uint8_t)out;
             }
 #endif
@@ -593,7 +667,34 @@ static void fc128_compute_depth_and_store(uint32_t frame_base_offset, uint32_t f
 static inline void reorder_grayscale_4px_line(uint8_t *buf, uint32_t n)
 {
     /* Swap [0..1] with [2..3] within each 4px group (matches Thread1 grayscale send fix). */
-    for (uint32_t i = 0; i + 3U < n; i += 4U)
+    uint32_t i = 0;
+
+#if USE_HELIUM_MVE
+    /* Vectorize by treating each 4px group as one 32-bit word:
+     * [a0 a1 a2 a3] -> [a2 a3 a0 a1] == rotate-by-16 within 32-bit.
+     * Process 4 groups (16 bytes) per loop.
+     */
+    for (; (i + 3U) < n && (((uintptr_t)(&buf[i])) & 3U); i += 4U)
+    {
+        uint8_t a0 = buf[i];
+        uint8_t a1 = buf[i + 1U];
+        buf[i] = buf[i + 2U];
+        buf[i + 1U] = buf[i + 3U];
+        buf[i + 2U] = a0;
+        buf[i + 3U] = a1;
+    }
+
+    for (; (i + 15U) < n; i += 16U)
+    {
+        uint32x4_t v = vld1q_u32((const uint32_t *)&buf[i]);
+        uint32x4_t hi = vshrq_n_u32(v, 16);
+        uint32x4_t lo = vshlq_n_u32(v, 16);
+        uint32x4_t r = vorrq_u32(hi, lo);
+        vst1q_u32((uint32_t *)&buf[i], r);
+    }
+#endif
+
+    for (; i + 3U < n; i += 4U)
     {
         uint8_t a0 = buf[i];
         uint8_t a1 = buf[i + 1U];
@@ -650,6 +751,45 @@ static void extract_y_line_uyvy_swap_y(const uint8_t *yuv, uint8_t *y_out, uint3
     reorder_grayscale_4px_line(y_out, width);
 }
 
+#if PQ128_USE_CHROMA_EDGEMASK
+static void extract_chroma_mag_line_uyvy_reorder(const uint8_t *yuv, uint8_t *c_out, uint32_t width)
+{
+    /* UYVY: [U0 Y0 V0 Y1] per 2 pixels.
+     * Compute a simple chroma magnitude proxy per pixel:
+     *   C = |U-128| + |V-128|  (clamped to 0..255)
+     * Duplicate to both pixels of the pair, then apply the same 4px reorder
+     * as the grayscale path so indexing matches y_out.
+     */
+    for (uint32_t x = 0; x < width; x += 2U)
+    {
+        uint32_t idx = x * 2U;
+        int u = (int)yuv[idx + 0U];
+        int v = (int)yuv[idx + 2U];
+        int du = u - 128;
+        int dv = v - 128;
+        if (du < 0)
+        {
+            du = -du;
+        }
+        if (dv < 0)
+        {
+            dv = -dv;
+        }
+        int c = du + dv;
+        if (c > 255)
+        {
+            c = 255;
+        }
+        c_out[x] = (uint8_t)c;
+        if ((x + 1U) < width)
+        {
+            c_out[x + 1U] = (uint8_t)c;
+        }
+    }
+    reorder_grayscale_4px_line(c_out, width);
+}
+#endif
+
 static inline int clamp_i32(int v, int lo, int hi)
 {
     if (v < lo)
@@ -694,6 +834,63 @@ static inline int32_t pq128_sat_weight_q15(int i0, int i1)
     return (1 << 15);
 #endif
 }
+
+#if PQ128_USE_DARK_SOFTMASK
+static inline int32_t pq128_dark_weight_q15(int i0, int i1)
+{
+    /* Use average intensity as a simple SNR proxy. */
+    int avg = (i0 + i1) >> 1;
+
+    if (avg <= PQ128_DARK_TH)
+    {
+        return 0;
+    }
+    if (avg >= PQ128_DARK_SOFT_END)
+    {
+        return (1 << 15);
+    }
+
+    int span = (PQ128_DARK_SOFT_END - PQ128_DARK_TH);
+    if (span <= 0)
+    {
+        return 0;
+    }
+    int num = (avg - PQ128_DARK_TH);
+    int32_t w = (int32_t)(((int64_t)num << 15) / (int64_t)span);
+    w = clamp_i32((int)w, 0, (1 << 15));
+
+#if PQ128_DARK_SOFT_POWER2
+    w = (int32_t)(((int64_t)w * (int64_t)w + (1 << 14)) >> 15);
+#endif
+    return w;
+}
+#endif
+
+#if PQ128_USE_CHROMA_EDGEMASK
+static inline int32_t pq128_chroma_edge_weight_q15(int edge)
+{
+    if (edge <= PQ128_CHROMA_EDGE_START)
+    {
+        return (1 << 15);
+    }
+    if (edge >= PQ128_CHROMA_EDGE_TH)
+    {
+        return 0;
+    }
+    int span = (PQ128_CHROMA_EDGE_TH - PQ128_CHROMA_EDGE_START);
+    if (span <= 0)
+    {
+        return 0;
+    }
+    int num = (PQ128_CHROMA_EDGE_TH - edge);
+    int32_t w = (int32_t)(((int64_t)num << 15) / (int64_t)span);
+    w = clamp_i32((int)w, 0, (1 << 15));
+#if PQ128_CHROMA_EDGE_POWER2
+    w = (int32_t)(((int64_t)w * (int64_t)w + (1 << 14)) >> 15);
+#endif
+    return w;
+}
+#endif
 
 #if PQ128_USE_INTENSITY_KNEE
 static void pq128_init_intensity_lut(uint8_t out_u8[256])
@@ -818,6 +1015,51 @@ static fsp_err_t load_y_line_from_hyperram_base(uint32_t frame_base_offset,
     return FSP_SUCCESS;
 }
 
+#if PQ128_USE_CHROMA_EDGEMASK
+static fsp_err_t load_yc_line_from_hyperram_base(uint32_t frame_base_offset,
+                                                 int requested_row,
+                                                 uint8_t yuv_line[FRAME_WIDTH * 2],
+                                                 uint8_t y_line[FRAME_WIDTH],
+                                                 uint8_t c_line[FRAME_WIDTH])
+{
+    int row = clamp_i32(requested_row, 0, FRAME_HEIGHT - 1);
+    uint32_t offset = frame_base_offset + (uint32_t)row * (uint32_t)FRAME_WIDTH * 2U;
+    fsp_err_t err = hyperram_b_read(yuv_line, (void *)offset, FRAME_WIDTH * 2);
+    if (FSP_SUCCESS != err)
+    {
+        return err;
+    }
+
+    extract_y_line_uyvy_swap_y(yuv_line, y_line, (uint32_t)FRAME_WIDTH);
+    extract_chroma_mag_line_uyvy_reorder(yuv_line, c_line, (uint32_t)FRAME_WIDTH);
+    return FSP_SUCCESS;
+}
+
+static void load_yc_line_from_hyperram_or_zero(uint32_t frame_base_offset,
+                                               int requested_row,
+                                               uint8_t yuv_line[FRAME_WIDTH * 2],
+                                               uint8_t y_line[FRAME_WIDTH],
+                                               uint8_t c_line[FRAME_WIDTH])
+{
+    if ((requested_row < 0) || (requested_row >= FRAME_HEIGHT))
+    {
+        memset(y_line, 0, FRAME_WIDTH);
+        memset(c_line, 0, FRAME_WIDTH);
+        return;
+    }
+    (void)load_yc_line_from_hyperram_base(frame_base_offset, requested_row, yuv_line, y_line, c_line);
+}
+
+static inline uint8_t pq128_get_c_or_zero(const uint8_t c_line[FRAME_WIDTH], int x)
+{
+    if ((x < 0) || (x >= FRAME_WIDTH))
+    {
+        return 0;
+    }
+    return c_line[x];
+}
+#endif
+
 static void load_y_line_from_hyperram_or_zero(uint32_t frame_base_offset,
                                               int requested_row,
                                               uint8_t yuv_line[FRAME_WIDTH * 2],
@@ -846,6 +1088,11 @@ static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_s
     uint8_t y_prev[FRAME_WIDTH];
     uint8_t y_curr[FRAME_WIDTH];
     uint8_t y_next[FRAME_WIDTH];
+#if PQ128_USE_CHROMA_EDGEMASK
+    uint8_t c_prev[FRAME_WIDTH];
+    uint8_t c_curr[FRAME_WIDTH];
+    uint8_t c_next[FRAME_WIDTH];
+#endif
     int16_t p_row[PQ128_SIZE];
     int16_t q_row[PQ128_SIZE];
 
@@ -856,9 +1103,15 @@ static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_s
      * Sliding-window fast path is valid only when stride_y==1.
      */
 #if (PQ128_SAMPLE_STRIDE_Y == 1)
+#if PQ128_USE_CHROMA_EDGEMASK
+    load_yc_line_from_hyperram_or_zero(frame_base_offset, PQ128_Y0 - 1, yuv_tmp, y_prev, c_prev);
+    load_yc_line_from_hyperram_or_zero(frame_base_offset, PQ128_Y0 + 0, yuv_tmp, y_curr, c_curr);
+    load_yc_line_from_hyperram_or_zero(frame_base_offset, PQ128_Y0 + 1, yuv_tmp, y_next, c_next);
+#else
     load_y_line_from_hyperram_or_zero(frame_base_offset, PQ128_Y0 - 1, yuv_tmp, y_prev);
     load_y_line_from_hyperram_or_zero(frame_base_offset, PQ128_Y0 + 0, yuv_tmp, y_curr);
     load_y_line_from_hyperram_or_zero(frame_base_offset, PQ128_Y0 + 1, yuv_tmp, y_next);
+#endif
 #endif
 
     /*
@@ -916,9 +1169,15 @@ static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_s
     {
 #if (PQ128_SAMPLE_STRIDE_Y != 1)
         int src_y = PQ128_Y0 + ry * PQ128_SAMPLE_STRIDE_Y;
+#if PQ128_USE_CHROMA_EDGEMASK
+        load_yc_line_from_hyperram_or_zero(frame_base_offset, src_y - PQ128_SAMPLE_STRIDE_Y, yuv_tmp, y_prev, c_prev);
+        load_yc_line_from_hyperram_or_zero(frame_base_offset, src_y, yuv_tmp, y_curr, c_curr);
+        load_yc_line_from_hyperram_or_zero(frame_base_offset, src_y + PQ128_SAMPLE_STRIDE_Y, yuv_tmp, y_next, c_next);
+#else
         load_y_line_from_hyperram_or_zero(frame_base_offset, src_y - PQ128_SAMPLE_STRIDE_Y, yuv_tmp, y_prev);
         load_y_line_from_hyperram_or_zero(frame_base_offset, src_y, yuv_tmp, y_curr);
         load_y_line_from_hyperram_or_zero(frame_base_offset, src_y + PQ128_SAMPLE_STRIDE_Y, yuv_tmp, y_next);
+#endif
 #endif
 #if PQ128_USE_TAPER && (PQ128_TAPER_WIDTH > 0)
         int32_t wy_q15 = (int32_t)s_taper_q15[ry];
@@ -955,6 +1214,40 @@ static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_s
             /* Saturation detection should use raw intensity (before knee). */
             int32_t w_p_q15 = pq128_sat_weight_q15(raw_xm1, raw_xp1);
             int32_t w_q_q15 = pq128_sat_weight_q15(raw_ym1, raw_yp1);
+
+#if PQ128_USE_DARK_SOFTMASK
+            {
+                int32_t wd_p_q15 = pq128_dark_weight_q15(raw_xm1, raw_xp1);
+                int32_t wd_q_q15 = pq128_dark_weight_q15(raw_ym1, raw_yp1);
+                w_p_q15 = (int32_t)(((int64_t)w_p_q15 * (int64_t)wd_p_q15 + (1 << 14)) >> 15);
+                w_q_q15 = (int32_t)(((int64_t)w_q_q15 * (int64_t)wd_q_q15 + (1 << 14)) >> 15);
+            }
+#endif
+
+#if PQ128_USE_CHROMA_EDGEMASK
+            {
+                int c_xm1 = (int)pq128_get_c_or_zero(c_curr, x - PQ128_SAMPLE_STRIDE_X);
+                int c_xp1 = (int)pq128_get_c_or_zero(c_curr, x + PQ128_SAMPLE_STRIDE_X);
+                int c_ym1 = (int)pq128_get_c_or_zero(c_prev, x);
+                int c_yp1 = (int)pq128_get_c_or_zero(c_next, x);
+
+                int dc_p = c_xp1 - c_xm1;
+                if (dc_p < 0)
+                {
+                    dc_p = -dc_p;
+                }
+                int dc_q = c_yp1 - c_ym1;
+                if (dc_q < 0)
+                {
+                    dc_q = -dc_q;
+                }
+
+                int32_t w_cp_q15 = pq128_chroma_edge_weight_q15(dc_p);
+                int32_t w_cq_q15 = pq128_chroma_edge_weight_q15(dc_q);
+                w_p_q15 = (int32_t)(((int64_t)w_p_q15 * (int64_t)w_cp_q15 + (1 << 14)) >> 15);
+                w_q_q15 = (int32_t)(((int64_t)w_q_q15 * (int64_t)w_cq_q15 + (1 << 14)) >> 15);
+            }
+#endif
 
 #if PQ128_USE_TAPER && (PQ128_TAPER_WIDTH > 0)
             int32_t wx_q15 = (int32_t)s_taper_q15[rx];
@@ -1020,6 +1313,10 @@ static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_s
                 }
 #endif
 
+#if PQ128_FLIP_P
+                v = -v;
+#endif
+
                 /* Apply saturation attenuation weight. */
                 v = (int32_t)(((int64_t)v * (int64_t)w_p_q15 + (1 << 14)) >> 15);
                 p_row[rx] = (int16_t)clamp_i32((int)v, -32768, 32767);
@@ -1082,6 +1379,10 @@ static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_s
                 }
 #endif
 
+#if PQ128_FLIP_Q
+                v = -v;
+#endif
+
                 /* Apply saturation attenuation weight. */
                 v = (int32_t)(((int64_t)v * (int64_t)w_q_q15 + (1 << 14)) >> 15);
                 q_row[rx] = (int16_t)clamp_i32((int)v, -32768, 32767);
@@ -1096,7 +1397,13 @@ static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_s
         /* Slide window: prev <- curr, curr <- next, next <- load(row+2). */
         memcpy(y_prev, y_curr, FRAME_WIDTH);
         memcpy(y_curr, y_next, FRAME_WIDTH);
+#if PQ128_USE_CHROMA_EDGEMASK
+        memcpy(c_prev, c_curr, FRAME_WIDTH);
+        memcpy(c_curr, c_next, FRAME_WIDTH);
+        load_yc_line_from_hyperram_or_zero(frame_base_offset, PQ128_Y0 + ry + 2, yuv_tmp, y_next, c_next);
+#else
         load_y_line_from_hyperram_or_zero(frame_base_offset, PQ128_Y0 + ry + 2, yuv_tmp, y_next);
+#endif
 #endif
     }
 
