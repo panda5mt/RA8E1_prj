@@ -116,7 +116,7 @@
  * N=1 zeros {0th, last} row/col (good for FFT periodic boundary artifacts).
  */
 #ifndef PQ128_BORDER_ZERO_N
-#define PQ128_BORDER_ZERO_N (2)
+#define PQ128_BORDER_ZERO_N (0)
 #endif
 
 #if (PQ128_BORDER_ZERO_N < 0)
