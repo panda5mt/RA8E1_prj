@@ -74,7 +74,7 @@
 
 /* Contrast around mid-gray (Q15). 32768=unchanged, 16384=half contrast. */
 #ifndef FC128_EXPORT_CONTRAST_Q15
-#define FC128_EXPORT_CONTRAST_Q15 (32768)
+#define FC128_EXPORT_CONTRAST_Q15 (32768 / 2)
 #endif
 
 // ---- 128x128 p,q (int16) generation ----
@@ -88,7 +88,7 @@
 #endif
 
 #ifndef PQ128_SAMPLE_STRIDE_Y
-#define PQ128_SAMPLE_STRIDE_Y (1)
+#define PQ128_SAMPLE_STRIDE_Y (2)
 #endif
 
 #if (PQ128_SAMPLE_STRIDE_X < 1) || (PQ128_SAMPLE_STRIDE_Y < 1)
@@ -98,8 +98,13 @@
 #define PQ128_SRC_W (PQ128_SIZE * PQ128_SAMPLE_STRIDE_X)
 #define PQ128_SRC_H (PQ128_SIZE * PQ128_SAMPLE_STRIDE_Y)
 
-#if (PQ128_SRC_W > FRAME_WIDTH) || (PQ128_SRC_H > FRAME_HEIGHT)
-#error "PQ128 source region exceeds frame; reduce PQ128_SAMPLE_STRIDE_X/Y"
+#if (PQ128_SRC_W > FRAME_WIDTH)
+#error "PQ128 source region exceeds frame width; reduce PQ128_SAMPLE_STRIDE_X"
+#endif
+
+/* Height may exceed the frame; out-of-frame rows are zero-padded. */
+#if (PQ128_SRC_H > FRAME_HEIGHT)
+#warning "PQ128_SRC_H exceeds frame height; top/bottom will be zero-padded"
 #endif
 
 #define PQ128_X0 ((FRAME_WIDTH - PQ128_SRC_W) / 2)
@@ -697,6 +702,19 @@ static fsp_err_t load_y_line_from_hyperram_base(uint32_t frame_base_offset,
     return FSP_SUCCESS;
 }
 
+static void load_y_line_from_hyperram_or_zero(uint32_t frame_base_offset,
+                                              int requested_row,
+                                              uint8_t yuv_line[FRAME_WIDTH * 2],
+                                              uint8_t y_line[FRAME_WIDTH])
+{
+    if ((requested_row < 0) || (requested_row >= FRAME_HEIGHT))
+    {
+        memset(y_line, 0, FRAME_WIDTH);
+        return;
+    }
+    (void)load_y_line_from_hyperram_base(frame_base_offset, requested_row, yuv_line, y_line);
+}
+
 static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_seq)
 {
     uint8_t yuv_tmp[FRAME_WIDTH * 2];
@@ -713,9 +731,9 @@ static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_s
      * Sliding-window fast path is valid only when stride_y==1.
      */
 #if (PQ128_SAMPLE_STRIDE_Y == 1)
-    (void)load_y_line_from_hyperram_base(frame_base_offset, PQ128_Y0 - 1, yuv_tmp, y_prev);
-    (void)load_y_line_from_hyperram_base(frame_base_offset, PQ128_Y0 + 0, yuv_tmp, y_curr);
-    (void)load_y_line_from_hyperram_base(frame_base_offset, PQ128_Y0 + 1, yuv_tmp, y_next);
+    load_y_line_from_hyperram_or_zero(frame_base_offset, PQ128_Y0 - 1, yuv_tmp, y_prev);
+    load_y_line_from_hyperram_or_zero(frame_base_offset, PQ128_Y0 + 0, yuv_tmp, y_curr);
+    load_y_line_from_hyperram_or_zero(frame_base_offset, PQ128_Y0 + 1, yuv_tmp, y_next);
 #endif
 
     /*
@@ -773,9 +791,9 @@ static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_s
     {
 #if (PQ128_SAMPLE_STRIDE_Y != 1)
         int src_y = PQ128_Y0 + ry * PQ128_SAMPLE_STRIDE_Y;
-        (void)load_y_line_from_hyperram_base(frame_base_offset, src_y - PQ128_SAMPLE_STRIDE_Y, yuv_tmp, y_prev);
-        (void)load_y_line_from_hyperram_base(frame_base_offset, src_y, yuv_tmp, y_curr);
-        (void)load_y_line_from_hyperram_base(frame_base_offset, src_y + PQ128_SAMPLE_STRIDE_Y, yuv_tmp, y_next);
+        load_y_line_from_hyperram_or_zero(frame_base_offset, src_y - PQ128_SAMPLE_STRIDE_Y, yuv_tmp, y_prev);
+        load_y_line_from_hyperram_or_zero(frame_base_offset, src_y, yuv_tmp, y_curr);
+        load_y_line_from_hyperram_or_zero(frame_base_offset, src_y + PQ128_SAMPLE_STRIDE_Y, yuv_tmp, y_next);
 #endif
 #if PQ128_USE_TAPER && (PQ128_TAPER_WIDTH > 0)
         int32_t wy_q15 = (int32_t)s_taper_q15[ry];
@@ -953,7 +971,7 @@ static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_s
         /* Slide window: prev <- curr, curr <- next, next <- load(row+2). */
         memcpy(y_prev, y_curr, FRAME_WIDTH);
         memcpy(y_curr, y_next, FRAME_WIDTH);
-        (void)load_y_line_from_hyperram_base(frame_base_offset, PQ128_Y0 + ry + 2, yuv_tmp, y_next);
+        load_y_line_from_hyperram_or_zero(frame_base_offset, PQ128_Y0 + ry + 2, yuv_tmp, y_next);
 #endif
     }
 
