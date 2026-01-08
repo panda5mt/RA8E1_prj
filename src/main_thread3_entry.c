@@ -367,6 +367,13 @@ static void fc128_compute_zhat(uint32_t frame_base_offset)
 
 static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
 {
+    /* Export placement: keep the 128x128 depth image centered in 320x240,
+     * independent from PQ128 sampling region (which may extend beyond the frame
+     * when strides are large and we zero-pad).
+     */
+    const int export_x0 = (FRAME_WIDTH - FC128_N) / 2;
+    const int export_y0 = (FRAME_HEIGHT - FC128_N) / 2;
+
     float row_z[FC128_N];
     float z_min = FLT_MAX;
     float z_max = -FLT_MAX;
@@ -375,6 +382,34 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
     {
         uint32_t row_off = (uint32_t)y * (uint32_t)FC128_N * (uint32_t)sizeof(float);
         (void)hyperram_b_read(row_z, (void *)(frame_base_offset + FC128_Z_REAL + row_off), (uint32_t)sizeof(row_z));
+
+#if USE_HELIUM_MVE
+        // MVE版: 4要素単位でロードし、スカラーでmin/max更新（ツールチェーン互換）
+        {
+            int x;
+            for (x = 0; x < FC128_N - 3; x += 4)
+            {
+                float32x4_t vz = vld1q_f32(&row_z[x]);
+                float t[4];
+                vst1q_f32(t, vz);
+                for (int i = 0; i < 4; i++)
+                {
+                    if (t[i] < z_min)
+                        z_min = t[i];
+                    if (t[i] > z_max)
+                        z_max = t[i];
+                }
+            }
+            for (; x < FC128_N; x++)
+            {
+                float v0 = row_z[x];
+                if (v0 < z_min)
+                    z_min = v0;
+                if (v0 > z_max)
+                    z_max = v0;
+            }
+        }
+#else
         for (int x = 0; x < FC128_N; x++)
         {
             float v0 = row_z[x];
@@ -387,6 +422,7 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
                 z_max = v0;
             }
         }
+#endif
     }
 
     float use_z_min = z_min;
@@ -420,20 +456,64 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
         range = FC128_EXPORT_RANGE_FLOOR;
     }
 
+    const float inv_range = 1.0f / range;
+
     uint8_t line[FRAME_WIDTH];
     for (int y = 0; y < FRAME_HEIGHT; y++)
     {
         memset(line, 128, sizeof(line));
 
-        if (y >= PQ128_Y0 && y < (PQ128_Y0 + FC128_N))
+        if (y >= export_y0 && y < (export_y0 + FC128_N))
         {
-            int ry = y - PQ128_Y0;
+            int ry = y - export_y0;
             uint32_t row_off = (uint32_t)ry * (uint32_t)FC128_N * (uint32_t)sizeof(float);
             (void)hyperram_b_read(row_z, (void *)(frame_base_offset + FC128_Z_REAL + row_off), (uint32_t)sizeof(row_z));
 
+#if USE_HELIUM_MVE
+            {
+                float32x4_t vzmin = vdupq_n_f32(use_z_min);
+                float32x4_t vscale = vdupq_n_f32(255.0f * inv_range);
+                float32x4_t vmid = vdupq_n_f32(127.5f);
+                float32x4_t vround = vdupq_n_f32(0.5f);
+
+                int32x4_t vzero_i32 = vdupq_n_s32(0);
+                int32x4_t vmax_i32 = vdupq_n_s32(255);
+
+                const bool use_contrast = (FC128_EXPORT_CONTRAST_Q15 != 32768);
+                float32x4_t va = vdupq_n_f32((float)FC128_EXPORT_CONTRAST_Q15 / 32768.0f);
+
+                for (int x = 0; x < FC128_N; x += 4)
+                {
+                    // vf = (z - zmin) * (255/range)
+                    float32x4_t vz = vld1q_f32(&row_z[x]);
+                    float32x4_t vf = vmulq_f32(vsubq_f32(vz, vzmin), vscale);
+
+                    // Optional contrast around 127.5 in [0..255] domain
+                    if (use_contrast)
+                    {
+                        vf = vaddq_f32(vmulq_f32(vsubq_f32(vf, vmid), va), vmid);
+                    }
+
+                    // Round and convert
+                    vf = vaddq_f32(vf, vround);
+                    int32x4_t vi = vcvtq_s32_f32(vf);
+
+                    // Clamp: 0..255
+                    vi = vmaxq_s32(vi, vzero_i32);
+                    vi = vminq_s32(vi, vmax_i32);
+
+                    int32_t out_i[4];
+                    vst1q_s32(out_i, vi);
+                    line[export_x0 + x + 0] = (uint8_t)out_i[0];
+                    line[export_x0 + x + 1] = (uint8_t)out_i[1];
+                    line[export_x0 + x + 2] = (uint8_t)out_i[2];
+                    line[export_x0 + x + 3] = (uint8_t)out_i[3];
+                }
+            }
+#else
             for (int x = 0; x < FC128_N; x++)
             {
-                float n = (row_z[x] - use_z_min) / range;
+                float n = (row_z[x] - use_z_min) * inv_range;
                 if (n < 0.0f)
                     n = 0.0f;
                 if (n > 1.0f)
@@ -455,8 +535,9 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
                     out = 0;
                 if (out > 255)
                     out = 255;
-                line[PQ128_X0 + x] = (uint8_t)out;
+                line[export_x0 + x] = (uint8_t)out;
             }
+#endif
         }
 
         (void)hyperram_b_write(line, (void *)(frame_base_offset + DEPTH_OFFSET + (uint32_t)y * (uint32_t)FRAME_WIDTH), (uint32_t)sizeof(line));
