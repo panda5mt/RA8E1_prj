@@ -607,7 +607,41 @@ static inline void reorder_grayscale_4px_line(uint8_t *buf, uint32_t n)
 static void extract_y_line_uyvy_swap_y(const uint8_t *yuv, uint8_t *y_out, uint32_t width)
 {
     /* UYVY: [U0 Y0 V0 Y1] but swap Y: output (Y1,Y0) to match current tuned grayscale view. */
-    for (uint32_t x = 0; x < width; x += 2U)
+    uint32_t x = 0;
+
+#if USE_HELIUM_MVE
+    /* 16 pixels = 32 bytes per iteration.
+     * Input layout per 2 pixels (4 bytes): [U0 Y0 V0 Y1]
+     * Output swaps Y within the pair: [Y1 Y0]
+     */
+    for (; (x + 15U) < width; x += 16U)
+    {
+        const uint8x16_t yuv_low = vld1q_u8(&yuv[x * 2U]);
+        const uint8x16_t yuv_high = vld1q_u8(&yuv[x * 2U + 16U]);
+
+        uint8_t tmp[16];
+        tmp[0] = yuv_low[3];
+        tmp[1] = yuv_low[1];
+        tmp[2] = yuv_low[7];
+        tmp[3] = yuv_low[5];
+        tmp[4] = yuv_low[11];
+        tmp[5] = yuv_low[9];
+        tmp[6] = yuv_low[15];
+        tmp[7] = yuv_low[13];
+        tmp[8] = yuv_high[3];
+        tmp[9] = yuv_high[1];
+        tmp[10] = yuv_high[7];
+        tmp[11] = yuv_high[5];
+        tmp[12] = yuv_high[11];
+        tmp[13] = yuv_high[9];
+        tmp[14] = yuv_high[15];
+        tmp[15] = yuv_high[13];
+
+        vst1q_u8(&y_out[x], vld1q_u8(tmp));
+    }
+#endif
+
+    for (; x < width; x += 2U)
     {
         uint32_t yuv_idx = x * 2U;
         y_out[x] = yuv[yuv_idx + 3U];
