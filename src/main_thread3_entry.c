@@ -98,8 +98,9 @@
 #define PQ128_SRC_W (PQ128_SIZE * PQ128_SAMPLE_STRIDE_X)
 #define PQ128_SRC_H (PQ128_SIZE * PQ128_SAMPLE_STRIDE_Y)
 
+/* Width may exceed the frame; left/right will be zero-padded. */
 #if (PQ128_SRC_W > FRAME_WIDTH)
-#error "PQ128 source region exceeds frame width; reduce PQ128_SAMPLE_STRIDE_X"
+#warning "PQ128_SRC_W exceeds frame width; left/right will be zero-padded"
 #endif
 
 /* Height may exceed the frame; out-of-frame rows are zero-padded. */
@@ -715,6 +716,15 @@ static void load_y_line_from_hyperram_or_zero(uint32_t frame_base_offset,
     (void)load_y_line_from_hyperram_base(frame_base_offset, requested_row, yuv_line, y_line);
 }
 
+static inline uint8_t pq128_get_y_or_zero(const uint8_t y_line[FRAME_WIDTH], int x)
+{
+    if ((x < 0) || (x >= FRAME_WIDTH))
+    {
+        return 0;
+    }
+    return y_line[x];
+}
+
 static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_seq)
 {
     uint8_t yuv_tmp[FRAME_WIDTH * 2];
@@ -810,10 +820,10 @@ static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_s
             }
 
             int x = PQ128_X0 + rx * PQ128_SAMPLE_STRIDE_X;
-            int raw_xm1 = (int)y_curr[x - PQ128_SAMPLE_STRIDE_X];
-            int raw_xp1 = (int)y_curr[x + PQ128_SAMPLE_STRIDE_X];
-            int raw_ym1 = (int)y_prev[x];
-            int raw_yp1 = (int)y_next[x];
+            int raw_xm1 = (int)pq128_get_y_or_zero(y_curr, x - PQ128_SAMPLE_STRIDE_X);
+            int raw_xp1 = (int)pq128_get_y_or_zero(y_curr, x + PQ128_SAMPLE_STRIDE_X);
+            int raw_ym1 = (int)pq128_get_y_or_zero(y_prev, x);
+            int raw_yp1 = (int)pq128_get_y_or_zero(y_next, x);
 
 #if PQ128_USE_INTENSITY_KNEE
             int i_xm1 = (int)s_knee_u8[(uint8_t)raw_xm1];
@@ -845,7 +855,7 @@ static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_s
             else
             {
 #if (PQ128_PQ_MODE == 3)
-                int raw_c = (int)y_curr[x];
+                int raw_c = (int)pq128_get_y_or_zero(y_curr, x);
 #if PQ128_USE_INTENSITY_KNEE
                 int i_c = (int)s_knee_u8[(uint8_t)raw_c];
 #else
@@ -907,7 +917,7 @@ static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_s
             else
             {
 #if (PQ128_PQ_MODE == 3)
-                int raw_c = (int)y_curr[x];
+                int raw_c = (int)pq128_get_y_or_zero(y_curr, x);
 #if PQ128_USE_INTENSITY_KNEE
                 int i_c = (int)s_knee_u8[(uint8_t)raw_c];
 #else
