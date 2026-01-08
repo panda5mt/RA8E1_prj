@@ -74,7 +74,7 @@
 
 /* Contrast around mid-gray (Q15). 32768=unchanged, 16384=half contrast. */
 #ifndef FC128_EXPORT_CONTRAST_Q15
-#define FC128_EXPORT_CONTRAST_Q15 (32768 / 2)
+#define FC128_EXPORT_CONTRAST_Q15 (32768)
 #endif
 
 // ---- 128x128 p,q (int16) generation ----
@@ -84,7 +84,7 @@
  * Example: PQ128_SAMPLE_STRIDE_X=2, PQ128_SAMPLE_STRIDE_Y=1 samples a 256x128 region.
  */
 #ifndef PQ128_SAMPLE_STRIDE_X
-#define PQ128_SAMPLE_STRIDE_X (3)
+#define PQ128_SAMPLE_STRIDE_X (2)
 #endif
 
 #ifndef PQ128_SAMPLE_STRIDE_Y
