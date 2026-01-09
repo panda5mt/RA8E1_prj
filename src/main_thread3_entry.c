@@ -74,7 +74,7 @@
 
 /* Contrast around mid-gray (Q15). 32768=unchanged, 16384=half contrast. */
 #ifndef FC128_EXPORT_CONTRAST_Q15
-#define FC128_EXPORT_CONTRAST_Q15 (32768 / 3 * 2)
+#define FC128_EXPORT_CONTRAST_Q15 (32768)
 #endif
 
 /* Invert exported depth polarity (u8): out <- 255 - out.
