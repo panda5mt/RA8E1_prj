@@ -348,12 +348,12 @@ static float g_light_ts;
 
 /* Edge taper (window) to reduce FFT wrap-around artifacts. */
 #ifndef PQ128_USE_TAPER
-#define PQ128_USE_TAPER (0)
+#define PQ128_USE_TAPER (1)
 #endif
 
 /* Width (pixels) of the taper region from each edge. 0 disables taper. */
 #ifndef PQ128_TAPER_WIDTH
-#define PQ128_TAPER_WIDTH (0)
+#define PQ128_TAPER_WIDTH (16)
 #endif
 
 /* Published when a full p/q write completes.
@@ -386,7 +386,7 @@ volatile uint32_t g_depth_base_offset = 0;
 #define FC_RESULT_N (128)
 
 #ifndef FC_FFT_N
-#define FC_FFT_N (256) // 128 or 256
+#define FC_FFT_N (128) // 128 or 256
 #endif
 
 #if (FC_FFT_N != 128) && (FC_FFT_N != 256)
