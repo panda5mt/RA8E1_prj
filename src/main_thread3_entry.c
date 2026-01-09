@@ -292,7 +292,7 @@ static float g_light_ts;
 
 /* Edge taper (window) to reduce FFT wrap-around artifacts. */
 #ifndef PQ128_USE_TAPER
-#define PQ128_USE_TAPER (1)
+#define PQ128_USE_TAPER (0)
 #endif
 
 /* Width (pixels) of the taper region from each edge. 0 disables taper. */
