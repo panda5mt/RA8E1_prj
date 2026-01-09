@@ -250,7 +250,7 @@ static float g_light_ts;
  * NOTE: UYVY is 4:2:2 so chroma is shared per 2 pixels; we duplicate per-pixel.
  */
 #ifndef PQ128_USE_CHROMA_EDGEMASK
-#define PQ128_USE_CHROMA_EDGEMASK (0)
+#define PQ128_USE_CHROMA_EDGEMASK (1)
 #endif
 
 /* Start suppressing when chroma-edge |C(x+1)-C(x-1)| exceeds this. */
@@ -315,8 +315,50 @@ volatile uint32_t g_depth_base_offset = 0;
 #endif
 
 // ---- FC(FFT) scratch layout (float planes) ----
-#define FC128_N (128)
-#define FC128_PLANE_BYTES ((uint32_t)(FC128_N * FC128_N * (uint32_t)sizeof(float)))
+/*
+ * FC integration grid size:
+ * - FC_RESULT_N is the depth map size we finally export (kept at 128).
+ * - FC_FFT_N selects the FFT grid size. When set to 256, we zero-pad the 128x128
+ *   p/q into the center of a 256x256 plane, run FC on 256, then crop the center
+ *   128x128 from Z for export.
+ */
+#define FC_RESULT_N (128)
+
+#ifndef FC_FFT_N
+#define FC_FFT_N (256)
+#endif
+
+#if (FC_FFT_N != 128) && (FC_FFT_N != 256)
+#error "FC_FFT_N must be 128 or 256"
+#endif
+
+#if (FC_FFT_N < FC_RESULT_N)
+#error "FC_FFT_N must be >= FC_RESULT_N"
+#endif
+
+#define FC_FFT_PAD ((FC_FFT_N - FC_RESULT_N) / 2)
+
+/*
+ * Padding placement for FC_FFT_N > FC_RESULT_N:
+ * - 1 (default): center the 128x128 block in the FFT plane (symmetric zero border)
+ * - 0: place the 128x128 block at (0,0) and pad only to the right/bottom
+ *
+ * If 256-FFT output looks like speckle/noise, toggling this helps determine whether
+ * the issue is related to spatial shift/phase handling vs. other causes.
+ */
+#ifndef FC_PAD_CENTERED
+#define FC_PAD_CENTERED (0)
+#endif
+
+#if FC_PAD_CENTERED
+#define FC_PAD_X0 (FC_FFT_PAD)
+#define FC_PAD_Y0 (FC_FFT_PAD)
+#else
+#define FC_PAD_X0 (0)
+#define FC_PAD_Y0 (0)
+#endif
+
+#define FC128_PLANE_BYTES ((uint32_t)(FC_FFT_N * FC_FFT_N * (uint32_t)sizeof(float)))
 
 /*
  * IMPORTANT:
@@ -344,32 +386,78 @@ volatile uint32_t g_depth_base_offset = 0;
 #define FC128_TMP_REAL (FC128_OFFSET_BASE + 12U * FC128_PLANE_BYTES)
 #define FC128_TMP_IMAG (FC128_OFFSET_BASE + 13U * FC128_PLANE_BYTES)
 
+/* Total FC scratch footprint relative to frame_base_offset. */
+#define FC128_SCRATCH_END (FC128_OFFSET_BASE + 14U * FC128_PLANE_BYTES)
+
+static void fc128_layout_check_once(uint32_t frame_base_offset)
+{
+    static bool s_printed = false;
+    if (s_printed)
+    {
+        return;
+    }
+    s_printed = true;
+
+    const uint32_t abs_end = frame_base_offset + (uint32_t)FC128_SCRATCH_END;
+
+    xprintf("[FC128] FC_FFT_N=%d FC_RESULT_N=%d pad=%d centered=%d\n",
+            (int)FC_FFT_N,
+            (int)FC_RESULT_N,
+            (int)FC_FFT_PAD,
+            (int)FC_PAD_CENTERED);
+    xprintf("[FC128] base=0x%08lX end=0x%08lX (HYPERRAM_SIZE=0x%08lX)\n",
+            (unsigned long)frame_base_offset,
+            (unsigned long)abs_end,
+            (unsigned long)HYPERRAM_SIZE);
+    xprintf("[FC128] plane_bytes=%lu scratch_end(rel)=%lu\n",
+            (unsigned long)FC128_PLANE_BYTES,
+            (unsigned long)FC128_SCRATCH_END);
+
+    if (abs_end > (uint32_t)HYPERRAM_SIZE)
+    {
+        xprintf("[FC128] ERROR: scratch exceeds HyperRAM (abs_end=%lu)\n", (unsigned long)abs_end);
+    }
+}
+
 static void fc128_build_float_planes_from_pq(uint32_t frame_base_offset)
 {
-    int16_t p_row_i16[FC128_N];
-    int16_t q_row_i16[FC128_N];
-    float row_f32[FC128_N];
-    float row_zero[FC128_N];
+    int16_t p_row_i16[FC_RESULT_N];
+    int16_t q_row_i16[FC_RESULT_N];
+    float row_f32[FC_FFT_N];
+    float row_zero[FC_FFT_N];
     memset(row_zero, 0, sizeof(row_zero));
 
-    for (int y = 0; y < FC128_N; y++)
+    for (int y = 0; y < FC_FFT_N; y++)
     {
-        uint32_t row_i16_off = (uint32_t)y * (uint32_t)FC128_N * (uint32_t)sizeof(int16_t);
-        uint32_t row_f32_off = (uint32_t)y * (uint32_t)FC128_N * (uint32_t)sizeof(float);
+        const bool in_center = (y >= FC_PAD_Y0) && (y < (FC_PAD_Y0 + FC_RESULT_N));
+        uint32_t row_f32_off = (uint32_t)y * (uint32_t)FC_FFT_N * (uint32_t)sizeof(float);
 
+        if (!in_center)
+        {
+            (void)hyperram_b_write(row_zero, (void *)(frame_base_offset + FC128_P_REAL + row_f32_off), (uint32_t)sizeof(row_zero));
+            (void)hyperram_b_write(row_zero, (void *)(frame_base_offset + FC128_P_IMAG + row_f32_off), (uint32_t)sizeof(row_zero));
+            (void)hyperram_b_write(row_zero, (void *)(frame_base_offset + FC128_Q_REAL + row_f32_off), (uint32_t)sizeof(row_zero));
+            (void)hyperram_b_write(row_zero, (void *)(frame_base_offset + FC128_Q_IMAG + row_f32_off), (uint32_t)sizeof(row_zero));
+            continue;
+        }
+
+        const int ry = y - FC_PAD_Y0;
+        uint32_t row_i16_off = (uint32_t)ry * (uint32_t)FC_RESULT_N * (uint32_t)sizeof(int16_t);
         (void)hyperram_b_read(p_row_i16, (void *)(frame_base_offset + PQ128_P_OFFSET + row_i16_off), (uint32_t)sizeof(p_row_i16));
         (void)hyperram_b_read(q_row_i16, (void *)(frame_base_offset + PQ128_Q_OFFSET + row_i16_off), (uint32_t)sizeof(q_row_i16));
 
-        for (int x = 0; x < FC128_N; x++)
+        memcpy(row_f32, row_zero, sizeof(row_f32));
+        for (int x = 0; x < FC_RESULT_N; x++)
         {
-            row_f32[x] = (float)p_row_i16[x];
+            row_f32[FC_PAD_X0 + x] = (float)p_row_i16[x];
         }
         (void)hyperram_b_write(row_f32, (void *)(frame_base_offset + FC128_P_REAL + row_f32_off), (uint32_t)sizeof(row_f32));
         (void)hyperram_b_write(row_zero, (void *)(frame_base_offset + FC128_P_IMAG + row_f32_off), (uint32_t)sizeof(row_zero));
 
-        for (int x = 0; x < FC128_N; x++)
+        memcpy(row_f32, row_zero, sizeof(row_f32));
+        for (int x = 0; x < FC_RESULT_N; x++)
         {
-            row_f32[x] = (float)q_row_i16[x];
+            row_f32[FC_PAD_X0 + x] = (float)q_row_i16[x];
         }
         (void)hyperram_b_write(row_f32, (void *)(frame_base_offset + FC128_Q_REAL + row_f32_off), (uint32_t)sizeof(row_f32));
         (void)hyperram_b_write(row_zero, (void *)(frame_base_offset + FC128_Q_IMAG + row_f32_off), (uint32_t)sizeof(row_zero));
@@ -379,38 +467,28 @@ static void fc128_build_float_planes_from_pq(uint32_t frame_base_offset)
 static void fc128_compute_zhat(uint32_t frame_base_offset)
 {
     const float two_pi = 6.2831853071795864769f;
-    float u[FC128_N];
-    float v[FC128_N];
-    for (int k = 0; k < FC128_N; k++)
-    {
-        int kk = (k < (FC128_N / 2)) ? k : (k - FC128_N);
-        u[k] = two_pi * (float)kk / (float)FC128_N;
-    }
-    for (int l = 0; l < FC128_N; l++)
-    {
-        int ll = (l < (FC128_N / 2)) ? l : (l - FC128_N);
-        v[l] = two_pi * (float)ll / (float)FC128_N;
-    }
+    float p_re[FC_FFT_N];
+    float p_im[FC_FFT_N];
+    float q_re[FC_FFT_N];
+    float q_im[FC_FFT_N];
+    float z_re[FC_FFT_N];
+    float z_im[FC_FFT_N];
 
-    float p_re[FC128_N];
-    float p_im[FC128_N];
-    float q_re[FC128_N];
-    float q_im[FC128_N];
-    float z_re[FC128_N];
-    float z_im[FC128_N];
-
-    for (int y = 0; y < FC128_N; y++)
+    for (int y = 0; y < FC_FFT_N; y++)
     {
-        uint32_t row_off = (uint32_t)y * (uint32_t)FC128_N * (uint32_t)sizeof(float);
+        uint32_t row_off = (uint32_t)y * (uint32_t)FC_FFT_N * (uint32_t)sizeof(float);
         (void)hyperram_b_read(p_re, (void *)(frame_base_offset + FC128_P_HAT_REAL + row_off), (uint32_t)sizeof(p_re));
         (void)hyperram_b_read(p_im, (void *)(frame_base_offset + FC128_P_HAT_IMAG + row_off), (uint32_t)sizeof(p_im));
         (void)hyperram_b_read(q_re, (void *)(frame_base_offset + FC128_Q_HAT_REAL + row_off), (uint32_t)sizeof(q_re));
         (void)hyperram_b_read(q_im, (void *)(frame_base_offset + FC128_Q_HAT_IMAG + row_off), (uint32_t)sizeof(q_im));
 
-        for (int x = 0; x < FC128_N; x++)
+        int ll = (y < (FC_FFT_N / 2)) ? y : (y - FC_FFT_N);
+        float vv = two_pi * (float)ll / (float)FC_FFT_N;
+
+        for (int x = 0; x < FC_FFT_N; x++)
         {
-            float uu = u[x];
-            float vv = v[y];
+            int kk = (x < (FC_FFT_N / 2)) ? x : (x - FC_FFT_N);
+            float uu = two_pi * (float)kk / (float)FC_FFT_N;
             float denom = uu * uu + vv * vv;
             if (denom < 1.0e-12f)
             {
@@ -437,23 +515,24 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
      * independent from PQ128 sampling region (which may extend beyond the frame
      * when strides are large and we zero-pad).
      */
-    const int export_x0 = (FRAME_WIDTH - FC128_N) / 2;
-    const int export_y0 = (FRAME_HEIGHT - FC128_N) / 2;
+    const int export_x0 = (FRAME_WIDTH - FC_RESULT_N) / 2;
+    const int export_y0 = (FRAME_HEIGHT - FC_RESULT_N) / 2;
 
-    float row_z[FC128_N];
+    float row_z[FC_RESULT_N];
     float z_min = FLT_MAX;
     float z_max = -FLT_MAX;
 
-    for (int y = 0; y < FC128_N; y++)
+    for (int y = 0; y < FC_RESULT_N; y++)
     {
-        uint32_t row_off = (uint32_t)y * (uint32_t)FC128_N * (uint32_t)sizeof(float);
-        (void)hyperram_b_read(row_z, (void *)(frame_base_offset + FC128_Z_REAL + row_off), (uint32_t)sizeof(row_z));
+        /* Read center crop from the FC_FFT_N x FC_FFT_N Z plane. */
+        const uint32_t base = (uint32_t)((y + FC_PAD_Y0) * FC_FFT_N + FC_PAD_X0) * (uint32_t)sizeof(float);
+        (void)hyperram_b_read(row_z, (void *)(frame_base_offset + FC128_Z_REAL + base), (uint32_t)sizeof(row_z));
 
 #if USE_HELIUM_MVE
         // MVE版: 4要素単位でロードし、スカラーでmin/max更新（ツールチェーン互換）
         {
             int x;
-            for (x = 0; x < FC128_N - 3; x += 4)
+            for (x = 0; x < FC_RESULT_N - 3; x += 4)
             {
                 float32x4_t vz = vld1q_f32(&row_z[x]);
                 float t[4];
@@ -466,7 +545,7 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
                         z_max = t[i];
                 }
             }
-            for (; x < FC128_N; x++)
+            for (; x < FC_RESULT_N; x++)
             {
                 float v0 = row_z[x];
                 if (v0 < z_min)
@@ -476,7 +555,7 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
             }
         }
 #else
-        for (int x = 0; x < FC128_N; x++)
+        for (int x = 0; x < FC_RESULT_N; x++)
         {
             float v0 = row_z[x];
             if (v0 < z_min)
@@ -529,11 +608,11 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
     {
         memset(line, 128, sizeof(line));
 
-        if (y >= export_y0 && y < (export_y0 + FC128_N))
+        if (y >= export_y0 && y < (export_y0 + FC_RESULT_N))
         {
             int ry = y - export_y0;
-            uint32_t row_off = (uint32_t)ry * (uint32_t)FC128_N * (uint32_t)sizeof(float);
-            (void)hyperram_b_read(row_z, (void *)(frame_base_offset + FC128_Z_REAL + row_off), (uint32_t)sizeof(row_z));
+            const uint32_t base = (uint32_t)((ry + FC_PAD_Y0) * FC_FFT_N + FC_PAD_X0) * (uint32_t)sizeof(float);
+            (void)hyperram_b_read(row_z, (void *)(frame_base_offset + FC128_Z_REAL + base), (uint32_t)sizeof(row_z));
 
 #if USE_HELIUM_MVE
             {
@@ -548,7 +627,7 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
                 const bool use_contrast = (FC128_EXPORT_CONTRAST_Q15 != 32768);
                 float32x4_t va = vdupq_n_f32((float)FC128_EXPORT_CONTRAST_Q15 / 32768.0f);
 
-                for (int x = 0; x < FC128_N; x += 4)
+                for (int x = 0; x < FC_RESULT_N; x += 4)
                 {
                     // vf = (z - zmin) * (255/range)
                     float32x4_t vz = vld1q_f32(&row_z[x]);
@@ -581,7 +660,7 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
                 }
             }
 #else
-            for (int x = 0; x < FC128_N; x++)
+            for (int x = 0; x < FC_RESULT_N; x++)
             {
                 float n = (row_z[x] - use_z_min) * inv_range;
                 if (n < 0.0f)
@@ -622,6 +701,13 @@ static void fc128_compute_depth_and_store(uint32_t frame_base_offset, uint32_t f
 {
     g_depth_seq = 0;
 
+    fc128_layout_check_once(frame_base_offset);
+    if ((frame_base_offset + (uint32_t)FC128_SCRATCH_END) > (uint32_t)HYPERRAM_SIZE)
+    {
+        /* Avoid corrupting memory if configuration/layout is invalid. */
+        return;
+    }
+
     fc128_build_float_planes_from_pq(frame_base_offset);
 
     /* FFT(P) and FFT(Q) */
@@ -632,7 +718,7 @@ static void fc128_compute_depth_and_store(uint32_t frame_base_offset, uint32_t f
         frame_base_offset + FC128_P_HAT_IMAG,
         frame_base_offset + FC128_TMP_REAL,
         frame_base_offset + FC128_TMP_IMAG,
-        FC128_N, FC128_N, false);
+        FC_FFT_N, FC_FFT_N, false);
 
     fft_2d_hyperram_full(
         frame_base_offset + FC128_Q_REAL,
@@ -641,7 +727,7 @@ static void fc128_compute_depth_and_store(uint32_t frame_base_offset, uint32_t f
         frame_base_offset + FC128_Q_HAT_IMAG,
         frame_base_offset + FC128_TMP_REAL,
         frame_base_offset + FC128_TMP_IMAG,
-        FC128_N, FC128_N, false);
+        FC_FFT_N, FC_FFT_N, false);
 
     /* Build Z_hat */
     fc128_compute_zhat(frame_base_offset);
@@ -654,7 +740,7 @@ static void fc128_compute_depth_and_store(uint32_t frame_base_offset, uint32_t f
         frame_base_offset + FC128_Z_IMAG,
         frame_base_offset + FC128_TMP_REAL,
         frame_base_offset + FC128_TMP_IMAG,
-        FC128_N, FC128_N, true);
+        FC_FFT_N, FC_FFT_N, true);
 
     fc128_export_depth_u8_320x240(frame_base_offset);
 

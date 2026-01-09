@@ -9,6 +9,7 @@
 ## 参照リンク（コード上の定義位置）
 
 - FC128 出力チューニング（`FC128_EXPORT_*`）: [src/main_thread3_entry.c#L54-L85](../src/main_thread3_entry.c#L54-L85)
+- FC FFTサイズ選択（`FC_FFT_N`, `FC_RESULT_N`）: [src/main_thread3_entry.c#L318-L346](../src/main_thread3_entry.c#L318-L346)
 - PQ128 ROI/stride/ゼロ埋め/境界ゼロ（`PQ128_SIZE` 〜 `PQ128_*_OFFSET`）: [src/main_thread3_entry.c#L87-L149](../src/main_thread3_entry.c#L87-L149)
 - PQ128 正規化/モード/符号（`PQ128_NORM_*`, `PQ128_PQ_MODE`, `PQ128_FLIP_*`）: [src/main_thread3_entry.c#L150-L199](../src/main_thread3_entry.c#L150-L199)
 - 飽和マスク（`PQ128_SAT_*`）: [src/main_thread3_entry.c#L201-L227](../src/main_thread3_entry.c#L201-L227)
@@ -133,6 +134,13 @@
 ---
 
 ## 7. 深度（Z）→ 8bit 出力の正規化/見え方
+
+### 7.0 FFTサイズ（ゼロパディング）
+
+| マクロ | デフォルト | 意味 | 備考 |
+|---|---:|---|---|
+| `FC_FFT_N` | 128 | FC積分で使うFFTグリッドサイズ | 256にすると「128を外周ゼロパディング→256 FFT→中心128だけ出力」 |
+| `FC_RESULT_N` | 128 | 最終的に出力する深度サイズ | 現状は固定（128のまま） |
 
 | マクロ | デフォルト | 意味 | 調整の目安 |
 |---|---:|---|---|

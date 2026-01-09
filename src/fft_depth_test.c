@@ -88,6 +88,15 @@ static arm_cfft_instance_f16 g_cfft_inst_f16;
 static int g_cfft_inst_f16_N = 0;
 #endif
 
+/*
+ * Experimental: use float16 CFFT for N=256.
+ * This can be faster on some targets but reduces precision and may harm image/FC quality.
+ * Keep disabled by default for stability.
+ */
+#ifndef FFT_USE_CFFT_F16_256
+#define FFT_USE_CFFT_F16_256 (0)
+#endif
+
 static arm_cfft_instance_f32 g_cfft_inst_f32;
 static int g_cfft_inst_N = 0;
 
@@ -806,7 +815,7 @@ void fft_1d_mve(float *real, float *imag, int N, bool is_inverse)
     {
         if (N == 256)
         {
-#if defined(ARM_FLOAT16_SUPPORTED)
+#if defined(ARM_FLOAT16_SUPPORTED) && FFT_USE_CFFT_F16_256
             bool used_f16 = fft_1d_cmsis_cfft_f16(real, imag, N, is_inverse);
 
 #if FFT_DIAG_LOG
@@ -831,7 +840,7 @@ void fft_1d_mve(float *real, float *imag, int N, bool is_inverse)
             if (!g_fft_print_fft256_path_once)
             {
                 g_fft_print_fft256_path_once = true;
-                FFT_LOG("[FFT] fft256: path=f32 (no_f16_build)\n");
+                FFT_LOG("[FFT] fft256: path=f32 (f16_disabled_or_unavailable)\n");
             }
 #endif
 #endif

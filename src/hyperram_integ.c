@@ -44,7 +44,15 @@
  * but may corrupt/interleave data), enable the following switch.
  */
 #ifndef HYPERRAM_UNSAFE_RW_CROSS_16B
-#define HYPERRAM_UNSAFE_RW_CROSS_16B 1
+/*
+ * IMPORTANT:
+ * The OSPI address conversion used by this project is 16-byte granular.
+ * Crossing a 16-byte boundary within one contiguous memory-mapped RW chunk can
+ * corrupt/interleave data (often seen as repeating patterns or speckle).
+ *
+ * Keep this disabled for correctness; enable only for controlled experiments.
+ */
+#define HYPERRAM_UNSAFE_RW_CROSS_16B 0
 #endif
 
 #ifndef HYPERRAM_RW_CHUNK_SIZE
