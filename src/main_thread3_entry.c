@@ -386,7 +386,7 @@ volatile uint32_t g_depth_base_offset = 0;
 #define FC_RESULT_N (128)
 
 #ifndef FC_FFT_N
-#define FC_FFT_N (128) // 128 or 256
+#define FC_FFT_N (256) // 128 or 256
 #endif
 
 #if (FC_FFT_N != 128) && (FC_FFT_N != 256)
@@ -612,6 +612,174 @@ static void fc128_build_zhat_from_packed_spectrum(uint32_t frame_base_offset)
         float vv_neg = two_pi * (float)ll_neg / (float)FC_FFT_N;
         float vv2_neg = vv_neg * vv_neg;
 
+#if USE_HELIUM_MVE
+        {
+            float32x4_t v_half = vdupq_n_f32(0.5f);
+            float32x4_t v_vv = vdupq_n_f32(vv);
+            float32x4_t v_vv2 = vdupq_n_f32(vv2);
+            float32x4_t v_vv_neg = vdupq_n_f32(vv_neg);
+            float32x4_t v_vv2_neg = vdupq_n_f32(vv2_neg);
+
+            int x = 0;
+            for (; x + 3 < FC_FFT_N; x += 4)
+            {
+                float32x4_t v_uu = vld1q_f32(&s_uu[x]);
+                float32x4_t v_uu2 = vld1q_f32(&s_uu2[x]);
+
+                /* ---- Row y ---- */
+                float32x4_t v_c_re = vld1q_f32(&c_re_y[x]);
+                float32x4_t v_c_im = vld1q_f32(&c_im_y[x]);
+
+                float cn_re_s[4];
+                float cn_im_s[4];
+                for (int i = 0; i < 4; i++)
+                {
+                    int k = x + i;
+                    int k_neg = (k == 0) ? 0 : (FC_FFT_N - k);
+                    cn_re_s[i] = c_re_yn[k_neg];
+                    cn_im_s[i] = c_im_yn[k_neg];
+                }
+                float32x4_t v_cn_re = vld1q_f32(cn_re_s);
+                float32x4_t v_cn_im = vld1q_f32(cn_im_s);
+
+                float32x4_t v_p_re = vmulq_f32(v_half, vaddq_f32(v_c_re, v_cn_re));
+                float32x4_t v_p_im = vmulq_f32(v_half, vsubq_f32(v_c_im, v_cn_im));
+                float32x4_t v_q_re = vmulq_f32(v_half, vaddq_f32(v_c_im, v_cn_im));
+                float32x4_t v_q_im = vmulq_f32(v_half, vsubq_f32(v_cn_re, v_c_re));
+
+                float32x4_t v_denom = vaddq_f32(v_uu2, v_vv2);
+
+                /* real_num = uu*p_im + vv*q_im */
+                float32x4_t v_real = vmulq_f32(v_uu, v_p_im);
+                v_real = vfmaq_f32(v_real, v_q_im, v_vv);
+
+                /* imag_num = -(uu*p_re + vv*q_re) */
+                float32x4_t v_imag = vmulq_f32(v_uu, v_p_re);
+                v_imag = vfmaq_f32(v_imag, v_q_re, v_vv);
+                v_imag = vnegq_f32(v_imag);
+                {
+                    float denom4[4];
+                    float real4[4];
+                    float imag4[4];
+                    vst1q_f32(denom4, v_denom);
+                    vst1q_f32(real4, v_real);
+                    vst1q_f32(imag4, v_imag);
+                    for (int i = 0; i < 4; i++)
+                    {
+                        float denom = denom4[i];
+                        if (denom < denom_eps)
+                        {
+                            denom = 1.0f;
+                        }
+                        z_re_y[x + i] = real4[i] / denom;
+                        z_im_y[x + i] = imag4[i] / denom;
+                    }
+                }
+
+                /* ---- Row y_neg (if different) ---- */
+                if (y_neg != y)
+                {
+                    float32x4_t v_c2_re = vld1q_f32(&c_re_yn[x]);
+                    float32x4_t v_c2_im = vld1q_f32(&c_im_yn[x]);
+
+                    float cn2_re_s[4];
+                    float cn2_im_s[4];
+                    for (int i = 0; i < 4; i++)
+                    {
+                        int k = x + i;
+                        int k_neg = (k == 0) ? 0 : (FC_FFT_N - k);
+                        cn2_re_s[i] = c_re_y[k_neg];
+                        cn2_im_s[i] = c_im_y[k_neg];
+                    }
+                    float32x4_t v_cn2_re = vld1q_f32(cn2_re_s);
+                    float32x4_t v_cn2_im = vld1q_f32(cn2_im_s);
+
+                    float32x4_t v_p2_re = vmulq_f32(v_half, vaddq_f32(v_c2_re, v_cn2_re));
+                    float32x4_t v_p2_im = vmulq_f32(v_half, vsubq_f32(v_c2_im, v_cn2_im));
+                    float32x4_t v_q2_re = vmulq_f32(v_half, vaddq_f32(v_c2_im, v_cn2_im));
+                    float32x4_t v_q2_im = vmulq_f32(v_half, vsubq_f32(v_cn2_re, v_c2_re));
+
+                    float32x4_t v_denom2 = vaddq_f32(v_uu2, v_vv2_neg);
+
+                    float32x4_t v_real2 = vmulq_f32(v_uu, v_p2_im);
+                    v_real2 = vfmaq_f32(v_real2, v_q2_im, v_vv_neg);
+
+                    float32x4_t v_imag2 = vmulq_f32(v_uu, v_p2_re);
+                    v_imag2 = vfmaq_f32(v_imag2, v_q2_re, v_vv_neg);
+                    v_imag2 = vnegq_f32(v_imag2);
+                    {
+                        float denom2_4[4];
+                        float real2_4[4];
+                        float imag2_4[4];
+                        vst1q_f32(denom2_4, v_denom2);
+                        vst1q_f32(real2_4, v_real2);
+                        vst1q_f32(imag2_4, v_imag2);
+                        for (int i = 0; i < 4; i++)
+                        {
+                            float denom2 = denom2_4[i];
+                            if (denom2 < denom_eps)
+                            {
+                                denom2 = 1.0f;
+                            }
+                            z_re_yn[x + i] = real2_4[i] / denom2;
+                            z_im_yn[x + i] = imag2_4[i] / denom2;
+                        }
+                    }
+                }
+            }
+
+            for (; x < FC_FFT_N; x++)
+            {
+                int x_neg = (x == 0) ? 0 : (FC_FFT_N - x);
+                float uu = s_uu[x];
+
+                float c_re = c_re_y[x];
+                float c_im = c_im_y[x];
+                float cn_re = c_re_yn[x_neg];
+                float cn_im = c_im_yn[x_neg];
+
+                float p_re = 0.5f * (c_re + cn_re);
+                float p_im = 0.5f * (c_im - cn_im);
+                float q_re = 0.5f * (c_im + cn_im);
+                float q_im = 0.5f * (cn_re - c_re);
+
+                float denom = s_uu2[x] + vv2;
+                if (denom < denom_eps)
+                {
+                    denom = 1.0f;
+                }
+
+                float real_num = uu * p_im + vv * q_im;
+                float imag_num = -(uu * p_re + vv * q_re);
+                z_re_y[x] = real_num / denom;
+                z_im_y[x] = imag_num / denom;
+
+                if (y_neg != y)
+                {
+                    float c2_re = c_re_yn[x];
+                    float c2_im = c_im_yn[x];
+                    float cn2_re = c_re_y[x_neg];
+                    float cn2_im = c_im_y[x_neg];
+
+                    float p2_re = 0.5f * (c2_re + cn2_re);
+                    float p2_im = 0.5f * (c2_im - cn2_im);
+                    float q2_re = 0.5f * (c2_im + cn2_im);
+                    float q2_im = 0.5f * (cn2_re - c2_re);
+
+                    float denom2 = s_uu2[x] + vv2_neg;
+                    if (denom2 < denom_eps)
+                    {
+                        denom2 = 1.0f;
+                    }
+
+                    float real_num2 = uu * p2_im + vv_neg * q2_im;
+                    float imag_num2 = -(uu * p2_re + vv_neg * q2_re);
+                    z_re_yn[x] = real_num2 / denom2;
+                    z_im_yn[x] = imag_num2 / denom2;
+                }
+            }
+        }
+#else
         for (int x = 0; x < FC_FFT_N; x++)
         {
             int x_neg = (x == 0) ? 0 : (FC_FFT_N - x);
@@ -668,6 +836,7 @@ static void fc128_build_zhat_from_packed_spectrum(uint32_t frame_base_offset)
                 z_im_yn[x] = imag_num2 / denom2;
             }
         }
+#endif
 
         /* Enforce DC to 0 (avoids tiny residuals from numerical paths). */
         if (y == 0)
