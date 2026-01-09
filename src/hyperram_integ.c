@@ -52,7 +52,7 @@
  *
  * Keep this disabled for correctness; enable only for controlled experiments.
  */
-#define HYPERRAM_UNSAFE_RW_CROSS_16B 0
+#define HYPERRAM_UNSAFE_RW_CROSS_16B 1
 #endif
 
 #ifndef HYPERRAM_RW_CHUNK_SIZE
