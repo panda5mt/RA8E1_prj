@@ -297,7 +297,7 @@ static float g_light_ts;
 
 /* Width (pixels) of the taper region from each edge. 0 disables taper. */
 #ifndef PQ128_TAPER_WIDTH
-#define PQ128_TAPER_WIDTH (16)
+#define PQ128_TAPER_WIDTH (0)
 #endif
 
 /* Published when a full p/q write completes.
