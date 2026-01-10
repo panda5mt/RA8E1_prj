@@ -270,7 +270,7 @@ static float g_light_ts;
 
 /* Start attenuating when intensity approaches saturation threshold. */
 #ifndef PQ128_SAT_SOFT_START
-#define PQ128_SAT_SOFT_START (200)
+#define PQ128_SAT_SOFT_START (140)
 #endif
 
 /* Softmask curve: 0=linear, 1=quadratic (stronger suppression near saturation). */
@@ -353,12 +353,12 @@ static float g_light_ts;
 
 /* Knee start (0..255). Values above this are compressed. */
 #ifndef PQ128_KNEE_START
-#define PQ128_KNEE_START (210)
+#define PQ128_KNEE_START (205)
 #endif
 
 /* Compression strength as right shift: 2 => /4, 3 => /8 (stronger). */
 #ifndef PQ128_KNEE_SHIFT
-#define PQ128_KNEE_SHIFT (8)
+#define PQ128_KNEE_SHIFT (4)
 #endif
 
 /* Edge taper (window) to reduce FFT wrap-around artifacts. */
