@@ -336,6 +336,21 @@ static float g_light_ts;
 #define PQ128_USE_INTENSITY_KNEE (1)
 #endif
 
+/* Optional gamma lift on intensity before computing p/q.
+ * Useful to lift dark objects (e.g. deep blue with low luma Y) so epsilon does not dominate.
+ * Implemented as a 256-entry LUT built once; no per-pixel floating point.
+ */
+#ifndef PQ128_USE_INTENSITY_GAMMA
+#define PQ128_USE_INTENSITY_GAMMA (1)
+#endif
+
+/* Gamma applied to normalized intensity in [0..1].
+ * gamma < 1 lifts shadows, gamma > 1 darkens shadows.
+ */
+#ifndef PQ128_INTENSITY_GAMMA
+#define PQ128_INTENSITY_GAMMA (0.75f)
+#endif
+
 /* Knee start (0..255). Values above this are compressed. */
 #ifndef PQ128_KNEE_START
 #define PQ128_KNEE_START (210)
@@ -1671,24 +1686,42 @@ static inline int32_t pq128_chroma_edge_weight_q15(int edge)
 }
 #endif
 
-#if PQ128_USE_INTENSITY_KNEE
+#if (PQ128_USE_INTENSITY_KNEE || PQ128_USE_INTENSITY_GAMMA)
 static void pq128_init_intensity_lut(uint8_t out_u8[256])
 {
     for (int i = 0; i < 256; i++)
     {
-        if (i <= PQ128_KNEE_START)
+        int y = i;
+
+#if PQ128_USE_INTENSITY_GAMMA
         {
-            out_u8[i] = (uint8_t)i;
+            float x = (float)y * (1.0f / 255.0f);
+            float yg = powf(x, (float)PQ128_INTENSITY_GAMMA);
+            int yi = (int)(yg * 255.0f + 0.5f);
+            if (yi < 0)
+            {
+                yi = 0;
+            }
+            if (yi > 255)
+            {
+                yi = 255;
+            }
+            y = yi;
         }
-        else
+#endif
+
+#if PQ128_USE_INTENSITY_KNEE
+        if (y > PQ128_KNEE_START)
         {
-            int y = PQ128_KNEE_START + ((i - PQ128_KNEE_START) >> PQ128_KNEE_SHIFT);
+            y = PQ128_KNEE_START + ((y - PQ128_KNEE_START) >> PQ128_KNEE_SHIFT);
             if (y > 255)
             {
                 y = 255;
             }
-            out_u8[i] = (uint8_t)y;
         }
+#endif
+
+        out_u8[i] = (uint8_t)y;
     }
 }
 #endif
@@ -1918,13 +1951,13 @@ static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_s
     }
 #endif
 
-#if PQ128_USE_INTENSITY_KNEE
-    static bool s_knee_inited = false;
-    static uint8_t s_knee_u8[256];
-    if (!s_knee_inited)
+#if (PQ128_USE_INTENSITY_KNEE || PQ128_USE_INTENSITY_GAMMA)
+    static bool s_intensity_lut_inited = false;
+    static uint8_t s_intensity_u8[256];
+    if (!s_intensity_lut_inited)
     {
-        pq128_init_intensity_lut(s_knee_u8);
-        s_knee_inited = true;
+        pq128_init_intensity_lut(s_intensity_u8);
+        s_intensity_lut_inited = true;
     }
 #endif
 
@@ -1978,11 +2011,11 @@ static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_s
             int raw_ym1 = (int)pq128_get_y_or_zero(y_prev, x);
             int raw_yp1 = (int)pq128_get_y_or_zero(y_next, x);
 
-#if PQ128_USE_INTENSITY_KNEE
-            int i_xm1 = (int)s_knee_u8[(uint8_t)raw_xm1];
-            int i_xp1 = (int)s_knee_u8[(uint8_t)raw_xp1];
-            int i_ym1 = (int)s_knee_u8[(uint8_t)raw_ym1];
-            int i_yp1 = (int)s_knee_u8[(uint8_t)raw_yp1];
+#if (PQ128_USE_INTENSITY_KNEE || PQ128_USE_INTENSITY_GAMMA)
+            int i_xm1 = (int)s_intensity_u8[(uint8_t)raw_xm1];
+            int i_xp1 = (int)s_intensity_u8[(uint8_t)raw_xp1];
+            int i_ym1 = (int)s_intensity_u8[(uint8_t)raw_ym1];
+            int i_yp1 = (int)s_intensity_u8[(uint8_t)raw_yp1];
 #else
             int i_xm1 = raw_xm1;
             int i_xp1 = raw_xp1;
@@ -2043,8 +2076,8 @@ static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_s
             {
 #if (PQ128_PQ_MODE == 3)
                 int raw_c = (int)pq128_get_y_or_zero(y_curr, x);
-#if PQ128_USE_INTENSITY_KNEE
-                int i_c = (int)s_knee_u8[(uint8_t)raw_c];
+#if (PQ128_USE_INTENSITY_KNEE || PQ128_USE_INTENSITY_GAMMA)
+                int i_c = (int)s_intensity_u8[(uint8_t)raw_c];
 #else
                 int i_c = raw_c;
 #endif
