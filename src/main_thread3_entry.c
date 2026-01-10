@@ -733,13 +733,10 @@ static void fc128_build_zhat_from_packed_spectrum(uint32_t frame_base_offset)
                     vst1q_f32(imag4, v_imag);
                     for (int i = 0; i < 4; i++)
                     {
-                        float denom = denom4[i];
-                        if (denom < denom_eps)
-                        {
-                            denom = 1.0f;
-                        }
-                        z_re_y[x + i] = real4[i] / denom;
-                        z_im_y[x + i] = imag4[i] / denom;
+                        /* For x>=1, denom is strictly > 0 (uu^2 + vv^2). */
+                        float inv = 1.0f / denom4[i];
+                        z_re_y[x + i] = real4[i] * inv;
+                        z_im_y[x + i] = imag4[i] * inv;
                     }
                 }
 
@@ -794,13 +791,10 @@ static void fc128_build_zhat_from_packed_spectrum(uint32_t frame_base_offset)
                         vst1q_f32(imag2_4, v_imag2);
                         for (int i = 0; i < 4; i++)
                         {
-                            float denom2 = denom2_4[i];
-                            if (denom2 < denom_eps)
-                            {
-                                denom2 = 1.0f;
-                            }
-                            z_re_yn[x + i] = real2_4[i] / denom2;
-                            z_im_yn[x + i] = imag2_4[i] / denom2;
+                            /* For x>=1, denom2 is strictly > 0 (uu^2 + vv_neg^2). */
+                            float inv2 = 1.0f / denom2_4[i];
+                            z_re_yn[x + i] = real2_4[i] * inv2;
+                            z_im_yn[x + i] = imag2_4[i] * inv2;
                         }
                     }
                 }
