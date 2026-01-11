@@ -179,7 +179,6 @@ end
 
 function img_handle = process_complete_frame_fast(packets, total_chunks, total_size, ax, img_handle)
     % 高速フレーム処理（深度マップ表示）
-    
     % フレームデータ復元（高速版）
     frame_data = reconstruct_frame_ultra_fast(packets, total_chunks, total_size);
     
