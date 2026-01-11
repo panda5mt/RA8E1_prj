@@ -221,7 +221,7 @@ static inline uint32_t fc128_cyc_to_us(uint32_t cyc)
  *       p ~= (I/255) * (ps/ts), q ~= (I/255) * (qs/ts)
  */
 #ifndef PQ128_PQ_MODE
-#define PQ128_PQ_MODE (0)
+#define PQ128_PQ_MODE (1)
 #endif
 
 /* Flip p/q sign if the reconstructed surface appears inverted.
