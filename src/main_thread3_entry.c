@@ -221,7 +221,7 @@ static inline uint32_t fc128_cyc_to_us(uint32_t cyc)
  *       p ~= (I/255) * (ps/ts), q ~= (I/255) * (qs/ts)
  */
 #ifndef PQ128_PQ_MODE
-#define PQ128_PQ_MODE (1)
+#define PQ128_PQ_MODE (2)
 #endif
 
 /* Flip p/q sign if the reconstructed surface appears inverted.
@@ -260,7 +260,12 @@ static float g_light_ts;
 
 /* Remove per-pixel division by using a reciprocal LUT (recommended for speed). */
 #ifndef PQ128_USE_RECIP_LUT
-#define PQ128_USE_RECIP_LUT (1)
+/* NOTE:
+ * PQ128_PQ_MODE==0 with PQ128_USE_RECIP_LUT==1 allocates a ~2KB uint32 LUT in .bss,
+ * which can overflow internal RAM depending on thread stack sizing.
+ * Default to 0 for robustness; enable explicitly if you have RAM headroom.
+ */
+#define PQ128_USE_RECIP_LUT (0)
 #endif
 
 /* Saturation handling: 0=hard mask (sat->0), 1=soft attenuation near saturation. */
@@ -363,7 +368,7 @@ static float g_light_ts;
 
 /* Edge taper (window) to reduce FFT wrap-around artifacts. */
 #ifndef PQ128_USE_TAPER
-#define PQ128_USE_TAPER (0)
+#define PQ128_USE_TAPER (1)
 #endif
 
 /* Width (pixels) of the taper region from each edge. 0 disables taper. */

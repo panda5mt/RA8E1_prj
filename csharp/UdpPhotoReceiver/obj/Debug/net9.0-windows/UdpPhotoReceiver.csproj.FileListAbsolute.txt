@@ -1,0 +1,15 @@
+C:\Users\lynxe\Documents\GitHub\RA8E1_prj\csharp\UdpPhotoReceiver\obj\Debug\net9.0-windows\UdpPhotoReceiver.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\lynxe\Documents\GitHub\RA8E1_prj\csharp\UdpPhotoReceiver\obj\Debug\net9.0-windows\UdpPhotoReceiver.AssemblyInfoInputs.cache
+C:\Users\lynxe\Documents\GitHub\RA8E1_prj\csharp\UdpPhotoReceiver\obj\Debug\net9.0-windows\UdpPhotoReceiver.AssemblyInfo.cs
+C:\Users\lynxe\Documents\GitHub\RA8E1_prj\csharp\UdpPhotoReceiver\obj\Debug\net9.0-windows\UdpPhotoReceiver.csproj.CoreCompileInputs.cache
+C:\Users\lynxe\Documents\GitHub\RA8E1_prj\csharp\UdpPhotoReceiver\obj\Debug\net9.0-windows\UdpPhotoReceiver.sourcelink.json
+C:\Users\lynxe\Documents\GitHub\RA8E1_prj\csharp\UdpPhotoReceiver\bin\Debug\net9.0-windows\UdpPhotoReceiver.exe
+C:\Users\lynxe\Documents\GitHub\RA8E1_prj\csharp\UdpPhotoReceiver\bin\Debug\net9.0-windows\UdpPhotoReceiver.deps.json
+C:\Users\lynxe\Documents\GitHub\RA8E1_prj\csharp\UdpPhotoReceiver\bin\Debug\net9.0-windows\UdpPhotoReceiver.runtimeconfig.json
+C:\Users\lynxe\Documents\GitHub\RA8E1_prj\csharp\UdpPhotoReceiver\bin\Debug\net9.0-windows\UdpPhotoReceiver.dll
+C:\Users\lynxe\Documents\GitHub\RA8E1_prj\csharp\UdpPhotoReceiver\bin\Debug\net9.0-windows\UdpPhotoReceiver.pdb
+C:\Users\lynxe\Documents\GitHub\RA8E1_prj\csharp\UdpPhotoReceiver\obj\Debug\net9.0-windows\UdpPhotoReceiver.dll
+C:\Users\lynxe\Documents\GitHub\RA8E1_prj\csharp\UdpPhotoReceiver\obj\Debug\net9.0-windows\refint\UdpPhotoReceiver.dll
+C:\Users\lynxe\Documents\GitHub\RA8E1_prj\csharp\UdpPhotoReceiver\obj\Debug\net9.0-windows\UdpPhotoReceiver.pdb
+C:\Users\lynxe\Documents\GitHub\RA8E1_prj\csharp\UdpPhotoReceiver\obj\Debug\net9.0-windows\UdpPhotoReceiver.genruntimeconfig.cache
+C:\Users\lynxe\Documents\GitHub\RA8E1_prj\csharp\UdpPhotoReceiver\obj\Debug\net9.0-windows\ref\UdpPhotoReceiver.dll
