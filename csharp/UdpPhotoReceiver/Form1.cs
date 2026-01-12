@@ -10,10 +10,19 @@ public partial class Form1 : Form
     private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
     private long _framesDisplayed;
     private long _lastStatsMs;
+    private volatile RenderMode _mode = RenderMode.Heatmap;
 
     public Form1()
     {
         InitializeComponent();
+
+        toolStripComboMode.Items.Add("Heatmap");
+        toolStripComboMode.Items.Add("Grayscale");
+        toolStripComboMode.SelectedIndex = 0;
+        toolStripComboMode.SelectedIndexChanged += (_, _) =>
+        {
+            _mode = toolStripComboMode.SelectedIndex == 1 ? RenderMode.Grayscale : RenderMode.Heatmap;
+        };
 
         _renderer = new DepthRenderer(width: 320, height: 240);
         _receiver = new UdpFrameReceiver(
@@ -57,7 +66,7 @@ public partial class Form1 : Form
     {
         try
         {
-            _renderer.RenderIntoBitmap(frameData.Span);
+            _renderer.RenderIntoBitmap(frameData.Span, _mode);
 
             BeginInvoke(() =>
             {

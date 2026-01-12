@@ -20,7 +20,7 @@ public sealed class DepthRenderer : IDisposable
         Bitmap = new Bitmap(_width, _height, PixelFormat.Format24bppRgb);
     }
 
-    public void RenderIntoBitmap(ReadOnlySpan<byte> frameData)
+    public void RenderIntoBitmap(ReadOnlySpan<byte> frameData, RenderMode mode)
     {
         int expected = _width * _height;
         if (frameData.Length < expected)
@@ -47,12 +47,21 @@ public sealed class DepthRenderer : IDisposable
                     for (int x = 0; x < _width; x++)
                     {
                         byte d = depth[srcIdx++];
-                        int lut = d * 3;
-
                         int px = x * 3;
-                        row[px + 0] = _bgrLut[lut + 0];
-                        row[px + 1] = _bgrLut[lut + 1];
-                        row[px + 2] = _bgrLut[lut + 2];
+
+                        if (mode == RenderMode.Grayscale)
+                        {
+                            row[px + 0] = d;
+                            row[px + 1] = d;
+                            row[px + 2] = d;
+                        }
+                        else
+                        {
+                            int lut = d * 3;
+                            row[px + 0] = _bgrLut[lut + 0];
+                            row[px + 1] = _bgrLut[lut + 1];
+                            row[px + 2] = _bgrLut[lut + 2];
+                        }
                     }
                 }
             }
