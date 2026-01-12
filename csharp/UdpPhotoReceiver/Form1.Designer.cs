@@ -32,6 +32,13 @@ partial class Form1
         this.toolStrip = new System.Windows.Forms.ToolStrip();
         this.toolStripLabelMode = new System.Windows.Forms.ToolStripLabel();
         this.toolStripComboMode = new System.Windows.Forms.ToolStripComboBox();
+        this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
+        this.toolStripLabelRange = new System.Windows.Forms.ToolStripLabel();
+        this.numericHeatMin = new System.Windows.Forms.NumericUpDown();
+        this.toolStripHostHeatMin = new System.Windows.Forms.ToolStripControlHost(this.numericHeatMin);
+        this.toolStripLabelTo = new System.Windows.Forms.ToolStripLabel();
+        this.numericHeatMax = new System.Windows.Forms.NumericUpDown();
+        this.toolStripHostHeatMax = new System.Windows.Forms.ToolStripControlHost(this.numericHeatMax);
         this.pictureBox = new System.Windows.Forms.PictureBox();
         this.statusStrip = new System.Windows.Forms.StatusStrip();
         this.toolStripStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
@@ -42,7 +49,7 @@ partial class Form1
         // 
         // toolStrip
         // 
-        this.toolStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { this.toolStripLabelMode, this.toolStripComboMode });
+        this.toolStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { this.toolStripLabelMode, this.toolStripComboMode, this.toolStripSeparator1, this.toolStripLabelRange, this.toolStripHostHeatMin, this.toolStripLabelTo, this.toolStripHostHeatMax });
         this.toolStrip.Location = new System.Drawing.Point(0, 0);
         this.toolStrip.Name = "toolStrip";
         this.toolStrip.Size = new System.Drawing.Size(800, 25);
@@ -60,6 +67,56 @@ partial class Form1
         this.toolStripComboMode.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
         this.toolStripComboMode.Name = "toolStripComboMode";
         this.toolStripComboMode.Size = new System.Drawing.Size(121, 25);
+
+        // 
+        // toolStripSeparator1
+        // 
+        this.toolStripSeparator1.Name = "toolStripSeparator1";
+        this.toolStripSeparator1.Size = new System.Drawing.Size(6, 25);
+
+        // 
+        // toolStripLabelRange
+        // 
+        this.toolStripLabelRange.Name = "toolStripLabelRange";
+        this.toolStripLabelRange.Size = new System.Drawing.Size(44, 22);
+        this.toolStripLabelRange.Text = "Range:";
+
+        // 
+        // numericHeatMin
+        // 
+        this.numericHeatMin.Minimum = new decimal(new int[] { 0, 0, 0, 0 });
+        this.numericHeatMin.Maximum = new decimal(new int[] { 255, 0, 0, 0 });
+        this.numericHeatMin.Value = new decimal(new int[] { 150, 0, 0, 0 });
+        this.numericHeatMin.Size = new System.Drawing.Size(56, 23);
+        this.numericHeatMin.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+
+        // 
+        // toolStripHostHeatMin
+        // 
+        this.toolStripHostHeatMin.Name = "toolStripHostHeatMin";
+        this.toolStripHostHeatMin.Size = new System.Drawing.Size(60, 22);
+
+        // 
+        // toolStripLabelTo
+        // 
+        this.toolStripLabelTo.Name = "toolStripLabelTo";
+        this.toolStripLabelTo.Size = new System.Drawing.Size(16, 22);
+        this.toolStripLabelTo.Text = "..";
+
+        // 
+        // numericHeatMax
+        // 
+        this.numericHeatMax.Minimum = new decimal(new int[] { 0, 0, 0, 0 });
+        this.numericHeatMax.Maximum = new decimal(new int[] { 255, 0, 0, 0 });
+        this.numericHeatMax.Value = new decimal(new int[] { 255, 0, 0, 0 });
+        this.numericHeatMax.Size = new System.Drawing.Size(56, 23);
+        this.numericHeatMax.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+
+        // 
+        // toolStripHostHeatMax
+        // 
+        this.toolStripHostHeatMax.Name = "toolStripHostHeatMax";
+        this.toolStripHostHeatMax.Size = new System.Drawing.Size(60, 22);
         // 
         // pictureBox
         // 
@@ -109,6 +166,13 @@ partial class Form1
     private System.Windows.Forms.ToolStrip toolStrip;
     private System.Windows.Forms.ToolStripLabel toolStripLabelMode;
     private System.Windows.Forms.ToolStripComboBox toolStripComboMode;
+    private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
+    private System.Windows.Forms.ToolStripLabel toolStripLabelRange;
+    private System.Windows.Forms.NumericUpDown numericHeatMin;
+    private System.Windows.Forms.ToolStripControlHost toolStripHostHeatMin;
+    private System.Windows.Forms.ToolStripLabel toolStripLabelTo;
+    private System.Windows.Forms.NumericUpDown numericHeatMax;
+    private System.Windows.Forms.ToolStripControlHost toolStripHostHeatMax;
     private System.Windows.Forms.PictureBox pictureBox;
     private System.Windows.Forms.StatusStrip statusStrip;
     private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel;

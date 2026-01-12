@@ -20,7 +20,7 @@ public sealed class DepthRenderer : IDisposable
         Bitmap = new Bitmap(_width, _height, PixelFormat.Format24bppRgb);
     }
 
-    public void RenderIntoBitmap(ReadOnlySpan<byte> frameData, RenderMode mode)
+    public void RenderIntoBitmap(ReadOnlySpan<byte> frameData, RenderMode mode, byte rangeMin, byte rangeMax)
     {
         int expected = _width * _height;
         if (frameData.Length < expected)
@@ -29,6 +29,13 @@ public sealed class DepthRenderer : IDisposable
         }
 
         ReadOnlySpan<byte> depth = frameData.Slice(0, expected);
+
+        if (rangeMax <= rangeMin)
+        {
+            // Avoid divide-by-zero and undefined behavior; treat as identity.
+            rangeMin = 0;
+            rangeMax = 255;
+        }
 
         Rectangle rect = new Rectangle(0, 0, _width, _height);
         BitmapData bmpData = Bitmap.LockBits(rect, ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
@@ -46,7 +53,7 @@ public sealed class DepthRenderer : IDisposable
                     byte* row = dstBase + y * stride;
                     for (int x = 0; x < _width; x++)
                     {
-                        byte d = depth[srcIdx++];
+                        byte d = RemapToByteRange(depth[srcIdx++], rangeMin, rangeMax);
                         int px = x * 3;
 
                         if (mode == RenderMode.Grayscale)
@@ -70,6 +77,38 @@ public sealed class DepthRenderer : IDisposable
         {
             Bitmap.UnlockBits(bmpData);
         }
+    }
+
+    private static byte RemapToByteRange(byte value, byte rangeMin, byte rangeMax)
+    {
+        if (rangeMin == 0 && rangeMax == 255)
+        {
+            return value;
+        }
+
+        if (value <= rangeMin)
+        {
+            return 0;
+        }
+
+        if (value >= rangeMax)
+        {
+            return 255;
+        }
+
+        int v = value;
+        int min = rangeMin;
+        int max = rangeMax;
+        int scaled = (v - min) * 255 / (max - min);
+        if (scaled < 0)
+        {
+            scaled = 0;
+        }
+        else if (scaled > 255)
+        {
+            scaled = 255;
+        }
+        return (byte)scaled;
     }
 
     public void Dispose()
