@@ -406,7 +406,7 @@ volatile uint32_t g_depth_base_offset = 0;
 #define FC_RESULT_N (128)
 
 #ifndef FC_FFT_N
-#define FC_FFT_N (256) // 128 or 256
+#define FC_FFT_N (128) // 128 or 256
 #endif
 
 #if (FC_FFT_N != 128) && (FC_FFT_N != 256)
