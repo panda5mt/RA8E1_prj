@@ -130,7 +130,7 @@ static inline uint32_t fc128_cyc_to_us(uint32_t cyc)
 
 /* Contrast around mid-gray (Q15). 32768=unchanged, 16384=half contrast. */
 #ifndef FC128_EXPORT_CONTRAST_Q15
-#define FC128_EXPORT_CONTRAST_Q15 (32768)
+#define FC128_EXPORT_CONTRAST_Q15 (24000)
 #endif
 
 /* Invert exported depth polarity (u8): out <- 255 - out.
@@ -358,7 +358,7 @@ static float g_light_ts;
 
 /* Knee start (0..255). Values above this are compressed. */
 #ifndef PQ128_KNEE_START
-#define PQ128_KNEE_START (205)
+#define PQ128_KNEE_START (195)
 #endif
 
 /* Compression strength as right shift: 2 => /4, 3 => /8 (stronger). */
