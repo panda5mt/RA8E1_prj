@@ -10,8 +10,510 @@
 #include <string.h>
 #include <math.h>
 
+/* --- Optional GNG (Growing Neural Gas) sparse 3D-ish shape in image coordinates ---
+ * Uses PQ128 focus (edge - blurred-edge) as a confidence gate, and FC128 Z (float) as z.
+ * Intended to provide a stable, sparse representation across frames.
+ */
+#ifndef FC128_GNG_ENABLE
+#define FC128_GNG_ENABLE (0)
+#endif
+
+#ifndef FC128_GNG_MAX_NODES
+#define FC128_GNG_MAX_NODES (32)
+#endif
+
+/* Sample stride over the 128x128 ROI. Larger = cheaper. */
+#ifndef FC128_GNG_SAMPLE_STRIDE
+#define FC128_GNG_SAMPLE_STRIDE (4)
+#endif
+
+/* Hard cap on how many samples are fed into GNG per frame (keeps runtime bounded). */
+#ifndef FC128_GNG_MAX_UPDATES_PER_FRAME
+#define FC128_GNG_MAX_UPDATES_PER_FRAME (160)
+#endif
+
+/* Do a cheap maintenance pass every N frames (error decay + isolated node cleanup). */
+#ifndef FC128_GNG_MAINT_PERIOD_FRAMES
+#define FC128_GNG_MAINT_PERIOD_FRAMES (1)
+#endif
+
+/* Debug: log GNG stats every N frames (0 disables). */
+#ifndef FC128_GNG_LOG_PERIOD
+#define FC128_GNG_LOG_PERIOD (0)
+#endif
+
+/* Only feed samples when focus >= this. */
+#ifndef FC128_GNG_FOCUS_TH
+#define FC128_GNG_FOCUS_TH (12)
+#endif
+
+/* Which pixels to sample for GNG:
+ * 0 = sharp edges (focus high)
+ * 1 = blurred edges (edge exists but focus is low vs edge strength)
+ */
+#ifndef FC128_GNG_GATE_MODE
+#define FC128_GNG_GATE_MODE (0)
+#endif
+
+/* Require edge magnitude >= this (uses stored edge plane). Helps avoid sampling flat areas. */
+#ifndef FC128_GNG_EDGE_TH
+#define FC128_GNG_EDGE_TH (40)
+#endif
+
+/* For blurred-edge sampling: require edge_blur/edge_orig >= this (Q15, 0..32768).
+ * edge_blur is approximated as (edge_orig - focus).
+ */
+#ifndef FC128_GNG_BLUR_RATIO_MIN_Q15
+#define FC128_GNG_BLUR_RATIO_MIN_Q15 (27853) /* 0.85 */
+#endif
+
+/* GNG Z source:
+ * 0 = FC128 reconstructed Z (Frankot-Chellappa integration output)
+ * 1 = Defocus proxy from focus plane (edge - edge(blur))  [pseudo depth]
+ */
+#ifndef FC128_GNG_Z_SOURCE
+#define FC128_GNG_Z_SOURCE (0)
+#endif
+
+/* When FC128_GNG_Z_SOURCE==1, convert focus (0..255) to a pseudo depth value.
+ * If INVERT=1 then larger blur (lower focus) becomes larger Z.
+ */
+#ifndef FC128_GNG_FOCUS_Z_INVERT
+#define FC128_GNG_FOCUS_Z_INVERT (1)
+#endif
+
+#ifndef FC128_GNG_FOCUS_Z_GAIN
+#define FC128_GNG_FOCUS_Z_GAIN (1.0f)
+#endif
+
+/* Learning rates. */
+#ifndef FC128_GNG_EPS_B
+#define FC128_GNG_EPS_B (0.15f)
+#endif
+
+#ifndef FC128_GNG_EPS_N
+#define FC128_GNG_EPS_N (0.02f)
+#endif
+
+/* Scale Z contribution in distance/update. Smaller => XY dominates => more stable topology. */
+#ifndef FC128_GNG_Z_SCALE
+#define FC128_GNG_Z_SCALE (0.05f)
+#endif
+
+/* Insert a new node every LAMBDA samples (across frames). */
+#ifndef FC128_GNG_LAMBDA
+#define FC128_GNG_LAMBDA (50)
+#endif
+
+/* Edge aging / pruning. */
+#ifndef FC128_GNG_MAX_AGE
+#define FC128_GNG_MAX_AGE (40)
+#endif
+
+/* Error decay factors. */
+#ifndef FC128_GNG_ALPHA
+#define FC128_GNG_ALPHA (0.5f)
+#endif
+
+#ifndef FC128_GNG_D
+#define FC128_GNG_D (0.995f)
+#endif
+
+/* If focus sampling yields 0 updates, optionally seed from Z at fixed points.
+ * Keep 0 for normal operation to avoid phantom fixed points.
+ */
+#ifndef FC128_GNG_ALLOW_Z_SEED_WHEN_NO_FOCUS
+#define FC128_GNG_ALLOW_Z_SEED_WHEN_NO_FOCUS (0)
+#endif
+
+/* When PQ128 ROI extends beyond the frame (due to stride), out-of-frame pixels are
+ * zero-padded. That can create artificial edges near the ROI top/bottom.
+ * Skip such padded rows/cols when sampling for GNG.
+ */
+#ifndef FC128_GNG_SKIP_PADDED_PQ128_SAMPLES
+#define FC128_GNG_SKIP_PADDED_PQ128_SAMPLES (1)
+#endif
+
+/* Visualization gain for GNG export mode (sparse dots). */
+#ifndef FC128_EXPORT_GNG_GAIN
+#define FC128_EXPORT_GNG_GAIN (1)
+#endif
+
+/* Draw neighbor edges in GNG export mode (scanline intersection, no extra buffers). */
+#ifndef FC128_EXPORT_GNG_DRAW_EDGES
+#define FC128_EXPORT_GNG_DRAW_EDGES (1)
+#endif
+
+/* Base brightness for edges (0..255). */
+#ifndef FC128_EXPORT_GNG_EDGE_V
+#define FC128_EXPORT_GNG_EDGE_V (48)
+#endif
+
 #if defined(__clang__) || defined(__GNUC__)
 #define FC128_UNUSED __attribute__((unused))
+
+static inline int clampi(int v, int lo, int hi)
+{
+    return (v < lo) ? lo : (v > hi) ? hi
+                                    : v;
+}
+
+static inline uint8_t max_u8(uint8_t a, uint8_t b)
+{
+    return (a > b) ? a : b;
+}
+
+#if FC128_GNG_ENABLE
+typedef struct
+{
+    uint8_t used[FC128_GNG_MAX_NODES];
+    float x[FC128_GNG_MAX_NODES];
+    float y[FC128_GNG_MAX_NODES];
+    float z[FC128_GNG_MAX_NODES];
+    float err[FC128_GNG_MAX_NODES];
+    uint8_t age[FC128_GNG_MAX_NODES][FC128_GNG_MAX_NODES]; /* 255 = no edge */
+    uint32_t sample_count;
+    uint8_t initialized;
+} fc128_gng_state_t;
+
+static fc128_gng_state_t g_fc128_gng;
+
+static void fc128_gng_reset(fc128_gng_state_t *st)
+{
+    memset(st, 0, sizeof(*st));
+    for (int i = 0; i < FC128_GNG_MAX_NODES; i++)
+    {
+        for (int j = 0; j < FC128_GNG_MAX_NODES; j++)
+        {
+            st->age[i][j] = 255;
+        }
+    }
+}
+
+static int fc128_gng_count_used(const fc128_gng_state_t *st)
+{
+    int n = 0;
+    for (int i = 0; i < FC128_GNG_MAX_NODES; i++)
+    {
+        n += (st->used[i] != 0);
+    }
+    return n;
+}
+
+static int fc128_gng_alloc_node(fc128_gng_state_t *st)
+{
+    for (int i = 0; i < FC128_GNG_MAX_NODES; i++)
+    {
+        if (!st->used[i])
+        {
+            st->used[i] = 1;
+            st->err[i] = 0.0f;
+            for (int j = 0; j < FC128_GNG_MAX_NODES; j++)
+            {
+                st->age[i][j] = 255;
+                st->age[j][i] = 255;
+            }
+            return i;
+        }
+    }
+    return -1;
+}
+
+static void fc128_gng_remove_node(fc128_gng_state_t *st, int idx)
+{
+    if ((idx < 0) || (idx >= FC128_GNG_MAX_NODES) || (!st->used[idx]))
+    {
+        return;
+    }
+    st->used[idx] = 0;
+    st->err[idx] = 0.0f;
+    for (int j = 0; j < FC128_GNG_MAX_NODES; j++)
+    {
+        st->age[idx][j] = 255;
+        st->age[j][idx] = 255;
+    }
+}
+
+static void fc128_gng_connect(fc128_gng_state_t *st, int a, int b)
+{
+    if ((a < 0) || (b < 0) || (a == b))
+    {
+        return;
+    }
+    st->age[a][b] = 0;
+    st->age[b][a] = 0;
+}
+
+static void fc128_gng_disconnect(fc128_gng_state_t *st, int a, int b)
+{
+    if ((a < 0) || (b < 0) || (a == b))
+    {
+        return;
+    }
+    st->age[a][b] = 255;
+    st->age[b][a] = 255;
+}
+
+static int fc128_gng_find_two_nearest(const fc128_gng_state_t *st, float sx, float sy, float sz, int *out_s1, int *out_s2)
+{
+    float best1 = 1e30f;
+    float best2 = 1e30f;
+    int s1 = -1;
+    int s2 = -1;
+
+    for (int i = 0; i < FC128_GNG_MAX_NODES; i++)
+    {
+        if (!st->used[i])
+        {
+            continue;
+        }
+        const float dx = st->x[i] - sx;
+        const float dy = st->y[i] - sy;
+        const float dz = (st->z[i] - sz) * FC128_GNG_Z_SCALE;
+        const float d2 = dx * dx + dy * dy + dz * dz;
+        if (d2 < best1)
+        {
+            best2 = best1;
+            s2 = s1;
+            best1 = d2;
+            s1 = i;
+        }
+        else if (d2 < best2)
+        {
+            best2 = d2;
+            s2 = i;
+        }
+    }
+
+    *out_s1 = s1;
+    *out_s2 = s2;
+    return (s1 >= 0) && (s2 >= 0);
+}
+
+static int fc128_gng_find_max_error_node(const fc128_gng_state_t *st)
+{
+    float best = -1.0f;
+    int idx = -1;
+    for (int i = 0; i < FC128_GNG_MAX_NODES; i++)
+    {
+        if (!st->used[i])
+        {
+            continue;
+        }
+        if (st->err[i] > best)
+        {
+            best = st->err[i];
+            idx = i;
+        }
+    }
+    return idx;
+}
+
+static int fc128_gng_find_max_error_neighbor(const fc128_gng_state_t *st, int q)
+{
+    float best = -1.0f;
+    int idx = -1;
+    for (int i = 0; i < FC128_GNG_MAX_NODES; i++)
+    {
+        if (!st->used[i])
+        {
+            continue;
+        }
+        if (st->age[q][i] == 255)
+        {
+            continue;
+        }
+        if (st->err[i] > best)
+        {
+            best = st->err[i];
+            idx = i;
+        }
+    }
+    return idx;
+}
+
+static void fc128_gng_prune(fc128_gng_state_t *st)
+{
+    /* Remove isolated nodes. (Edge aging / removal is handled locally in the update step.) */
+    for (int i = 0; i < FC128_GNG_MAX_NODES; i++)
+    {
+        if (!st->used[i])
+        {
+            continue;
+        }
+        int deg = 0;
+        for (int j = 0; j < FC128_GNG_MAX_NODES; j++)
+        {
+            deg += (st->age[i][j] != 255);
+        }
+        if (deg == 0)
+        {
+            fc128_gng_remove_node(st, i);
+        }
+    }
+}
+
+static void fc128_gng_step(fc128_gng_state_t *st, float sx, float sy, float sz)
+{
+    if (!st->initialized)
+    {
+        fc128_gng_reset(st);
+        st->initialized = 1;
+    }
+
+    /* Bootstrap: need at least 2 nodes. */
+    if (fc128_gng_count_used(st) < 2)
+    {
+        int n = fc128_gng_alloc_node(st);
+        if (n >= 0)
+        {
+            st->x[n] = sx;
+            st->y[n] = sy;
+            st->z[n] = sz;
+        }
+        return;
+    }
+
+    int s1 = -1;
+    int s2 = -1;
+    if (!fc128_gng_find_two_nearest(st, sx, sy, sz, &s1, &s2))
+    {
+        return;
+    }
+
+    /* Age edges from s1. */
+    for (int j = 0; j < FC128_GNG_MAX_NODES; j++)
+    {
+        if (st->age[s1][j] != 255)
+        {
+            if (st->age[s1][j] < 254)
+            {
+                st->age[s1][j]++;
+                st->age[j][s1] = st->age[s1][j];
+            }
+
+            if (st->age[s1][j] > FC128_GNG_MAX_AGE)
+            {
+                fc128_gng_disconnect(st, s1, j);
+            }
+        }
+    }
+
+    /* Update winner error and move winner/its neighbors. */
+    {
+        const float dx = sx - st->x[s1];
+        const float dy = sy - st->y[s1];
+        const float dz = (sz - st->z[s1]) * FC128_GNG_Z_SCALE;
+        const float d2 = dx * dx + dy * dy + dz * dz;
+        st->err[s1] += d2;
+        st->x[s1] += FC128_GNG_EPS_B * dx;
+        st->y[s1] += FC128_GNG_EPS_B * dy;
+        st->z[s1] += FC128_GNG_EPS_B * dz;
+    }
+    for (int j = 0; j < FC128_GNG_MAX_NODES; j++)
+    {
+        if (!st->used[j])
+        {
+            continue;
+        }
+        if (st->age[s1][j] == 255)
+        {
+            continue;
+        }
+        const float dx = sx - st->x[j];
+        const float dy = sy - st->y[j];
+        const float dz = (sz - st->z[j]) * FC128_GNG_Z_SCALE;
+        st->x[j] += FC128_GNG_EPS_N * dx;
+        st->y[j] += FC128_GNG_EPS_N * dy;
+        st->z[j] += FC128_GNG_EPS_N * dz;
+    }
+
+    /* Connect s1-s2 (age=0). */
+    fc128_gng_connect(st, s1, s2);
+
+    /* Insert nodes periodically. */
+    st->sample_count++;
+    if ((FC128_GNG_LAMBDA > 0) && ((st->sample_count % FC128_GNG_LAMBDA) == 0))
+    {
+        int q = fc128_gng_find_max_error_node(st);
+        if (q >= 0)
+        {
+            int f = fc128_gng_find_max_error_neighbor(st, q);
+            if (f >= 0)
+            {
+                int r = fc128_gng_alloc_node(st);
+                if (r >= 0)
+                {
+                    st->x[r] = 0.5f * (st->x[q] + st->x[f]);
+                    st->y[r] = 0.5f * (st->y[q] + st->y[f]);
+                    st->z[r] = 0.5f * (st->z[q] + st->z[f]);
+                    st->err[r] = st->err[q];
+                    st->err[q] *= FC128_GNG_ALPHA;
+                    st->err[f] *= FC128_GNG_ALPHA;
+                    fc128_gng_disconnect(st, q, f);
+                    fc128_gng_connect(st, q, r);
+                    fc128_gng_connect(st, r, f);
+                }
+            }
+        }
+    }
+
+    /* Error decay is handled by per-frame maintenance (cheaper). */
+}
+
+static void fc128_gng_maint(fc128_gng_state_t *st)
+{
+    for (int i = 0; i < FC128_GNG_MAX_NODES; i++)
+    {
+        if (st->used[i])
+        {
+            st->err[i] *= FC128_GNG_D;
+        }
+    }
+    fc128_gng_prune(st);
+}
+
+static void fc128_gng_render_u8_128x128(const fc128_gng_state_t *st, uint8_t *dst128)
+{
+    memset(dst128, 0, 128 * 128);
+
+    float zmin = 1e30f;
+    float zmax = -1e30f;
+    for (int i = 0; i < FC128_GNG_MAX_NODES; i++)
+    {
+        if (!st->used[i])
+        {
+            continue;
+        }
+        if (st->z[i] < zmin)
+        {
+            zmin = st->z[i];
+        }
+        if (st->z[i] > zmax)
+        {
+            zmax = st->z[i];
+        }
+    }
+    const float denom = (zmax > zmin) ? (zmax - zmin) : 1.0f;
+
+    for (int i = 0; i < FC128_GNG_MAX_NODES; i++)
+    {
+        if (!st->used[i])
+        {
+            continue;
+        }
+        const int xi = clampi((int)(st->x[i] + 0.5f), 0, 127);
+        const int yi = clampi((int)(st->y[i] + 0.5f), 0, 127);
+        float t = (st->z[i] - zmin) / denom;
+        int v = (int)(t * 255.0f);
+        v = clampi(v * FC128_EXPORT_GNG_GAIN, 0, 255);
+        dst128[yi * 128 + xi] = (uint8_t)v;
+    }
+}
+
+/* Defined later (needs PQ128/FC128 layout macros). */
+static void fc128_gng_update_from_frame(uint32_t frame_base_offset, uint32_t frame_seq);
+#endif /* FC128_GNG_ENABLE */
 #else
 #define FC128_UNUSED
 #endif
@@ -107,6 +609,16 @@ static inline uint32_t fc128_cyc_to_us(uint32_t cyc)
 /* Align scratch to 16 bytes (matches base alignment granularity). */
 #define ALIGN16_U32(x) (((uint32_t)(x) + 15U) & ~15U)
 
+/* ---- Tuning profile ----
+ * 1 (default): classic FC behavior (minimal PQ128 pre-processing; matches prior look)
+ * 0: stabilized/experimental (focus/chroma masks, tone handling, etc.)
+ *
+ * You can override this from build flags if needed.
+ */
+#ifndef FC128_PROFILE_CLASSIC
+#define FC128_PROFILE_CLASSIC (1)
+#endif
+
 /* ---- Depth export (FC128 -> 320x240 u8) tunables ----
  * By default the exporter normalizes per-frame (z_min..z_max) to [0..255], which can
  * make even small variations look like strong "relative depth".
@@ -130,7 +642,11 @@ static inline uint32_t fc128_cyc_to_us(uint32_t cyc)
 
 /* Contrast around mid-gray (Q15). 32768=unchanged, 16384=half contrast. */
 #ifndef FC128_EXPORT_CONTRAST_Q15
+#if FC128_PROFILE_CLASSIC
+#define FC128_EXPORT_CONTRAST_Q15 (32768)
+#else
 #define FC128_EXPORT_CONTRAST_Q15 (24000)
+#endif
 #endif
 
 /* Invert exported depth polarity (u8): out <- 255 - out.
@@ -138,6 +654,51 @@ static inline uint32_t fc128_cyc_to_us(uint32_t cyc)
  */
 #ifndef FC128_EXPORT_INVERT
 #define FC128_EXPORT_INVERT (0)
+#endif
+
+/* Background fill value for the exported 320x240 depth image. */
+#ifndef FC128_EXPORT_BG_U8
+#if FC128_PROFILE_CLASSIC
+#define FC128_EXPORT_BG_U8 (0)
+#else
+#define FC128_EXPORT_BG_U8 (128)
+#endif
+#endif
+
+/* Export selector:
+ * 0=FC128 depth (default)
+ * 1=PQ128 focus (edge - edge(blur))
+ * 3=PQ128 edge magnitude (edge)
+ * 4=PQ128 blurness ratio (edge_blur/edge)
+ */
+#ifndef FC128_EXPORT_SOURCE
+#define FC128_EXPORT_SOURCE (0)
+#endif
+
+#define FC128_EXPORT_SRC_DEPTH (0)
+#define FC128_EXPORT_SRC_FOCUS (1)
+#define FC128_EXPORT_SRC_GNG (2)
+#define FC128_EXPORT_SRC_EDGE (3)
+#define FC128_EXPORT_SRC_BLUR_RATIO (4)
+
+/* Extra gain when exporting focus map (0..255). */
+#ifndef FC128_EXPORT_FOCUS_GAIN
+#define FC128_EXPORT_FOCUS_GAIN (8)
+#endif
+
+/* Extra gain when exporting edge magnitude map (0..255). */
+#ifndef FC128_EXPORT_EDGE_GAIN
+#define FC128_EXPORT_EDGE_GAIN (2)
+#endif
+
+/* Extra gain when exporting blurness ratio (0..255). */
+#ifndef FC128_EXPORT_BLUR_RATIO_GAIN
+#define FC128_EXPORT_BLUR_RATIO_GAIN (1)
+#endif
+
+/* Suppress ratio where edge is too weak (avoids noisy division). */
+#ifndef FC128_EXPORT_BLUR_EDGE_TH
+#define FC128_EXPORT_BLUR_EDGE_TH (32)
 #endif
 
 // ---- 128x128 p,q (int16) generation ----
@@ -151,7 +712,7 @@ static inline uint32_t fc128_cyc_to_us(uint32_t cyc)
 #endif
 
 #ifndef PQ128_SAMPLE_STRIDE_Y
-#define PQ128_SAMPLE_STRIDE_Y (2)
+#define PQ128_SAMPLE_STRIDE_Y (1)
 #endif
 
 #if (PQ128_SAMPLE_STRIDE_X < 1) || (PQ128_SAMPLE_STRIDE_Y < 1)
@@ -161,13 +722,18 @@ static inline uint32_t fc128_cyc_to_us(uint32_t cyc)
 #define PQ128_SRC_W (PQ128_SIZE * PQ128_SAMPLE_STRIDE_X)
 #define PQ128_SRC_H (PQ128_SIZE * PQ128_SAMPLE_STRIDE_Y)
 
+/* Some toolchains treat #warning as -Werror. Keep disabled by default. */
+#ifndef PQ128_BUILD_WARNINGS
+#define PQ128_BUILD_WARNINGS (0)
+#endif
+
 /* Width may exceed the frame; left/right will be zero-padded. */
-#if (PQ128_SRC_W > FRAME_WIDTH)
+#if (PQ128_BUILD_WARNINGS && (PQ128_SRC_W > FRAME_WIDTH))
 #warning "PQ128_SRC_W exceeds frame width; left/right will be zero-padded"
 #endif
 
 /* Height may exceed the frame; out-of-frame rows are zero-padded. */
-#if (PQ128_SRC_H > FRAME_HEIGHT)
+#if (PQ128_BUILD_WARNINGS && (PQ128_SRC_H > FRAME_HEIGHT))
 #warning "PQ128_SRC_H exceeds frame height; top/bottom will be zero-padded"
 #endif
 
@@ -202,6 +768,67 @@ static inline uint32_t fc128_cyc_to_us(uint32_t cyc)
  */
 #define PQ128_P_OFFSET (GRADIENT_OFFSET)
 #define PQ128_Q_OFFSET (PQ128_P_OFFSET + PQ128_PLANE_BYTES)
+
+/* Optional: store a u8 focus map (edge(original)-edge(blur)) for debug/visualization. */
+#ifndef PQ128_STORE_FOCUS_PLANE
+#define PQ128_STORE_FOCUS_PLANE (1)
+#endif
+
+/* Blur strength for defocus cue (focus/edge_blur computation).
+ * Larger values make edge_blur weaker for sharp textures/edges, improving separation.
+ */
+#ifndef PQ128_FOCUS_BLUR_PASSES
+#if FC128_PROFILE_CLASSIC
+#define PQ128_FOCUS_BLUR_PASSES (1)
+#else
+#define PQ128_FOCUS_BLUR_PASSES (2)
+#endif
+#endif
+
+#if (PQ128_FOCUS_BLUR_PASSES < 1)
+#error "PQ128_FOCUS_BLUR_PASSES must be >= 1"
+#endif
+
+#define PQ128_FOCUS_PLANE_BYTES ((uint32_t)(PQ128_SIZE * PQ128_SIZE))
+#define PQ128_FOCUS_OFFSET (PQ128_Q_OFFSET + PQ128_PLANE_BYTES)
+
+/* Optional: store edge magnitude of original image (sobel on unblurred Y) for gating/analysis. */
+#ifndef PQ128_STORE_EDGE_PLANE
+#define PQ128_STORE_EDGE_PLANE (1)
+#endif
+
+/* Optional: store edge magnitude of blurred image (sobel on blurred Y).
+ * This enables a more direct "blurness" estimate (edge_blur/edge_orig).
+ */
+#ifndef PQ128_STORE_EDGE_BLUR_PLANE
+#define PQ128_STORE_EDGE_BLUR_PLANE (1)
+#endif
+
+/* Optional: store a mask to suppress highlights/dark noise (0=invalid, 255=valid).
+ * Used by blur_ratio export and optionally by GNG sampling.
+ */
+#ifndef PQ128_STORE_SATMASK_PLANE
+#define PQ128_STORE_SATMASK_PLANE (1)
+#endif
+
+/* Mark invalid if any neighbor/center is >= HI_TH (specular/saturation). */
+#ifndef PQ128_SATMASK_HI_TH
+#define PQ128_SATMASK_HI_TH (250)
+#endif
+
+/* Mark invalid if any neighbor/center is <= LO_TH (dark noise / low SNR). */
+#ifndef PQ128_SATMASK_LO_TH
+#define PQ128_SATMASK_LO_TH (2)
+#endif
+
+#define PQ128_EDGE_PLANE_BYTES ((uint32_t)(PQ128_SIZE * PQ128_SIZE))
+#define PQ128_EDGE_OFFSET (PQ128_FOCUS_OFFSET + PQ128_FOCUS_PLANE_BYTES)
+
+#define PQ128_EDGE_BLUR_PLANE_BYTES ((uint32_t)(PQ128_SIZE * PQ128_SIZE))
+#define PQ128_EDGE_BLUR_OFFSET (PQ128_EDGE_OFFSET + PQ128_EDGE_PLANE_BYTES)
+
+#define PQ128_SATMASK_PLANE_BYTES ((uint32_t)(PQ128_SIZE * PQ128_SIZE))
+#define PQ128_SATMASK_OFFSET (PQ128_EDGE_BLUR_OFFSET + PQ128_EDGE_BLUR_PLANE_BYTES)
 
 /* PQ128 normalized-gradient parameters (compile-time tunables). */
 #ifndef PQ128_NORM_EPS
@@ -311,7 +938,11 @@ static float g_light_ts;
  * NOTE: UYVY is 4:2:2 so chroma is shared per 2 pixels; we duplicate per-pixel.
  */
 #ifndef PQ128_USE_CHROMA_EDGEMASK
+#if FC128_PROFILE_CLASSIC
+#define PQ128_USE_CHROMA_EDGEMASK (0)
+#else
 #define PQ128_USE_CHROMA_EDGEMASK (1)
+#endif
 #endif
 
 /* Start suppressing when chroma-edge |C(x+1)-C(x-1)| exceeds this. */
@@ -329,6 +960,34 @@ static float g_light_ts;
 #define PQ128_CHROMA_EDGE_POWER2 (1)
 #endif
 
+/* Optional focus/blur mask (defocus cue):
+ * Compute focus = max(0, edge(I) - edge(blur(I))) and down-weight p/q where focus is low.
+ * This is a cheap, texture-based confidence term that tends to stabilize results when the
+ * image is motion-blurred or out-of-focus.
+ */
+#ifndef PQ128_USE_FOCUS_SOFTMASK
+#if FC128_PROFILE_CLASSIC
+#define PQ128_USE_FOCUS_SOFTMASK (0)
+#else
+#define PQ128_USE_FOCUS_SOFTMASK (1)
+#endif
+#endif
+
+/* Fully suppress when focus <= TH. */
+#ifndef PQ128_FOCUS_TH
+#define PQ128_FOCUS_TH (8)
+#endif
+
+/* Full weight when focus >= SOFT_END. */
+#ifndef PQ128_FOCUS_SOFT_END
+#define PQ128_FOCUS_SOFT_END (40)
+#endif
+
+/* Curve: 0=linear, 1=quadratic (stronger suppression near threshold). */
+#ifndef PQ128_FOCUS_POWER2
+#define PQ128_FOCUS_POWER2 (1)
+#endif
+
 /* Denominator range: (I0+I1+eps), I in [0..255] */
 #ifndef PQ128_DEN_MAX
 #define PQ128_DEN_MAX (510 + PQ128_NORM_EPS)
@@ -338,7 +997,11 @@ static float g_light_ts;
  * This reduces the impact of near-saturation highlights without adding per-pixel floating point.
  */
 #ifndef PQ128_USE_INTENSITY_KNEE
+#if FC128_PROFILE_CLASSIC
+#define PQ128_USE_INTENSITY_KNEE (0)
+#else
 #define PQ128_USE_INTENSITY_KNEE (1)
+#endif
 #endif
 
 /* Optional gamma lift on intensity before computing p/q.
@@ -346,7 +1009,11 @@ static float g_light_ts;
  * Implemented as a 256-entry LUT built once; no per-pixel floating point.
  */
 #ifndef PQ128_USE_INTENSITY_GAMMA
+#if FC128_PROFILE_CLASSIC
+#define PQ128_USE_INTENSITY_GAMMA (0)
+#else
 #define PQ128_USE_INTENSITY_GAMMA (1)
+#endif
 #endif
 
 /* Gamma applied to normalized intensity in [0..1].
@@ -368,7 +1035,11 @@ static float g_light_ts;
 
 /* Edge taper (window) to reduce FFT wrap-around artifacts. */
 #ifndef PQ128_USE_TAPER
+#if FC128_PROFILE_CLASSIC
+#define PQ128_USE_TAPER (0)
+#else
 #define PQ128_USE_TAPER (1)
+#endif
 #endif
 
 /* Width (pixels) of the taper region from each edge. 0 disables taper. */
@@ -466,6 +1137,199 @@ volatile uint32_t g_depth_base_offset = 0;
 
 #define FC128_TMP_REAL (FC128_OFFSET_BASE + 12U * FC128_PLANE_BYTES)
 #define FC128_TMP_IMAG (FC128_OFFSET_BASE + 13U * FC128_PLANE_BYTES)
+
+#if FC128_GNG_ENABLE
+static void fc128_gng_update_from_frame(uint32_t frame_base_offset, uint32_t frame_seq)
+{
+    float row_z[FC_RESULT_N];
+    int updates = 0;
+
+#if (PQ128_USE_FOCUS_SOFTMASK && PQ128_STORE_FOCUS_PLANE)
+    {
+        uint8_t focus_row[FC_RESULT_N];
+#if PQ128_STORE_EDGE_PLANE
+        uint8_t edge_row[FC_RESULT_N];
+#endif
+#if PQ128_STORE_EDGE_BLUR_PLANE
+        uint8_t edge_blur_row[FC_RESULT_N];
+#endif
+#if PQ128_STORE_SATMASK_PLANE
+        uint8_t satmask_row[FC_RESULT_N];
+#endif
+
+        for (int y = 0; y < FC_RESULT_N; y += FC128_GNG_SAMPLE_STRIDE)
+        {
+#if FC128_GNG_SKIP_PADDED_PQ128_SAMPLES
+            const int src_y = PQ128_Y0 + y * PQ128_SAMPLE_STRIDE_Y;
+            if ((src_y < 0) || (src_y >= FRAME_HEIGHT))
+            {
+                continue;
+            }
+#endif
+            (void)hyperram_b_read(focus_row,
+                                  (void *)(frame_base_offset + PQ128_FOCUS_OFFSET + (uint32_t)y * (uint32_t)PQ128_SIZE),
+                                  (uint32_t)sizeof(focus_row));
+
+#if PQ128_STORE_EDGE_PLANE
+            (void)hyperram_b_read(edge_row,
+                                  (void *)(frame_base_offset + PQ128_EDGE_OFFSET + (uint32_t)y * (uint32_t)PQ128_SIZE),
+                                  (uint32_t)sizeof(edge_row));
+#endif
+
+#if PQ128_STORE_EDGE_BLUR_PLANE
+            (void)hyperram_b_read(edge_blur_row,
+                                  (void *)(frame_base_offset + PQ128_EDGE_BLUR_OFFSET + (uint32_t)y * (uint32_t)PQ128_SIZE),
+                                  (uint32_t)sizeof(edge_blur_row));
+#endif
+
+#if PQ128_STORE_SATMASK_PLANE
+            (void)hyperram_b_read(satmask_row,
+                                  (void *)(frame_base_offset + PQ128_SATMASK_OFFSET + (uint32_t)y * (uint32_t)PQ128_SIZE),
+                                  (uint32_t)sizeof(satmask_row));
+#endif
+
+#if (FC128_GNG_Z_SOURCE == 0)
+            const uint32_t z_base = (uint32_t)((y + FC_PAD_Y0) * FC_FFT_N + FC_PAD_X0) * (uint32_t)sizeof(float);
+            (void)hyperram_b_read(row_z, (void *)(frame_base_offset + FC128_Z_REAL + z_base), (uint32_t)sizeof(row_z));
+#endif
+
+            for (int x = 0; x < FC_RESULT_N; x += FC128_GNG_SAMPLE_STRIDE)
+            {
+#if FC128_GNG_SKIP_PADDED_PQ128_SAMPLES
+                const int src_x = PQ128_X0 + x * PQ128_SAMPLE_STRIDE_X;
+                if ((src_x < 0) || (src_x >= FRAME_WIDTH))
+                {
+                    continue;
+                }
+#endif
+#if PQ128_STORE_SATMASK_PLANE
+                if (satmask_row[x] == 0)
+                {
+                    continue;
+                }
+#endif
+                const uint8_t f_u8 = focus_row[x];
+
+#if PQ128_STORE_EDGE_PLANE
+                const uint32_t e = (uint32_t)edge_row[x];
+                if (e < (uint32_t)FC128_GNG_EDGE_TH)
+                {
+                    continue;
+                }
+
+#if (FC128_GNG_GATE_MODE == 0)
+                /* Sharp-edge sampling: focus high. */
+                if (f_u8 < (uint8_t)FC128_GNG_FOCUS_TH)
+                {
+                    continue;
+                }
+#else
+                /* Blurred-edge sampling: edge exists but focus is low vs edge strength.
+                 * Prefer stored edge_blur when available.
+                 */
+#if PQ128_STORE_EDGE_BLUR_PLANE
+                const int32_t edge_blur = (int32_t)edge_blur_row[x];
+#else
+                int32_t edge_blur = (int32_t)e - (int32_t)f_u8;
+                if (edge_blur < 0)
+                {
+                    edge_blur = 0;
+                }
+#endif
+                if ((((int64_t)edge_blur) << 15) < ((int64_t)FC128_GNG_BLUR_RATIO_MIN_Q15 * (int64_t)e))
+                {
+                    continue;
+                }
+#endif
+#else
+                /* No edge plane: fall back to simple focus threshold. */
+                if (f_u8 < (uint8_t)FC128_GNG_FOCUS_TH)
+                {
+                    continue;
+                }
+#endif
+
+                float z;
+#if (FC128_GNG_Z_SOURCE == 0)
+                z = row_z[x];
+                if (!isfinite(z))
+                {
+                    continue;
+                }
+#else
+                /* Pseudo depth from defocus proxy (focus plane). */
+                const int f = (int)f_u8;
+#if (FC128_GNG_FOCUS_Z_INVERT != 0)
+                z = (float)(255 - f) * (float)FC128_GNG_FOCUS_Z_GAIN;
+#else
+                z = (float)(f) * (float)FC128_GNG_FOCUS_Z_GAIN;
+#endif
+#endif
+
+                fc128_gng_step(&g_fc128_gng, (float)x, (float)y, z);
+                updates++;
+                if (updates >= FC128_GNG_MAX_UPDATES_PER_FRAME)
+                {
+                    y = FC_RESULT_N;
+                    break;
+                }
+            }
+        }
+    }
+#endif
+
+/* If focus plane is available but yielded no samples, optionally seed from Z.
+ * If focus plane is NOT available, keep seeding enabled so GNG can still run.
+ */
+#if (PQ128_USE_FOCUS_SOFTMASK && PQ128_STORE_FOCUS_PLANE)
+    if ((updates == 0) && (FC128_GNG_ALLOW_Z_SEED_WHEN_NO_FOCUS != 0))
+    {
+#else
+    if (updates == 0)
+    {
+#endif
+        static const uint8_t pts[8][2] = {
+            {64, 64},
+            {32, 64},
+            {96, 64},
+            {64, 32},
+            {64, 96},
+            {32, 32},
+            {96, 32},
+            {32, 96},
+        };
+
+        for (int k = 0; k < 8; k++)
+        {
+            const int x = (int)pts[k][0];
+            const int y = (int)pts[k][1];
+
+            const uint32_t z_base = (uint32_t)((y + FC_PAD_Y0) * FC_FFT_N + FC_PAD_X0) * (uint32_t)sizeof(float);
+            (void)hyperram_b_read(row_z, (void *)(frame_base_offset + FC128_Z_REAL + z_base), (uint32_t)sizeof(row_z));
+            const float z = row_z[x];
+            if (!isfinite(z))
+            {
+                continue;
+            }
+            fc128_gng_step(&g_fc128_gng, (float)x, (float)y, z);
+            updates++;
+        }
+    }
+
+#if (FC128_GNG_LOG_PERIOD > 0)
+    if ((frame_seq % (uint32_t)FC128_GNG_LOG_PERIOD) == 0U)
+    {
+        const int nodes = fc128_gng_count_used(&g_fc128_gng);
+        xprintf("[GNG] seq=%lu updates=%d nodes=%d\n", (unsigned long)frame_seq, updates, nodes);
+    }
+#endif
+
+    if ((FC128_GNG_MAINT_PERIOD_FRAMES > 0U) && ((frame_seq % (uint32_t)FC128_GNG_MAINT_PERIOD_FRAMES) == 0U))
+    {
+        fc128_gng_maint(&g_fc128_gng);
+    }
+}
+#endif /* FC128_GNG_ENABLE */
 
 /* Total FC scratch footprint relative to frame_base_offset. */
 #define FC128_SCRATCH_END (FC128_OFFSET_BASE + 14U * FC128_PLANE_BYTES)
@@ -1142,6 +2006,335 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
     const int export_x0 = (FRAME_WIDTH - FC_RESULT_N) / 2;
     const int export_y0 = (FRAME_HEIGHT - FC_RESULT_N) / 2;
 
+#if (FC128_EXPORT_SOURCE == FC128_EXPORT_SRC_GNG)
+    {
+        uint8_t line[FRAME_WIDTH];
+
+#if FC128_GNG_ENABLE
+        float zmin = 1e30f;
+        float zmax = -1e30f;
+        for (int i = 0; i < FC128_GNG_MAX_NODES; i++)
+        {
+            if (!g_fc128_gng.used[i])
+            {
+                continue;
+            }
+            if (g_fc128_gng.z[i] < zmin)
+            {
+                zmin = g_fc128_gng.z[i];
+            }
+            if (g_fc128_gng.z[i] > zmax)
+            {
+                zmax = g_fc128_gng.z[i];
+            }
+        }
+        const float denom = (zmax > zmin) ? (zmax - zmin) : 0.0f;
+        const bool z_span_ok = (denom > 1.0e-6f);
+#endif
+
+        for (int y = 0; y < FRAME_HEIGHT; y++)
+        {
+            memset(line, 0, sizeof(line));
+
+            if (y >= export_y0 && y < (export_y0 + FC_RESULT_N))
+            {
+                const int ry = y - export_y0;
+
+                /* Always-visible debug marker: border + center dot. */
+                if ((ry == 0) || (ry == (FC_RESULT_N - 1)))
+                {
+                    for (int x = 0; x < FC_RESULT_N; x++)
+                    {
+                        line[export_x0 + x] = 32;
+                    }
+                }
+                else
+                {
+                    line[export_x0 + 0] = 32;
+                    line[export_x0 + (FC_RESULT_N - 1)] = 32;
+                }
+
+                if (ry == 64)
+                {
+                    line[export_x0 + 64] = 255;
+                }
+
+#if FC128_GNG_ENABLE
+                if (ry == 1)
+                {
+                    const int nodes = fc128_gng_count_used(&g_fc128_gng);
+                    const int nbar = (nodes > FC_RESULT_N) ? FC_RESULT_N : nodes;
+                    for (int x = 0; x < nbar; x++)
+                    {
+                        line[export_x0 + x] = 200;
+                    }
+                }
+#endif
+
+#if FC128_GNG_ENABLE
+#if FC128_EXPORT_GNG_DRAW_EDGES
+                /* Draw edges first (thin), then nodes on top (bright). */
+                {
+                    const uint8_t edge_v = (uint8_t)clampi((int)FC128_EXPORT_GNG_EDGE_V, 0, 255);
+
+                    for (int i = 0; i < FC128_GNG_MAX_NODES; i++)
+                    {
+                        if (!g_fc128_gng.used[i])
+                        {
+                            continue;
+                        }
+                        const int xi = clampi((int)(g_fc128_gng.x[i] + 0.5f), 0, 127);
+                        const int yi = clampi((int)(g_fc128_gng.y[i] + 0.5f), 0, 127);
+
+                        for (int j = i + 1; j < FC128_GNG_MAX_NODES; j++)
+                        {
+                            if (!g_fc128_gng.used[j])
+                            {
+                                continue;
+                            }
+                            const uint8_t aij = g_fc128_gng.age[i][j];
+                            if ((aij == 255) || (aij > (uint8_t)FC128_GNG_MAX_AGE))
+                            {
+                                continue;
+                            }
+
+                            const int xj = clampi((int)(g_fc128_gng.x[j] + 0.5f), 0, 127);
+                            const int yj = clampi((int)(g_fc128_gng.y[j] + 0.5f), 0, 127);
+
+                            if (yi == yj)
+                            {
+                                if (ry == yi)
+                                {
+                                    const int x0 = (xi < xj) ? xi : xj;
+                                    const int x1 = (xi < xj) ? xj : xi;
+                                    for (int x = x0; x <= x1; x++)
+                                    {
+                                        line[export_x0 + x] = max_u8(line[export_x0 + x], edge_v);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                const int ymin = (yi < yj) ? yi : yj;
+                                const int ymax = (yi < yj) ? yj : yi;
+                                if ((ry < ymin) || (ry > ymax))
+                                {
+                                    continue;
+                                }
+                                const float t = (float)(ry - yi) / (float)(yj - yi);
+                                const float xf = (float)xi + t * (float)(xj - xi);
+                                const int x = clampi((int)(xf + 0.5f), 0, 127);
+                                line[export_x0 + x] = max_u8(line[export_x0 + x], edge_v);
+                            }
+                        }
+                    }
+                }
+#endif /* FC128_EXPORT_GNG_DRAW_EDGES */
+
+                for (int i = 0; i < FC128_GNG_MAX_NODES; i++)
+                {
+                    if (!g_fc128_gng.used[i])
+                    {
+                        continue;
+                    }
+                    const int xi = clampi((int)(g_fc128_gng.x[i] + 0.5f), 0, 127);
+                    const int yi = clampi((int)(g_fc128_gng.y[i] + 0.5f), 0, 127);
+                    if (yi != ry)
+                    {
+                        continue;
+                    }
+
+                    int v;
+                    if (z_span_ok)
+                    {
+                        float t = (g_fc128_gng.z[i] - zmin) / denom;
+                        if (t < 0.0f)
+                            t = 0.0f;
+                        if (t > 1.0f)
+                            t = 1.0f;
+                        v = (int)(t * 255.0f);
+                    }
+                    else
+                    {
+                        v = 255;
+                    }
+                    v = clampi(v * FC128_EXPORT_GNG_GAIN, 0, 255);
+                    line[export_x0 + xi] = max_u8(line[export_x0 + xi], (uint8_t)v);
+                }
+#endif
+            }
+
+            (void)hyperram_b_write(line,
+                                   (void *)(frame_base_offset + DEPTH_OFFSET + (uint32_t)y * (uint32_t)FRAME_WIDTH),
+                                   (uint32_t)sizeof(line));
+        }
+    }
+    return;
+#endif
+
+#if (FC128_EXPORT_SOURCE == FC128_EXPORT_SRC_FOCUS)
+    {
+        uint8_t focus_row[FC_RESULT_N];
+        uint8_t line[FRAME_WIDTH];
+
+        for (int y = 0; y < FRAME_HEIGHT; y++)
+        {
+            memset(line, 0, sizeof(line));
+
+            if (y >= export_y0 && y < (export_y0 + FC_RESULT_N))
+            {
+                int ry = y - export_y0;
+                (void)hyperram_b_read(focus_row,
+                                      (void *)(frame_base_offset + PQ128_FOCUS_OFFSET + (uint32_t)ry * (uint32_t)PQ128_SIZE),
+                                      (uint32_t)sizeof(focus_row));
+
+                for (int x = 0; x < FC_RESULT_N; x++)
+                {
+                    int v = (int)focus_row[x] * (int)FC128_EXPORT_FOCUS_GAIN;
+                    if (v > 255)
+                    {
+                        v = 255;
+                    }
+                    line[export_x0 + x] = (uint8_t)v;
+                }
+            }
+
+            (void)hyperram_b_write(line,
+                                   (void *)(frame_base_offset + DEPTH_OFFSET + (uint32_t)y * (uint32_t)FRAME_WIDTH),
+                                   (uint32_t)sizeof(line));
+        }
+    }
+    return;
+#endif
+
+#if (FC128_EXPORT_SOURCE == FC128_EXPORT_SRC_EDGE)
+    {
+        uint8_t edge_row[FC_RESULT_N];
+        uint8_t line[FRAME_WIDTH];
+
+        for (int y = 0; y < FRAME_HEIGHT; y++)
+        {
+            memset(line, 0, sizeof(line));
+
+            if (y >= export_y0 && y < (export_y0 + FC_RESULT_N))
+            {
+                int ry = y - export_y0;
+
+#if PQ128_STORE_EDGE_PLANE
+                (void)hyperram_b_read(edge_row,
+                                      (void *)(frame_base_offset + PQ128_EDGE_OFFSET + (uint32_t)ry * (uint32_t)PQ128_SIZE),
+                                      (uint32_t)sizeof(edge_row));
+#else
+                memset(edge_row, 0, sizeof(edge_row));
+#endif
+
+                for (int x = 0; x < FC_RESULT_N; x++)
+                {
+                    int v = (int)edge_row[x] * (int)FC128_EXPORT_EDGE_GAIN;
+                    if (v > 255)
+                    {
+                        v = 255;
+                    }
+                    line[export_x0 + x] = (uint8_t)v;
+                }
+            }
+
+            (void)hyperram_b_write(line,
+                                   (void *)(frame_base_offset + DEPTH_OFFSET + (uint32_t)y * (uint32_t)FRAME_WIDTH),
+                                   (uint32_t)sizeof(line));
+        }
+    }
+    return;
+#endif
+
+#if (FC128_EXPORT_SOURCE == FC128_EXPORT_SRC_BLUR_RATIO)
+    {
+        uint8_t focus_row[FC_RESULT_N];
+        uint8_t edge_row[FC_RESULT_N];
+        uint8_t edge_blur_row[FC_RESULT_N];
+        uint8_t satmask_row[FC_RESULT_N];
+        uint8_t line[FRAME_WIDTH];
+
+        for (int y = 0; y < FRAME_HEIGHT; y++)
+        {
+            memset(line, 0, sizeof(line));
+
+            if (y >= export_y0 && y < (export_y0 + FC_RESULT_N))
+            {
+                int ry = y - export_y0;
+
+#if PQ128_STORE_FOCUS_PLANE
+                (void)hyperram_b_read(focus_row,
+                                      (void *)(frame_base_offset + PQ128_FOCUS_OFFSET + (uint32_t)ry * (uint32_t)PQ128_SIZE),
+                                      (uint32_t)sizeof(focus_row));
+#else
+                memset(focus_row, 0, sizeof(focus_row));
+#endif
+
+#if PQ128_STORE_EDGE_PLANE
+                (void)hyperram_b_read(edge_row,
+                                      (void *)(frame_base_offset + PQ128_EDGE_OFFSET + (uint32_t)ry * (uint32_t)PQ128_SIZE),
+                                      (uint32_t)sizeof(edge_row));
+#else
+                memset(edge_row, 0, sizeof(edge_row));
+#endif
+
+#if PQ128_STORE_EDGE_BLUR_PLANE
+                (void)hyperram_b_read(edge_blur_row,
+                                      (void *)(frame_base_offset + PQ128_EDGE_BLUR_OFFSET + (uint32_t)ry * (uint32_t)PQ128_SIZE),
+                                      (uint32_t)sizeof(edge_blur_row));
+#else
+                memset(edge_blur_row, 0, sizeof(edge_blur_row));
+#endif
+
+#if PQ128_STORE_SATMASK_PLANE
+                (void)hyperram_b_read(satmask_row,
+                                      (void *)(frame_base_offset + PQ128_SATMASK_OFFSET + (uint32_t)ry * (uint32_t)PQ128_SIZE),
+                                      (uint32_t)sizeof(satmask_row));
+#else
+                memset(satmask_row, 255, sizeof(satmask_row));
+#endif
+
+                for (int x = 0; x < FC_RESULT_N; x++)
+                {
+                    if (satmask_row[x] == 0)
+                    {
+                        continue;
+                    }
+                    const uint32_t e = (uint32_t)edge_row[x];
+                    if (e < (uint32_t)FC128_EXPORT_BLUR_EDGE_TH)
+                    {
+                        continue;
+                    }
+
+                    int32_t edge_blur;
+#if PQ128_STORE_EDGE_BLUR_PLANE
+                    edge_blur = (int32_t)edge_blur_row[x];
+#else
+                    /* focus = max(0, edge - edge_blur)  =>  edge_blur ~= edge - focus */
+                    edge_blur = (int32_t)e - (int32_t)focus_row[x];
+                    if (edge_blur < 0)
+                    {
+                        edge_blur = 0;
+                    }
+#endif
+
+                    /* ratio in [0..1] as Q15 */
+                    const uint32_t ratio_q15 = (uint32_t)(((int64_t)edge_blur << 15) / (int64_t)((e > 0U) ? e : 1U));
+                    int v = (int)((ratio_q15 * 255U + 16384U) >> 15);
+                    v = clampi(v * (int)FC128_EXPORT_BLUR_RATIO_GAIN, 0, 255);
+                    line[export_x0 + x] = (uint8_t)v;
+                }
+            }
+
+            (void)hyperram_b_write(line,
+                                   (void *)(frame_base_offset + DEPTH_OFFSET + (uint32_t)y * (uint32_t)FRAME_WIDTH),
+                                   (uint32_t)sizeof(line));
+        }
+    }
+    return;
+#endif
+
     float row_z[FC_RESULT_N];
     float z_min = FLT_MAX;
     float z_max = -FLT_MAX;
@@ -1230,7 +2423,7 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
     uint8_t line[FRAME_WIDTH];
     for (int y = 0; y < FRAME_HEIGHT; y++)
     {
-        memset(line, 128, sizeof(line));
+        memset(line, (int)FC128_EXPORT_BG_U8, sizeof(line));
 
         if (y >= export_y0 && y < (export_y0 + FC_RESULT_N))
         {
@@ -1419,6 +2612,10 @@ static void fc128_compute_depth_and_store(uint32_t frame_base_offset, uint32_t f
 
 #if FC128_TIMING_ENABLE
     uint32_t t_ifft = fc128_dwt_now();
+#endif
+
+#if FC128_GNG_ENABLE
+    fc128_gng_update_from_frame(frame_base_offset, frame_seq);
 #endif
 
     fc128_export_depth_u8_320x240(frame_base_offset);
@@ -1691,6 +2888,53 @@ static inline int32_t pq128_chroma_edge_weight_q15(int edge)
 }
 #endif
 
+#if PQ128_USE_FOCUS_SOFTMASK
+/* Simple horizontal blur: [1 2 1]/4. Border pixels are copied. */
+static inline void pq128_blur121_u8_line(const uint8_t in_u8[FRAME_WIDTH], uint8_t out_u8[FRAME_WIDTH])
+{
+    out_u8[0] = in_u8[0];
+    out_u8[FRAME_WIDTH - 1] = in_u8[FRAME_WIDTH - 1];
+    for (int x = 1; x < FRAME_WIDTH - 1; x++)
+    {
+        int v = (int)in_u8[x - 1] + ((int)in_u8[x] << 1) + (int)in_u8[x + 1];
+        v = (v + 2) >> 2;
+        out_u8[x] = (uint8_t)v;
+    }
+}
+
+static inline int32_t pq128_focus_weight_q15(int focus)
+{
+    if (focus <= PQ128_FOCUS_TH)
+    {
+        return 0;
+    }
+    if (focus >= PQ128_FOCUS_SOFT_END)
+    {
+        return (1 << 15);
+    }
+
+    int span = (PQ128_FOCUS_SOFT_END - PQ128_FOCUS_TH);
+    if (span <= 0)
+    {
+        return (1 << 15);
+    }
+    int num = (focus - PQ128_FOCUS_TH);
+    int32_t w = (int32_t)(((int64_t)num << 15) / (int64_t)span);
+    w = clamp_i32((int)w, 0, (1 << 15));
+
+#if PQ128_FOCUS_POWER2
+    w = (int32_t)(((int64_t)w * (int64_t)w + (1 << 14)) >> 15);
+#endif
+    return w;
+}
+#endif
+
+/* Forward declaration: Sobel is defined later (MVE/non-MVE variants share signature). */
+static void apply_sobel_filter(uint8_t y_prev[FRAME_WIDTH],
+                               uint8_t y_curr[FRAME_WIDTH],
+                               uint8_t y_next[FRAME_WIDTH],
+                               uint8_t edge_out[FRAME_WIDTH]);
+
 #if (PQ128_USE_INTENSITY_KNEE || PQ128_USE_INTENSITY_GAMMA)
 static void pq128_init_intensity_lut(uint8_t out_u8[256])
 {
@@ -1905,6 +3149,27 @@ static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_s
     uint8_t y_prev[FRAME_WIDTH];
     uint8_t y_curr[FRAME_WIDTH];
     uint8_t y_next[FRAME_WIDTH];
+#if PQ128_USE_FOCUS_SOFTMASK
+    uint8_t y_prev_blur[FRAME_WIDTH];
+    uint8_t y_curr_blur[FRAME_WIDTH];
+    uint8_t y_next_blur[FRAME_WIDTH];
+    uint8_t y_blur_tmp[FRAME_WIDTH];
+    uint8_t edge_orig[FRAME_WIDTH];
+    uint8_t edge_blur[FRAME_WIDTH];
+    uint8_t focus_line[FRAME_WIDTH];
+#if PQ128_STORE_FOCUS_PLANE
+    uint8_t focus_row[PQ128_SIZE];
+#endif
+#if PQ128_STORE_EDGE_PLANE
+    uint8_t edge_row[PQ128_SIZE];
+#endif
+#if PQ128_STORE_EDGE_BLUR_PLANE
+    uint8_t edge_blur_row[PQ128_SIZE];
+#endif
+#if PQ128_STORE_SATMASK_PLANE
+    uint8_t satmask_row[PQ128_SIZE];
+#endif
+#endif
 #if PQ128_USE_CHROMA_EDGEMASK
     uint8_t c_prev[FRAME_WIDTH];
     uint8_t c_curr[FRAME_WIDTH];
@@ -1996,6 +3261,37 @@ static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_s
         load_y_line_from_hyperram_or_zero(frame_base_offset, src_y + PQ128_SAMPLE_STRIDE_Y, yuv_tmp, y_next);
 #endif
 #endif
+
+#if PQ128_USE_FOCUS_SOFTMASK
+        /* Focus cue: edge(original) - edge(blurred). */
+        pq128_blur121_u8_line(y_prev, y_prev_blur);
+        pq128_blur121_u8_line(y_curr, y_curr_blur);
+        pq128_blur121_u8_line(y_next, y_next_blur);
+
+#if (PQ128_FOCUS_BLUR_PASSES > 1)
+        for (int pass = 1; pass < PQ128_FOCUS_BLUR_PASSES; pass++)
+        {
+            pq128_blur121_u8_line(y_prev_blur, y_blur_tmp);
+            memcpy(y_prev_blur, y_blur_tmp, FRAME_WIDTH);
+
+            pq128_blur121_u8_line(y_curr_blur, y_blur_tmp);
+            memcpy(y_curr_blur, y_blur_tmp, FRAME_WIDTH);
+
+            pq128_blur121_u8_line(y_next_blur, y_blur_tmp);
+            memcpy(y_next_blur, y_blur_tmp, FRAME_WIDTH);
+        }
+#endif
+
+        apply_sobel_filter(y_prev, y_curr, y_next, edge_orig);
+        apply_sobel_filter(y_prev_blur, y_curr_blur, y_next_blur, edge_blur);
+
+        for (int x0 = 0; x0 < FRAME_WIDTH; x0++)
+        {
+            int d = (int)edge_orig[x0] - (int)edge_blur[x0];
+            focus_line[x0] = (uint8_t)((d > 0) ? d : 0);
+        }
+#endif
+
 #if PQ128_USE_TAPER && (PQ128_TAPER_WIDTH > 0)
         int32_t wy_q15 = (int32_t)s_taper_q15[ry];
 #endif
@@ -2007,10 +3303,50 @@ static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_s
             {
                 p_row[rx] = 0;
                 q_row[rx] = 0;
+#if PQ128_USE_FOCUS_SOFTMASK && PQ128_STORE_FOCUS_PLANE
+                focus_row[rx] = 0;
+#endif
+#if PQ128_USE_FOCUS_SOFTMASK && PQ128_STORE_EDGE_PLANE
+                edge_row[rx] = 0;
+#endif
+#if PQ128_USE_FOCUS_SOFTMASK && PQ128_STORE_EDGE_BLUR_PLANE
+                edge_blur_row[rx] = 0;
+#endif
+#if PQ128_USE_FOCUS_SOFTMASK && PQ128_STORE_SATMASK_PLANE
+                satmask_row[rx] = 0;
+#endif
                 continue;
             }
 
             int x = PQ128_X0 + rx * PQ128_SAMPLE_STRIDE_X;
+
+#if PQ128_USE_FOCUS_SOFTMASK && PQ128_STORE_FOCUS_PLANE
+            focus_row[rx] = pq128_get_y_or_zero(focus_line, x);
+#endif
+#if PQ128_USE_FOCUS_SOFTMASK && PQ128_STORE_EDGE_PLANE
+            edge_row[rx] = pq128_get_y_or_zero(edge_orig, x);
+#endif
+#if PQ128_USE_FOCUS_SOFTMASK && PQ128_STORE_EDGE_BLUR_PLANE
+            edge_blur_row[rx] = pq128_get_y_or_zero(edge_blur, x);
+#endif
+
+#if PQ128_USE_FOCUS_SOFTMASK && PQ128_STORE_SATMASK_PLANE
+            {
+                const int raw_c = (int)pq128_get_y_or_zero(y_curr, x);
+                const int raw_xm1_m = (int)pq128_get_y_or_zero(y_curr, x - PQ128_SAMPLE_STRIDE_X);
+                const int raw_xp1_m = (int)pq128_get_y_or_zero(y_curr, x + PQ128_SAMPLE_STRIDE_X);
+                const int raw_ym1_m = (int)pq128_get_y_or_zero(y_prev, x);
+                const int raw_yp1_m = (int)pq128_get_y_or_zero(y_next, x);
+
+                const int hi = (int)PQ128_SATMASK_HI_TH;
+                const int lo = (int)PQ128_SATMASK_LO_TH;
+
+                const bool sat = (raw_c >= hi) || (raw_xm1_m >= hi) || (raw_xp1_m >= hi) || (raw_ym1_m >= hi) || (raw_yp1_m >= hi);
+                const bool dark = (raw_c <= lo) || (raw_xm1_m <= lo) || (raw_xp1_m <= lo) || (raw_ym1_m <= lo) || (raw_yp1_m <= lo);
+
+                satmask_row[rx] = (uint8_t)((!sat && !dark) ? 255 : 0);
+            }
+#endif
             int raw_xm1 = (int)pq128_get_y_or_zero(y_curr, x - PQ128_SAMPLE_STRIDE_X);
             int raw_xp1 = (int)pq128_get_y_or_zero(y_curr, x + PQ128_SAMPLE_STRIDE_X);
             int raw_ym1 = (int)pq128_get_y_or_zero(y_prev, x);
@@ -2071,6 +3407,15 @@ static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_s
             int32_t w_taper_q15 = (int32_t)(((int64_t)wx_q15 * (int64_t)wy_q15 + (1 << 14)) >> 15);
             w_p_q15 = (int32_t)(((int64_t)w_p_q15 * (int64_t)w_taper_q15 + (1 << 14)) >> 15);
             w_q_q15 = (int32_t)(((int64_t)w_q_q15 * (int64_t)w_taper_q15 + (1 << 14)) >> 15);
+#endif
+
+#if PQ128_USE_FOCUS_SOFTMASK
+            {
+                int focus = (int)pq128_get_y_or_zero(focus_line, x);
+                int32_t w_f_q15 = pq128_focus_weight_q15(focus);
+                w_p_q15 = (int32_t)(((int64_t)w_p_q15 * (int64_t)w_f_q15 + (1 << 14)) >> 15);
+                w_q_q15 = (int32_t)(((int64_t)w_q_q15 * (int64_t)w_f_q15 + (1 << 14)) >> 15);
+            }
 #endif
 
             if (w_p_q15 == 0)
@@ -2209,6 +3554,30 @@ static void pq128_compute_and_store(uint32_t frame_base_offset, uint32_t frame_s
         uint32_t row_off = (uint32_t)ry * (uint32_t)PQ128_SIZE * (uint32_t)sizeof(int16_t);
         (void)hyperram_b_write(p_row, (void *)(frame_base_offset + PQ128_P_OFFSET + row_off), (uint32_t)PQ128_SIZE * (uint32_t)sizeof(int16_t));
         (void)hyperram_b_write(q_row, (void *)(frame_base_offset + PQ128_Q_OFFSET + row_off), (uint32_t)PQ128_SIZE * (uint32_t)sizeof(int16_t));
+
+#if PQ128_USE_FOCUS_SOFTMASK && PQ128_STORE_FOCUS_PLANE
+        (void)hyperram_b_write(focus_row,
+                               (void *)(frame_base_offset + PQ128_FOCUS_OFFSET + (uint32_t)ry * (uint32_t)PQ128_SIZE),
+                               (uint32_t)PQ128_SIZE);
+#endif
+
+#if PQ128_USE_FOCUS_SOFTMASK && PQ128_STORE_EDGE_PLANE
+        (void)hyperram_b_write(edge_row,
+                               (void *)(frame_base_offset + PQ128_EDGE_OFFSET + (uint32_t)ry * (uint32_t)PQ128_SIZE),
+                               (uint32_t)PQ128_SIZE);
+#endif
+
+#if PQ128_USE_FOCUS_SOFTMASK && PQ128_STORE_EDGE_BLUR_PLANE
+        (void)hyperram_b_write(edge_blur_row,
+                               (void *)(frame_base_offset + PQ128_EDGE_BLUR_OFFSET + (uint32_t)ry * (uint32_t)PQ128_SIZE),
+                               (uint32_t)PQ128_SIZE);
+#endif
+
+#if PQ128_USE_FOCUS_SOFTMASK && PQ128_STORE_SATMASK_PLANE
+        (void)hyperram_b_write(satmask_row,
+                               (void *)(frame_base_offset + PQ128_SATMASK_OFFSET + (uint32_t)ry * (uint32_t)PQ128_SIZE),
+                               (uint32_t)PQ128_SIZE);
+#endif
 
 #if (PQ128_SAMPLE_STRIDE_Y == 1)
         /* Slide window: prev <- curr, curr <- next, next <- load(row+2). */
@@ -2992,7 +4361,7 @@ static FC128_UNUSED void reconstruct_depth_simple_direct(uint32_t gradient_line_
         {
             xprintf("[Thread3] Direct depth read failed at offset=%d err=%d\n",
                     (unsigned long)(gradient_line_offset + offset), err);
-            memset(depth_line + pixel, 0, FRAME_WIDTH - pixel);
+            memset(depth_line + pixel, 0, (size_t)(FRAME_WIDTH - pixel));
             return;
         }
 
@@ -3091,11 +4460,11 @@ static void mg_prepare_layout(void)
         level->width = width;
         level->height = height;
         level->z_offset = offset;
-        offset += (uint32_t)(width * height * sizeof(float));
+        offset += (uint32_t)((uint32_t)width * (uint32_t)height * (uint32_t)sizeof(float));
         level->rhs_offset = offset;
-        offset += (uint32_t)(width * height * sizeof(float));
+        offset += (uint32_t)((uint32_t)width * (uint32_t)height * (uint32_t)sizeof(float));
         level->residual_offset = offset; // 各レベル専用の残差バッファ
-        offset += (uint32_t)(width * height * sizeof(float));
+        offset += (uint32_t)((uint32_t)width * (uint32_t)height * (uint32_t)sizeof(float));
 
         g_mg_level_count++;
 
@@ -3145,7 +4514,7 @@ static void mg_zero_all_levels(void)
 {
     for (int i = 0; i < g_mg_level_count; i++)
     {
-        size_t bytes = (size_t)g_mg_levels[i].width * g_mg_levels[i].height * sizeof(float);
+        size_t bytes = (size_t)g_mg_levels[i].width * (size_t)g_mg_levels[i].height * sizeof(float);
         mg_zero_buffer(g_mg_levels[i].z_offset, bytes);
         mg_zero_buffer(g_mg_levels[i].rhs_offset, bytes);
         mg_zero_buffer(g_mg_levels[i].residual_offset, bytes);
@@ -3267,7 +4636,7 @@ static void mg_compute_divergence_to_hyperram(const mg_level_t *level)
 #endif
         }
 
-        hyperram_b_write(div_row, (void *)(level->rhs_offset + y * rhs_row_bytes), rhs_row_bytes);
+        hyperram_b_write(div_row, (void *)(level->rhs_offset + (uint32_t)y * rhs_row_bytes), rhs_row_bytes);
 
         if (y == height - 1)
         {
@@ -3284,7 +4653,7 @@ static void mg_compute_divergence_to_hyperram(const mg_level_t *level)
         }
         else
         {
-            hyperram_b_read(pq_next, (void *)(GRADIENT_OFFSET + next_row * pq_row_bytes), pq_row_bytes);
+            hyperram_b_read(pq_next, (void *)(GRADIENT_OFFSET + (uint32_t)next_row * pq_row_bytes), pq_row_bytes);
         }
     }
 }
@@ -3842,7 +5211,9 @@ static void mg_vcycle(int level_index)
         if (level->width == 80)
         {
             float test_row[FRAME_WIDTH];
-            hyperram_b_read(test_row, (void *)(level->z_offset + level->width * sizeof(float)), level->width * sizeof(float));
+            hyperram_b_read(test_row,
+                            (void *)(level->z_offset + (uint32_t)level->width * (uint32_t)sizeof(float)),
+                            (uint32_t)level->width * (uint32_t)sizeof(float));
             xprintf("[MG] After coarse solve: z[1,40]=%.6f\n", test_row[40]);
         }
         return;
