@@ -625,7 +625,7 @@ static inline uint32_t fc128_cyc_to_us(uint32_t cyc)
  * Enable the options below to suppress that effect.
  */
 #ifndef FC128_EXPORT_USE_ZMINMAX_EMA
-#define FC128_EXPORT_USE_ZMINMAX_EMA (0)
+#define FC128_EXPORT_USE_ZMINMAX_EMA (1)
 #endif
 
 /* EMA step: new = old + (cur-old)/2^SHIFT. Smaller = smoother. */
@@ -663,6 +663,62 @@ static inline uint32_t fc128_cyc_to_us(uint32_t cyc)
 #else
 #define FC128_EXPORT_BG_U8 (128)
 #endif
+#endif
+
+/* Depth export mapping mode:
+ * 0: legacy per-frame min/max normalization (max contrast, but can look like it flips)
+ * 1: distance-like mapping using a stable reference z_ref and fixed gain/polarity
+ */
+#ifndef FC128_EXPORT_DEPTH_MODE
+#define FC128_EXPORT_DEPTH_MODE (1)
+#endif
+
+/* Reference for distance-like mapping.
+ * 0: center pixel (64,64)
+ * 1: mean of a small 3x3 around center
+ * 2: fixed 0.0f (useful if Z is already zero-referenced)
+ */
+#ifndef FC128_EXPORT_ZREF_MODE
+#define FC128_EXPORT_ZREF_MODE (0)
+#endif
+
+/* Smooth z_ref with EMA to reduce flicker in distance-like mode. */
+#ifndef FC128_EXPORT_ZREF_USE_EMA
+#define FC128_EXPORT_ZREF_USE_EMA (1)
+#endif
+
+#ifndef FC128_EXPORT_ZREF_EMA_SHIFT
+#define FC128_EXPORT_ZREF_EMA_SHIFT (3)
+#endif
+
+/* Scale from (Z - z_ref) to u8 steps.
+ * out = 127.5 + (Z - z_ref) * FC128_EXPORT_Z_GAIN * FC128_EXPORT_Z_SIGN
+ */
+#ifndef FC128_EXPORT_Z_GAIN
+#define FC128_EXPORT_Z_GAIN (1.0f)
+#endif
+
+/* Polarity for distance-like mode.
+ * -1.0 makes larger Z darker (often perceived as farther), +1.0 swaps.
+ */
+#ifndef FC128_EXPORT_Z_SIGN
+#define FC128_EXPORT_Z_SIGN (-1.0f)
+#endif
+
+/* Auto-gain for distance-like mode (prevents full-frame saturation).
+ * 0: use fixed gain (FC128_EXPORT_Z_GAIN)
+ * 1: estimate gain from sampled max |z-z_ref| and smooth with EMA
+ */
+#ifndef FC128_EXPORT_ZGAIN_AUTO
+#define FC128_EXPORT_ZGAIN_AUTO (0)
+#endif
+
+#ifndef FC128_EXPORT_ZGAIN_TARGET_HALFSPAN_U8
+#define FC128_EXPORT_ZGAIN_TARGET_HALFSPAN_U8 (110.0f)
+#endif
+
+#ifndef FC128_EXPORT_ZGAIN_EMA_SHIFT
+#define FC128_EXPORT_ZGAIN_EMA_SHIFT (3)
 #endif
 
 /* Export selector:
@@ -848,7 +904,7 @@ static inline uint32_t fc128_cyc_to_us(uint32_t cyc)
  *       p ~= (I/255) * (ps/ts), q ~= (I/255) * (qs/ts)
  */
 #ifndef PQ128_PQ_MODE
-#define PQ128_PQ_MODE (2)
+#define PQ128_PQ_MODE (0)
 #endif
 
 /* Flip p/q sign if the reconstructed surface appears inverted.
@@ -1036,7 +1092,7 @@ static float g_light_ts;
 /* Edge taper (window) to reduce FFT wrap-around artifacts. */
 #ifndef PQ128_USE_TAPER
 #if FC128_PROFILE_CLASSIC
-#define PQ128_USE_TAPER (0)
+#define PQ128_USE_TAPER (1)
 #else
 #define PQ128_USE_TAPER (1)
 #endif
@@ -2336,6 +2392,8 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
 #endif
 
     float row_z[FC_RESULT_N];
+
+#if (FC128_EXPORT_DEPTH_MODE == 0)
     float z_min = FLT_MAX;
     float z_max = -FLT_MAX;
 
@@ -2346,7 +2404,7 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
         (void)hyperram_b_read(row_z, (void *)(frame_base_offset + FC128_Z_REAL + base), (uint32_t)sizeof(row_z));
 
 #if USE_HELIUM_MVE
-        // MVE版: 4要素単位でロードし、スカラーでmin/max更新（ツールチェーン互換）
+        /* MVE path: update min/max using scalar extraction (toolchain compatibility). */
         {
             int x;
             for (x = 0; x < FC_RESULT_N - 3; x += 4)
@@ -2419,6 +2477,132 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
     }
 
     const float inv_range = 1.0f / range;
+#else
+    float z_ref = 0.0f;
+
+#if (FC128_EXPORT_ZREF_MODE == 2)
+    z_ref = 0.0f;
+#else
+    /* Read reference samples from Z plane. */
+    {
+        const int cy = 64;
+        const uint32_t base = (uint32_t)((cy + FC_PAD_Y0) * FC_FFT_N + FC_PAD_X0) * (uint32_t)sizeof(float);
+        (void)hyperram_b_read(row_z, (void *)(frame_base_offset + FC128_Z_REAL + base), (uint32_t)sizeof(row_z));
+
+#if (FC128_EXPORT_ZREF_MODE == 1)
+        /* 3x3 mean around center */
+        static const int dx[9] = {-1, 0, 1, -1, 0, 1, -1, 0, 1};
+        static const int dy[9] = {-1, -1, -1, 0, 0, 0, 1, 1, 1};
+        float sum = 0.0f;
+        int cnt = 0;
+        for (int k = 0; k < 9; k++)
+        {
+            const int y = cy + dy[k];
+            const int x = 64 + dx[k];
+            if (y < 0 || y >= FC_RESULT_N || x < 0 || x >= FC_RESULT_N)
+            {
+                continue;
+            }
+            if (y != cy)
+            {
+                const uint32_t base2 = (uint32_t)((y + FC_PAD_Y0) * FC_FFT_N + FC_PAD_X0) * (uint32_t)sizeof(float);
+                (void)hyperram_b_read(row_z, (void *)(frame_base_offset + FC128_Z_REAL + base2), (uint32_t)sizeof(row_z));
+            }
+            const float z = row_z[x];
+            if (!isfinite(z))
+            {
+                continue;
+            }
+            sum += z;
+            cnt++;
+        }
+        z_ref = (cnt > 0) ? (sum / (float)cnt) : row_z[64];
+#else
+        z_ref = row_z[64];
+#endif
+
+        if (!isfinite(z_ref))
+        {
+            z_ref = 0.0f;
+        }
+    }
+#endif
+
+#if FC128_EXPORT_ZREF_USE_EMA
+    {
+        static float s_zref_ema = 0.0f;
+        static int s_zref_init = 0;
+        if (!s_zref_init)
+        {
+            s_zref_ema = z_ref;
+            s_zref_init = 1;
+        }
+        else
+        {
+            const float k = 1.0f / (float)(1U << FC128_EXPORT_ZREF_EMA_SHIFT);
+            s_zref_ema += (z_ref - s_zref_ema) * k;
+        }
+        z_ref = s_zref_ema;
+    }
+#endif
+
+    /* Determine gain for distance-like mapping. */
+    float z_gain = (float)FC128_EXPORT_Z_GAIN;
+#if FC128_EXPORT_ZGAIN_AUTO
+    {
+        /* Sample max |z-z_ref| over a coarse grid to avoid saturation.
+         * 8x8 samples with stride 16 across 128x128.
+         */
+        float max_abs = 0.0f;
+        for (int sy = 0; sy < FC_RESULT_N; sy += 16)
+        {
+            const uint32_t base = (uint32_t)((sy + FC_PAD_Y0) * FC_FFT_N + FC_PAD_X0) * (uint32_t)sizeof(float);
+            (void)hyperram_b_read(row_z, (void *)(frame_base_offset + FC128_Z_REAL + base), (uint32_t)sizeof(row_z));
+            for (int sx = 0; sx < FC_RESULT_N; sx += 16)
+            {
+                const float z = row_z[sx];
+                if (!isfinite(z))
+                {
+                    continue;
+                }
+                float a = z - z_ref;
+                if (a < 0.0f)
+                {
+                    a = -a;
+                }
+                if (a > max_abs)
+                {
+                    max_abs = a;
+                }
+            }
+        }
+
+        float g = 0.0f;
+        if (max_abs > 1.0e-9f)
+        {
+            g = (float)FC128_EXPORT_ZGAIN_TARGET_HALFSPAN_U8 / max_abs;
+        }
+
+        /* Smooth gain to reduce flicker. */
+        static float s_gain_ema = 0.0f;
+        static int s_gain_init = 0;
+        if (!s_gain_init)
+        {
+            s_gain_ema = g;
+            s_gain_init = 1;
+        }
+        else
+        {
+            const float k = 1.0f / (float)(1U << FC128_EXPORT_ZGAIN_EMA_SHIFT);
+            s_gain_ema += (g - s_gain_ema) * k;
+        }
+
+        z_gain *= s_gain_ema;
+    }
+#endif
+
+    z_gain *= (float)FC128_EXPORT_Z_SIGN;
+#endif /* FC128_EXPORT_DEPTH_MODE */
 
     uint8_t line[FRAME_WIDTH];
     for (int y = 0; y < FRAME_HEIGHT; y++)
@@ -2433,8 +2617,6 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
 
 #if USE_HELIUM_MVE
             {
-                float32x4_t vzmin = vdupq_n_f32(use_z_min);
-                float32x4_t vscale = vdupq_n_f32(255.0f * inv_range);
                 float32x4_t vmid = vdupq_n_f32(127.5f);
                 float32x4_t vround = vdupq_n_f32(0.5f);
 
@@ -2444,17 +2626,31 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
                 const bool use_contrast = (FC128_EXPORT_CONTRAST_Q15 != 32768);
                 float32x4_t va = vdupq_n_f32((float)FC128_EXPORT_CONTRAST_Q15 / 32768.0f);
 
+#if (FC128_EXPORT_DEPTH_MODE == 0)
+                float32x4_t vzmin = vdupq_n_f32(use_z_min);
+                float32x4_t vscale = vdupq_n_f32(255.0f * inv_range);
+#else
+                float32x4_t vzref = vdupq_n_f32(z_ref);
+                float32x4_t vgain = vdupq_n_f32(z_gain);
+#endif
+
                 for (int x = 0; x < FC_RESULT_N; x += 4)
                 {
-                    // vf = (z - zmin) * (255/range)
                     float32x4_t vz = vld1q_f32(&row_z[x]);
+
+#if (FC128_EXPORT_DEPTH_MODE == 0)
+                    /* vf = (z - zmin) * (255/range) */
                     float32x4_t vf = vmulq_f32(vsubq_f32(vz, vzmin), vscale);
 
-                    // Optional contrast around 127.5 in [0..255] domain
+                    /* Optional contrast around 127.5 in [0..255] domain */
                     if (use_contrast)
                     {
                         vf = vaddq_f32(vmulq_f32(vsubq_f32(vf, vmid), va), vmid);
                     }
+#else
+                    /* vf = 127.5 + (z - z_ref) * gain */
+                    float32x4_t vf = vaddq_f32(vmulq_f32(vsubq_f32(vz, vzref), vgain), vmid);
+#endif
 
                     // Round and convert
                     vf = vaddq_f32(vf, vround);
@@ -2479,7 +2675,11 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
 #else
             for (int x = 0; x < FC_RESULT_N; x++)
             {
-                float n = (row_z[x] - use_z_min) * inv_range;
+                const float z = row_z[x];
+                int out;
+
+#if (FC128_EXPORT_DEPTH_MODE == 0)
+                float n = (z - use_z_min) * inv_range;
                 if (n < 0.0f)
                     n = 0.0f;
                 if (n > 1.0f)
@@ -2496,7 +2696,23 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
                         n = 1.0f;
                 }
 
-                int out = (int)(n * 255.0f + 0.5f);
+                out = (int)(n * 255.0f + 0.5f);
+#else
+                if (!isfinite(z))
+                {
+                    out = (int)FC128_EXPORT_BG_U8;
+                }
+                else
+                {
+                    float v = 127.5f + (z - z_ref) * z_gain;
+                    if (v < 0.0f)
+                        v = 0.0f;
+                    if (v > 255.0f)
+                        v = 255.0f;
+                    out = (int)(v + 0.5f);
+                }
+#endif
+
                 if (out < 0)
                     out = 0;
                 if (out > 255)
