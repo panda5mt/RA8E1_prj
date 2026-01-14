@@ -677,9 +677,10 @@ static inline uint32_t fc128_cyc_to_us(uint32_t cyc)
  * 0: center pixel (64,64)
  * 1: mean of a small 3x3 around center
  * 2: fixed 0.0f (useful if Z is already zero-referenced)
+ * 3: median of coarse 8x8 samples (robust when center has no object)
  */
 #ifndef FC128_EXPORT_ZREF_MODE
-#define FC128_EXPORT_ZREF_MODE (0)
+#define FC128_EXPORT_ZREF_MODE (2)
 #endif
 
 /* Smooth z_ref with EMA to reduce flicker in distance-like mode. */
@@ -720,6 +721,22 @@ static inline uint32_t fc128_cyc_to_us(uint32_t cyc)
 #ifndef FC128_EXPORT_ZGAIN_EMA_SHIFT
 #define FC128_EXPORT_ZGAIN_EMA_SHIFT (3)
 #endif
+
+/* Sort helper for small arrays (n<=64). */
+static inline void fc128_sort_f32_small(float *a, int n)
+{
+    for (int i = 1; i < n; i++)
+    {
+        const float key = a[i];
+        int j = i - 1;
+        while (j >= 0 && a[j] > key)
+        {
+            a[j + 1] = a[j];
+            j--;
+        }
+        a[j + 1] = key;
+    }
+}
 
 /* Export selector:
  * 0=FC128 depth (default)
@@ -2480,8 +2497,41 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
 #else
     float z_ref = 0.0f;
 
+#if (FC128_EXPORT_ZREF_MODE == 3) || FC128_EXPORT_ZGAIN_AUTO
+    /* Coarse sampling grid (8x8): reuse for z_ref and/or auto gain. */
+    float z_samples[64];
+    int z_samples_n = 0;
+    for (int sy = 0; sy < FC_RESULT_N; sy += 16)
+    {
+        const uint32_t base = (uint32_t)((sy + FC_PAD_Y0) * FC_FFT_N + FC_PAD_X0) * (uint32_t)sizeof(float);
+        (void)hyperram_b_read(row_z, (void *)(frame_base_offset + FC128_Z_REAL + base), (uint32_t)sizeof(row_z));
+        for (int sx = 0; sx < FC_RESULT_N; sx += 16)
+        {
+            const float z = row_z[sx];
+            if (!isfinite(z))
+            {
+                continue;
+            }
+            if (z_samples_n < (int)(sizeof(z_samples) / sizeof(z_samples[0])))
+            {
+                z_samples[z_samples_n++] = z;
+            }
+        }
+    }
+#endif
+
 #if (FC128_EXPORT_ZREF_MODE == 2)
     z_ref = 0.0f;
+#elif (FC128_EXPORT_ZREF_MODE == 3)
+    if (z_samples_n > 0)
+    {
+        fc128_sort_f32_small(z_samples, z_samples_n);
+        z_ref = z_samples[z_samples_n / 2];
+    }
+    else
+    {
+        z_ref = 0.0f;
+    }
 #else
     /* Read reference samples from Z plane. */
     {
@@ -2550,32 +2600,22 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
     float z_gain = (float)FC128_EXPORT_Z_GAIN;
 #if FC128_EXPORT_ZGAIN_AUTO
     {
-        /* Sample max |z-z_ref| over a coarse grid to avoid saturation.
-         * 8x8 samples with stride 16 across 128x128.
-         */
         float max_abs = 0.0f;
-        for (int sy = 0; sy < FC_RESULT_N; sy += 16)
+        /* Use the coarse samples captured above (avoids extra HyperRAM reads). */
+#if (FC128_EXPORT_ZREF_MODE == 3) || FC128_EXPORT_ZGAIN_AUTO
+        for (int i = 0; i < z_samples_n; i++)
         {
-            const uint32_t base = (uint32_t)((sy + FC_PAD_Y0) * FC_FFT_N + FC_PAD_X0) * (uint32_t)sizeof(float);
-            (void)hyperram_b_read(row_z, (void *)(frame_base_offset + FC128_Z_REAL + base), (uint32_t)sizeof(row_z));
-            for (int sx = 0; sx < FC_RESULT_N; sx += 16)
+            float a = z_samples[i] - z_ref;
+            if (a < 0.0f)
             {
-                const float z = row_z[sx];
-                if (!isfinite(z))
-                {
-                    continue;
-                }
-                float a = z - z_ref;
-                if (a < 0.0f)
-                {
-                    a = -a;
-                }
-                if (a > max_abs)
-                {
-                    max_abs = a;
-                }
+                a = -a;
+            }
+            if (a > max_abs)
+            {
+                max_abs = a;
             }
         }
+#endif
 
         float g = 0.0f;
         if (max_abs > 1.0e-9f)
