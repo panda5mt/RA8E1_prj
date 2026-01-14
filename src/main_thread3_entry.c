@@ -710,7 +710,7 @@ static inline uint32_t fc128_cyc_to_us(uint32_t cyc)
  * 1: estimate gain from sampled max |z-z_ref| and smooth with EMA
  */
 #ifndef FC128_EXPORT_ZGAIN_AUTO
-#define FC128_EXPORT_ZGAIN_AUTO (0)
+#define FC128_EXPORT_ZGAIN_AUTO (1)
 #endif
 
 #ifndef FC128_EXPORT_ZGAIN_TARGET_HALFSPAN_U8
