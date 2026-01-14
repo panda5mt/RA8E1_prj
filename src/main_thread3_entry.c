@@ -72,7 +72,7 @@
  * 1 = Defocus proxy from focus plane (edge - edge(blur))  [pseudo depth]
  */
 #ifndef FC128_GNG_Z_SOURCE
-#define FC128_GNG_Z_SOURCE (0)
+#define FC128_GNG_Z_SOURCE (1)
 #endif
 
 /* When FC128_GNG_Z_SOURCE==1, convert focus (0..255) to a pseudo depth value.
@@ -624,6 +624,63 @@ static inline uint32_t fc128_cyc_to_us(uint32_t cyc)
  * make even small variations look like strong "relative depth".
  * Enable the options below to suppress that effect.
  */
+#ifndef FC128_EXPORT_FIXED_SCALE
+/* 1: Fixed scale (recommended for "distance-like" heatmap)
+ *    u8 is derived from a fixed Z range (plus optional z_ref).
+ * 0: Per-frame min/max normalization.
+ */
+#define FC128_EXPORT_FIXED_SCALE (0)
+#endif
+
+#ifndef FC128_EXPORT_USE_ZREF_EMA
+/* Track a slowly-varying Z offset and subtract it before fixed-range mapping.
+ * Helps stabilize the visualization against DC drift.
+ */
+#define FC128_EXPORT_USE_ZREF_EMA (1)
+#endif
+
+#ifndef FC128_EXPORT_ZREF_EMA_SHIFT
+/* EMA step for z_ref: new = old + (cur-old)/2^SHIFT. Larger = smoother. */
+#define FC128_EXPORT_ZREF_EMA_SHIFT (4)
+#endif
+
+#ifndef FC128_EXPORT_Z_NEAR
+/* Z value (after subtracting z_ref) that should appear RED (u8=255). */
+#define FC128_EXPORT_Z_NEAR (0.50f)
+#endif
+
+#ifndef FC128_EXPORT_Z_FAR
+/* Z value (after subtracting z_ref) that should appear BLUE (u8=0). */
+#define FC128_EXPORT_Z_FAR (-0.50f)
+#endif
+
+#ifndef FC128_EXPORT_FIXED_AUTOCALIB
+/* 1: During the first N frames, auto-expand the fixed Z range based on observed
+ * (z - z_ref) min/max so the output doesn't saturate at 0/255.
+ */
+#define FC128_EXPORT_FIXED_AUTOCALIB (1)
+#endif
+
+#ifndef FC128_EXPORT_FIXED_AUTOCALIB_FRAMES
+#define FC128_EXPORT_FIXED_AUTOCALIB_FRAMES (30U)
+#endif
+
+#ifndef FC128_EXPORT_FIXED_AUTOCALIB_MARGIN
+/* Extra margin added to observed span when auto-calibrating. */
+#define FC128_EXPORT_FIXED_AUTOCALIB_MARGIN (0.15f)
+#endif
+
+#ifndef FC128_EXPORT_BRIGHTNESS_BIAS_U8
+/* Additive bias applied to exported u8 after mapping (and after INVERT).
+ * Positive values make the heatmap brighter.
+ */
+#if FC128_EXPORT_FIXED_SCALE
+#define FC128_EXPORT_BRIGHTNESS_BIAS_U8 (24)
+#else
+#define FC128_EXPORT_BRIGHTNESS_BIAS_U8 (0)
+#endif
+#endif
+
 #ifndef FC128_EXPORT_USE_ZMINMAX_EMA
 #define FC128_EXPORT_USE_ZMINMAX_EMA (1)
 #endif
@@ -665,94 +722,19 @@ static inline uint32_t fc128_cyc_to_us(uint32_t cyc)
 #endif
 #endif
 
-/* Depth export mapping mode:
- * 0: legacy per-frame min/max normalization (max contrast, but can look like it flips)
- * 1: distance-like mapping using a stable reference z_ref and fixed gain/polarity
- */
-#ifndef FC128_EXPORT_DEPTH_MODE
-#define FC128_EXPORT_DEPTH_MODE (1)
-#endif
-
-/* Reference for distance-like mapping.
- * 0: center pixel (64,64)
- * 1: mean of a small 3x3 around center
- * 2: fixed 0.0f (useful if Z is already zero-referenced)
- * 3: median of coarse 8x8 samples (robust when center has no object)
- */
-#ifndef FC128_EXPORT_ZREF_MODE
-#define FC128_EXPORT_ZREF_MODE (2)
-#endif
-
-/* Smooth z_ref with EMA to reduce flicker in distance-like mode. */
-#ifndef FC128_EXPORT_ZREF_USE_EMA
-#define FC128_EXPORT_ZREF_USE_EMA (1)
-#endif
-
-#ifndef FC128_EXPORT_ZREF_EMA_SHIFT
-#define FC128_EXPORT_ZREF_EMA_SHIFT (3)
-#endif
-
-/* Scale from (Z - z_ref) to u8 steps.
- * out = 127.5 + (Z - z_ref) * FC128_EXPORT_Z_GAIN * FC128_EXPORT_Z_SIGN
- */
-#ifndef FC128_EXPORT_Z_GAIN
-#define FC128_EXPORT_Z_GAIN (1.0f)
-#endif
-
-/* Polarity for distance-like mode.
- * -1.0 makes larger Z darker (often perceived as farther), +1.0 swaps.
- */
-#ifndef FC128_EXPORT_Z_SIGN
-#define FC128_EXPORT_Z_SIGN (-1.0f)
-#endif
-
-/* Auto-gain for distance-like mode (prevents full-frame saturation).
- * 0: use fixed gain (FC128_EXPORT_Z_GAIN)
- * 1: estimate gain from sampled max |z-z_ref| and smooth with EMA
- */
-#ifndef FC128_EXPORT_ZGAIN_AUTO
-#define FC128_EXPORT_ZGAIN_AUTO (1)
-#endif
-
-#ifndef FC128_EXPORT_ZGAIN_TARGET_HALFSPAN_U8
-#define FC128_EXPORT_ZGAIN_TARGET_HALFSPAN_U8 (110.0f)
-#endif
-
-#ifndef FC128_EXPORT_ZGAIN_EMA_SHIFT
-#define FC128_EXPORT_ZGAIN_EMA_SHIFT (3)
-#endif
-
-/* Sort helper for small arrays (n<=64). */
-static inline void fc128_sort_f32_small(float *a, int n)
-{
-    for (int i = 1; i < n; i++)
-    {
-        const float key = a[i];
-        int j = i - 1;
-        while (j >= 0 && a[j] > key)
-        {
-            a[j + 1] = a[j];
-            j--;
-        }
-        a[j + 1] = key;
-    }
-}
-
 /* Export selector:
- * 0=FC128 depth (default)
- * 1=PQ128 focus (edge - edge(blur))
- * 3=PQ128 edge magnitude (edge)
- * 4=PQ128 blurness ratio (edge_blur/edge)
+ * 0 = FC128 reconstructed depth (Frankot–Chellappa Z)
+ * Other debug sources were removed to reduce complexity.
  */
 #ifndef FC128_EXPORT_SOURCE
 #define FC128_EXPORT_SOURCE (0)
 #endif
 
+#if (FC128_EXPORT_SOURCE != 0)
+#error "Only FC128_EXPORT_SOURCE=0 is supported"
+#endif
+
 #define FC128_EXPORT_SRC_DEPTH (0)
-#define FC128_EXPORT_SRC_FOCUS (1)
-#define FC128_EXPORT_SRC_GNG (2)
-#define FC128_EXPORT_SRC_EDGE (3)
-#define FC128_EXPORT_SRC_BLUR_RATIO (4)
 
 /* Extra gain when exporting focus map (0..255). */
 #ifndef FC128_EXPORT_FOCUS_GAIN
@@ -921,7 +903,7 @@ static inline void fc128_sort_f32_small(float *a, int n)
  *       p ~= (I/255) * (ps/ts), q ~= (I/255) * (qs/ts)
  */
 #ifndef PQ128_PQ_MODE
-#define PQ128_PQ_MODE (0)
+#define PQ128_PQ_MODE (2)
 #endif
 
 /* Flip p/q sign if the reconstructed surface appears inverted.
@@ -1109,7 +1091,7 @@ static float g_light_ts;
 /* Edge taper (window) to reduce FFT wrap-around artifacts. */
 #ifndef PQ128_USE_TAPER
 #if FC128_PROFILE_CLASSIC
-#define PQ128_USE_TAPER (1)
+#define PQ128_USE_TAPER (0)
 #else
 #define PQ128_USE_TAPER (1)
 #endif
@@ -2079,338 +2061,33 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
     const int export_x0 = (FRAME_WIDTH - FC_RESULT_N) / 2;
     const int export_y0 = (FRAME_HEIGHT - FC_RESULT_N) / 2;
 
-#if (FC128_EXPORT_SOURCE == FC128_EXPORT_SRC_GNG)
-    {
-        uint8_t line[FRAME_WIDTH];
-
-#if FC128_GNG_ENABLE
-        float zmin = 1e30f;
-        float zmax = -1e30f;
-        for (int i = 0; i < FC128_GNG_MAX_NODES; i++)
-        {
-            if (!g_fc128_gng.used[i])
-            {
-                continue;
-            }
-            if (g_fc128_gng.z[i] < zmin)
-            {
-                zmin = g_fc128_gng.z[i];
-            }
-            if (g_fc128_gng.z[i] > zmax)
-            {
-                zmax = g_fc128_gng.z[i];
-            }
-        }
-        const float denom = (zmax > zmin) ? (zmax - zmin) : 0.0f;
-        const bool z_span_ok = (denom > 1.0e-6f);
-#endif
-
-        for (int y = 0; y < FRAME_HEIGHT; y++)
-        {
-            memset(line, 0, sizeof(line));
-
-            if (y >= export_y0 && y < (export_y0 + FC_RESULT_N))
-            {
-                const int ry = y - export_y0;
-
-                /* Always-visible debug marker: border + center dot. */
-                if ((ry == 0) || (ry == (FC_RESULT_N - 1)))
-                {
-                    for (int x = 0; x < FC_RESULT_N; x++)
-                    {
-                        line[export_x0 + x] = 32;
-                    }
-                }
-                else
-                {
-                    line[export_x0 + 0] = 32;
-                    line[export_x0 + (FC_RESULT_N - 1)] = 32;
-                }
-
-                if (ry == 64)
-                {
-                    line[export_x0 + 64] = 255;
-                }
-
-#if FC128_GNG_ENABLE
-                if (ry == 1)
-                {
-                    const int nodes = fc128_gng_count_used(&g_fc128_gng);
-                    const int nbar = (nodes > FC_RESULT_N) ? FC_RESULT_N : nodes;
-                    for (int x = 0; x < nbar; x++)
-                    {
-                        line[export_x0 + x] = 200;
-                    }
-                }
-#endif
-
-#if FC128_GNG_ENABLE
-#if FC128_EXPORT_GNG_DRAW_EDGES
-                /* Draw edges first (thin), then nodes on top (bright). */
-                {
-                    const uint8_t edge_v = (uint8_t)clampi((int)FC128_EXPORT_GNG_EDGE_V, 0, 255);
-
-                    for (int i = 0; i < FC128_GNG_MAX_NODES; i++)
-                    {
-                        if (!g_fc128_gng.used[i])
-                        {
-                            continue;
-                        }
-                        const int xi = clampi((int)(g_fc128_gng.x[i] + 0.5f), 0, 127);
-                        const int yi = clampi((int)(g_fc128_gng.y[i] + 0.5f), 0, 127);
-
-                        for (int j = i + 1; j < FC128_GNG_MAX_NODES; j++)
-                        {
-                            if (!g_fc128_gng.used[j])
-                            {
-                                continue;
-                            }
-                            const uint8_t aij = g_fc128_gng.age[i][j];
-                            if ((aij == 255) || (aij > (uint8_t)FC128_GNG_MAX_AGE))
-                            {
-                                continue;
-                            }
-
-                            const int xj = clampi((int)(g_fc128_gng.x[j] + 0.5f), 0, 127);
-                            const int yj = clampi((int)(g_fc128_gng.y[j] + 0.5f), 0, 127);
-
-                            if (yi == yj)
-                            {
-                                if (ry == yi)
-                                {
-                                    const int x0 = (xi < xj) ? xi : xj;
-                                    const int x1 = (xi < xj) ? xj : xi;
-                                    for (int x = x0; x <= x1; x++)
-                                    {
-                                        line[export_x0 + x] = max_u8(line[export_x0 + x], edge_v);
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                const int ymin = (yi < yj) ? yi : yj;
-                                const int ymax = (yi < yj) ? yj : yi;
-                                if ((ry < ymin) || (ry > ymax))
-                                {
-                                    continue;
-                                }
-                                const float t = (float)(ry - yi) / (float)(yj - yi);
-                                const float xf = (float)xi + t * (float)(xj - xi);
-                                const int x = clampi((int)(xf + 0.5f), 0, 127);
-                                line[export_x0 + x] = max_u8(line[export_x0 + x], edge_v);
-                            }
-                        }
-                    }
-                }
-#endif /* FC128_EXPORT_GNG_DRAW_EDGES */
-
-                for (int i = 0; i < FC128_GNG_MAX_NODES; i++)
-                {
-                    if (!g_fc128_gng.used[i])
-                    {
-                        continue;
-                    }
-                    const int xi = clampi((int)(g_fc128_gng.x[i] + 0.5f), 0, 127);
-                    const int yi = clampi((int)(g_fc128_gng.y[i] + 0.5f), 0, 127);
-                    if (yi != ry)
-                    {
-                        continue;
-                    }
-
-                    int v;
-                    if (z_span_ok)
-                    {
-                        float t = (g_fc128_gng.z[i] - zmin) / denom;
-                        if (t < 0.0f)
-                            t = 0.0f;
-                        if (t > 1.0f)
-                            t = 1.0f;
-                        v = (int)(t * 255.0f);
-                    }
-                    else
-                    {
-                        v = 255;
-                    }
-                    v = clampi(v * FC128_EXPORT_GNG_GAIN, 0, 255);
-                    line[export_x0 + xi] = max_u8(line[export_x0 + xi], (uint8_t)v);
-                }
-#endif
-            }
-
-            (void)hyperram_b_write(line,
-                                   (void *)(frame_base_offset + DEPTH_OFFSET + (uint32_t)y * (uint32_t)FRAME_WIDTH),
-                                   (uint32_t)sizeof(line));
-        }
-    }
-    return;
-#endif
-
-#if (FC128_EXPORT_SOURCE == FC128_EXPORT_SRC_FOCUS)
-    {
-        uint8_t focus_row[FC_RESULT_N];
-        uint8_t line[FRAME_WIDTH];
-
-        for (int y = 0; y < FRAME_HEIGHT; y++)
-        {
-            memset(line, 0, sizeof(line));
-
-            if (y >= export_y0 && y < (export_y0 + FC_RESULT_N))
-            {
-                int ry = y - export_y0;
-                (void)hyperram_b_read(focus_row,
-                                      (void *)(frame_base_offset + PQ128_FOCUS_OFFSET + (uint32_t)ry * (uint32_t)PQ128_SIZE),
-                                      (uint32_t)sizeof(focus_row));
-
-                for (int x = 0; x < FC_RESULT_N; x++)
-                {
-                    int v = (int)focus_row[x] * (int)FC128_EXPORT_FOCUS_GAIN;
-                    if (v > 255)
-                    {
-                        v = 255;
-                    }
-                    line[export_x0 + x] = (uint8_t)v;
-                }
-            }
-
-            (void)hyperram_b_write(line,
-                                   (void *)(frame_base_offset + DEPTH_OFFSET + (uint32_t)y * (uint32_t)FRAME_WIDTH),
-                                   (uint32_t)sizeof(line));
-        }
-    }
-    return;
-#endif
-
-#if (FC128_EXPORT_SOURCE == FC128_EXPORT_SRC_EDGE)
-    {
-        uint8_t edge_row[FC_RESULT_N];
-        uint8_t line[FRAME_WIDTH];
-
-        for (int y = 0; y < FRAME_HEIGHT; y++)
-        {
-            memset(line, 0, sizeof(line));
-
-            if (y >= export_y0 && y < (export_y0 + FC_RESULT_N))
-            {
-                int ry = y - export_y0;
-
-#if PQ128_STORE_EDGE_PLANE
-                (void)hyperram_b_read(edge_row,
-                                      (void *)(frame_base_offset + PQ128_EDGE_OFFSET + (uint32_t)ry * (uint32_t)PQ128_SIZE),
-                                      (uint32_t)sizeof(edge_row));
-#else
-                memset(edge_row, 0, sizeof(edge_row));
-#endif
-
-                for (int x = 0; x < FC_RESULT_N; x++)
-                {
-                    int v = (int)edge_row[x] * (int)FC128_EXPORT_EDGE_GAIN;
-                    if (v > 255)
-                    {
-                        v = 255;
-                    }
-                    line[export_x0 + x] = (uint8_t)v;
-                }
-            }
-
-            (void)hyperram_b_write(line,
-                                   (void *)(frame_base_offset + DEPTH_OFFSET + (uint32_t)y * (uint32_t)FRAME_WIDTH),
-                                   (uint32_t)sizeof(line));
-        }
-    }
-    return;
-#endif
-
-#if (FC128_EXPORT_SOURCE == FC128_EXPORT_SRC_BLUR_RATIO)
-    {
-        uint8_t focus_row[FC_RESULT_N];
-        uint8_t edge_row[FC_RESULT_N];
-        uint8_t edge_blur_row[FC_RESULT_N];
-        uint8_t satmask_row[FC_RESULT_N];
-        uint8_t line[FRAME_WIDTH];
-
-        for (int y = 0; y < FRAME_HEIGHT; y++)
-        {
-            memset(line, 0, sizeof(line));
-
-            if (y >= export_y0 && y < (export_y0 + FC_RESULT_N))
-            {
-                int ry = y - export_y0;
-
-#if PQ128_STORE_FOCUS_PLANE
-                (void)hyperram_b_read(focus_row,
-                                      (void *)(frame_base_offset + PQ128_FOCUS_OFFSET + (uint32_t)ry * (uint32_t)PQ128_SIZE),
-                                      (uint32_t)sizeof(focus_row));
-#else
-                memset(focus_row, 0, sizeof(focus_row));
-#endif
-
-#if PQ128_STORE_EDGE_PLANE
-                (void)hyperram_b_read(edge_row,
-                                      (void *)(frame_base_offset + PQ128_EDGE_OFFSET + (uint32_t)ry * (uint32_t)PQ128_SIZE),
-                                      (uint32_t)sizeof(edge_row));
-#else
-                memset(edge_row, 0, sizeof(edge_row));
-#endif
-
-#if PQ128_STORE_EDGE_BLUR_PLANE
-                (void)hyperram_b_read(edge_blur_row,
-                                      (void *)(frame_base_offset + PQ128_EDGE_BLUR_OFFSET + (uint32_t)ry * (uint32_t)PQ128_SIZE),
-                                      (uint32_t)sizeof(edge_blur_row));
-#else
-                memset(edge_blur_row, 0, sizeof(edge_blur_row));
-#endif
-
-#if PQ128_STORE_SATMASK_PLANE
-                (void)hyperram_b_read(satmask_row,
-                                      (void *)(frame_base_offset + PQ128_SATMASK_OFFSET + (uint32_t)ry * (uint32_t)PQ128_SIZE),
-                                      (uint32_t)sizeof(satmask_row));
-#else
-                memset(satmask_row, 255, sizeof(satmask_row));
-#endif
-
-                for (int x = 0; x < FC_RESULT_N; x++)
-                {
-                    if (satmask_row[x] == 0)
-                    {
-                        continue;
-                    }
-                    const uint32_t e = (uint32_t)edge_row[x];
-                    if (e < (uint32_t)FC128_EXPORT_BLUR_EDGE_TH)
-                    {
-                        continue;
-                    }
-
-                    int32_t edge_blur;
-#if PQ128_STORE_EDGE_BLUR_PLANE
-                    edge_blur = (int32_t)edge_blur_row[x];
-#else
-                    /* focus = max(0, edge - edge_blur)  =>  edge_blur ~= edge - focus */
-                    edge_blur = (int32_t)e - (int32_t)focus_row[x];
-                    if (edge_blur < 0)
-                    {
-                        edge_blur = 0;
-                    }
-#endif
-
-                    /* ratio in [0..1] as Q15 */
-                    const uint32_t ratio_q15 = (uint32_t)(((int64_t)edge_blur << 15) / (int64_t)((e > 0U) ? e : 1U));
-                    int v = (int)((ratio_q15 * 255U + 16384U) >> 15);
-                    v = clampi(v * (int)FC128_EXPORT_BLUR_RATIO_GAIN, 0, 255);
-                    line[export_x0 + x] = (uint8_t)v;
-                }
-            }
-
-            (void)hyperram_b_write(line,
-                                   (void *)(frame_base_offset + DEPTH_OFFSET + (uint32_t)y * (uint32_t)FRAME_WIDTH),
-                                   (uint32_t)sizeof(line));
-        }
-    }
-    return;
-#endif
-
     float row_z[FC_RESULT_N];
 
-#if (FC128_EXPORT_DEPTH_MODE == 0)
+#if FC128_EXPORT_FIXED_SCALE
+    /* z_ref is applied to the fixed-scale mapping to stabilize the output.
+     * We intentionally use the previous EMA value for the current frame mapping,
+     * then update EMA at the end of this function.
+     */
+    static float s_zref_ema = 0.0f;
+    static int s_zref_init = 0;
+    const float z_ref = (FC128_EXPORT_USE_ZREF_EMA && s_zref_init) ? s_zref_ema : 0.0f;
+
+    static float s_znear = (float)FC128_EXPORT_Z_NEAR;
+    static float s_zfar = (float)FC128_EXPORT_Z_FAR;
+#if FC128_EXPORT_FIXED_AUTOCALIB
+    static uint32_t s_autocalib_left = FC128_EXPORT_FIXED_AUTOCALIB_FRAMES;
+#endif
+    float z_near = s_znear;
+    float z_far = s_zfar;
+    float span = z_near - z_far;
+    float inv_span = (span > FC128_EXPORT_RANGE_FLOOR) ? (1.0f / span) : (1.0f / FC128_EXPORT_RANGE_FLOOR);
+
+    double sum_z = 0.0;
+    uint32_t sum_n = 0U;
+
+    float z_adj_min = FLT_MAX;
+    float z_adj_max = -FLT_MAX;
+#else
     float z_min = FLT_MAX;
     float z_max = -FLT_MAX;
 
@@ -2421,7 +2098,7 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
         (void)hyperram_b_read(row_z, (void *)(frame_base_offset + FC128_Z_REAL + base), (uint32_t)sizeof(row_z));
 
 #if USE_HELIUM_MVE
-        /* MVE path: update min/max using scalar extraction (toolchain compatibility). */
+        // MVE版: 4要素単位でロードし、スカラーでmin/max更新（ツールチェーン互換）
         {
             int x;
             for (x = 0; x < FC_RESULT_N - 3; x += 4)
@@ -2494,155 +2171,7 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
     }
 
     const float inv_range = 1.0f / range;
-#else
-    float z_ref = 0.0f;
-
-#if (FC128_EXPORT_ZREF_MODE == 3) || FC128_EXPORT_ZGAIN_AUTO
-    /* Coarse sampling grid (8x8): reuse for z_ref and/or auto gain. */
-    float z_samples[64];
-    int z_samples_n = 0;
-    for (int sy = 0; sy < FC_RESULT_N; sy += 16)
-    {
-        const uint32_t base = (uint32_t)((sy + FC_PAD_Y0) * FC_FFT_N + FC_PAD_X0) * (uint32_t)sizeof(float);
-        (void)hyperram_b_read(row_z, (void *)(frame_base_offset + FC128_Z_REAL + base), (uint32_t)sizeof(row_z));
-        for (int sx = 0; sx < FC_RESULT_N; sx += 16)
-        {
-            const float z = row_z[sx];
-            if (!isfinite(z))
-            {
-                continue;
-            }
-            if (z_samples_n < (int)(sizeof(z_samples) / sizeof(z_samples[0])))
-            {
-                z_samples[z_samples_n++] = z;
-            }
-        }
-    }
 #endif
-
-#if (FC128_EXPORT_ZREF_MODE == 2)
-    z_ref = 0.0f;
-#elif (FC128_EXPORT_ZREF_MODE == 3)
-    if (z_samples_n > 0)
-    {
-        fc128_sort_f32_small(z_samples, z_samples_n);
-        z_ref = z_samples[z_samples_n / 2];
-    }
-    else
-    {
-        z_ref = 0.0f;
-    }
-#else
-    /* Read reference samples from Z plane. */
-    {
-        const int cy = 64;
-        const uint32_t base = (uint32_t)((cy + FC_PAD_Y0) * FC_FFT_N + FC_PAD_X0) * (uint32_t)sizeof(float);
-        (void)hyperram_b_read(row_z, (void *)(frame_base_offset + FC128_Z_REAL + base), (uint32_t)sizeof(row_z));
-
-#if (FC128_EXPORT_ZREF_MODE == 1)
-        /* 3x3 mean around center */
-        static const int dx[9] = {-1, 0, 1, -1, 0, 1, -1, 0, 1};
-        static const int dy[9] = {-1, -1, -1, 0, 0, 0, 1, 1, 1};
-        float sum = 0.0f;
-        int cnt = 0;
-        for (int k = 0; k < 9; k++)
-        {
-            const int y = cy + dy[k];
-            const int x = 64 + dx[k];
-            if (y < 0 || y >= FC_RESULT_N || x < 0 || x >= FC_RESULT_N)
-            {
-                continue;
-            }
-            if (y != cy)
-            {
-                const uint32_t base2 = (uint32_t)((y + FC_PAD_Y0) * FC_FFT_N + FC_PAD_X0) * (uint32_t)sizeof(float);
-                (void)hyperram_b_read(row_z, (void *)(frame_base_offset + FC128_Z_REAL + base2), (uint32_t)sizeof(row_z));
-            }
-            const float z = row_z[x];
-            if (!isfinite(z))
-            {
-                continue;
-            }
-            sum += z;
-            cnt++;
-        }
-        z_ref = (cnt > 0) ? (sum / (float)cnt) : row_z[64];
-#else
-        z_ref = row_z[64];
-#endif
-
-        if (!isfinite(z_ref))
-        {
-            z_ref = 0.0f;
-        }
-    }
-#endif
-
-#if FC128_EXPORT_ZREF_USE_EMA
-    {
-        static float s_zref_ema = 0.0f;
-        static int s_zref_init = 0;
-        if (!s_zref_init)
-        {
-            s_zref_ema = z_ref;
-            s_zref_init = 1;
-        }
-        else
-        {
-            const float k = 1.0f / (float)(1U << FC128_EXPORT_ZREF_EMA_SHIFT);
-            s_zref_ema += (z_ref - s_zref_ema) * k;
-        }
-        z_ref = s_zref_ema;
-    }
-#endif
-
-    /* Determine gain for distance-like mapping. */
-    float z_gain = (float)FC128_EXPORT_Z_GAIN;
-#if FC128_EXPORT_ZGAIN_AUTO
-    {
-        float max_abs = 0.0f;
-        /* Use the coarse samples captured above (avoids extra HyperRAM reads). */
-#if (FC128_EXPORT_ZREF_MODE == 3) || FC128_EXPORT_ZGAIN_AUTO
-        for (int i = 0; i < z_samples_n; i++)
-        {
-            float a = z_samples[i] - z_ref;
-            if (a < 0.0f)
-            {
-                a = -a;
-            }
-            if (a > max_abs)
-            {
-                max_abs = a;
-            }
-        }
-#endif
-
-        float g = 0.0f;
-        if (max_abs > 1.0e-9f)
-        {
-            g = (float)FC128_EXPORT_ZGAIN_TARGET_HALFSPAN_U8 / max_abs;
-        }
-
-        /* Smooth gain to reduce flicker. */
-        static float s_gain_ema = 0.0f;
-        static int s_gain_init = 0;
-        if (!s_gain_init)
-        {
-            s_gain_ema = g;
-            s_gain_init = 1;
-        }
-        else
-        {
-            const float k = 1.0f / (float)(1U << FC128_EXPORT_ZGAIN_EMA_SHIFT);
-            s_gain_ema += (g - s_gain_ema) * k;
-        }
-
-        z_gain *= s_gain_ema;
-    }
-#endif
-
-    z_gain *= (float)FC128_EXPORT_Z_SIGN;
-#endif /* FC128_EXPORT_DEPTH_MODE */
 
     uint8_t line[FRAME_WIDTH];
     for (int y = 0; y < FRAME_HEIGHT; y++)
@@ -2657,40 +2186,72 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
 
 #if USE_HELIUM_MVE
             {
+#if FC128_EXPORT_FIXED_SCALE
+                /* Fixed mapping: n = ( (z - z_ref) - Z_FAR ) / (Z_NEAR - Z_FAR)
+                 * so that Z_NEAR => 1 (RED), Z_FAR => 0 (BLUE).
+                 */
+                float32x4_t vzref = vdupq_n_f32(z_ref);
+                float32x4_t vzfar = vdupq_n_f32((float)FC128_EXPORT_Z_FAR);
+                float32x4_t vscale = vdupq_n_f32(255.0f * inv_span);
+#else
+                float32x4_t vzmin = vdupq_n_f32(use_z_min);
+                float32x4_t vscale = vdupq_n_f32(255.0f * inv_range);
+#endif
                 float32x4_t vmid = vdupq_n_f32(127.5f);
                 float32x4_t vround = vdupq_n_f32(0.5f);
 
                 int32x4_t vzero_i32 = vdupq_n_s32(0);
                 int32x4_t vmax_i32 = vdupq_n_s32(255);
+                int32x4_t vbias_i32 = vdupq_n_s32((int32_t)FC128_EXPORT_BRIGHTNESS_BIAS_U8);
 
                 const bool use_contrast = (FC128_EXPORT_CONTRAST_Q15 != 32768);
                 float32x4_t va = vdupq_n_f32((float)FC128_EXPORT_CONTRAST_Q15 / 32768.0f);
 
-#if (FC128_EXPORT_DEPTH_MODE == 0)
-                float32x4_t vzmin = vdupq_n_f32(use_z_min);
-                float32x4_t vscale = vdupq_n_f32(255.0f * inv_range);
-#else
-                float32x4_t vzref = vdupq_n_f32(z_ref);
-                float32x4_t vgain = vdupq_n_f32(z_gain);
-#endif
-
                 for (int x = 0; x < FC_RESULT_N; x += 4)
                 {
                     float32x4_t vz = vld1q_f32(&row_z[x]);
+#if FC128_EXPORT_FIXED_SCALE
+                    /* vf in [0..255] domain */
+                    float32x4_t vf = vmulq_f32(vsubq_f32(vsubq_f32(vz, vzref), vzfar), vscale);
 
-#if (FC128_EXPORT_DEPTH_MODE == 0)
-                    /* vf = (z - zmin) * (255/range) */
+                    /* Accumulate mean for z_ref update (scalar-friendly). */
+                    {
+                        float t[4];
+                        vst1q_f32(t, vz);
+                        sum_z += (double)t[0] + (double)t[1] + (double)t[2] + (double)t[3];
+                        sum_n += 4U;
+
+                        const float a0 = t[0] - z_ref;
+                        const float a1 = t[1] - z_ref;
+                        const float a2 = t[2] - z_ref;
+                        const float a3 = t[3] - z_ref;
+                        if (a0 < z_adj_min)
+                            z_adj_min = a0;
+                        if (a1 < z_adj_min)
+                            z_adj_min = a1;
+                        if (a2 < z_adj_min)
+                            z_adj_min = a2;
+                        if (a3 < z_adj_min)
+                            z_adj_min = a3;
+                        if (a0 > z_adj_max)
+                            z_adj_max = a0;
+                        if (a1 > z_adj_max)
+                            z_adj_max = a1;
+                        if (a2 > z_adj_max)
+                            z_adj_max = a2;
+                        if (a3 > z_adj_max)
+                            z_adj_max = a3;
+                    }
+#else
+                    // vf = (z - zmin) * (255/range)
                     float32x4_t vf = vmulq_f32(vsubq_f32(vz, vzmin), vscale);
+#endif
 
-                    /* Optional contrast around 127.5 in [0..255] domain */
+                    // Optional contrast around 127.5 in [0..255] domain
                     if (use_contrast)
                     {
                         vf = vaddq_f32(vmulq_f32(vsubq_f32(vf, vmid), va), vmid);
                     }
-#else
-                    /* vf = 127.5 + (z - z_ref) * gain */
-                    float32x4_t vf = vaddq_f32(vmulq_f32(vsubq_f32(vz, vzref), vgain), vmid);
-#endif
 
                     // Round and convert
                     vf = vaddq_f32(vf, vround);
@@ -2704,6 +2265,14 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
                     vi = vsubq_s32(vmax_i32, vi);
 #endif
 
+                    // Brightness bias + clamp (after invert)
+                    if (FC128_EXPORT_BRIGHTNESS_BIAS_U8 != 0)
+                    {
+                        vi = vaddq_s32(vi, vbias_i32);
+                        vi = vmaxq_s32(vi, vzero_i32);
+                        vi = vminq_s32(vi, vmax_i32);
+                    }
+
                     int32_t out_i[4];
                     vst1q_s32(out_i, vi);
                     line[export_x0 + x + 0] = (uint8_t)out_i[0];
@@ -2715,11 +2284,21 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
 #else
             for (int x = 0; x < FC_RESULT_N; x++)
             {
+#if FC128_EXPORT_FIXED_SCALE
                 const float z = row_z[x];
-                int out;
+                sum_z += (double)z;
+                sum_n++;
 
-#if (FC128_EXPORT_DEPTH_MODE == 0)
-                float n = (z - use_z_min) * inv_range;
+                const float z_adj = z - z_ref;
+                if (z_adj < z_adj_min)
+                    z_adj_min = z_adj;
+                if (z_adj > z_adj_max)
+                    z_adj_max = z_adj;
+
+                float n = (z_adj - z_far) * inv_span;
+#else
+                float n = (row_z[x] - use_z_min) * inv_range;
+#endif
                 if (n < 0.0f)
                     n = 0.0f;
                 if (n > 1.0f)
@@ -2736,23 +2315,7 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
                         n = 1.0f;
                 }
 
-                out = (int)(n * 255.0f + 0.5f);
-#else
-                if (!isfinite(z))
-                {
-                    out = (int)FC128_EXPORT_BG_U8;
-                }
-                else
-                {
-                    float v = 127.5f + (z - z_ref) * z_gain;
-                    if (v < 0.0f)
-                        v = 0.0f;
-                    if (v > 255.0f)
-                        v = 255.0f;
-                    out = (int)(v + 0.5f);
-                }
-#endif
-
+                int out = (int)(n * 255.0f + 0.5f);
                 if (out < 0)
                     out = 0;
                 if (out > 255)
@@ -2761,6 +2324,15 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
 #if FC128_EXPORT_INVERT
                 out = 255 - out;
 #endif
+
+                if (FC128_EXPORT_BRIGHTNESS_BIAS_U8 != 0)
+                {
+                    out += (int)FC128_EXPORT_BRIGHTNESS_BIAS_U8;
+                    if (out < 0)
+                        out = 0;
+                    if (out > 255)
+                        out = 255;
+                }
                 line[export_x0 + x] = (uint8_t)out;
             }
 #endif
@@ -2768,6 +2340,60 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
 
         (void)hyperram_b_write(line, (void *)(frame_base_offset + DEPTH_OFFSET + (uint32_t)y * (uint32_t)FRAME_WIDTH), (uint32_t)sizeof(line));
     }
+
+#if FC128_EXPORT_FIXED_SCALE
+#if FC128_EXPORT_FIXED_AUTOCALIB
+    /* Update fixed range for the next frames during initial calibration window. */
+    if (s_autocalib_left != 0U && z_adj_min < z_adj_max)
+    {
+        float obs_span = z_adj_max - z_adj_min;
+        if (obs_span < FC128_EXPORT_RANGE_FLOOR)
+        {
+            obs_span = FC128_EXPORT_RANGE_FLOOR;
+        }
+        const float m = (float)FC128_EXPORT_FIXED_AUTOCALIB_MARGIN;
+        const float new_far = z_adj_min - obs_span * m;
+        const float new_near = z_adj_max + obs_span * m;
+
+        /* Expand only (never shrink) during calibration to avoid flicker. */
+        if (new_far < s_zfar)
+        {
+            s_zfar = new_far;
+        }
+        if (new_near > s_znear)
+        {
+            s_znear = new_near;
+        }
+
+        s_autocalib_left--;
+    }
+#endif
+
+#if FC128_EXPORT_USE_ZREF_EMA
+    if (sum_n != 0U)
+    {
+        const float mean_z = (float)(sum_z / (double)sum_n);
+        if (!s_zref_init)
+        {
+            s_zref_ema = mean_z;
+            s_zref_init = 1;
+        }
+        else
+        {
+            const float k = 1.0f / (float)(1U << FC128_EXPORT_ZREF_EMA_SHIFT);
+            s_zref_ema += (mean_z - s_zref_ema) * k;
+        }
+    }
+#else
+    (void)sum_z;
+    (void)sum_n;
+    if (!s_zref_init)
+    {
+        s_zref_ema = 0.0f;
+        s_zref_init = 1;
+    }
+#endif
+#endif
 }
 
 static void fc128_compute_depth_and_store(uint32_t frame_base_offset, uint32_t frame_seq)
@@ -3144,7 +2770,7 @@ static inline int32_t pq128_chroma_edge_weight_q15(int edge)
 }
 #endif
 
-#if PQ128_USE_FOCUS_SOFTMASK
+#if PQ128_COMPUTE_DEFOCUS_PLANES
 /* Simple horizontal blur: [1 2 1]/4. Border pixels are copied. */
 static inline void pq128_blur121_u8_line(const uint8_t in_u8[FRAME_WIDTH], uint8_t out_u8[FRAME_WIDTH])
 {
@@ -3157,6 +2783,10 @@ static inline void pq128_blur121_u8_line(const uint8_t in_u8[FRAME_WIDTH], uint8
         out_u8[x] = (uint8_t)v;
     }
 }
+
+#endif /* PQ128_COMPUTE_DEFOCUS_PLANES */
+
+#if PQ128_USE_FOCUS_SOFTMASK
 
 static inline int32_t pq128_focus_weight_q15(int focus)
 {
