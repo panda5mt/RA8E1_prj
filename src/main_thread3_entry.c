@@ -727,6 +727,68 @@ static inline uint32_t fc128_cyc_to_us(uint32_t cyc)
 #endif
 #endif
 
+/* ---- Optional Canny contour overlay (on exported 128x128 ROI) ----
+ * Purpose: draw clean contours that can be colorized by depth (near/far discriminable).
+ * The PC viewer's Jet heatmap maps u8 -> color; if we output edges-only using the depth
+ * value at the edge pixels, the contour will naturally be red (near) or blue (far).
+ */
+#ifndef FC128_EXPORT_CANNY_ENABLE
+#define FC128_EXPORT_CANNY_ENABLE (1)
+#endif
+
+#ifndef FC128_CANNY_N
+/* Canny ROI size. Keep aligned with the exported depth crop size (128x128). */
+#define FC128_CANNY_N (128)
+#endif
+
+#ifndef FC128_EXPORT_CANNY_EDGES_ONLY
+/* 1: Only edge pixels keep depth value; non-edges become BG_U8.
+ * 0: Overlay is not applied (depth remains unchanged).
+ */
+#define FC128_EXPORT_CANNY_EDGES_ONLY (1)
+#endif
+
+#ifndef FC128_CANNY_LOW_TH
+/* Low hysteresis threshold on NMS magnitude (0..255). */
+#define FC128_CANNY_LOW_TH (11)
+#endif
+
+#ifndef FC128_CANNY_HIGH_TH
+/* High hysteresis threshold on NMS magnitude (0..255). */
+#define FC128_CANNY_HIGH_TH (24)
+#endif
+
+#ifndef FC128_CANNY_HYST_STEPS
+/* Number of expansion passes for LOW/HIGH hysteresis.
+ * 0 disables LOW threshold usage (strong edges only).
+ * 1..3 is usually enough for connectivity.
+ */
+#define FC128_CANNY_HYST_STEPS (3)
+#endif
+
+#ifndef FC128_CANNY_HYST_BIDIR
+/* 1: do both forward + backward raster expansions per step (less directional bias). */
+#define FC128_CANNY_HYST_BIDIR (1)
+#endif
+
+#ifndef FC128_CANNY_ROI_USE_EXPORT_CENTER
+/* 1: Use the same 128x128 ROI location as depth export (centered).
+ * 0: (reserved)
+ */
+#define FC128_CANNY_ROI_USE_EXPORT_CENTER (1)
+#endif
+
+#if FC128_EXPORT_CANNY_ENABLE
+/* Forward declaration for line loader helper defined later in this file. */
+static FC128_UNUSED void load_y_line_from_hyperram_or_zero(uint32_t frame_base_offset,
+                                                           int requested_row,
+                                                           uint8_t yuv_line[FRAME_WIDTH * 2],
+                                                           uint8_t y_line[FRAME_WIDTH]);
+
+/* HyperRAM-backed Canny implementation is defined later, after scratch layout macros. */
+static void fc128_compute_canny_roi128(uint32_t frame_base_offset, int roi_x0, int roi_y0);
+#endif /* FC128_EXPORT_CANNY_ENABLE */
+
 /* Export selector:
  * 0 = FC128 reconstructed depth (Frankot–Chellappa Z)
  * Other debug sources were removed to reduce complexity.
@@ -1394,6 +1456,21 @@ static void fc128_gng_update_from_frame(uint32_t frame_base_offset, uint32_t fra
 /* Total FC scratch footprint relative to frame_base_offset. */
 #define FC128_SCRATCH_END (FC128_OFFSET_BASE + 14U * FC128_PLANE_BYTES)
 
+#if FC128_EXPORT_CANNY_ENABLE
+/* Additional HyperRAM scratch for Canny (edge mask + blurred ROI).
+ * Stored in HyperRAM (not on-chip RAM) to avoid linker RAM overflow.
+ */
+#define FC128_CANNY_ROI_BYTES ((uint32_t)FC128_CANNY_N * (uint32_t)FC128_CANNY_N)
+#define FC128_CANNY_OFFSET_BASE ALIGN16_U32(FC128_SCRATCH_END)
+#define FC128_CANNY_BLUR_OFFSET (FC128_CANNY_OFFSET_BASE + 0U * FC128_CANNY_ROI_BYTES)
+#define FC128_CANNY_EDGE_OFFSET (FC128_CANNY_OFFSET_BASE + 1U * FC128_CANNY_ROI_BYTES)
+#define FC128_CANNY_NMS_OFFSET (FC128_CANNY_OFFSET_BASE + 2U * FC128_CANNY_ROI_BYTES)
+#define FC128_CANNY_SCRATCH_END ALIGN16_U32(FC128_CANNY_OFFSET_BASE + 3U * FC128_CANNY_ROI_BYTES)
+#define FC128_TOTAL_SCRATCH_END (FC128_CANNY_SCRATCH_END)
+#else
+#define FC128_TOTAL_SCRATCH_END (FC128_SCRATCH_END)
+#endif
+
 static void fc128_layout_check_once(uint32_t frame_base_offset)
 {
     static bool s_printed = false;
@@ -1403,7 +1480,7 @@ static void fc128_layout_check_once(uint32_t frame_base_offset)
     }
     s_printed = true;
 
-    const uint32_t abs_end = frame_base_offset + (uint32_t)FC128_SCRATCH_END;
+    const uint32_t abs_end = frame_base_offset + (uint32_t)FC128_TOTAL_SCRATCH_END;
 
 #if FC128_LAYOUT_LOG_ENABLE
     xprintf("[FC128] FC_FFT_N=%d FC_RESULT_N=%d pad=%d centered=%d\n",
@@ -1417,7 +1494,7 @@ static void fc128_layout_check_once(uint32_t frame_base_offset)
             (unsigned long)HYPERRAM_SIZE);
     xprintf("[FC128] plane_bytes=%lu scratch_end(rel)=%lu\n",
             (unsigned long)FC128_PLANE_BYTES,
-            (unsigned long)FC128_SCRATCH_END);
+            (unsigned long)FC128_TOTAL_SCRATCH_END);
 #endif
 
     if (abs_end > (uint32_t)HYPERRAM_SIZE)
@@ -1427,6 +1504,361 @@ static void fc128_layout_check_once(uint32_t frame_base_offset)
 #endif
     }
 }
+
+#if FC128_EXPORT_CANNY_ENABLE
+static inline void fc128_blur121_u8_line_128(const uint8_t in_u8[FC128_CANNY_N], uint8_t out_u8[FC128_CANNY_N])
+{
+    out_u8[0] = in_u8[0];
+    out_u8[FC128_CANNY_N - 1] = in_u8[FC128_CANNY_N - 1];
+    for (int x = 1; x < FC128_CANNY_N - 1; x++)
+    {
+        int v = (int)in_u8[x - 1] + ((int)in_u8[x] << 1) + (int)in_u8[x + 1];
+        v = (v + 2) >> 2;
+        out_u8[x] = (uint8_t)v;
+    }
+}
+
+static void fc128_compute_canny_roi128(uint32_t frame_base_offset, int roi_x0, int roi_y0)
+{
+    /* Memory-friendly Canny-lite:
+     * - blur (1-2-1 separable) -> stored in HyperRAM
+     * - Sobel -> magnitude + 4-bin direction (streaming)
+     * - NMS (streaming)
+     * - threshold:
+     *   - strong edges: NMS >= HIGH
+     *   - optional hysteresis: grow edges into pixels with NMS >= LOW
+     */
+    const int x0 = roi_x0;
+    const int y0 = roi_y0;
+
+    /* --- Stage 1: build blurred ROI into HyperRAM --- */
+    uint8_t yuv_tmp[FRAME_WIDTH * 2] __attribute__((aligned(16)));
+    uint8_t y_line[FRAME_WIDTH] __attribute__((aligned(16)));
+
+    uint8_t raw0[FC128_CANNY_N] __attribute__((aligned(16)));
+    uint8_t raw1[FC128_CANNY_N] __attribute__((aligned(16)));
+    uint8_t raw2[FC128_CANNY_N] __attribute__((aligned(16)));
+    uint8_t h0[FC128_CANNY_N] __attribute__((aligned(16)));
+    uint8_t h1[FC128_CANNY_N] __attribute__((aligned(16)));
+    uint8_t h2[FC128_CANNY_N] __attribute__((aligned(16)));
+    uint8_t blur_line[FC128_CANNY_N] __attribute__((aligned(16)));
+
+    load_y_line_from_hyperram_or_zero(frame_base_offset, y0 + 0, yuv_tmp, y_line);
+    for (int x = 0; x < FC128_CANNY_N; x++)
+    {
+        int sx = x0 + x;
+        raw0[x] = (uint8_t)((sx >= 0 && sx < FRAME_WIDTH) ? y_line[sx] : 0);
+    }
+    fc128_blur121_u8_line_128(raw0, h0);
+
+    load_y_line_from_hyperram_or_zero(frame_base_offset, y0 + 1, yuv_tmp, y_line);
+    for (int x = 0; x < FC128_CANNY_N; x++)
+    {
+        int sx = x0 + x;
+        raw1[x] = (uint8_t)((sx >= 0 && sx < FRAME_WIDTH) ? y_line[sx] : 0);
+    }
+    fc128_blur121_u8_line_128(raw1, h1);
+
+    for (int y = 2; y < FC128_CANNY_N; y++)
+    {
+        load_y_line_from_hyperram_or_zero(frame_base_offset, y0 + y, yuv_tmp, y_line);
+        for (int x = 0; x < FC128_CANNY_N; x++)
+        {
+            int sx = x0 + x;
+            raw2[x] = (uint8_t)((sx >= 0 && sx < FRAME_WIDTH) ? y_line[sx] : 0);
+        }
+        fc128_blur121_u8_line_128(raw2, h2);
+
+        for (int x = 0; x < FC128_CANNY_N; x++)
+        {
+            int v = (int)h0[x] + ((int)h1[x] << 1) + (int)h2[x];
+            v = (v + 2) >> 2;
+            blur_line[x] = (uint8_t)v;
+        }
+
+        (void)hyperram_b_write(blur_line,
+                               (void *)(frame_base_offset + (uint32_t)FC128_CANNY_BLUR_OFFSET + (uint32_t)(y - 1) * (uint32_t)FC128_CANNY_N),
+                               (uint32_t)sizeof(blur_line));
+
+        memcpy(h0, h1, sizeof(h0));
+        memcpy(h1, h2, sizeof(h1));
+    }
+
+    /* Fill top/bottom blurred lines by copying adjacent lines. */
+    {
+        (void)hyperram_b_read(blur_line,
+                              (void *)(frame_base_offset + (uint32_t)FC128_CANNY_BLUR_OFFSET + 1U * (uint32_t)FC128_CANNY_N),
+                              (uint32_t)sizeof(blur_line));
+        (void)hyperram_b_write(blur_line,
+                               (void *)(frame_base_offset + (uint32_t)FC128_CANNY_BLUR_OFFSET + 0U * (uint32_t)FC128_CANNY_N),
+                               (uint32_t)sizeof(blur_line));
+
+        (void)hyperram_b_read(blur_line,
+                              (void *)(frame_base_offset + (uint32_t)FC128_CANNY_BLUR_OFFSET + (uint32_t)(FC128_CANNY_N - 2) * (uint32_t)FC128_CANNY_N),
+                              (uint32_t)sizeof(blur_line));
+        (void)hyperram_b_write(blur_line,
+                               (void *)(frame_base_offset + (uint32_t)FC128_CANNY_BLUR_OFFSET + (uint32_t)(FC128_CANNY_N - 1) * (uint32_t)FC128_CANNY_N),
+                               (uint32_t)sizeof(blur_line));
+    }
+
+    /* --- Stage 2: Sobel + NMS + threshold -> edge mask into HyperRAM --- */
+    uint8_t b0[FC128_CANNY_N] __attribute__((aligned(16)));
+    uint8_t b1[FC128_CANNY_N] __attribute__((aligned(16)));
+    uint8_t b2[FC128_CANNY_N] __attribute__((aligned(16)));
+
+    uint8_t mag_ring[3][FC128_CANNY_N] __attribute__((aligned(16)));
+    uint8_t dir_ring[3][FC128_CANNY_N] __attribute__((aligned(16)));
+    uint8_t nms_line[FC128_CANNY_N] __attribute__((aligned(16)));
+    uint8_t edge_line[FC128_CANNY_N] __attribute__((aligned(16)));
+
+    memset(mag_ring, 0, sizeof(mag_ring));
+    memset(dir_ring, 0, sizeof(dir_ring));
+    memset(edge_line, 0, sizeof(edge_line));
+
+    /* Clear border lines in edge mask and NMS. */
+    (void)hyperram_b_write(edge_line,
+                           (void *)(frame_base_offset + (uint32_t)FC128_CANNY_EDGE_OFFSET + 0U * (uint32_t)FC128_CANNY_N),
+                           (uint32_t)sizeof(edge_line));
+    (void)hyperram_b_write(edge_line,
+                           (void *)(frame_base_offset + (uint32_t)FC128_CANNY_EDGE_OFFSET + (uint32_t)(FC128_CANNY_N - 1) * (uint32_t)FC128_CANNY_N),
+                           (uint32_t)sizeof(edge_line));
+    (void)hyperram_b_write(edge_line,
+                           (void *)(frame_base_offset + (uint32_t)FC128_CANNY_EDGE_OFFSET + (uint32_t)(FC128_CANNY_N - 2) * (uint32_t)FC128_CANNY_N),
+                           (uint32_t)sizeof(edge_line));
+
+    (void)hyperram_b_write(edge_line,
+                           (void *)(frame_base_offset + (uint32_t)FC128_CANNY_NMS_OFFSET + 0U * (uint32_t)FC128_CANNY_N),
+                           (uint32_t)sizeof(edge_line));
+    (void)hyperram_b_write(edge_line,
+                           (void *)(frame_base_offset + (uint32_t)FC128_CANNY_NMS_OFFSET + (uint32_t)(FC128_CANNY_N - 1) * (uint32_t)FC128_CANNY_N),
+                           (uint32_t)sizeof(edge_line));
+    (void)hyperram_b_write(edge_line,
+                           (void *)(frame_base_offset + (uint32_t)FC128_CANNY_NMS_OFFSET + (uint32_t)(FC128_CANNY_N - 2) * (uint32_t)FC128_CANNY_N),
+                           (uint32_t)sizeof(edge_line));
+
+    const uint8_t lo = (uint8_t)FC128_CANNY_LOW_TH;
+    const uint8_t hi = (uint8_t)FC128_CANNY_HIGH_TH;
+
+    for (int y = 1; y < FC128_CANNY_N - 1; y++)
+    {
+        (void)hyperram_b_read(b0,
+                              (void *)(frame_base_offset + (uint32_t)FC128_CANNY_BLUR_OFFSET + (uint32_t)(y - 1) * (uint32_t)FC128_CANNY_N),
+                              (uint32_t)sizeof(b0));
+        (void)hyperram_b_read(b1,
+                              (void *)(frame_base_offset + (uint32_t)FC128_CANNY_BLUR_OFFSET + (uint32_t)(y + 0) * (uint32_t)FC128_CANNY_N),
+                              (uint32_t)sizeof(b1));
+        (void)hyperram_b_read(b2,
+                              (void *)(frame_base_offset + (uint32_t)FC128_CANNY_BLUR_OFFSET + (uint32_t)(y + 1) * (uint32_t)FC128_CANNY_N),
+                              (uint32_t)sizeof(b2));
+
+        const int slot = y % 3;
+        uint8_t *mag = mag_ring[slot];
+        uint8_t *dir = dir_ring[slot];
+        mag[0] = 0;
+        mag[FC128_CANNY_N - 1] = 0;
+        dir[0] = 0;
+        dir[FC128_CANNY_N - 1] = 0;
+
+        for (int x = 1; x < FC128_CANNY_N - 1; x++)
+        {
+            int a00 = (int)b0[x - 1];
+            int a01 = (int)b0[x + 0];
+            int a02 = (int)b0[x + 1];
+            int a10 = (int)b1[x - 1];
+            int a12 = (int)b1[x + 1];
+            int a20 = (int)b2[x - 1];
+            int a21 = (int)b2[x + 0];
+            int a22 = (int)b2[x + 1];
+
+            int gx = (a02 + (a12 << 1) + a22) - (a00 + (a10 << 1) + a20);
+            int gy = (a20 + (a21 << 1) + a22) - (a00 + (a01 << 1) + a02);
+
+            int ax = (gx < 0) ? -gx : gx;
+            int ay = (gy < 0) ? -gy : gy;
+            int m = (ax + ay + 4) >> 3;
+            if (m > 255)
+            {
+                m = 255;
+            }
+
+            /* Direction quantization for NMS.
+             * Use a slightly stricter axis-dominance test than 0.5 to reduce
+             * diagonal mis-binning, which can cause multi-pixel (double/triple)
+             * edges when NMS compares along the wrong direction.
+             */
+            uint8_t d;
+            if ((ay * 3) < ax)
+            {
+                d = 0; /* 0 deg: compare left/right */
+            }
+            else if ((ax * 3) < ay)
+            {
+                d = 2; /* 90 deg: compare up/down */
+            }
+            else
+            {
+                d = ((gx ^ gy) >= 0) ? 1 : 3; /* 45 / 135 */
+            }
+            mag[x] = (uint8_t)m;
+            dir[x] = d;
+        }
+
+        if (y >= 2)
+        {
+            const int y_out = y - 1;
+            const uint8_t *mag_m1 = mag_ring[(y_out - 1) % 3];
+            const uint8_t *mag_0 = mag_ring[(y_out + 0) % 3];
+            const uint8_t *mag_p1 = mag_ring[(y_out + 1) % 3];
+            const uint8_t *dir_0 = dir_ring[(y_out + 0) % 3];
+
+            memset(nms_line, 0, sizeof(nms_line));
+            memset(edge_line, 0, sizeof(edge_line));
+            for (int x = 1; x < FC128_CANNY_N - 1; x++)
+            {
+                const uint8_t m0 = mag_0[x];
+                const uint8_t d0 = dir_0[x];
+                uint8_t m1 = 0;
+                uint8_t m2 = 0;
+                switch (d0)
+                {
+                case 0:
+                    m1 = mag_0[x - 1];
+                    m2 = mag_0[x + 1];
+                    break;
+                case 1:
+                    m1 = mag_m1[x + 1];
+                    m2 = mag_p1[x - 1];
+                    break;
+                case 2:
+                    m1 = mag_m1[x];
+                    m2 = mag_p1[x];
+                    break;
+                default:
+                    m1 = mag_m1[x - 1];
+                    m2 = mag_p1[x + 1];
+                    break;
+                }
+
+                if ((m0 >= m1) && (m0 >= m2))
+                {
+                    nms_line[x] = m0;
+                    if (m0 >= hi)
+                    {
+                        edge_line[x] = 255;
+                    }
+                }
+            }
+
+            (void)hyperram_b_write(nms_line,
+                                   (void *)(frame_base_offset + (uint32_t)FC128_CANNY_NMS_OFFSET + (uint32_t)y_out * (uint32_t)FC128_CANNY_N),
+                                   (uint32_t)sizeof(nms_line));
+            (void)hyperram_b_write(edge_line,
+                                   (void *)(frame_base_offset + (uint32_t)FC128_CANNY_EDGE_OFFSET + (uint32_t)y_out * (uint32_t)FC128_CANNY_N),
+                                   (uint32_t)sizeof(edge_line));
+        }
+    }
+
+    /* Optional hysteresis: iteratively grow edge mask into pixels with NMS>=LOW
+     * when they touch an existing strong/accepted edge.
+     */
+    if ((FC128_CANNY_HYST_STEPS > 0) && (lo < hi))
+    {
+        uint8_t e_prev[FC128_CANNY_N];
+        uint8_t e_cur[FC128_CANNY_N];
+        uint8_t e_next[FC128_CANNY_N];
+        uint8_t nms_cur[FC128_CANNY_N];
+
+        for (int step = 0; step < (int)FC128_CANNY_HYST_STEPS; step++)
+        {
+            /* Forward pass. */
+            for (int y2 = 1; y2 < FC128_CANNY_N - 1; y2++)
+            {
+                (void)hyperram_b_read(e_prev,
+                                      (void *)(frame_base_offset + (uint32_t)FC128_CANNY_EDGE_OFFSET + (uint32_t)(y2 - 1) * (uint32_t)FC128_CANNY_N),
+                                      (uint32_t)sizeof(e_prev));
+                (void)hyperram_b_read(e_cur,
+                                      (void *)(frame_base_offset + (uint32_t)FC128_CANNY_EDGE_OFFSET + (uint32_t)(y2 + 0) * (uint32_t)FC128_CANNY_N),
+                                      (uint32_t)sizeof(e_cur));
+                (void)hyperram_b_read(e_next,
+                                      (void *)(frame_base_offset + (uint32_t)FC128_CANNY_EDGE_OFFSET + (uint32_t)(y2 + 1) * (uint32_t)FC128_CANNY_N),
+                                      (uint32_t)sizeof(e_next));
+                (void)hyperram_b_read(nms_cur,
+                                      (void *)(frame_base_offset + (uint32_t)FC128_CANNY_NMS_OFFSET + (uint32_t)y2 * (uint32_t)FC128_CANNY_N),
+                                      (uint32_t)sizeof(nms_cur));
+
+                for (int x2 = 1; x2 < FC128_CANNY_N - 1; x2++)
+                {
+                    if (e_cur[x2] != 0)
+                    {
+                        continue;
+                    }
+                    if (nms_cur[x2] < lo)
+                    {
+                        continue;
+                    }
+
+                    const int has_neighbor =
+                        (e_prev[x2 - 1] | e_prev[x2] | e_prev[x2 + 1] |
+                         e_cur[x2 - 1] | e_cur[x2 + 1] |
+                         e_next[x2 - 1] | e_next[x2] | e_next[x2 + 1]);
+                    if (has_neighbor)
+                    {
+                        e_cur[x2] = 255;
+                    }
+                }
+
+                (void)hyperram_b_write(e_cur,
+                                       (void *)(frame_base_offset + (uint32_t)FC128_CANNY_EDGE_OFFSET + (uint32_t)y2 * (uint32_t)FC128_CANNY_N),
+                                       (uint32_t)sizeof(e_cur));
+            }
+
+#if FC128_CANNY_HYST_BIDIR
+            /* Backward pass. */
+            for (int y2 = FC128_CANNY_N - 2; y2 >= 1; y2--)
+            {
+                (void)hyperram_b_read(e_prev,
+                                      (void *)(frame_base_offset + (uint32_t)FC128_CANNY_EDGE_OFFSET + (uint32_t)(y2 - 1) * (uint32_t)FC128_CANNY_N),
+                                      (uint32_t)sizeof(e_prev));
+                (void)hyperram_b_read(e_cur,
+                                      (void *)(frame_base_offset + (uint32_t)FC128_CANNY_EDGE_OFFSET + (uint32_t)(y2 + 0) * (uint32_t)FC128_CANNY_N),
+                                      (uint32_t)sizeof(e_cur));
+                (void)hyperram_b_read(e_next,
+                                      (void *)(frame_base_offset + (uint32_t)FC128_CANNY_EDGE_OFFSET + (uint32_t)(y2 + 1) * (uint32_t)FC128_CANNY_N),
+                                      (uint32_t)sizeof(e_next));
+                (void)hyperram_b_read(nms_cur,
+                                      (void *)(frame_base_offset + (uint32_t)FC128_CANNY_NMS_OFFSET + (uint32_t)y2 * (uint32_t)FC128_CANNY_N),
+                                      (uint32_t)sizeof(nms_cur));
+
+                for (int x2 = FC128_CANNY_N - 2; x2 >= 1; x2--)
+                {
+                    if (e_cur[x2] != 0)
+                    {
+                        continue;
+                    }
+                    if (nms_cur[x2] < lo)
+                    {
+                        continue;
+                    }
+
+                    const int has_neighbor =
+                        (e_prev[x2 - 1] | e_prev[x2] | e_prev[x2 + 1] |
+                         e_cur[x2 - 1] | e_cur[x2 + 1] |
+                         e_next[x2 - 1] | e_next[x2] | e_next[x2 + 1]);
+                    if (has_neighbor)
+                    {
+                        e_cur[x2] = 255;
+                    }
+                }
+
+                (void)hyperram_b_write(e_cur,
+                                       (void *)(frame_base_offset + (uint32_t)FC128_CANNY_EDGE_OFFSET + (uint32_t)y2 * (uint32_t)FC128_CANNY_N),
+                                       (uint32_t)sizeof(e_cur));
+            }
+#endif
+        }
+    }
+}
+#endif /* FC128_EXPORT_CANNY_ENABLE */
 
 /* Reduce compute time by halving forward 2D FFT cost:
  * Pack P into real and Q into imag, compute one complex FFT, then unpack:
@@ -2066,6 +2498,13 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
     const int export_x0 = (FRAME_WIDTH - FC_RESULT_N) / 2;
     const int export_y0 = (FRAME_HEIGHT - FC_RESULT_N) / 2;
 
+#if FC128_EXPORT_CANNY_ENABLE
+    /* Compute Canny edges for this frame (ROI aligned to exported 128x128). */
+#if FC128_CANNY_ROI_USE_EXPORT_CENTER
+    fc128_compute_canny_roi128(frame_base_offset, export_x0, export_y0);
+#endif
+#endif
+
     float row_z[FC_RESULT_N];
 
 #if FC128_EXPORT_FIXED_SCALE
@@ -2343,6 +2782,25 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
 #endif
         }
 
+#if FC128_EXPORT_CANNY_ENABLE && FC128_EXPORT_CANNY_EDGES_ONLY
+        /* Keep depth only where Canny says "edge". */
+        if (y >= export_y0 && y < (export_y0 + FC128_CANNY_N))
+        {
+            int ry = y - export_y0;
+            uint8_t canny_edge_line[FC128_CANNY_N];
+            (void)hyperram_b_read(canny_edge_line,
+                                  (void *)(frame_base_offset + (uint32_t)FC128_CANNY_EDGE_OFFSET + (uint32_t)ry * (uint32_t)FC128_CANNY_N),
+                                  (uint32_t)sizeof(canny_edge_line));
+            for (int x = 0; x < FC128_CANNY_N; x++)
+            {
+                if (canny_edge_line[x] == 0)
+                {
+                    line[export_x0 + x] = (uint8_t)FC128_EXPORT_BG_U8;
+                }
+            }
+        }
+#endif
+
         (void)hyperram_b_write(line, (void *)(frame_base_offset + DEPTH_OFFSET + (uint32_t)y * (uint32_t)FRAME_WIDTH), (uint32_t)sizeof(line));
     }
 
@@ -2413,7 +2871,7 @@ static void fc128_compute_depth_and_store(uint32_t frame_base_offset, uint32_t f
 #endif
 
     fc128_layout_check_once(frame_base_offset);
-    if ((frame_base_offset + (uint32_t)FC128_SCRATCH_END) > (uint32_t)HYPERRAM_SIZE)
+    if ((frame_base_offset + (uint32_t)FC128_TOTAL_SCRATCH_END) > (uint32_t)HYPERRAM_SIZE)
     {
         /* Avoid corrupting memory if configuration/layout is invalid. */
         return;
