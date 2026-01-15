@@ -86,7 +86,7 @@ partial class Form1
         // 
         this.numericHeatMin.Minimum = new decimal(new int[] { 0, 0, 0, 0 });
         this.numericHeatMin.Maximum = new decimal(new int[] { 255, 0, 0, 0 });
-        this.numericHeatMin.Value = new decimal(new int[] { 150, 0, 0, 0 });
+        this.numericHeatMin.Value = new decimal(new int[] { 0, 0, 0, 0 });
         this.numericHeatMin.Size = new System.Drawing.Size(56, 23);
         this.numericHeatMin.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
 

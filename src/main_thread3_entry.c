@@ -533,7 +533,12 @@ static void fc128_gng_update_from_frame(uint32_t frame_base_offset, uint32_t fra
 // 輝度正規化（明るさに依存しない深度推定）
 // 1 = 各行ごとにコントラストを正規化（薄暗い/明るい環境でも同じ深度）
 // 0 = 正規化なし（従来動作）
-#define USE_BRIGHTNESS_NORMALIZATION 1
+#ifndef USE_BRIGHTNESS_NORMALIZATION
+/* NOTE: 行ごとのヒストグラム伸長は、白い物体/ハイライトがあると
+ * 勾配が過剰に強調されて「近い」判定になりやすいので、既定はOFF。
+ */
+#define USE_BRIGHTNESS_NORMALIZATION 0
+#endif
 // =================================================
 
 // Helium MVE (ARM M-profile Vector Extension) support
@@ -629,7 +634,7 @@ static inline uint32_t fc128_cyc_to_us(uint32_t cyc)
  *    u8 is derived from a fixed Z range (plus optional z_ref).
  * 0: Per-frame min/max normalization.
  */
-#define FC128_EXPORT_FIXED_SCALE (0)
+#define FC128_EXPORT_FIXED_SCALE (1)
 #endif
 
 #ifndef FC128_EXPORT_USE_ZREF_EMA
@@ -651,7 +656,7 @@ static inline uint32_t fc128_cyc_to_us(uint32_t cyc)
 
 #ifndef FC128_EXPORT_Z_FAR
 /* Z value (after subtracting z_ref) that should appear BLUE (u8=0). */
-#define FC128_EXPORT_Z_FAR (-0.50f)
+#define FC128_EXPORT_Z_FAR (-0.20f)
 #endif
 
 #ifndef FC128_EXPORT_FIXED_AUTOCALIB
