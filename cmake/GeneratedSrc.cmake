@@ -52,6 +52,8 @@ target_include_directories(${PROJECT_NAME}.elf
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/ra/arm/CMSIS-DSP/Include
     ${CMAKE_CURRENT_SOURCE_DIR}/ra/arm/CMSIS-DSP/PrivateInclude
+    ${CMAKE_CURRENT_SOURCE_DIR}/ra/arm/CMSIS-NN
+    ${CMAKE_CURRENT_SOURCE_DIR}/ra/arm/CMSIS-NN/Include
     ${CMAKE_CURRENT_SOURCE_DIR}/ra/arm/CMSIS_6/CMSIS/Core/Include
     ${CMAKE_CURRENT_SOURCE_DIR}/ra/aws/FreeRTOS/FreeRTOS/Source/include
     ${CMAKE_CURRENT_SOURCE_DIR}/ra/fsp/inc

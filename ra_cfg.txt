@@ -1303,7 +1303,7 @@ FSP Configuration
   Thread "Main Thread3"
     Symbol: main_thread3
     Name: Main Thread3
-    Stack size (bytes): 32768
+    Stack size (bytes): 24576
     Priority: 1
     Thread Context: NULL
     Memory Allocation: Static

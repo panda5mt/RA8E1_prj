@@ -71,6 +71,21 @@ list(APPEND RASC_RELEASE_WITH_DEBUG_INFO "-O3")
 
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/GeneratedSrc.cmake)
 
+# ---- Optional: build CMSIS-NN only when needed ----
+# GeneratedSrc.cmake uses a broad GLOB over ra/*.c which pulls in CMSIS-NN sources.
+# That is convenient but expensive; keep CMSIS-NN opt-in by filtering its sources out
+# of the final target unless explicitly enabled.
+option(APP_ENABLE_CMSIS_NN "Build CMSIS-NN (ra/arm/CMSIS-NN/Source)" OFF)
+if (NOT APP_ENABLE_CMSIS_NN)
+	get_target_property(_app_sources ${PROJECT_NAME}.elf SOURCES)
+	if (_app_sources)
+		# Match both '/' and '\\' path separators.
+		list(FILTER _app_sources EXCLUDE REGEX "[/\\\\]CMSIS-NN[/\\\\]Source[/\\\\].*\\.(c|cc|cpp|cxx|S|asm|sx|msa)$")
+		set_property(TARGET ${PROJECT_NAME}.elf PROPERTY SOURCES "${_app_sources}")
+	endif()
+	unset(_app_sources)
+endif()
+
 # Optional: Release-only LTO for additional speed (can help inlining across translation units).
 # Keep this opt-in/disableable because some toolchains/linker setups may not support LTO.
 option(APP_ENABLE_LTO "Enable link-time optimization (Release only)" ON)

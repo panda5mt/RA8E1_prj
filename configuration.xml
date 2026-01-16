@@ -341,6 +341,10 @@
       <description>Arm CMSIS Version 6 - Core (M)</description>
       <originalPack>Arm.CMSIS6.6.1.0+fsp.6.3.0.pack</originalPack>
     </component>
+    <component apiversion="" class="CMSIS" condition="" group="Main" subgroup="NN" variant="" vendor="Arm" version="7.0.0+fsp.6.3.0">
+      <description>Arm NN Library Source</description>
+      <originalPack>Arm.CMSIS-NN.7.0.0+fsp.6.3.0.pack</originalPack>
+    </component>
   </raComponentSelection>
   <raElcConfiguration/>
   <raIcuConfiguration/>
