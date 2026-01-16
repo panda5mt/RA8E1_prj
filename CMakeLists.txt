@@ -24,6 +24,33 @@ include(${CMAKE_CURRENT_LIST_DIR}/Config.cmake)
 
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/GeneratedCfg.cmake)
 
+# ---- Guard for RASC pre/post build steps ----
+#
+# GeneratedSrc.cmake registers RASC pre-build and post-build commands when it thinks we are
+# not running inside e2studio (it checks RENESAS_IDE).
+#
+# On some ARM64 hosts, RASC may not be available. However, on Windows x64 (and on any host
+# where RASC is installed), these steps should run.
+#
+# So we only disable the pre/post steps when BOTH:
+# - the host CPU is ARM64/aarch64, AND
+# - RASC_EXE_PATH is not set or does not exist.
+option(APP_DISABLE_RASC_PREPOST_WHEN_UNAVAILABLE "Disable RASC pre/post build steps when RASC is unavailable (ARM64 hosts)" ON)
+if (APP_DISABLE_RASC_PREPOST_WHEN_UNAVAILABLE)
+	if (CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^(ARM64|arm64|aarch64)$")
+		set(_rasc_available OFF)
+		if (DEFINED RASC_EXE_PATH AND (NOT "${RASC_EXE_PATH}" STREQUAL "") AND EXISTS "${RASC_EXE_PATH}")
+			set(_rasc_available ON)
+		endif()
+		if (NOT _rasc_available)
+			# Make GeneratedSrc.cmake treat this as e2studio so it does not register the
+			# pre-build and post-build RASC commands.
+			set(RENESAS_IDE "e2studio" CACHE STRING "Forced on ARM64 host when RASC is unavailable" FORCE)
+		endif()
+		unset(_rasc_available)
+	endif()
+endif()
+
 # Enable Helium MVE for ARM Cortex-M85
 list(APPEND RASC_CMAKE_C_FLAGS "-march=armv8.1-m.main+mve")
 list(APPEND RASC_CMAKE_CXX_FLAGS "-march=armv8.1-m.main+mve")
