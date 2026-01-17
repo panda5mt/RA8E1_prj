@@ -71,3 +71,5 @@ add_git.sh
 compile_commands.json
 /fcmethod/
 FFT_readme.*
+*/hlac_training_data/
+*/lda_model/
