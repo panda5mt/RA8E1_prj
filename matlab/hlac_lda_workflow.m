@@ -1,15 +1,40 @@
-% HLAC-LDA Classification Workflow Main Script
-% 
-% This script guides you through the complete workflow:
+function hlac_lda_workflow(varargin)
+% HLAC-LDA Classification Workflow
+%
+% This workflow guides you through:
 % 1. Image capture
-% 2. Sobel filter preprocessing
-% 3. HLAC feature extraction
-% 4. LDA classifier training
-% 5. Parameter export for RA8E1
+% 2. Dataset check
+% 3. Sobel + HLAC feature extraction
+% 4. LDA training
+% 5. (Optional) parameter export for RA8E1
+%
+% Usage:
+%   cd matlab
+%   hlac_lda_workflow
+%
+% With options (recommended when using a refined-image folder):
+%   hlac_lda_workflow('data_dir','../refined_images', 'class_names', {'class0','class1'})
+%
+% Options (name,value):
+%   'data_dir'     (default '../hlac_training_data')
+%   'output_dir'   (default '../lda_model')
+%   'class_names'  (default {'class0','class1','class2','class3','class4'})
+%   'hlac_order'   (default 2)
+%   'use_sobel'    (default true)
+%   'do_capture'   (default false)  % run hlac_image_capture at Step1
 
-clear all;
 close all;
 clc;
+
+p = inputParser;
+p.addParameter('data_dir', './hlac_training_data');
+p.addParameter('output_dir', './lda_model');
+p.addParameter('class_names', {'class0', 'class1', 'class2', 'class3', 'class4'});
+p.addParameter('hlac_order', 2);
+p.addParameter('use_sobel', true);
+p.addParameter('do_capture', false);
+p.parse(varargin{:});
+opt = p.Results;
 
 fprintf('====================================\n');
 fprintf('Sobel + HLAC-LDA Classification Workflow\n');
@@ -17,16 +42,16 @@ fprintf('====================================\n\n');
 
 % Configuration
 config = struct();
-config.data_dir = 'hlac_training_data';
-config.output_dir = 'lda_model';
-config.hlac_order = 2;  % Use 2nd-order HLAC (25 dimensions)
-config.use_sobel = true;  % Sobel前処理を使用
-config.class_names = {'class0', 'class1', 'class2', 'class3', 'class4'};
+config.data_dir = local_resolve_dir(opt.data_dir);
+config.output_dir = local_resolve_dir(opt.output_dir);
+config.hlac_order = opt.hlac_order;  % Use 2nd-order HLAC (25 dimensions)
+config.use_sobel = opt.use_sobel;    % Sobel前処理を使用
+config.class_names = opt.class_names;
 
 fprintf('設定:\n');
 fprintf('  データディレクトリ: %s\n', config.data_dir);
 fprintf('  出力ディレクトリ: %s\n', config.output_dir);
-feature_dim = (config.hlac_order==1) * 5 + (config.hlac_order==2) * 45;
+feature_dim = (config.hlac_order==1) * 5 + (config.hlac_order==2) * 25;
 fprintf('  HLAC次数: %d (特徴次元: %d)\n', config.hlac_order, feature_dim);
 if config.use_sobel
     sobel_str = '有効';
@@ -49,7 +74,7 @@ fprintf('  >> hlac_image_capture\n\n');
 fprintf('既に画像を収集済みの場合は、次のステップに進みます。\n\n');
 
 choice = input('画像収集を今すぐ実行しますか? (y/n): ', 's');
-if strcmpi(choice, 'y')
+if opt.do_capture || strcmpi(choice, 'y')
     fprintf('\n画像キャプチャツールを起動します...\n');
     fprintf('終了後、このスクリプトに戻ってきます。\n\n');
     hlac_image_capture();
@@ -64,7 +89,9 @@ fprintf('ステップ2: データ確認\n');
 fprintf('====================================\n');
 
 if ~exist(config.data_dir, 'dir')
-    error('データディレクトリが見つかりません: %s\n画像収集を先に実行してください。', config.data_dir);
+    error(['データディレクトリが見つかりません: %s\n' ...
+           '対処: hlac_lda_workflow(''data_dir'',''<your_folder>'') で指定してください。\n' ...
+           '例: hlac_lda_workflow(''data_dir'',''../hlac_training_data'')\n'], config.data_dir);
 end
 
 fprintf('各クラスのサンプル数:\n');
@@ -129,8 +156,25 @@ else
     fprintf('保存済みの特徴量を読み込んでいます...\n');
     
     if exist('hlac_features.mat', 'file')
-        load('hlac_features.mat');
-        fprintf('特徴量を読み込みました。\n\n');
+        s = load('hlac_features.mat');
+        if isfield(s, 'features_table')
+            features_table = s.features_table;
+        else
+            error('hlac_features.mat に features_table が見つかりません');
+        end
+
+        expected_dim = (config.hlac_order==1) * 5 + (config.hlac_order==2) * 25;
+        actual_dim = width(features_table) - 2; % exclude Label/Filename
+        if actual_dim ~= expected_dim
+            fprintf('警告: 保存済み特徴量の次元が不一致です (saved=%d, expected=%d)。特徴抽出を再実行します...\n\n', ...
+                actual_dim, expected_dim);
+            features_table = extract_hlac_from_dataset(config.data_dir, config.class_names, ...
+                                                       config.hlac_order, config.use_sobel);
+            save('hlac_features.mat', 'features_table', 'config');
+            fprintf('\n特徴量を hlac_features.mat に保存しました。\n\n');
+        else
+            fprintf('特徴量を読み込みました。\n\n');
+        end
     else
         fprintf('保存された特徴量が見つかりません。特徴量抽出を自動実行します...\n\n');
         features_table = extract_hlac_from_dataset(config.data_dir, config.class_names, ...
@@ -151,7 +195,7 @@ if isempty(choice)
 end
 if strcmpi(choice, 'y')
     fprintf('\nLDA分類器を学習中...\n\n');
-    [lda_model, W, b] = train_lda_classifier(features_table, config.class_names, config.output_dir);
+    [lda_model, ~, ~] = train_lda_classifier(features_table, config.class_names, config.output_dir);
     
     fprintf('\n学習が完了しました！\n\n');
     
@@ -201,4 +245,58 @@ if strcmpi(choice, 'y')
     else
         fprintf('ファイルを手動で開いてください: ../HLAC_LDA_README.md\n');
     end
+end
+
+end
+
+function resolved = local_resolve_dir(p)
+% Resolve a directory path robustly:
+% - If absolute path: use as-is
+% - If relative: try as-is, then relative to this file, then to repo root (.. from matlab/)
+if isempty(p)
+    resolved = p;
+    return;
+end
+
+if local_isabsolute_path(p)
+    resolved = p;
+    return;
+end
+
+% 1) as-is (relative to current directory)
+if exist(p, 'dir')
+    resolved = p;
+    return;
+end
+
+% 2) relative to this .m file
+this_dir = fileparts(mfilename('fullpath'));
+cand = fullfile(this_dir, p);
+if exist(cand, 'dir')
+    resolved = cand;
+    return;
+end
+
+% 3) relative to repo root (one level up from matlab/)
+cand = fullfile(this_dir, '..', p);
+if exist(cand, 'dir')
+    resolved = cand;
+    return;
+end
+
+% not found: return best-effort path so error messages are informative
+resolved = cand;
+end
+
+function tf = local_isabsolute_path(p)
+tf = false;
+if isempty(p)
+    return;
+end
+if ispc
+    tf = (numel(p) >= 3 && isletter(p(1)) && p(2) == ':' && (p(3) == '\' || p(3) == '/')) || ...
+         (numel(p) >= 2 && p(1) == '\' && p(2) == '\');
+else
+    tf = (p(1) == '/');
+end
 end

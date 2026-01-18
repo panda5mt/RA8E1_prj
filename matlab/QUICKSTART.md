@@ -5,8 +5,10 @@
 パイプライン：
 
 ```
-RA8E1 depth(8bit, 320x240) → Sobel(|P|+|Q|) → HLAC(order=2, 45次元) → LDA
+RA8E1 depth(8bit, 320x240) → Sobel(|P|+|Q|) → HLAC(order=2, 25次元) → LDA
 ```
+
+※ HLACの次元（例: order=2の25次元）を変更した場合、`lda_model/` は作り直し（再学習）が必要です。
 
 ## 1) 前提（Toolbox）
 
@@ -35,6 +37,19 @@ RA8E1 depth(8bit, 320x240) → Sobel(|P|+|Q|) → HLAC(order=2, 45次元) → LD
 ```matlab
 >> cd matlab
 >> hlac_lda_workflow
+```
+
+データフォルダを指定したい場合（精製済み画像フォルダなど）:
+
+```matlab
+hlac_lda_workflow('data_dir','../your_refined_folder', ...
+				  'class_names', {'class0','class1'});
+```
+
+出力先を変える場合:
+
+```matlab
+hlac_lda_workflow('output_dir','../lda_model_refined');
 ```
 
 - Step3: 特徴抽出（初回は `y` 推奨。Enterだけでも `y` 扱いになります）

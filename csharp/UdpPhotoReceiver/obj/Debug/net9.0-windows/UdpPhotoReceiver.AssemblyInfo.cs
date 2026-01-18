@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("UdpPhotoReceiver")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5ebb8df3dbc55856ce1d4354ddff2a97869346d2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ceb7830c60e7134f0a344c33c73c82c9b262d731")]
 [assembly: System.Reflection.AssemblyProductAttribute("UdpPhotoReceiver")]
 [assembly: System.Reflection.AssemblyTitleAttribute("UdpPhotoReceiver")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

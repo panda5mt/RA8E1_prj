@@ -32,7 +32,7 @@ else
 end
 fprintf('Sobelフィルタ: %s\n', sobel_str);
 fprintf('HLAC次数: %d\n', order);
-fprintf('特徴次元数: %d\n', (order==1) * 5 + (order==2) * 45);
+fprintf('特徴次元数: %d\n', (order==1) * 5 + (order==2) * 25);
 fprintf('====================================\n\n');
 
 for c = 1:length(class_names)

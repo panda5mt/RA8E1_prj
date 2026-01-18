@@ -1,6 +1,6 @@
 function hlac_udp_inference(varargin)
 % Online inference from RA8E1 UDP stream (port 9000 by default).
-% Pipeline: depth(uint8) frame -> Sobel(|P|+|Q|) -> HLAC(order=2, 45) -> LDA(W,b)
+% Pipeline: depth(uint8) frame -> Sobel(|P|+|Q|) -> HLAC(order=2, 25) -> LDA(W,b)
 %
 % Requirements:
 % - DSP System Toolbox (dsp.UDPReceiver)
@@ -189,8 +189,23 @@ end
             end
 
             if size(params.W, 1) ~= numel(feats)
-                fprintf('警告: 特徴次元がモデルと一致しません (model=%d, feats=%d)。学習と同じ設定(use_sobel/hlac_order)か確認してください。\n', ...
+                fprintf('警告: 特徴次元がモデルと一致しません (model=%d, feats=%d)。学習と同じ設定(use_sobel/hlac_order)か確認し、必要なら再学習してください。\n', ...
                     size(params.W, 1), numel(feats));
+
+                title_str = sprintf('frame=%d  missing=%d  (skip infer: dim mismatch model=%d feats=%d)', ...
+                    cur_frame_id, missing, size(params.W, 1), numel(feats));
+
+                % Still show the frame
+                if isempty(img_handle) || ~ishandle(img_handle)
+                    img_handle = imshow(frame, [], 'Parent', ax);
+                    axis(ax, 'image');
+                    colormap(ax, gray(256));
+                else
+                    set(img_handle, 'CData', frame);
+                end
+                title(ax, title_str);
+                drawnow limitrate;
+                return;
             end
 
             lin = (params.W.' * feats);
