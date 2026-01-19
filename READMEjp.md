@@ -205,6 +205,8 @@ cmake --build build/Debug
 
 ## 使用方法
 
+MATLAB側で HLAC/LDA の学習＋オンライン推論まで行う場合は [matlab/QUICKSTART.md](matlab/QUICKSTART.md) を参照してください。
+
 ### MATLAB受信側
 ```matlab
 % UDP受信開始(無制限受信モード)
@@ -214,15 +216,29 @@ udp_photo_receiver
 % 停止: Ctrl+C または画像ウィンドウを閉じる
 ```
 
+### HLAC + LDA（MATLAB）
+
+深度/|P|+|Q| を 8bit フレームとして受信し、学習＋推論を行う場合:
+
+```matlab
+cd matlab
+hlac_lda_workflow           % 学習（デフォルト: Sobel OFF）
+hlac_udp_inference          % 推論（デフォルト: Sobel OFF）
+```
+
 ### 通信プロトコル
 - **動作モード**: マルチフレーム動画送信
-- **チャンク送信間隔**: 0ms(最速，pbuf確保失敗時は1msリトライ)
-- **フレーム間隔**: 2ms(設定可変)
+- **チャンク送信間隔**: 設定可変（デフォルト ~1ms）
+- **フレーム間隔**: 設定可変（デフォルト ~5ms）
 - **フレーム数**: 無制限(total_frames = -1)または指定数
 - **チャンクサイズ**: 512バイト/パケット
-- **総パケット数**: 300パケット/フレーム
-- **パケット構造**: 24バイトヘッダー + 512バイトデータ
+- **総パケット数**: 1フレームあたり `ceil(total_size / 512)`
+- **パケット構造**: 24バイトヘッダー + 最大512バイトデータ
 - **実効フレームレート**: 約1-2 fps(ネットワーク環境依存)
+
+補足:
+- `total_size` は 320x240 固定の場合と、ROIちょうど（例: 256x128）の可変サイズの場合があります。
+- UDPは取りこぼしが起き得るため、欠損が増えると `missing` が増えます。
 
 ## ネットワーク接続
 
@@ -290,9 +306,11 @@ udp_photo_receiver
 
 ### C側設定(main_thread1_entry.c)
 ```c
-ctx->interval_ms = 0;           // チャンク間隔 (0=最速, 推奨3-5ms)
-ctx->frame_interval_ms = 2;     // フレーム間隔 (ms)
-ctx->total_frames = -1;         // -1=無制限, 数値=指定フレーム数
+// src/main_thread1_entry.c のマクロで調整（ミリ秒）
+#define UDP_PACKET_INTERVAL_MS 1
+#define UDP_FRAME_INTERVAL_MS  5
+
+// total_frames: -1=無制限, 数値=指定フレーム数
 ```
 
 ### 深度再構成設定 (main_thread3_entry.c)

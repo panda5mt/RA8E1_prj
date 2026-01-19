@@ -202,6 +202,8 @@ cmake --build build/Debug
 
 ## Usage
 
+For MATLAB-based HLAC/LDA training + online inference, see [matlab/QUICKSTART.md](matlab/QUICKSTART.md).
+
 ### MATLAB Receiver
 ```matlab
 % Start UDP reception (unlimited reception mode)
@@ -211,15 +213,29 @@ udp_photo_receiver
 % Stop: Ctrl+C or close image window
 ```
 
+### HLAC + LDA (MATLAB)
+
+If you are streaming depth / |P|+|Q| as an 8-bit frame and want to train + run inference in MATLAB:
+
+```matlab
+cd matlab
+hlac_lda_workflow           % training (default: Sobel OFF)
+hlac_udp_inference          % online inference (default: Sobel OFF)
+```
+
 ### Communication Protocol
 - **Operation Mode**: Multi-frame video transmission
-- **Chunk Transmission Interval**: 0ms (fastest, 1ms retry on pbuf allocation failure)
-- **Frame Interval**: 2ms (configurable)
+- **Chunk Transmission Interval**: configurable (default ~1ms)
+- **Frame Interval**: configurable (default ~5ms)
 - **Frame Count**: Unlimited (total_frames = -1) or specified count
 - **Chunk Size**: 512 bytes/packet
-- **Total Packets**: 300 packets/frame
-- **Packet Structure**: 24-byte header + 512-byte data
+- **Total Packets**: `ceil(total_size / 512)` per frame
+- **Packet Structure**: 24-byte header + up to 512-byte data
 - **Effective Frame Rate**: ~1-2 fps (network environment dependent)
+
+Notes:
+- `total_size` can be 320x240 (fixed) or ROI-sized (e.g. 256x128) depending on what the firmware streams.
+- The receiver reconstructs frames using the header fields; UDP packet loss increases `missing` chunks.
 
 ## Network Connection
 
@@ -287,9 +303,12 @@ udp_photo_receiver
 
 ### C-side Settings (main_thread1_entry.c)
 ```c
-ctx->interval_ms = 0;           // Chunk interval (0=fastest, recommend 3-5ms)
-ctx->frame_interval_ms = 2;     // Frame interval (ms)
-ctx->total_frames = -1;         // -1=unlimited, number=specified frame count
+// Prefer tuning these macros in src/main_thread1_entry.c
+// (values in milliseconds)
+#define UDP_PACKET_INTERVAL_MS 1
+#define UDP_FRAME_INTERVAL_MS  5
+
+// total_frames: -1=unlimited, number=specified frame count
 ```
 
 ### Depth Reconstruction Settings (main_thread3_entry.c)
