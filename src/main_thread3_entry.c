@@ -642,7 +642,12 @@ volatile uint32_t g_depth_size_bytes = 0;
 
 /* Print every N frames to avoid spamming USB CDC. */
 #ifndef HLAC_UART_LOG_PERIOD
-#define HLAC_UART_LOG_PERIOD (1U)
+#define HLAC_UART_LOG_PERIOD (2U)
+#endif
+
+/* If enabled, print only when the predicted label changes (and still honor LOG_PERIOD as a fallback). */
+#ifndef HLAC_UART_LOG_ON_CHANGE
+#define HLAC_UART_LOG_ON_CHANGE (0)
 #endif
 
 #ifndef HLAC_PQ_MAG_SHIFT
@@ -1840,11 +1845,27 @@ static void fc128_compute_depth_and_store(uint32_t frame_base_offset, uint32_t f
                                     (uint32_t)PQ128_SRC_H,
                                     feats);
     int pred = hlac_lda_predict(feats, NULL);
-    if (HLAC_UART_LOG_PERIOD > 0U)
     {
-        if ((frame_seq % HLAC_UART_LOG_PERIOD) == 0U)
+        static int s_last_pred = -9999;
+        bool do_print = false;
+        if (HLAC_UART_LOG_ON_CHANGE)
+        {
+            if (pred != s_last_pred)
+            {
+                do_print = true;
+            }
+        }
+        if (!do_print && (HLAC_UART_LOG_PERIOD > 0U))
+        {
+            if ((frame_seq % HLAC_UART_LOG_PERIOD) == 0U)
+            {
+                do_print = true;
+            }
+        }
+        if (do_print)
         {
             xprintf("pred=%d\n", pred);
+            s_last_pred = pred;
         }
     }
 #endif
