@@ -229,7 +229,7 @@ fprintf('   - %s/confusion_matrix.png\n\n', config.output_dir);
 
 fprintf('2. RA8E1への実装:\n');
 fprintf('   a. lda_params.h を RA8E1_prj/src/ にコピー\n');
-fprintf('   b. hlac_extract.h, lda_inference.h を使用して推論を実装\n');
+fprintf('   b. hlac_extract.h を使用して推論を実装\n');
 fprintf('   c. 詳細は HLAC_LDA_README.md を参照\n\n');
 
 fprintf('3. テスト:\n');

@@ -215,35 +215,22 @@ static inline uint32_t hlac_sum_u16x8(uint16x8_t v)
     return s;
 }
 
-static inline uint64_t hlac_sumprod3_u8_u8_u8_mve(uint8x16_t vc, uint8x16_t va, uint8x16_t vb)
+static inline uint64_t hlac_sumprod_u16_u16_to_u64(uint16x8_t a_lo, uint16x8_t a_hi, uint16x8_t b_lo, uint16x8_t b_hi)
 {
-    uint16x8_t c_lo = vmovlbq_u8(vc);
-    uint16x8_t c_hi = vmovltq_u8(vc);
-    uint16x8_t a_lo = vmovlbq_u8(va);
-    uint16x8_t a_hi = vmovltq_u8(va);
-    uint16x8_t b_lo = vmovlbq_u8(vb);
-    uint16x8_t b_hi = vmovltq_u8(vb);
-
-    /* c*a <= 255*255 = 65025 fits in u16.
-     * (c*a)*b <= 65025*255 = 16581375 fits in u32. Accumulate in u64.
-     */
-    uint16x8_t ca_lo = vmulq_u16(c_lo, a_lo);
-    uint16x8_t ca_hi = vmulq_u16(c_hi, a_hi);
-
-    uint32x4_t ca_ll = vmovlbq_u16(ca_lo);
-    uint32x4_t ca_lh = vmovltq_u16(ca_lo);
-    uint32x4_t ca_hl = vmovlbq_u16(ca_hi);
-    uint32x4_t ca_hh = vmovltq_u16(ca_hi);
+    uint32x4_t a_ll = vmovlbq_u16(a_lo);
+    uint32x4_t a_lh = vmovltq_u16(a_lo);
+    uint32x4_t a_hl = vmovlbq_u16(a_hi);
+    uint32x4_t a_hh = vmovltq_u16(a_hi);
 
     uint32x4_t b_ll = vmovlbq_u16(b_lo);
     uint32x4_t b_lh = vmovltq_u16(b_lo);
     uint32x4_t b_hl = vmovlbq_u16(b_hi);
     uint32x4_t b_hh = vmovltq_u16(b_hi);
 
-    uint32x4_t p_ll = vmulq_u32(ca_ll, b_ll);
-    uint32x4_t p_lh = vmulq_u32(ca_lh, b_lh);
-    uint32x4_t p_hl = vmulq_u32(ca_hl, b_hl);
-    uint32x4_t p_hh = vmulq_u32(ca_hh, b_hh);
+    uint32x4_t p_ll = vmulq_u32(a_ll, b_ll);
+    uint32x4_t p_lh = vmulq_u32(a_lh, b_lh);
+    uint32x4_t p_hl = vmulq_u32(a_hl, b_hl);
+    uint32x4_t p_hh = vmulq_u32(a_hh, b_hh);
 
     uint64_t s = 0ULL;
     s += (uint64_t)vaddvq(p_ll);
@@ -455,6 +442,21 @@ void hlac25_compute_from_u8_hyperram(uint32_t img_addr, uint32_t width, uint32_t
 
                     const uint8x16_t neighv[8] = {n0, n1, n2, n3, n4, n5, n6, n7};
 
+                    /* Precompute u16 neighbors and (center*neighbor) for reuse across all pairs. */
+                    const uint16x8_t c_lo = vmovlbq_u8(vc);
+                    const uint16x8_t c_hi = vmovltq_u8(vc);
+                    uint16x8_t n_lo16[8];
+                    uint16x8_t n_hi16[8];
+                    uint16x8_t ca_lo16[8];
+                    uint16x8_t ca_hi16[8];
+                    for (int k = 0; k < 8; k++)
+                    {
+                        n_lo16[k] = vmovlbq_u8(neighv[k]);
+                        n_hi16[k] = vmovltq_u8(neighv[k]);
+                        ca_lo16[k] = vmulq_u16(c_lo, n_lo16[k]);
+                        ca_hi16[k] = vmulq_u16(c_hi, n_hi16[k]);
+                    }
+
                     int p_max = HLAC_MVE_PAIR_COUNT;
                     if (p_max > 20)
                     {
@@ -464,9 +466,8 @@ void hlac25_compute_from_u8_hyperram(uint32_t img_addr, uint32_t width, uint32_t
                     {
                         const int ii = (int)pair_i_all[p];
                         const int jj = (int)pair_j_all[p];
-                        const uint8x16_t vi = neighv[ii & 7];
-                        const uint8x16_t vj = neighv[jj & 7];
-                        acc2[p] += hlac_sumprod3_u8_u8_u8_mve(vc, vi, vj);
+                        /* acc2 += (center*neigh[ii]) * neigh[jj] */
+                        acc2[p] += hlac_sumprod_u16_u16_to_u64(ca_lo16[ii & 7], ca_hi16[ii & 7], n_lo16[jj & 7], n_hi16[jj & 7]);
                     }
                 }
             }
