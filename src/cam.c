@@ -61,14 +61,14 @@ void cam_capture(void)
     err = R_CEU_CaptureStart(&g_ceu0_ctrl, g_image_qvga_sram);
     assert(FSP_SUCCESS == err);
 
-    xprintf("[Camera Capture] Start.\n");
+    // xprintf("[Camera Capture] Start.\n");
 
     while (!g_ceu_capture_complete /* && !g_ceu_capture_error */)
     {
         /* Wait for capture to complete. */
     }
 
-    xprintf("[Camera Capture] end\n");
+    // xprintf("[Camera Capture] end\n");
     /* Process image here if capture was successful. */
 
     ////////////////////// CAMERA END
