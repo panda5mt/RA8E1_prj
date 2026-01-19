@@ -12,6 +12,10 @@
 #include <arm_mve.h>
 #endif
 
+#ifndef HLAC_MVE_PAIR_COUNT
+#define HLAC_MVE_PAIR_COUNT (20)
+#endif
+
 #ifndef HLAC_MAX_IMAGE_W
 #define HLAC_MAX_IMAGE_W (320U)
 #endif
@@ -211,6 +215,44 @@ static inline uint32_t hlac_sum_u16x8(uint16x8_t v)
     return s;
 }
 
+static inline uint64_t hlac_sumprod3_u8_u8_u8_mve(uint8x16_t vc, uint8x16_t va, uint8x16_t vb)
+{
+    uint16x8_t c_lo = vmovlbq_u8(vc);
+    uint16x8_t c_hi = vmovltq_u8(vc);
+    uint16x8_t a_lo = vmovlbq_u8(va);
+    uint16x8_t a_hi = vmovltq_u8(va);
+    uint16x8_t b_lo = vmovlbq_u8(vb);
+    uint16x8_t b_hi = vmovltq_u8(vb);
+
+    /* c*a <= 255*255 = 65025 fits in u16.
+     * (c*a)*b <= 65025*255 = 16581375 fits in u32. Accumulate in u64.
+     */
+    uint16x8_t ca_lo = vmulq_u16(c_lo, a_lo);
+    uint16x8_t ca_hi = vmulq_u16(c_hi, a_hi);
+
+    uint32x4_t ca_ll = vmovlbq_u16(ca_lo);
+    uint32x4_t ca_lh = vmovltq_u16(ca_lo);
+    uint32x4_t ca_hl = vmovlbq_u16(ca_hi);
+    uint32x4_t ca_hh = vmovltq_u16(ca_hi);
+
+    uint32x4_t b_ll = vmovlbq_u16(b_lo);
+    uint32x4_t b_lh = vmovltq_u16(b_lo);
+    uint32x4_t b_hl = vmovlbq_u16(b_hi);
+    uint32x4_t b_hh = vmovltq_u16(b_hi);
+
+    uint32x4_t p_ll = vmulq_u32(ca_ll, b_ll);
+    uint32x4_t p_lh = vmulq_u32(ca_lh, b_lh);
+    uint32x4_t p_hl = vmulq_u32(ca_hl, b_hl);
+    uint32x4_t p_hh = vmulq_u32(ca_hh, b_hh);
+
+    uint64_t s = 0ULL;
+    s += (uint64_t)vaddvq(p_ll);
+    s += (uint64_t)vaddvq(p_lh);
+    s += (uint64_t)vaddvq(p_hl);
+    s += (uint64_t)vaddvq(p_hh);
+    return s;
+}
+
 static inline uint32_t hlac_sum_u8_mve(const uint8_t *a, uint32_t n)
 {
     uint32_t s = 0U;
@@ -298,6 +340,14 @@ void hlac25_compute_from_u8_hyperram(uint32_t img_addr, uint32_t width, uint32_t
     uint64_t acc2[20];
     memset(acc2, 0, sizeof(acc2));
 
+    int8_t pair_i_all[20];
+    int8_t pair_j_all[20];
+    for (int p = 0; p < 20; p++)
+    {
+        pair_i_all[p] = s_pair_idx[p][0];
+        pair_j_all[p] = s_pair_idx[p][1];
+    }
+
     for (uint32_t y = 0; y < height; y++)
     {
         /* 0th/1st order terms: accumulate in integer domain (faster; avoid float in inner loop). */
@@ -380,7 +430,51 @@ void hlac25_compute_from_u8_hyperram(uint32_t img_addr, uint32_t width, uint32_t
                 }
             }
 
-            /* x = 1..width-2 (no bounds checks) */
+            uint32_t vec_end = 1U;
+#if defined(__ARM_FEATURE_MVE) && (__ARM_FEATURE_MVE > 0)
+            /* MVE block path for 2nd-order pairs over the inner region. */
+            if (width >= 3U)
+            {
+                const uint32_t inner_start = 1U;
+                const uint32_t inner_end_inclusive = width - 2U;
+                const uint32_t inner_len = inner_end_inclusive - inner_start + 1U;
+                const uint32_t blocks = inner_len / 16U;
+                vec_end = inner_start + blocks * 16U;
+
+                for (uint32_t x = inner_start; x < vec_end; x += 16U)
+                {
+                    const uint8x16_t vc = vld1q_u8(&cur[x]);
+                    const uint8x16_t n0 = vld1q_u8(&prev[x - 1U]);
+                    const uint8x16_t n1 = vld1q_u8(&prev[x]);
+                    const uint8x16_t n2 = vld1q_u8(&prev[x + 1U]);
+                    const uint8x16_t n3 = vld1q_u8(&cur[x - 1U]);
+                    const uint8x16_t n4 = vld1q_u8(&cur[x + 1U]);
+                    const uint8x16_t n5 = vld1q_u8(&next[x - 1U]);
+                    const uint8x16_t n6 = vld1q_u8(&next[x]);
+                    const uint8x16_t n7 = vld1q_u8(&next[x + 1U]);
+
+                    const uint8x16_t neighv[8] = {n0, n1, n2, n3, n4, n5, n6, n7};
+
+                    int p_max = HLAC_MVE_PAIR_COUNT;
+                    if (p_max > 20)
+                    {
+                        p_max = 20;
+                    }
+                    for (int p = 0; p < p_max; p++)
+                    {
+                        const int ii = (int)pair_i_all[p];
+                        const int jj = (int)pair_j_all[p];
+                        const uint8x16_t vi = neighv[ii & 7];
+                        const uint8x16_t vj = neighv[jj & 7];
+                        acc2[p] += hlac_sumprod3_u8_u8_u8_mve(vc, vi, vj);
+                    }
+                }
+            }
+#endif
+
+            /* x = 1..width-2 (no bounds checks).
+             * If MVE covered some leading blocks, skip computing those pairs here to avoid double counting.
+             */
             for (uint32_t x = 1U; x + 1U < width; x++)
             {
                 uint8_t neigh_u8[8];
@@ -394,7 +488,19 @@ void hlac25_compute_from_u8_hyperram(uint32_t img_addr, uint32_t width, uint32_t
                 neigh_u8[7] = next[x + 1U];
                 uint64_t c = (uint64_t)cur[x];
 
-                for (int p = 0; p < 20; p++)
+                int p_start = 0;
+#if defined(__ARM_FEATURE_MVE) && (__ARM_FEATURE_MVE > 0)
+                if (x < vec_end)
+                {
+                    /* MVE already computed the first HLAC_MVE_PAIR_COUNT pairs for these pixels. */
+                    p_start = HLAC_MVE_PAIR_COUNT;
+                    if (p_start > 20)
+                    {
+                        p_start = 20;
+                    }
+                }
+#endif
+                for (int p = p_start; p < 20; p++)
                 {
                     int i = (int)s_pair_idx[p][0];
                     int j = (int)s_pair_idx[p][1];
