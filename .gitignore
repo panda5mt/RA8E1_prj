@@ -73,3 +73,4 @@ compile_commands.json
 FFT_readme.*
 */hlac_training_data/
 */lda_model/
+*.mat
