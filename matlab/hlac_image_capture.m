@@ -127,6 +127,11 @@ function [stats, total_saved] = capture_loop(udp_obj, ax, fig, save_dir, class_n
     packet_count = 0;
     last_status_time = tic;
     received_frames = 0;
+
+    % UDPは順序入れ替わり得るため、受信済みチャンク数で完了判定する
+    received_mask = [];
+    received_count = 0;
+    frame_completed = false;
     
     fprintf('UDPパケット受信待機中...\n');
     
@@ -174,7 +179,7 @@ function [stats, total_saved] = capture_loop(udp_obj, ax, fig, save_dir, class_n
                             current_frame_id = current_frame_id + 1;
 
                             % 前のフレームを完成させる
-                            if ~isempty(packets)
+                            if ~isempty(packets) && ~frame_completed
                                 [current_frame, last_missing_chunks] = reconstruct_depth_frame(packets, total_chunks, total_size, frame_width, frame_height);
                                 last_frame_id = current_frame_id - 1;
                                 if ~isempty(current_frame)
@@ -190,6 +195,9 @@ function [stats, total_saved] = capture_loop(udp_obj, ax, fig, save_dir, class_n
                             total_chunks = double(total_chunks_val);
                             total_size = double(total_size_val);
                             packets = cell(total_chunks, 1);
+                            received_mask = false(total_chunks, 1);
+                            received_count = 0;
+                            frame_completed = false;
                         end
                         
                         % パケット格納
@@ -197,12 +205,16 @@ function [stats, total_saved] = capture_loop(udp_obj, ax, fig, save_dir, class_n
                         if chunk_idx <= total_chunks && chunk_idx > 0
                             actual_size = min(double(chunk_data_size_val), length(chunk_data));
                             if actual_size > 0
-                                packets{chunk_idx} = chunk_data(1:actual_size);
+                                if isempty(packets{chunk_idx})
+                                    packets{chunk_idx} = chunk_data(1:actual_size);
+                                    received_mask(chunk_idx) = true;
+                                    received_count = received_count + 1;
+                                end
                             end
                         end
-                        
-                        % 最後のチャンクを受信したらフレームを完成させる
-                        if chunk_idx == total_chunks && ~isempty(packets)
+
+                        % 全チャンク受信でフレーム完成（順序入れ替わりに対応）
+                        if ~frame_completed && ~isempty(packets) && received_count == total_chunks
                             [current_frame, last_missing_chunks] = reconstruct_depth_frame(packets, total_chunks, total_size, frame_width, frame_height);
                             last_frame_id = current_frame_id;
                             if ~isempty(current_frame)
@@ -212,9 +224,7 @@ function [stats, total_saved] = capture_loop(udp_obj, ax, fig, save_dir, class_n
                                     fprintf('✓ 最初のフレームを表示しました！\n');
                                 end
                             end
-
-                            % 次フレーム準備（udp_photo_receiver.m と同じ考え方）
-                            packets = {};
+                            frame_completed = true;
                         end
                     end
                 end
@@ -306,6 +316,7 @@ function [frame, missing_count] = reconstruct_depth_frame(packets, total_chunks,
             end
         end
 
+        [width, height] = infer_frame_dims_from_total_size(total_size, width, height);
         expected_pixels = width * height;
         if total_size < expected_pixels
             return;
@@ -316,6 +327,48 @@ function [frame, missing_count] = reconstruct_depth_frame(packets, total_chunks,
 
     catch ME
         fprintf('フレーム復元エラー: %s\n', ME.message);
+    end
+end
+
+function [w, h] = infer_frame_dims_from_total_size(total_size, w0, h0)
+    % Infer (width,height) from total_size when sender uses variable-size payload.
+    % Known cases:
+    %   - 320x240 depth/grayscale
+    %   - 256x128 |P|+|Q| ROI (PQ128 strideX=2, strideY=1)
+    %   - 128x128 (if ROI sent without stride expansion)
+
+    w = w0;
+    h = h0;
+    if isempty(w) || isempty(h) || w <= 0 || h <= 0
+        w = 320;
+        h = 240;
+    end
+
+    if total_size == double(w) * double(h)
+        return;
+    end
+
+    if total_size == 320 * 240
+        w = 320;
+        h = 240;
+    elseif total_size == 256 * 128
+        w = 256;
+        h = 128;
+    elseif total_size == 128 * 128
+        w = 128;
+        h = 128;
+    elseif mod(total_size, 320) == 0
+        cand_h = total_size / 320;
+        if cand_h >= 1 && cand_h <= 240
+            w = 320;
+            h = cand_h;
+        end
+    elseif mod(total_size, 256) == 0
+        cand_h = total_size / 256;
+        if cand_h >= 1 && cand_h <= 240
+            w = 256;
+            h = cand_h;
+        end
     end
 end
 

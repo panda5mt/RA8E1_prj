@@ -20,7 +20,7 @@ function hlac_lda_workflow(varargin)
 %   'output_dir'   (default '../lda_model')
 %   'class_names'  (default {'class0','class1','class2','class3','class4'})
 %   'hlac_order'   (default 2)
-%   'use_sobel'    (default true)
+%   'use_sobel'    (default false)
 %   'do_capture'   (default false)  % run hlac_image_capture at Step1
 
 close all;
@@ -31,7 +31,7 @@ p.addParameter('data_dir', './hlac_training_data');
 p.addParameter('output_dir', './lda_model');
 p.addParameter('class_names', {'class0', 'class1', 'class2', 'class3', 'class4'});
 p.addParameter('hlac_order', 2);
-p.addParameter('use_sobel', true);
+p.addParameter('use_sobel', false);
 p.addParameter('do_capture', false);
 p.parse(varargin{:});
 opt = p.Results;
@@ -62,7 +62,11 @@ fprintf('  Sobelフィルタ: %s\n', sobel_str);
 fprintf('  クラス数: %d\n', length(config.class_names));
 fprintf('\n');
 fprintf('処理の流れ:\n');
-fprintf('  画像 → Sobel(|P|+|Q|) → HLAC(25次元) → LDA分類\n');
+if config.use_sobel
+    fprintf('  画像 → Sobel → HLAC(25次元) → LDA分類\n');
+else
+    fprintf('  画像 → HLAC(25次元) → LDA分類\n');
+end
 fprintf('\n');
 
 %% Step 1: Image Capture (Optional - Manual)

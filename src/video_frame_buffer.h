@@ -50,6 +50,11 @@ extern volatile uint32_t g_pq128_base_offset;
  */
 extern volatile uint32_t g_depth_seq;
 extern volatile uint32_t g_depth_base_offset;
+/* Total byte size of the published depth/output buffer.
+ * - Typical depth: 320*240 (76800)
+ * - HLAC |P|+|Q| ROI (example): 256*128 (32768)
+ */
+extern volatile uint32_t g_depth_size_bytes;
 
 static inline uint32_t video_frame_align_u32(uint32_t x)
 {

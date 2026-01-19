@@ -625,6 +625,7 @@ volatile uint32_t g_pq128_base_offset = 0;
 /* Published when a full depth frame write completes. */
 volatile uint32_t g_depth_seq = 0;
 volatile uint32_t g_depth_base_offset = 0;
+volatile uint32_t g_depth_size_bytes = 0;
 
 #ifndef HLAC_ENABLE
 /* 1: Export |P|+|Q| into the DEPTH_OFFSET buffer instead of FC reconstructed depth.
@@ -1749,51 +1750,52 @@ static inline uint8_t hlac_pq_mag_u8(int16_t p, int16_t q)
     return (uint8_t)mag;
 }
 
-static void hlac_export_pq_mag_u8_320x240(uint32_t frame_base_offset)
+static void hlac_export_pq_mag_u8_roi(uint32_t frame_base_offset)
 {
-    /* Place the sampled PQ region back into the 320x240 canvas.
-     * Areas outside the PQ sampling ROI are filled with 0.
+    /* Export a compact u8 image covering exactly the sampled PQ ROI.
+     * Output size: PQ128_SRC_W x PQ128_SRC_H (e.g. 256x128 when strideX=2, strideY=1).
      */
-    uint8_t line[FRAME_WIDTH];
+    uint8_t line[PQ128_SRC_W];
     int16_t p_row[PQ128_SIZE];
     int16_t q_row[PQ128_SIZE];
     int cached_ry = -1;
 
-    for (int y = 0; y < FRAME_HEIGHT; y++)
+    for (int y = 0; y < (int)PQ128_SRC_H; y++)
     {
-        memset(line, 0, sizeof(line));
-
-        if ((y >= (int)PQ128_Y0) && (y < (int)(PQ128_Y0 + PQ128_SRC_H)))
+        int ry = y / (int)PQ128_SAMPLE_STRIDE_Y;
+        if (ry < 0)
         {
-            int ry = (y - (int)PQ128_Y0) / (int)PQ128_SAMPLE_STRIDE_Y;
-            if ((ry >= 0) && (ry < PQ128_SIZE))
-            {
-                if (ry != cached_ry)
-                {
-                    uint32_t row_off = (uint32_t)ry * (uint32_t)PQ128_SIZE * (uint32_t)sizeof(int16_t);
-                    (void)hyperram_b_read(p_row, (void *)(frame_base_offset + PQ128_P_OFFSET + row_off), (uint32_t)sizeof(p_row));
-                    (void)hyperram_b_read(q_row, (void *)(frame_base_offset + PQ128_Q_OFFSET + row_off), (uint32_t)sizeof(q_row));
-                    cached_ry = ry;
-                }
+            ry = 0;
+        }
+        if (ry >= PQ128_SIZE)
+        {
+            ry = PQ128_SIZE - 1;
+        }
 
-                for (int rx = 0; rx < PQ128_SIZE; rx++)
+        if (ry != cached_ry)
+        {
+            uint32_t row_off = (uint32_t)ry * (uint32_t)PQ128_SIZE * (uint32_t)sizeof(int16_t);
+            (void)hyperram_b_read(p_row, (void *)(frame_base_offset + PQ128_P_OFFSET + row_off), (uint32_t)sizeof(p_row));
+            (void)hyperram_b_read(q_row, (void *)(frame_base_offset + PQ128_Q_OFFSET + row_off), (uint32_t)sizeof(q_row));
+            cached_ry = ry;
+        }
+
+        for (int rx = 0; rx < PQ128_SIZE; rx++)
+        {
+            uint8_t v = hlac_pq_mag_u8(p_row[rx], q_row[rx]);
+            int x0 = rx * (int)PQ128_SAMPLE_STRIDE_X;
+            for (int dx = 0; dx < (int)PQ128_SAMPLE_STRIDE_X; dx++)
+            {
+                int x = x0 + dx;
+                if ((x >= 0) && (x < (int)PQ128_SRC_W))
                 {
-                    int x0 = (int)PQ128_X0 + rx * (int)PQ128_SAMPLE_STRIDE_X;
-                    uint8_t v = hlac_pq_mag_u8(p_row[rx], q_row[rx]);
-                    for (int dx = 0; dx < (int)PQ128_SAMPLE_STRIDE_X; dx++)
-                    {
-                        int x = x0 + dx;
-                        if ((x >= 0) && (x < FRAME_WIDTH))
-                        {
-                            line[x] = v;
-                        }
-                    }
+                    line[x] = v;
                 }
             }
         }
 
         (void)hyperram_b_write(line,
-                               (void *)(frame_base_offset + (uint32_t)DEPTH_OFFSET + (uint32_t)y * (uint32_t)FRAME_WIDTH),
+                               (void *)(frame_base_offset + (uint32_t)DEPTH_OFFSET + (uint32_t)y * (uint32_t)PQ128_SRC_W),
                                (uint32_t)sizeof(line));
     }
 }
@@ -1802,12 +1804,14 @@ static void hlac_export_pq_mag_u8_320x240(uint32_t frame_base_offset)
 static void fc128_compute_depth_and_store(uint32_t frame_base_offset, uint32_t frame_seq)
 {
     g_depth_seq = 0;
+    g_depth_size_bytes = 0;
 
 #if HLAC_ENABLE
     /* In HLAC mode, reuse the depth export slot to record |P|+|Q| (u8 320x240).
      * This avoids the heavy FC FFT pipeline.
      */
-    if ((frame_base_offset + (uint32_t)DEPTH_OFFSET + (uint32_t)DEPTH_BYTES) > (uint32_t)HYPERRAM_SIZE)
+    const uint32_t out_bytes = (uint32_t)PQ128_SRC_W * (uint32_t)PQ128_SRC_H;
+    if ((frame_base_offset + (uint32_t)DEPTH_OFFSET + out_bytes) > (uint32_t)HYPERRAM_SIZE)
     {
         return;
     }
@@ -1816,8 +1820,10 @@ static void fc128_compute_depth_and_store(uint32_t frame_base_offset, uint32_t f
         return;
     }
 
-    hlac_export_pq_mag_u8_320x240(frame_base_offset);
+    hlac_export_pq_mag_u8_roi(frame_base_offset);
 
+    __DMB();
+    g_depth_size_bytes = out_bytes;
     __DMB();
     g_depth_base_offset = frame_base_offset;
     __DMB();
@@ -1957,6 +1963,8 @@ static void fc128_compute_depth_and_store(uint32_t frame_base_offset, uint32_t f
     }
 #endif
 
+    __DMB();
+    g_depth_size_bytes = (uint32_t)DEPTH_BYTES;
     __DMB();
     g_depth_base_offset = frame_base_offset;
     __DMB();

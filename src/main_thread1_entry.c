@@ -132,6 +132,20 @@ static void extract_y_from_yuv422(const uint8_t *yuv, uint8_t *y_out, uint32_t y
 #define GRADIENT_OFFSET FRAME_SIZE    // p,q勾配マップオフセット（MONO_OFFSETと同じ位置）
 #define DEPTH_OFFSET (FRAME_SIZE * 2) // 深度マップオフセット（8bit grayscale: 320×240 = 76,800バイト）
 
+/*
+ * UDP pacing:
+ * Sending back-to-back (0ms) can easily overrun the receiver (PC/MATLAB) and
+ * cause frequent chunk loss -> many missing chunks during frame reconstruction.
+ * Tune these values depending on your LAN and PC load.
+ */
+#ifndef UDP_PACKET_INTERVAL_MS
+#define UDP_PACKET_INTERVAL_MS 1
+#endif
+
+#ifndef UDP_FRAME_INTERVAL_MS
+#define UDP_FRAME_INTERVAL_MS 5
+#endif
+
 // ---- Optional debug: select what to stream in video mode ----
 // 0: normal grayscale (Y)
 // 1: stream p (dx) from Thread3 PQ128 buffer
@@ -251,6 +265,7 @@ typedef struct
      */
     uint32_t depth_base_offset;
     uint32_t depth_seq_snapshot;
+    uint32_t depth_size_snapshot;
 } udp_send_ctx_t;
 static void udp_send_timer_cb(void *arg);
 
@@ -325,6 +340,12 @@ static void udp_send_timer_cb(void *arg)
                 {
                     ctx->depth_seq_snapshot = depth_seq;
                     ctx->depth_base_offset = (uint32_t)g_depth_base_offset;
+                    uint32_t sz = (uint32_t)g_depth_size_bytes;
+                    if (sz != 0U)
+                    {
+                        ctx->depth_size_snapshot = sz;
+                        ctx->photo_size = sz;
+                    }
                 }
             }
             else
@@ -337,12 +358,16 @@ static void udp_send_timer_cb(void *arg)
         uint32_t remaining_bytes = ctx->photo_size - ctx->sent_bytes;
         send_size = (remaining_bytes < ctx->chunk_size) ? remaining_bytes : ctx->chunk_size;
 
-        /* Y成分抽出は2ピクセル(=2バイト)単位で行うため偶数に丸める */
-        send_size &= ~(size_t)1U;
+        /* Only grayscale (YUV422->Y) requires even/4-byte alignment. */
+        if (UDP_VIDEO_SOURCE == 0)
+        {
+            /* Y成分抽出は2ピクセル(=2バイト)単位で行うため偶数に丸める */
+            send_size &= ~(size_t)1U;
 #if UDP_GRAYSCALE_REORDER_4PX_MODE == 1
-        /* 4px束並び替えを行う場合、4バイト境界に揃える */
-        send_size &= ~(size_t)3U;
+            /* 4px束並び替えを行う場合、4バイト境界に揃える */
+            send_size &= ~(size_t)3U;
 #endif
+        }
 
         // ヘッダー + データのサイズでバッファを確保
         size_t total_packet_size = sizeof(udp_photo_header_t) + send_size;
@@ -516,6 +541,12 @@ static void udp_send_timer_cb(void *arg)
                     {
                         ctx->depth_seq_snapshot = depth_seq;
                         ctx->depth_base_offset = (uint32_t)g_depth_base_offset;
+                        uint32_t sz = (uint32_t)g_depth_size_bytes;
+                        if (sz != 0U)
+                        {
+                            ctx->depth_size_snapshot = sz;
+                            ctx->photo_size = sz;
+                        }
                     }
                 }
                 else
@@ -725,7 +756,7 @@ void main_thread1_entry(void *pvParameters)
         ctx->pcb = pcb;
         ctx->dest_ip = dest_ip;
         ctx->port = UDP_PORT_DEST;
-        ctx->interval_ms = 0; /* 0ms間隔（lwIPタスクに余裕を持たせたい場合は3ms） */
+        ctx->interval_ms = UDP_PACKET_INTERVAL_MS;
 
         // 動画データ送信モード（グレースケール送信：Y成分のみ）
         ctx->is_video_mode = true;
@@ -738,7 +769,7 @@ void main_thread1_entry(void *pvParameters)
         // マルチフレーム設定
         ctx->current_frame = 0;
         ctx->total_frames = UINT32_MAX; // 無制限フレーム送信
-        ctx->frame_interval_ms = 2;     // フレーム間2ms待機（thread0と同期、高速化）
+        ctx->frame_interval_ms = UDP_FRAME_INTERVAL_MS;
         ctx->is_frame_complete = false;
         ctx->frame_base_offset = (uint32_t)g_video_frame_base_offset;
 

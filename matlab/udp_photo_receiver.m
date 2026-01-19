@@ -63,6 +63,10 @@ function receive_video_stream(udp_obj, ax)
     frames_received = 0;
     frames_displayed = 0;
     last_stats_time = tic;
+
+    received_mask = [];
+    received_count = 0;
+    frame_completed = false;
     
     while toc(total_start_time) < total_timeout_sec
         try
@@ -92,7 +96,7 @@ function receive_video_stream(udp_obj, ax)
                         % 新しいフレーム開始チェック
                         if chunk_index_val == 0
                             % 前のフレーム処理（完了チェック省略で高速化）
-                            if ~isempty(packets)
+                            if ~isempty(packets) && ~frame_completed
                                 img_handle = process_complete_frame_fast(packets, total_chunks, total_size, ax, img_handle);
                                 frames_displayed = frames_displayed + 1;
                             end
@@ -102,6 +106,9 @@ function receive_video_stream(udp_obj, ax)
                             total_chunks = double(total_chunks_val);
                             total_size = double(total_size_val);
                             packets = cell(total_chunks, 1);
+                            received_mask = false(total_chunks, 1);
+                            received_count = 0;
+                            frame_completed = false;
                             frame_start_time = tic;
                         end
                         
@@ -110,19 +117,20 @@ function receive_video_stream(udp_obj, ax)
                         if chunk_idx <= total_chunks && chunk_idx > 0
                             actual_size = min(double(chunk_data_size_val), length(chunk_data));
                             if actual_size > 0
-                                packets{chunk_idx} = chunk_data(1:actual_size);
+                                if isempty(packets{chunk_idx})
+                                    packets{chunk_idx} = chunk_data(1:actual_size);
+                                    received_mask(chunk_idx) = true;
+                                    received_count = received_count + 1;
+                                end
                             end
                         end
-                        
-                        % フレーム完了チェック（最後のチャンクで判定）
-                        if chunk_idx == total_chunks
+
+                        % フレーム完了チェック（全チャンク受信で判定）
+                        if ~frame_completed && ~isempty(packets) && received_count == total_chunks
                             img_handle = process_complete_frame_fast(packets, total_chunks, total_size, ax, img_handle);
                             frames_received = frames_received + 1;
                             frames_displayed = frames_displayed + 1;
-                            
-                            % 次フレーム準備
-                            packets = {};
-                            frame_start_time = tic;
+                            frame_completed = true;
                         end
                     end
                 end
@@ -182,8 +190,9 @@ function img_handle = process_complete_frame_fast(packets, total_chunks, total_s
     % フレームデータ復元（高速版）
     frame_data = reconstruct_frame_ultra_fast(packets, total_chunks, total_size);
     
-    % 深度マップを可視化（8bit grayscale: 320×240）
-    depth_map = extract_depth_map(frame_data, 320, 240);
+    % 深度マップを可視化（8bit grayscale; sender may use variable payload size）
+    [w, h] = infer_frame_dims_from_total_size(total_size, 320, 240);
+    depth_map = extract_depth_map(frame_data(1:(w*h)), w, h);
     
     % 画像表示更新（深度マップをヒートマップ表示）
     if isempty(img_handle) || ~ishandle(img_handle)
@@ -191,12 +200,34 @@ function img_handle = process_complete_frame_fast(packets, total_chunks, total_s
         colormap(ax, jet(256));
         colorbar(ax);
         caxis(ax, [150 255]); % depthは8bitなので固定レンジで表示
-        set(ax, 'Title', text('String', 'Depth (Heatmap)', 'FontSize', 10));
+        set(ax, 'Title', text('String', sprintf('Depth/ROI (Heatmap) %dx%d', w, h), 'FontSize', 10));
     else
         img_handle.CData = depth_map;  % 直接プロパティアクセス
     end
     
     drawnow;% limitrate;  % 描画レート制限で効率化
+end
+
+function [w, h] = infer_frame_dims_from_total_size(total_size, w0, h0)
+    % Infer (width,height) from total_size when sender uses variable-size payload.
+    w = w0;
+    h = h0;
+    if total_size == 320 * 240
+        w = 320;
+        h = 240;
+    elseif total_size == 256 * 128
+        w = 256;
+        h = 128;
+    elseif total_size == 128 * 128
+        w = 128;
+        h = 128;
+    elseif mod(total_size, 320) == 0
+        cand_h = total_size / 320;
+        if cand_h >= 1 && cand_h <= 240
+            w = 320;
+            h = cand_h;
+        end
+    end
 end
 
 function frame_data = reconstruct_frame_ultra_fast(packets, total_chunks, total_size)

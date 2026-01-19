@@ -1,6 +1,6 @@
 function hlac_udp_inference(varargin)
 % Online inference from RA8E1 UDP stream (port 9000 by default).
-% Pipeline: depth(uint8) frame -> Sobel(|P|+|Q|) -> HLAC(order=2, 25) -> LDA(W,b)
+% Pipeline: depth(uint8) frame -> (optional Sobel) -> HLAC(order=2, 25) -> LDA(W,b)
 %
 % Requirements:
 % - DSP System Toolbox (dsp.UDPReceiver)
@@ -17,7 +17,7 @@ function hlac_udp_inference(varargin)
 %   'frame_height'           (default 240)
 %   'max_missing_chunks'     (default 5)  % infer only if missing<=this
 %   'infer_on_rejected'      (default false) % if true, infer even when missing>threshold
-%   'use_sobel'              (default true) % must match training
+%   'use_sobel'              (default false) % must match training
 %   'hlac_order'             (default 2)    % 1 or 2
 %   'score_smoothing'         (default 0)   % 0=no smoothing, 0.8=strong EMA smoothing
 %   'min_margin'              (default 0)   % require top1-top2 >= this, else show "uncertain"
@@ -32,7 +32,7 @@ p.addParameter('frame_width', 320);
 p.addParameter('frame_height', 240);
 p.addParameter('max_missing_chunks', 5);
 p.addParameter('infer_on_rejected', false);
-p.addParameter('use_sobel', true);
+p.addParameter('use_sobel', false);
 p.addParameter('hlac_order', 2);
 p.addParameter('score_smoothing', 0);
 p.addParameter('min_margin', 0);
@@ -80,11 +80,17 @@ try
     total_chunks = 0;
     total_size = 0;
     frame_id = 0;
+    received_mask = [];
+    received_count = 0;
+    frame_completed = false;
     last_status = tic;
     pkt_count = 0;
     infer_count = 0;
     smoothed_scores = [];
     last_pred_label = 0;
+
+    % Display stabilization: keep last good frame to avoid flicker on packet loss.
+    last_good_frame = [];
 
     while ishandle(fig)
         % Drain a small burst each loop
@@ -120,7 +126,7 @@ try
 
             if chunk_index_val == 0
                 % finalize previous
-                if ~isempty(packets)
+                if ~isempty(packets) && ~frame_completed
                     [frame, missing] = reconstruct_depth_frame(packets, total_chunks, total_size, opt.frame_width, opt.frame_height);
                     if ~isempty(frame)
                         run_infer_and_show(frame, missing, frame_id);
@@ -131,22 +137,29 @@ try
                 total_chunks = total_chunks_val;
                 total_size = total_size_val;
                 packets = cell(total_chunks, 1);
+                received_mask = false(total_chunks, 1);
+                received_count = 0;
+                frame_completed = false;
             end
 
             chunk_idx = chunk_index_val + 1;
             if chunk_idx >= 1 && chunk_idx <= total_chunks
                 actual_size = min(chunk_data_size_val, length(chunk_data));
                 if actual_size > 0
-                    packets{chunk_idx} = chunk_data(1:actual_size);
+                    if isempty(packets{chunk_idx})
+                        packets{chunk_idx} = chunk_data(1:actual_size);
+                        received_mask(chunk_idx) = true;
+                        received_count = received_count + 1;
+                    end
                 end
             end
 
-            if chunk_idx == total_chunks && ~isempty(packets)
+            if ~frame_completed && ~isempty(packets) && received_count == total_chunks
                 [frame, missing] = reconstruct_depth_frame(packets, total_chunks, total_size, opt.frame_width, opt.frame_height);
                 if ~isempty(frame)
                     run_infer_and_show(frame, missing, frame_id);
                 end
-                packets = {};
+                frame_completed = true;
             end
         end
 
@@ -174,6 +187,14 @@ end
     function run_infer_and_show(frame, missing, cur_frame_id)
         do_infer = (missing <= opt.max_missing_chunks) || opt.infer_on_rejected;
 
+        % Freeze display when too many chunks are missing (avoid flicker from zero-fill).
+        show_frame = frame;
+        if missing <= opt.max_missing_chunks
+            last_good_frame = frame;
+        elseif ~isempty(last_good_frame)
+            show_frame = last_good_frame;
+        end
+
         if do_infer
             feats = extract_hlac_features(frame, opt.hlac_order, opt.use_sobel);
             feats = feats(:);
@@ -197,11 +218,12 @@ end
 
                 % Still show the frame
                 if isempty(img_handle) || ~ishandle(img_handle)
-                    img_handle = imshow(frame, [], 'Parent', ax);
+                    img_handle = imshow(show_frame, [0 255], 'Parent', ax);
                     axis(ax, 'image');
                     colormap(ax, gray(256));
+                    set(ax, 'CLim', [0 255]);
                 else
-                    set(img_handle, 'CData', frame);
+                    set(img_handle, 'CData', show_frame);
                 end
                 title(ax, title_str);
                 drawnow limitrate;
@@ -250,15 +272,20 @@ end
             end
         else
             scores = [];
-            title_str = sprintf('frame=%d  missing=%d  (skip infer: missing>%d)', cur_frame_id, missing, opt.max_missing_chunks);
+            if missing <= opt.max_missing_chunks
+                title_str = sprintf('frame=%d  missing=%d  (skip infer)', cur_frame_id, missing);
+            else
+                title_str = sprintf('frame=%d  missing=%d  (skip infer: missing>%d, show last good)', cur_frame_id, missing, opt.max_missing_chunks);
+            end
         end
 
         if isempty(img_handle) || ~ishandle(img_handle)
-            img_handle = imshow(frame, [], 'Parent', ax);
+            img_handle = imshow(show_frame, [0 255], 'Parent', ax);
             axis(ax, 'image');
             colormap(ax, gray(256));
+            set(ax, 'CLim', [0 255]);
         else
-            set(img_handle, 'CData', frame);
+            set(img_handle, 'CData', show_frame);
         end
 
         title(ax, title_str);
@@ -330,6 +357,7 @@ try
         end
     end
 
+    [width, height] = infer_frame_dims_from_total_size(total_size, width, height);
     expected_pixels = width * height;
     if total_size < expected_pixels
         return;
@@ -340,5 +368,43 @@ try
 
 catch
     frame = [];
+end
+end
+
+function [w, h] = infer_frame_dims_from_total_size(total_size, w0, h0)
+% Infer (width,height) from total_size when sender uses variable-size payload.
+
+w = w0;
+h = h0;
+if isempty(w) || isempty(h) || w <= 0 || h <= 0
+    w = 320;
+    h = 240;
+end
+
+if total_size == double(w) * double(h)
+    return;
+end
+
+if total_size == 320 * 240
+    w = 320;
+    h = 240;
+elseif total_size == 256 * 128
+    w = 256;
+    h = 128;
+elseif total_size == 128 * 128
+    w = 128;
+    h = 128;
+elseif mod(total_size, 320) == 0
+    cand_h = total_size / 320;
+    if cand_h >= 1 && cand_h <= 240
+        w = 320;
+        h = cand_h;
+    end
+elseif mod(total_size, 256) == 0
+    cand_h = total_size / 256;
+    if cand_h >= 1 && cand_h <= 240
+        w = 256;
+        h = cand_h;
+    end
 end
 end
