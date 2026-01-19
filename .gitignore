@@ -81,4 +81,6 @@ lda_model/
 */hlac_training_data/*
 */lda_model/*
 
+# MATLAB data files (ignore anywhere)
 *.mat
+*.[mM][aA][tT]
