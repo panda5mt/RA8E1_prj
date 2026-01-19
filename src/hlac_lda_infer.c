@@ -6,6 +6,11 @@
 #include <string.h>
 #include <math.h>
 #include <stdbool.h>
+#include <stdint.h>
+
+#if defined(__ARM_FEATURE_MVE) && (__ARM_FEATURE_MVE > 0)
+#include <arm_mve.h>
+#endif
 
 #ifndef HLAC_MAX_IMAGE_W
 #define HLAC_MAX_IMAGE_W (320U)
@@ -171,6 +176,88 @@ static void hlac25_init_pairs_once(void)
     s_pairs_inited = true;
 }
 
+#if !defined(__ARM_FEATURE_MVE) || (__ARM_FEATURE_MVE == 0)
+static inline uint32_t hlac_sum_u8_scalar(const uint8_t *a, uint32_t n)
+{
+    uint32_t s = 0U;
+    for (uint32_t i = 0; i < n; i++)
+    {
+        s += (uint32_t)a[i];
+    }
+    return s;
+}
+
+static inline uint64_t hlac_sumprod_u8_u8_scalar(const uint8_t *a, const uint8_t *b, uint32_t n)
+{
+    uint64_t s = 0ULL;
+    for (uint32_t i = 0; i < n; i++)
+    {
+        s += (uint64_t)a[i] * (uint64_t)b[i];
+    }
+    return s;
+}
+#endif
+
+#if defined(__ARM_FEATURE_MVE) && (__ARM_FEATURE_MVE > 0)
+static inline uint32_t hlac_sum_u16x8(uint16x8_t v)
+{
+    uint16_t tmp[8];
+    vst1q_u16(tmp, v);
+    uint32_t s = 0U;
+    for (int i = 0; i < 8; i++)
+    {
+        s += (uint32_t)tmp[i];
+    }
+    return s;
+}
+
+static inline uint32_t hlac_sum_u8_mve(const uint8_t *a, uint32_t n)
+{
+    uint32_t s = 0U;
+    uint32_t i = 0U;
+    for (; (i + 16U) <= n; i += 16U)
+    {
+        uint8x16_t va = vld1q_u8(&a[i]);
+        uint16x8_t lo = vmovlbq_u8(va);
+        uint16x8_t hi = vmovltq_u8(va);
+        s += hlac_sum_u16x8(lo);
+        s += hlac_sum_u16x8(hi);
+    }
+    for (; i < n; i++)
+    {
+        s += (uint32_t)a[i];
+    }
+    return s;
+}
+
+static inline uint64_t hlac_sumprod_u8_u8_mve(const uint8_t *a, const uint8_t *b, uint32_t n)
+{
+    uint64_t s = 0ULL;
+    uint32_t i = 0U;
+    for (; (i + 16U) <= n; i += 16U)
+    {
+        uint8x16_t va = vld1q_u8(&a[i]);
+        uint8x16_t vb = vld1q_u8(&b[i]);
+
+        uint16x8_t a_lo = vmovlbq_u8(va);
+        uint16x8_t a_hi = vmovltq_u8(va);
+        uint16x8_t b_lo = vmovlbq_u8(vb);
+        uint16x8_t b_hi = vmovltq_u8(vb);
+
+        uint16x8_t prod_lo = vmulq_u16(a_lo, b_lo);
+        uint16x8_t prod_hi = vmulq_u16(a_hi, b_hi);
+
+        s += (uint64_t)hlac_sum_u16x8(prod_lo);
+        s += (uint64_t)hlac_sum_u16x8(prod_hi);
+    }
+    for (; i < n; i++)
+    {
+        s += (uint64_t)a[i] * (uint64_t)b[i];
+    }
+    return s;
+}
+#endif
+
 void hlac25_compute_from_u8_hyperram(uint32_t img_addr, uint32_t width, uint32_t height, float out25[25])
 {
     if (!out25 || width == 0U || height == 0U || width > HLAC_MAX_IMAGE_W)
@@ -183,6 +270,8 @@ void hlac25_compute_from_u8_hyperram(uint32_t img_addr, uint32_t width, uint32_t
     memset(out25, 0, 25U * sizeof(float));
 
     const float inv255 = 1.0f / 255.0f;
+    const float inv255_2 = inv255 * inv255;
+    const float inv255_3 = inv255_2 * inv255;
 
     uint8_t prev[HLAC_MAX_IMAGE_W];
     uint8_t cur[HLAC_MAX_IMAGE_W];
@@ -201,64 +290,137 @@ void hlac25_compute_from_u8_hyperram(uint32_t img_addr, uint32_t width, uint32_t
 
     const uint32_t count = width * height;
 
-    /* Neighbor indices (0-based) corresponding to MATLAB: right, down, rd, ru */
-    const int idx_right = 4; /* (0,1) */
-    const int idx_down = 6;  /* (1,0) */
-    const int idx_rd = 7;    /* (1,1) */
-    const int idx_ru = 2;    /* (-1,1) */
-
-    float neigh[8];
+    uint32_t acc0_center = 0U;
+    uint64_t acc1_right = 0ULL;
+    uint64_t acc1_down = 0ULL;
+    uint64_t acc1_rd = 0ULL;
+    uint64_t acc1_ru = 0ULL;
+    uint64_t acc2[20];
+    memset(acc2, 0, sizeof(acc2));
 
     for (uint32_t y = 0; y < height; y++)
     {
-        for (uint32_t x = 0; x < width; x++)
+        /* 0th/1st order terms: accumulate in integer domain (faster; avoid float in inner loop). */
+#if defined(__ARM_FEATURE_MVE) && (__ARM_FEATURE_MVE > 0)
+        acc0_center += hlac_sum_u8_mve(cur, width);
+        acc1_down += hlac_sumprod_u8_u8_mve(cur, next, width);
+        if (width > 1U)
         {
-            const float center = (float)cur[x] * inv255;
+            acc1_right += hlac_sumprod_u8_u8_mve(cur, &cur[1], width - 1U);
+            acc1_rd += hlac_sumprod_u8_u8_mve(cur, &next[1], width - 1U);
+            acc1_ru += hlac_sumprod_u8_u8_mve(cur, &prev[1], width - 1U);
+        }
+#else
+        acc0_center += hlac_sum_u8_scalar(cur, width);
+        acc1_down += hlac_sumprod_u8_u8_scalar(cur, next, width);
+        if (width > 1U)
+        {
+            acc1_right += hlac_sumprod_u8_u8_scalar(cur, &cur[1], width - 1U);
+            acc1_rd += hlac_sumprod_u8_u8_scalar(cur, &next[1], width - 1U);
+            acc1_ru += hlac_sumprod_u8_u8_scalar(cur, &prev[1], width - 1U);
+        }
+#endif
 
-            /* Build 8-neighborhood with zero padding. */
-            for (int k = 0; k < 8; k++)
-            {
-                int yy = (int)y + (int)k_offsets8[k][0];
-                int xx = (int)x + (int)k_offsets8[k][1];
-                if (xx < 0 || xx >= (int)width)
-                {
-                    neigh[k] = 0.0f;
-                    continue;
-                }
-                if (yy < 0)
-                {
-                    neigh[k] = 0.0f;
-                }
-                else if (yy == (int)y - 1)
-                {
-                    neigh[k] = (float)prev[(uint32_t)xx] * inv255;
-                }
-                else if (yy == (int)y)
-                {
-                    neigh[k] = (float)cur[(uint32_t)xx] * inv255;
-                }
-                else if (yy == (int)y + 1)
-                {
-                    neigh[k] = (float)next[(uint32_t)xx] * inv255;
-                }
-                else
-                {
-                    /* Only 3x3 neighborhood is used; yy can only differ by +/-1. */
-                    neigh[k] = 0.0f;
-                }
-            }
-
-            out25[0] += center;
-            out25[1] += center * neigh[idx_right];
-            out25[2] += center * neigh[idx_down];
-            out25[3] += center * neigh[idx_rd];
-            out25[4] += center * neigh[idx_ru];
-
+        /* 2nd order terms: compute in integer domain (center*ni*nj) then scale once at the end. */
+        if (width == 1U)
+        {
+            uint8_t neigh_u8[8] = {0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U};
+            neigh_u8[1] = prev[0];
+            neigh_u8[6] = next[0];
+            uint64_t c = (uint64_t)cur[0];
             for (int p = 0; p < 20; p++)
             {
                 int i = (int)s_pair_idx[p][0];
                 int j = (int)s_pair_idx[p][1];
-                out25[5 + p] += center * neigh[i] * neigh[j];
+                acc2[p] += c * (uint64_t)neigh_u8[i] * (uint64_t)neigh_u8[j];
+            }
+        }
+        else if (width == 2U)
+        {
+            for (uint32_t x = 0; x < 2U; x++)
+            {
+                uint8_t neigh_u8[8];
+                neigh_u8[0] = (x == 0U) ? 0U : prev[x - 1U];
+                neigh_u8[1] = prev[x];
+                neigh_u8[2] = (x + 1U >= width) ? 0U : prev[x + 1U];
+                neigh_u8[3] = (x == 0U) ? 0U : cur[x - 1U];
+                neigh_u8[4] = (x + 1U >= width) ? 0U : cur[x + 1U];
+                neigh_u8[5] = (x == 0U) ? 0U : next[x - 1U];
+                neigh_u8[6] = next[x];
+                neigh_u8[7] = (x + 1U >= width) ? 0U : next[x + 1U];
+
+                uint64_t c = (uint64_t)cur[x];
+                for (int p = 0; p < 20; p++)
+                {
+                    int i = (int)s_pair_idx[p][0];
+                    int j = (int)s_pair_idx[p][1];
+                    acc2[p] += c * (uint64_t)neigh_u8[i] * (uint64_t)neigh_u8[j];
+                }
+            }
+        }
+        else
+        {
+            /* x = 0 (left edge) */
+            {
+                uint8_t neigh_u8[8];
+                neigh_u8[0] = 0U;
+                neigh_u8[1] = prev[0];
+                neigh_u8[2] = prev[1];
+                neigh_u8[3] = 0U;
+                neigh_u8[4] = cur[1];
+                neigh_u8[5] = 0U;
+                neigh_u8[6] = next[0];
+                neigh_u8[7] = next[1];
+                uint64_t c = (uint64_t)cur[0];
+                for (int p = 0; p < 20; p++)
+                {
+                    int i = (int)s_pair_idx[p][0];
+                    int j = (int)s_pair_idx[p][1];
+                    acc2[p] += c * (uint64_t)neigh_u8[i] * (uint64_t)neigh_u8[j];
+                }
+            }
+
+            /* x = 1..width-2 (no bounds checks) */
+            for (uint32_t x = 1U; x + 1U < width; x++)
+            {
+                uint8_t neigh_u8[8];
+                neigh_u8[0] = prev[x - 1U];
+                neigh_u8[1] = prev[x];
+                neigh_u8[2] = prev[x + 1U];
+                neigh_u8[3] = cur[x - 1U];
+                neigh_u8[4] = cur[x + 1U];
+                neigh_u8[5] = next[x - 1U];
+                neigh_u8[6] = next[x];
+                neigh_u8[7] = next[x + 1U];
+                uint64_t c = (uint64_t)cur[x];
+
+                for (int p = 0; p < 20; p++)
+                {
+                    int i = (int)s_pair_idx[p][0];
+                    int j = (int)s_pair_idx[p][1];
+                    acc2[p] += c * (uint64_t)neigh_u8[i] * (uint64_t)neigh_u8[j];
+                }
+            }
+
+            /* x = width-1 (right edge) */
+            {
+                uint32_t x = width - 1U;
+                uint8_t neigh_u8[8];
+                neigh_u8[0] = prev[x - 1U];
+                neigh_u8[1] = prev[x];
+                neigh_u8[2] = 0U;
+                neigh_u8[3] = cur[x - 1U];
+                neigh_u8[4] = 0U;
+                neigh_u8[5] = next[x - 1U];
+                neigh_u8[6] = next[x];
+                neigh_u8[7] = 0U;
+                uint64_t c = (uint64_t)cur[x];
+                for (int p = 0; p < 20; p++)
+                {
+                    int i = (int)s_pair_idx[p][0];
+                    int j = (int)s_pair_idx[p][1];
+                    acc2[p] += c * (uint64_t)neigh_u8[i] * (uint64_t)neigh_u8[j];
+                }
             }
         }
 
@@ -278,9 +440,14 @@ void hlac25_compute_from_u8_hyperram(uint32_t img_addr, uint32_t width, uint32_t
     if (count != 0U)
     {
         const float inv_count = 1.0f / (float)count;
-        for (int i = 0; i < 25; i++)
+        out25[0] = (float)acc0_center * inv255 * inv_count;
+        out25[1] = (float)acc1_right * inv255_2 * inv_count;
+        out25[2] = (float)acc1_down * inv255_2 * inv_count;
+        out25[3] = (float)acc1_rd * inv255_2 * inv_count;
+        out25[4] = (float)acc1_ru * inv255_2 * inv_count;
+        for (int p = 0; p < 20; p++)
         {
-            out25[i] *= inv_count;
+            out25[5 + p] = (float)acc2[p] * inv255_3 * inv_count;
         }
     }
 }
