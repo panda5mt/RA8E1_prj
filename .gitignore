@@ -73,6 +73,12 @@ compile_commands.json
 FFT_readme.*
 /hlac_training_data/
 /lda_model/
-*/hlac_training_data/
-*/lda_model/
+# Ignore these folders anywhere in the repo (top-level or nested)
+hlac_training_data/
+lda_model/
+/hlac_training_data/
+/lda_model/
+*/hlac_training_data/*
+*/lda_model/*
+
 *.mat
