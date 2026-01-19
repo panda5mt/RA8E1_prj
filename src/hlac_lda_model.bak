@@ -1,0 +1,52 @@
+#include "hlac_lda_model.h"
+
+#include <stdint.h>
+
+/*
+ * Stub model (buildable defaults)
+ *
+ * Replace this file with your trained parameters generated from MATLAB.
+ * Suggested approach:
+ * - export W (25 x num_classes) and b (num_classes)
+ * - optionally export feature_mean/std (25)
+ */
+
+#ifndef HLAC_LDA_NUM_CLASSES
+#define HLAC_LDA_NUM_CLASSES (2U)
+#endif
+
+const uint32_t g_hlac_lda_num_classes = HLAC_LDA_NUM_CLASSES;
+
+/* W and b default to zeros -> pred will always be 0 (ties broken by first). */
+const float g_hlac_lda_W[HLAC_FEATURE_DIM][HLAC_MAX_CLASSES] = {0};
+const float g_hlac_lda_b[HLAC_MAX_CLASSES] = {0};
+
+/* Standardization defaults: mean=0, std=1 (no-op). */
+const float g_hlac_feature_mean[HLAC_FEATURE_DIM] = {0};
+const float g_hlac_feature_std[HLAC_FEATURE_DIM] = {
+    1.0f,
+    1.0f,
+    1.0f,
+    1.0f,
+    1.0f,
+    1.0f,
+    1.0f,
+    1.0f,
+    1.0f,
+    1.0f,
+    1.0f,
+    1.0f,
+    1.0f,
+    1.0f,
+    1.0f,
+    1.0f,
+    1.0f,
+    1.0f,
+    1.0f,
+    1.0f,
+    1.0f,
+    1.0f,
+    1.0f,
+    1.0f,
+    1.0f,
+};

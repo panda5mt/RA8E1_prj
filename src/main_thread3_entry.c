@@ -2,6 +2,7 @@
 #include "hyperram_integ.h"
 #include "projdefs.h"
 #include "putchar_ra8usb.h"
+#include "hlac_lda_infer.h"
 #include "fft_depth_test.h"
 #include "verify_mode.h"
 #include "FreeRTOS.h"
@@ -632,6 +633,16 @@ volatile uint32_t g_depth_size_bytes = 0;
  * This is useful for HLAC input/debug and avoids the heavy FC FFT pipeline.
  */
 #define HLAC_ENABLE (1)
+#endif
+
+/* HLAC(25)+LDA inference on RA8E1 (UART only). */
+#ifndef HLAC_LDA_INFER_ENABLE
+#define HLAC_LDA_INFER_ENABLE (1)
+#endif
+
+/* Print every N frames to avoid spamming USB CDC. */
+#ifndef HLAC_UART_LOG_PERIOD
+#define HLAC_UART_LOG_PERIOD (1U)
 #endif
 
 #ifndef HLAC_PQ_MAG_SHIFT
@@ -1821,6 +1832,22 @@ static void fc128_compute_depth_and_store(uint32_t frame_base_offset, uint32_t f
     }
 
     hlac_export_pq_mag_u8_roi(frame_base_offset);
+
+#if HLAC_LDA_INFER_ENABLE
+    float feats[25];
+    hlac25_compute_from_u8_hyperram(frame_base_offset + (uint32_t)DEPTH_OFFSET,
+                                    (uint32_t)PQ128_SRC_W,
+                                    (uint32_t)PQ128_SRC_H,
+                                    feats);
+    int pred = hlac_lda_predict(feats, NULL);
+    if (HLAC_UART_LOG_PERIOD > 0U)
+    {
+        if ((frame_seq % HLAC_UART_LOG_PERIOD) == 0U)
+        {
+            xprintf("pred=%d\n", pred);
+        }
+    }
+#endif
 
     __DMB();
     g_depth_size_bytes = out_bytes;
