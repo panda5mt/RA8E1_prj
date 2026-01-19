@@ -1,4 +1,4 @@
-#Fri Jan 16 23:52:44 JST 2026
+#Mon Jan 19 18:05:17 JST 2026
 com.renesas.cdt.ddsc.content/com.renesas.cdt.ddsc.content.defaultlinkerscript=script/fsp.lld
 com.renesas.cdt.ddsc.contentgen.options/options/suppresswarningspaths=ra/arm,ra/aws,ra/lwip-tcpip
 com.renesas.cdt.ddsc.packs.componentfiles/AWS\#\#Heaps\#\#FreeRTOS\#\#heap_4\#\#\#\#11.1.0+fsp.6.3.0/all=271572837,ra/aws/FreeRTOS/FreeRTOS/Source/portable/MemMang/heap_4.c
@@ -58,7 +58,7 @@ com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#Middleware\#\#all\#\#rm_lwi
 com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#Middleware\#\#all\#\#rm_lwip_sys_freertos\#\#\#\#6.3.0/all=
 com.renesas.cdt.ddsc.packs.componentfiles/Renesas\#\#Middleware\#\#all\#\#rm_lwip_sys_freertos\#\#\#\#6.3.0/libraries=
 com.renesas.cdt.ddsc.project.standalone.projectgenerationoptions/isCpp=false
-com.renesas.cdt.ddsc.settingseditor/com.renesas.cdt.ddsc.settingseditor.active_page=ModuleSelection
+com.renesas.cdt.ddsc.settingseditor/com.renesas.cdt.ddsc.settingseditor.active_page=SWPConfigurator
 com.renesas.cdt.ddsc.threads.configurator/collapse/module.arm.cmsis.dsp.1126511039=false
 com.renesas.cdt.ddsc.threads.configurator/collapse/module.arm.cmsis.nn.873451940=false
 com.renesas.cdt.ddsc.threads.configurator/collapse/module.arm.cmsis.nn.877617547=false

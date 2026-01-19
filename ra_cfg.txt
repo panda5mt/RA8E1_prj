@@ -663,7 +663,7 @@ FSP Configuration
     NETIF: Loopback interface: LwIP netif loopback multithreading: (!NO_SYS)
     Infrastructure: Threading: TCPIP thread name: tcpip_thread
     Infrastructure: Threading: TCPIP thread stacksize: 2048
-    Infrastructure: Threading: TCPIP thread prio: 1
+    Infrastructure: Threading: TCPIP thread prio: 3
     Infrastructure: Threading: TCPIP mbox size: 32
     Infrastructure: Threading: LwIP tcpip thread alive: 
     Infrastructure: Threading: Slipif thread name: slipif_loop

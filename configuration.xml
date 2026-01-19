@@ -954,7 +954,7 @@
       <property id="config.middleware.lwip_tcpip.lwip_netif_loopback_multithreading" value="config.middleware.lwip_tcpip.lwip_netif_loopback_multithreading.no_sys"/>
       <property id="config.middleware.lwip_tcpip.tcpip_thread_name" value="tcpip_thread"/>
       <property id="config.middleware.lwip_tcpip.tcpip_thread_stacksize" value="2048"/>
-      <property id="config.middleware.lwip_tcpip.tcpip_thread_prio" value="1"/>
+      <property id="config.middleware.lwip_tcpip.tcpip_thread_prio" value="3"/>
       <property id="config.middleware.lwip_tcpip.tcpip_mbox_size" value="32"/>
       <property id="config.middleware.lwip_tcpip.lwip_tcpip_thread_alive" value=""/>
       <property id="config.middleware.lwip_tcpip.slipif_thread_name" value="slipif_loop"/>
