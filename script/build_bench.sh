@@ -14,6 +14,7 @@ Options:
   --clean                                                Remove build dir before configuring
   --twice                                                Run build twice (2nd run measures incremental speed)
   --suite                                                Run 3 benchmark cases in one shot: (1) normal -j N, (2) -j 1, (3) /tmp build -j N
+  --set-governor <name>                                  Best-effort set CPU scaling governor (e.g. performance, ondemand, schedutil)
   --no-configure                                         Skip configure step (assumes build dir already configured)
   --toolchain <path>                                     Toolchain file (default: cmake/llvm.cmake)
   --log <path>                                           Log output path (default: build_bench_<host>_<type>.log)
@@ -34,6 +35,7 @@ parallel=""
 clean=0
 twice=0
 suite=0
+set_governor=""
 no_configure=0
 toolchain="cmake/llvm.cmake"
 log_path=""
@@ -55,6 +57,8 @@ while [[ $# -gt 0 ]]; do
       twice=1; shift;;
     --suite)
       suite=1; shift;;
+    --set-governor)
+      set_governor="${2:-}"; shift 2;;
     --no-configure)
       no_configure=1; shift;;
     --toolchain)
@@ -156,6 +160,33 @@ read_cpufreq() {
   fi
 }
 
+apply_governor() {
+  local gov="$1"
+  [[ -n "$gov" ]] || return 0
+
+  section "CPU Governor"
+  log "Requested governor: $gov"
+
+  local wrote=0 failed=0
+  for g in /sys/devices/system/cpu/cpufreq/policy*/scaling_governor; do
+    [[ -e "$g" ]] || continue
+    if echo "$gov" >"$g" 2>/dev/null; then
+      wrote=$((wrote + 1))
+    else
+      failed=$((failed + 1))
+    fi
+  done
+
+  if [[ $wrote -eq 0 && $failed -gt 0 ]]; then
+    log "WARNING: Could not set governor (permission denied?). Try running with sudo."
+  else
+    log "Governor set attempts: success=$wrote failed=$failed"
+  fi
+
+  echo "CPU freq/governor (after set attempt):" | tee -a "$log_path"
+  read_cpufreq | tee -a "$log_path" || true
+}
+
 read_tmpfs_info() {
   echo "df -T /tmp:" 
   df -T /tmp 2>/dev/null || true
@@ -198,6 +229,8 @@ section "System"
   echo "Temperatures (raw):"
   read_temps || true
 } | tee -a "$log_path"
+
+apply_governor "$set_governor"
 
 configure_build_dir() {
   local dir="$1"
