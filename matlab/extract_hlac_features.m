@@ -5,7 +5,7 @@ function features = extract_hlac_features(img, order, use_sobel)
     % 入力:
     %   img        - 入力画像（グレースケールまたはRGB）
     %   order      - HLAC次数（1または2、デフォルトは2）
-    %   use_sobel  - Sobelフィルタを適用するか（デフォルトはtrue）
+    %   use_sobel  - Sobelフィルタを適用するか（デフォルトはfalse）
     %
     % 出力:
     %   features - HLAC特徴ベクトル
@@ -22,7 +22,7 @@ function features = extract_hlac_features(img, order, use_sobel)
     end
     
     if nargin < 3
-        use_sobel = true;  % デフォルトでSobelフィルタを使用
+        use_sobel = false;  % デフォルトはSobelなし
     end
     
     % グレースケール変換

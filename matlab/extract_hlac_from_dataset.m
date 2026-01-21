@@ -1,11 +1,11 @@
 function features_table = extract_hlac_from_dataset(data_dir, class_names, order, use_sobel)
-% データセット全体からSobel+HLAC特徴量を抽出
+% データセット全体からHLAC特徴量を抽出（任意でSobel前処理）
 %
 % 入力:
 %   data_dir    - データセットディレクトリ
 %   class_names - クラス名のセル配列
 %   order       - HLAC次数（デフォルト=2）
-%   use_sobel   - Sobelフィルタを使用するか（デフォルト=true）
+%   use_sobel   - Sobelフィルタを使用するか（デフォルト=false）
 %
 % 出力:
 %   features_table - 特徴量とラベルを含むテーブル
@@ -15,7 +15,7 @@ if nargin < 3
 end
 
 if nargin < 4
-    use_sobel = true;
+    use_sobel = false;
 end
 
 all_features = [];
@@ -23,7 +23,7 @@ all_labels = [];
 all_filenames = {};
 
 fprintf('====================================\n');
-fprintf('Sobel + HLAC特徴量抽出\n');
+fprintf('HLAC特徴量抽出\n');
 fprintf('====================================\n');
 if use_sobel
     sobel_str = '有効';
