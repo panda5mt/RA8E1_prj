@@ -218,10 +218,9 @@ end
 
                 % Still show the frame
                 if isempty(img_handle) || ~ishandle(img_handle)
-                    img_handle = imshow(show_frame, [0 255], 'Parent', ax);
+                    img_handle = imshow(show_frame, [], 'Parent', ax);
                     axis(ax, 'image');
                     colormap(ax, gray(256));
-                    set(ax, 'CLim', [0 255]);
                 else
                     set(img_handle, 'CData', show_frame);
                 end
@@ -280,10 +279,9 @@ end
         end
 
         if isempty(img_handle) || ~ishandle(img_handle)
-            img_handle = imshow(show_frame, [0 255], 'Parent', ax);
+            img_handle = imshow(show_frame, [], 'Parent', ax);
             axis(ax, 'image');
             colormap(ax, gray(256));
-            set(ax, 'CLim', [0 255]);
         else
             set(img_handle, 'CData', show_frame);
         end
