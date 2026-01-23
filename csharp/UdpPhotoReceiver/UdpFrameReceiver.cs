@@ -32,6 +32,10 @@ public sealed class UdpFrameReceiver : IDisposable
         {
             if (_assembler.InProgress && _assembler.Elapsed > _frameTimeout)
             {
+                if (_assembler.HasAnyChunk)
+                {
+                    _onFrame(_assembler.ReconstructFrame());
+                }
                 _assembler.Reset();
             }
 
@@ -77,10 +81,11 @@ public sealed class UdpFrameReceiver : IDisposable
 
         if (chunkIndex == 0)
         {
-            if (_assembler.InProgress)
+            if (_assembler.InProgress && _assembler.HasAnyChunk)
             {
                 _onFrame(_assembler.ReconstructFrame());
             }
+            _assembler.Reset();
 
             _assembler.StartNew(totalChunks: (int)totalChunks, totalSize: (int)totalSize);
         }
@@ -92,7 +97,7 @@ public sealed class UdpFrameReceiver : IDisposable
 
         _assembler.AddChunk((int)chunkIndex, payload);
 
-        if (chunkIndex + 1 == totalChunks)
+        if (_assembler.IsComplete)
         {
             _onFrame(_assembler.ReconstructFrame());
             _assembler.Reset();

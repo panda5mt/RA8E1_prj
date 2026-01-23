@@ -7,7 +7,8 @@ public partial class Form1 : Form
 {
     private readonly CancellationTokenSource _cts = new();
     private readonly UdpFrameReceiver _receiver;
-    private readonly DepthRenderer _renderer;
+    private readonly object _renderLock = new();
+    private DepthRenderer _renderer;
     private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
     private long _framesDisplayed;
     private long _lastStatsMs;
@@ -19,6 +20,8 @@ public partial class Form1 : Form
     public Form1()
     {
         InitializeComponent();
+
+        pictureBox.SizeMode = PictureBoxSizeMode.Zoom;
 
         toolStripComboMode.Items.Add("Heatmap");
         toolStripComboMode.Items.Add("Grayscale");
@@ -71,7 +74,10 @@ public partial class Form1 : Form
     {
         _cts.Cancel();
         _receiver.Dispose();
-        _renderer.Dispose();
+        lock (_renderLock)
+        {
+            _renderer.Dispose();
+        }
         base.OnFormClosing(e);
     }
 
@@ -102,11 +108,26 @@ public partial class Form1 : Form
         {
             byte rangeMin = (byte)Math.Clamp(_heatmapMin, 0, 255);
             byte rangeMax = (byte)Math.Clamp(_heatmapMax, 0, 255);
-            _renderer.RenderIntoBitmap(frameData.Span, _mode, rangeMin, rangeMax);
+
+            (int w, int h) = InferFrameDimsFromTotalSize(frameData.Length, defaultW: 320, defaultH: 240);
+
+            lock (_renderLock)
+            {
+                if (_renderer.Width != w || _renderer.Height != h)
+                {
+                    _renderer.Dispose();
+                    _renderer = new DepthRenderer(width: w, height: h);
+                }
+
+                _renderer.RenderIntoBitmap(frameData.Span, _mode, rangeMin, rangeMax);
+            }
 
             BeginInvoke(() =>
             {
-                pictureBox.Image = _renderer.Bitmap;
+                lock (_renderLock)
+                {
+                    pictureBox.Image = _renderer.Bitmap;
+                }
                 _framesDisplayed++;
 
                 var nowMs = _stopwatch.ElapsedMilliseconds;
@@ -122,5 +143,55 @@ public partial class Form1 : Form
         {
             // keep receiving even if a bad frame arrives
         }
+    }
+
+    private static (int width, int height) InferFrameDimsFromTotalSize(int totalSize, int defaultW, int defaultH)
+    {
+        if (totalSize <= 0)
+        {
+            return (defaultW, defaultH);
+        }
+
+        // Known cases used in this repo/tooling.
+        if (totalSize == 320 * 240)
+        {
+            return (320, 240);
+        }
+        if (totalSize == 256 * 128)
+        {
+            return (256, 128);
+        }
+        if (totalSize == 128 * 128)
+        {
+            return (128, 128);
+        }
+
+        // Fallback: try common widths.
+        if (totalSize % 320 == 0)
+        {
+            int h = totalSize / 320;
+            if (h >= 1 && h <= 240)
+            {
+                return (320, h);
+            }
+        }
+        if (totalSize % 256 == 0)
+        {
+            int h = totalSize / 256;
+            if (h >= 1 && h <= 240)
+            {
+                return (256, h);
+            }
+        }
+        if (totalSize % 128 == 0)
+        {
+            int h = totalSize / 128;
+            if (h >= 1 && h <= 240)
+            {
+                return (128, h);
+            }
+        }
+
+        return (defaultW, defaultH);
     }
 }

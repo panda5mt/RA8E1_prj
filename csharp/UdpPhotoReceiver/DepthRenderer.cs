@@ -9,6 +9,9 @@ public sealed class DepthRenderer : IDisposable
     private readonly int _height;
     private readonly byte[] _bgrLut;
 
+    public int Width => _width;
+    public int Height => _height;
+
     public Bitmap Bitmap { get; }
 
     public DepthRenderer(int width, int height)

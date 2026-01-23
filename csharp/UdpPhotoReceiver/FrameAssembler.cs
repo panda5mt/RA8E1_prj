@@ -9,9 +9,15 @@ public sealed class FrameAssembler
     private int _totalChunks;
     private int _totalSize;
     private byte[]?[]? _chunks;
+    private bool[]? _received;
+    private int _receivedCount;
     private readonly Stopwatch _frameStopwatch = new();
 
     public bool InProgress => _chunks is not null;
+
+    public bool IsComplete => _chunks is not null && _receivedCount == _totalChunks;
+
+    public bool HasAnyChunk => _chunks is not null && _receivedCount > 0;
 
     public TimeSpan Elapsed => _frameStopwatch.Elapsed;
 
@@ -26,12 +32,14 @@ public sealed class FrameAssembler
         _totalChunks = totalChunks;
         _totalSize = totalSize;
         _chunks = new byte[totalChunks][];
+        _received = new bool[totalChunks];
+        _receivedCount = 0;
         _frameStopwatch.Restart();
     }
 
     public void AddChunk(int chunkIndex, ReadOnlyMemory<byte> chunkData)
     {
-        if (_chunks is null)
+        if (_chunks is null || _received is null)
         {
             return;
         }
@@ -46,7 +54,14 @@ public sealed class FrameAssembler
             return;
         }
 
+        if (_received[chunkIndex])
+        {
+            return;
+        }
+
         _chunks[chunkIndex] = chunkData.ToArray();
+        _received[chunkIndex] = true;
+        _receivedCount++;
     }
 
     public ReadOnlyMemory<byte> ReconstructFrame()
@@ -84,6 +99,8 @@ public sealed class FrameAssembler
         _chunks = null;
         _totalChunks = 0;
         _totalSize = 0;
+        _received = null;
+        _receivedCount = 0;
         _frameStopwatch.Reset();
     }
 }
