@@ -1,5 +1,5 @@
 function udp_photo_receiver()
-    % UDP動画データ受信・リアルタイム表示（マルチフレーム対応）
+    % UDP動画データ受信・リアルタイム表示(マルチフレーム対応)
     close all;
     % UDP設定
     udp_port = 9000;
@@ -50,13 +50,13 @@ function receive_video_stream(udp_obj, ax)
     total_chunks = 0;
     total_size = 0;
     
-    % 画像ハンドル管理（グローバルに管理）
+    % 画像ハンドル管理(グローバルに管理)
     img_handle = [];
     
     % タイムアウト・統計設定
     frame_start_time = tic;
     frame_timeout_sec = 10;     % フレームタイムアウト10秒
-    total_timeout_sec = inf;    % 無制限受信（Ctrl+Cまたはウィンドウを閉じるまで）
+    total_timeout_sec = inf;    % 無制限受信(Ctrl+Cまたはウィンドウを閉じるまで)
     total_start_time = tic;
     
     % 統計情報
@@ -70,7 +70,7 @@ function receive_video_stream(udp_obj, ax)
     
     while toc(total_start_time) < total_timeout_sec
         try
-            % 高速パケット連続受信（バッファ蓄積対応）
+            % 高速パケット連続受信(バッファ蓄積対応)
             packet_count = 0;
             while packet_count < 10  % 最大10パケット連続処理
                 data = udp_obj();
@@ -80,7 +80,7 @@ function receive_video_stream(udp_obj, ax)
                 packet_count = packet_count + 1;
                 
                 if length(data) >= header_size
-                    % 高速ヘッダー解析（関数コール削減）
+                    % 高速ヘッダー解析(関数コール削減)
                     header_bytes = data(1:header_size);
                     magic_number = typecast(header_bytes(1:4), 'uint32');
                     
@@ -95,7 +95,7 @@ function receive_video_stream(udp_obj, ax)
                         
                         % 新しいフレーム開始チェック
                         if chunk_index_val == 0
-                            % 前のフレーム処理（完了チェック省略で高速化）
+                            % 前のフレーム処理(完了チェック省略で高速化)
                             if ~isempty(packets) && ~frame_completed
                                 img_handle = process_complete_frame_fast(packets, total_chunks, total_size, ax, img_handle);
                                 frames_displayed = frames_displayed + 1;
@@ -112,7 +112,7 @@ function receive_video_stream(udp_obj, ax)
                             frame_start_time = tic;
                         end
                         
-                        % パケット保存（境界チェック最小化）
+                        % パケット保存(境界チェック最小化)
                         chunk_idx = double(chunk_index_val) + 1;
                         if chunk_idx <= total_chunks && chunk_idx > 0
                             actual_size = min(double(chunk_data_size_val), length(chunk_data));
@@ -125,7 +125,7 @@ function receive_video_stream(udp_obj, ax)
                             end
                         end
 
-                        % フレーム完了チェック（全チャンク受信で判定）
+                        % フレーム完了チェック(全チャンク受信で判定)
                         if ~frame_completed && ~isempty(packets) && received_count == total_chunks
                             img_handle = process_complete_frame_fast(packets, total_chunks, total_size, ax, img_handle);
                             frames_received = frames_received + 1;
@@ -143,7 +143,7 @@ function receive_video_stream(udp_obj, ax)
                 frame_start_time = tic;
             end
             
-            % 統計表示（10秒ごと＋簡略化）
+            % 統計表示(10秒ごと＋簡略化)
             if toc(last_stats_time) > 10
                 fps = frames_displayed/toc(total_start_time);
                 fprintf('Frames: %d (%.2f fps)\n', frames_displayed, fps);
@@ -155,7 +155,7 @@ function receive_video_stream(udp_obj, ax)
             % エラーが発生してもループは継続
         end
         
-        % 待機時間を最小に（パフォーマンス優先）
+        % 待機時間を最小に(パフォーマンス優先)
         % pause(0.001);  % 削除してCPU使用率向上
         
         % ウィンドウが閉じられたら終了
@@ -186,15 +186,15 @@ function is_complete = check_frame_complete(packets)
 end
 
 function img_handle = process_complete_frame_fast(packets, total_chunks, total_size, ax, img_handle)
-    % 高速フレーム処理（深度マップ表示）
-    % フレームデータ復元（高速版）
+    % 高速フレーム処理(深度マップ表示)
+    % フレームデータ復元(高速版)
     frame_data = reconstruct_frame_ultra_fast(packets, total_chunks, total_size);
     
-    % 深度マップを可視化（8bit grayscale; sender may use variable payload size）
+    % 深度マップを可視化(8bit grayscale; sender may use variable payload size)
     [w, h] = infer_frame_dims_from_total_size(total_size, 320, 240);
     depth_map = extract_depth_map(frame_data(1:(w*h)), w, h);
     
-    % 画像表示更新（深度マップをヒートマップ表示）
+    % 画像表示更新(深度マップをヒートマップ表示)
     if isempty(img_handle) || ~ishandle(img_handle)
         img_handle = imshow(depth_map, [], 'Parent', ax);
         colormap(ax, jet(256));
@@ -231,7 +231,7 @@ function [w, h] = infer_frame_dims_from_total_size(total_size, w0, h0)
 end
 
 function frame_data = reconstruct_frame_ultra_fast(packets, total_chunks, total_size)
-    % 元の安全なフレーム復元（速度重視版）
+    % 元の安全なフレーム復元(速度重視版)
     
     frame_data = zeros(total_size, 1, 'uint8');
     
@@ -293,7 +293,7 @@ function is_valid = verify_checksum(header_bytes)
 end
 
 function rgb_image = yuv422_to_rgb_fast(yuv_data, width, height)
-    % 高速YUV422→RGB変換（ベクトル化処理）
+    % 高速YUV422→RGB変換(ベクトル化処理)
     
     expected_bytes = width * height * 2;
     if length(yuv_data) < expected_bytes
@@ -347,7 +347,7 @@ function rgb_image = yuv422_to_rgb_fast(yuv_data, width, height)
     Umat = reshape(U_ch, [width, height])';
     Vmat = reshape(V_ch, [width, height])';
     
-    % YUVからRGB変換（行列演算で高速化）
+    % YUVからRGB変換(行列演算で高速化)
     Yf = double(Ymat);
     Uf = double(Umat);
     Vf = double(Vmat);
@@ -366,7 +366,7 @@ function rgb_image = yuv422_to_rgb_fast(yuv_data, width, height)
 end
 
 function gray_image = yuv422_to_grayscale(yuv_data, width, height)
-    % YUV422からY成分（輝度）のみを抽出してグレースケール画像を生成
+    % YUV422からY成分(輝度)のみを抽出してグレースケール画像を生成
     % YUV422フォーマット: [V0 Y1 U0 Y0] [V1 Y3 U1 Y2] ... (リトルエンディアン)
     
     expected_bytes = width * height * 2;
@@ -376,8 +376,8 @@ function gray_image = yuv422_to_grayscale(yuv_data, width, height)
     
     yuv_data = yuv_data(1:expected_bytes);
     
-    % Y成分の抽出（高速ベクトル化処理）
-    % 8バイトブロック（4ピクセル）ごとに処理
+    % Y成分の抽出(高速ベクトル化処理)
+    % 8バイトブロック(4ピクセル)ごとに処理
     % Y位置: byte[4]=Y0, byte[2]=Y1, byte[8]=Y2, byte[6]=Y3
     indices = 1:8:length(yuv_data);
     n_blocks = length(indices);
@@ -397,7 +397,7 @@ function gray_image = yuv422_to_grayscale(yuv_data, width, height)
         end
     end
     
-    % 画像形状に変換（転置が必要）
+    % 画像形状に変換(転置が必要)
     gray_image = reshape(Y_ch, width, height)';
 end
 
@@ -442,7 +442,7 @@ function rgb_image = yuv422_to_rgb(yuv_data, width, height)
         % ピクセルインデックス(4ピクセル分)
         pix_base = ((i-1)/8) * 4;
         if pix_base + 4 <= nPixels
-            % 順序を逆転: 1番→4ピクセル目、2番→3ピクセル目、3番→2ピクセル目、4番→1ピクセル目
+            % 順序を逆転: 1番→4ピクセル目，2番→3ピクセル目，3番→2ピクセル目，4番→1ピクセル目
             % ピクセル4 (元の2番データ)
             Y_ch(pix_base + 4) = Y1;
             U_ch(pix_base + 4) = U0;
@@ -491,7 +491,7 @@ end
 function [p_map, q_map] = extract_pq_gradients(frame_data, width, height)
     % p,q勾配マップを抽出
     % フォーマット: [q0 p0 q1 p1 ...] (640バイト/行)
-    % 値の範囲: 0〜254 (127=中央値、0=-127、254=+127)
+    % 値の範囲: 0〜254 (127=中央値，0=-127，254=+127)
     
     total_pixels = width * height;
     
@@ -509,9 +509,9 @@ function [p_map, q_map] = extract_pq_gradients(frame_data, width, height)
 end
 
 function depth_map = extract_depth_map(frame_data, width, height)
-    % 深度マップを抽出（8bit grayscale）
+    % 深度マップを抽出(8bit grayscale)
     % フォーマット: [d0 d1 d2 ...] (320バイト/行)
-    % 値の範囲: 0〜255 (0=遠い、255=近い）
+    % 値の範囲: 0〜255 (0=遠い，255=近い)
     
     % uint8データをdoubleに変換
     depth_raw = double(frame_data);

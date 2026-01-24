@@ -1,20 +1,20 @@
 function features = extract_hlac_features(img, order, use_sobel)
-    % HLAC（Higher-order Local Auto-Correlation）特徴量抽出
+    % HLAC(Higher-order Local Auto-Correlation)特徴量抽出
     % Sobelフィルタ前処理を含む
     %
     % 入力:
-    %   img        - 入力画像（グレースケールまたはRGB）
-    %   order      - HLAC次数（1または2、デフォルトは2）
-    %   use_sobel  - Sobelフィルタを適用するか（デフォルトはfalse）
+    %   img        - 入力画像(グレースケールまたはRGB)
+    %   order      - HLAC次数(1または2，デフォルトは2)
+    %   use_sobel  - Sobelフィルタを適用するか(デフォルトはfalse)
     %
     % 出力:
     %   features - HLAC特徴ベクトル
     %            order=1: 5次元
-    %            order=2: 25次元（0次(1) + 1次(4) + 2次(20)）
+    %            order=2: 25次元(0次(1) + 1次(4) + 2次(20))
     %
     % 処理の流れ:
     %   1. グレースケール変換
-    %   2. Sobelフィルタ適用（|P|+|Q|を計算）
+    %   2. Sobelフィルタ適用(|P|+|Q|を計算)
     %   3. HLAC特徴量抽出
     
     if nargin < 2
@@ -48,7 +48,7 @@ function features = extract_hlac_features(img, order, use_sobel)
     elseif order == 2
         features = compute_hlac_order2(sobel_img);
     else
-        error('サポートされていない次数です。order=1または2を指定してください。');
+        error('サポートされていない次数です．order=1または2を指定してください．');
     end
 end
 
@@ -62,12 +62,12 @@ function sobel_img = apply_sobel_filter(img)
     %   sobel_img - Sobelエッジ強度画像 [0, 1]
     
     % Sobelカーネル定義
-    % 水平方向（P）
+    % 水平方向(P)
     sobel_h = [-1, 0, 1;
                -2, 0, 2;
                -1, 0, 1];
     
-    % 垂直方向（Q）
+    % 垂直方向(Q)
     sobel_v = [-1, -2, -1;
                 0,  0,  0;
                 1,  2,  1];
@@ -79,14 +79,14 @@ function sobel_img = apply_sobel_filter(img)
     % エッジ強度計算: |P| + |Q|
     sobel_img = abs(P) + abs(Q);
     
-    % 正規化（0-1範囲）
+    % 正規化(0-1範囲)
     if max(sobel_img(:)) > 0
         sobel_img = sobel_img / max(sobel_img(:));
     end
 end
 
 function features = compute_hlac_order1(img)
-    % 1次HLAC特徴量（5次元）
+    % 1次HLAC特徴量(5次元)
     % パターン:
     % 1. r0 = f(r)
     % 2. r1 = f(r)*f(r+a1) (右)
@@ -97,7 +97,7 @@ function features = compute_hlac_order1(img)
     [h, w] = size(img);
     features = zeros(5, 1);
     
-    % パディング（Toolbox無しでも動くように自前実装）
+    % パディング(Toolbox無しでも動くように自前実装)
     padded = local_padarray_zeros(img, 1, 1);
     
     count = 0;
@@ -134,17 +134,17 @@ function features = compute_hlac_order1(img)
 end
 
 function features = compute_hlac_order2(img)
-    % 2次HLAC特徴量（25次元）
+    % 2次HLAC特徴量(25次元)
     % 3x3近傍の定義に基づく「0次(1) + 1次(4) + 2次(20)」
-    % 2次(20)は、8近傍(中心除く)のペア(重複あり)をD4対称性で同値類にまとめた代表パターン
+    % 2次(20)は，8近傍(中心除く)のペア(重複あり)をD4対称性で同値類にまとめた代表パターン
     
     [h, w] = size(img);
     features = zeros(25, 1);
     
-    % パディング（Toolbox無しでも動くように自前実装）
+    % パディング(Toolbox無しでも動くように自前実装)
     padded = local_padarray_zeros(img, 1, 1);
     
-    % 8近傍オフセット（中心除外）
+    % 8近傍オフセット(中心除外)
     persistent offsets8 pair_idx idx_right idx_down idx_rd idx_ru
     if isempty(offsets8)
         offsets8 = [

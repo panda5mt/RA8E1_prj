@@ -7,7 +7,7 @@ function visualize_sobel_hlac(img_path)
     % 表示内容:
     %   1. 元画像
     %   2. グレースケール画像
-    %   3. Sobel処理画像（|P|+|Q|）
+    %   3. Sobel処理画像(|P|+|Q|)
     %   4. HLAC特徴量のバー表示
     
     % 画像読み込み
@@ -40,7 +40,7 @@ function visualize_sobel_hlac(img_path)
         sobel_img_norm = sobel_img;
     end
     
-    % HLAC特徴量抽出（Sobelあり・なし）
+    % HLAC特徴量抽出(Sobelあり・なし)
     features_with_sobel = extract_hlac_features(img, 2, true);
     features_without_sobel = extract_hlac_features(img, 2, false);
     
@@ -63,13 +63,13 @@ function visualize_sobel_hlac(img_path)
     title('Sobel処理 (|P|+|Q|)');
     colorbar;
     
-    % 水平エッジ（P）
+    % 水平エッジ(P)
     subplot(2, 3, 4);
     imshow(abs(P), []);
     title('水平エッジ (|P|)');
     colorbar;
     
-    % 垂直エッジ（Q）
+    % 垂直エッジ(Q)
     subplot(2, 3, 5);
     imshow(abs(Q), []);
     title('垂直エッジ (|Q|)');
@@ -109,7 +109,7 @@ function compare_sobel_hlac_on_dataset(data_dir, class_names, num_samples_per_cl
     % 入力:
     %   data_dir              - データセットディレクトリ
     %   class_names           - クラス名のセル配列
-    %   num_samples_per_class - 各クラスから表示するサンプル数（デフォルト=3）
+    %   num_samples_per_class - 各クラスから表示するサンプル数(デフォルト=3)
     
     if nargin < 3
         num_samples_per_class = 3;
@@ -164,10 +164,10 @@ function plot_sobel_effect_on_features(data_dir, class_names)
     fprintf('====================================\n\n');
     
     % Sobelあり・なしで特徴量抽出
-    fprintf('特徴量抽出中（Sobelなし）...\n');
+    fprintf('特徴量抽出中(Sobelなし)...\n');
     features_table_without = extract_hlac_from_dataset(data_dir, class_names, 2, false);
     
-    fprintf('\n特徴量抽出中（Sobelあり）...\n');
+    fprintf('\n特徴量抽出中(Sobelあり)...\n');
     features_table_with = extract_hlac_from_dataset(data_dir, class_names, 2, true);
     
     % 特徴量データ取得
@@ -196,7 +196,7 @@ function plot_sobel_effect_on_features(data_dir, class_names)
     end
     xlabel('第1主成分');
     ylabel('第2主成分');
-    title('特徴空間分布（Sobelなし）');
+    title('特徴空間分布(Sobelなし)');
     legend('Location', 'best');
     grid on;
     hold off;
@@ -211,7 +211,7 @@ function plot_sobel_effect_on_features(data_dir, class_names)
     end
     xlabel('第1主成分');
     ylabel('第2主成分');
-    title('特徴空間分布（Sobelあり）');
+    title('特徴空間分布(Sobelあり)');
     legend('Location', 'best');
     grid on;
     hold off;

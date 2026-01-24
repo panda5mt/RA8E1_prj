@@ -1,7 +1,7 @@
 % Complete Example: Sobel + HLAC + LDA Classification
 % 
-% このスクリプトは、Sobel前処理を含むHLAC-LDA分類の
-% 完全な使用例を示します。
+% このスクリプトは，Sobel前処理を含むHLAC-LDA分類の
+% 完全な使用例を示します．
 
 clear all;
 close all;
@@ -12,7 +12,7 @@ fprintf('Sobel + HLAC + LDA 完全な使用例\n');
 fprintf('====================================\n\n');
 
 %% 設定
-class_names = {'class0', 'class1', 'class2'};  % クラス名（実際の名前に変更）
+class_names = {'class0', 'class1', 'class2'};  % クラス名(実際の名前に変更)
 data_dir = 'hlac_training_data';
 model_dir = 'lda_model';
 
@@ -20,7 +20,7 @@ model_dir = 'lda_model';
 fprintf('ステップ1: 単一画像のテスト\n');
 fprintf('------------------------------------\n');
 
-% テスト画像のパスを指定（実際の画像パスに変更）
+% テスト画像のパスを指定(実際の画像パスに変更)
 test_image_path = fullfile(data_dir, class_names{1}, 'test_image.png');
 
 if exist(test_image_path, 'file')
@@ -29,13 +29,13 @@ if exist(test_image_path, 'file')
     % Sobel処理の可視化
     visualize_sobel_hlac_process(test_image_path);
     
-    fprintf('可視化が完了しました。\n');
-    fprintf('ウィンドウを確認してください。\n\n');
+    fprintf('可視化が完了しました．\n');
+    fprintf('ウィンドウを確認してください．\n\n');
     
     pause(2);
 else
-    fprintf('テスト画像が見つかりません。\n');
-    fprintf('データ収集を先に実行してください。\n\n');
+    fprintf('テスト画像が見つかりません．\n');
+    fprintf('データ収集を先に実行してください．\n\n');
 end
 
 %% ステップ2: データセット全体で特徴量抽出
@@ -50,14 +50,14 @@ end
 fprintf('Sobel + HLAC特徴量を抽出中...\n\n');
 features_table = extract_hlac_from_dataset(data_dir, class_names, 2, true);
 
-fprintf('\n特徴量抽出完了。\n');
+fprintf('\n特徴量抽出完了．\n');
 fprintf('総サンプル数: %d\n', height(features_table));
 fprintf('特徴次元数: 25\n\n');
 
 % 特徴量の可視化
 visualize_hlac_features(features_table, class_names);
 
-%% ステップ3: Sobel効果の統計分析（オプション）
+%% ステップ3: Sobel効果の統計分析(オプション)
 fprintf('ステップ3: Sobel効果の統計分析\n');
 fprintf('------------------------------------\n');
 
@@ -65,7 +65,7 @@ choice = input('Sobelあり・なしの比較分析を実行しますか? (y/n):
 if strcmpi(choice, 'y')
     fprintf('\n比較分析を実行中...\n\n');
     plot_sobel_effect_on_features(data_dir, class_names);
-    fprintf('比較分析完了。\n\n');
+    fprintf('比較分析完了．\n\n');
 end
 
 %% ステップ4: LDA分類器の学習
@@ -76,7 +76,7 @@ fprintf('------------------------------------\n');
 fprintf('LDA分類器を学習中...\n\n');
 [lda_model, W, b] = train_lda_classifier(features_table, class_names, model_dir);
 
-fprintf('\nLDA学習完了。\n\n');
+fprintf('\nLDA学習完了．\n\n');
 
 %% ステップ5: 推論テスト
 fprintf('ステップ5: 推論テスト\n');

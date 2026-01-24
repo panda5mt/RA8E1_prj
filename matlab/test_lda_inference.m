@@ -27,7 +27,7 @@ for i = 1:num_samples
             if isstruct(lda_model) && isfield(lda_model, 'type') && strcmp(lda_model.type, 'custom_lda') && isfield(lda_model, 'W') && isfield(lda_model, 'b')
                 pred_label = lda_predict_from_Wb(features, lda_model.W, lda_model.b);
             else
-                error('推論に必要な predict が利用できません（Statistics and Machine Learning Toolbox が必要）。');
+                error('推論に必要な predict が利用できません(Statistics and Machine Learning Toolbox が必要)．');
             end
         end
     end

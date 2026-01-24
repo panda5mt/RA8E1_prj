@@ -25,13 +25,13 @@ volatile uint32_t g_video_frame_seq = 0;
 #define RAM_DATA_LENGTH (64U) //
 // void putchar_ra8usb(uint8_t c);
 
-// ---- D-Cache を無効化（安全手順）----
+// ---- D-Cache を無効化(安全手順)----
 static inline void dcache_disable_global(void)
 {
     __DSB();
     __DMB();
     SCB_CleanDCache();      // ① ダーティラインを外へ書き戻す
-    SCB_InvalidateDCache(); // ② すべて無効化（古い行を破棄）
+    SCB_InvalidateDCache(); // ② すべて無効化(古い行を破棄)
     SCB_DisableDCache();    // ③ D-CacheをOFF
     __DSB();
     __ISB();
@@ -48,7 +48,7 @@ static inline void dcache_enable_global(void)
     __ISB();
 }
 
-// ---- I-Cache を無効化／有効化（必要な場合）----
+// ---- I-Cache を無効化／有効化(必要な場合)----
 static inline void icache_disable_global(void)
 {
     __DSB();
@@ -122,7 +122,7 @@ void main_thread0_entry(void *pvParameters)
         // カメラキャプチャ実行
         cam_capture();
 
-        // HyperRAMに書き込み（動画ストリーミング用）
+        // HyperRAMに書き込み(動画ストリーミング用)
         const uint32_t frame_bytes = (uint32_t)(VGA_WIDTH * VGA_HEIGHT * BYTE_PER_PIXEL);
 
         err = hyperram_b_write(image_p8, (void *)next_write_base, frame_bytes);

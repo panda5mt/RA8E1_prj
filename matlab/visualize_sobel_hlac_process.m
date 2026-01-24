@@ -7,7 +7,7 @@ function visualize_sobel_hlac_process(img_path)
 % 表示内容:
 %   1. 元画像
 %   2. グレースケール画像
-%   3. Sobel処理画像（|P|+|Q|）
+%   3. Sobel処理画像(|P|+|Q|)
 %   4. HLAC特徴量のバー表示
 
 img = imread(img_path);

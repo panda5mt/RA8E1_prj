@@ -4,7 +4,7 @@ function compare_sobel_hlac_on_dataset(data_dir, class_names, num_samples_per_cl
 % 入力:
 %   data_dir              - データセットディレクトリ
 %   class_names           - クラス名のセル配列
-%   num_samples_per_class - 各クラスから表示するサンプル数（デフォルト=3）
+%   num_samples_per_class - 各クラスから表示するサンプル数(デフォルト=3)
 
 if nargin < 3
     num_samples_per_class = 3;

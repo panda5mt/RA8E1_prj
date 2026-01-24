@@ -1,5 +1,5 @@
 function visualize_hlac_features(features_table, class_names)
-% HLAC特徴量の可視化（PCA使用）
+% HLAC特徴量の可視化(PCA使用)
 
 feature_cols = features_table.Properties.VariableNames;
 feature_cols = feature_cols(~ismember(feature_cols, {'Label', 'Filename'}));
@@ -14,7 +14,7 @@ catch
     [score, explained] = local_pca_via_svd(X);
 end
 
-figure('Name', 'HLAC特徴量の分布（PCA）');
+figure('Name', 'HLAC特徴量の分布(PCA)');
 hold on;
 
 colors = lines(length(class_names));

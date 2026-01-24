@@ -31,21 +31,21 @@ static FC128_UNUSED inline uint8_t max_u8(uint8_t a, uint8_t b)
 #include <float.h>
 
 // ========== 深度復元アルゴリズム切り替え ==========
-// 1 = マルチグリッド版（ポアソン方程式反復解法、中品質、中速: ~0.5-2秒/フレーム）
-// 0 = 簡易版（行方向積分、低品質、高速: <1ms/フレーム）
+// 1 = マルチグリッド版(ポアソン方程式反復解法，中品質，中速: ~0.5-2秒/フレーム)
+// 0 = 簡易版(行方向積分，低品質，高速: <1ms/フレーム)
 #define USE_DEPTH_METHOD 1
 
-// HyperRAMから直接p勾配をストリーミングして行積分する簡易版。
-// USE_SIMPLE_DIRECT_P=1で有効化。
+// HyperRAMから直接p勾配をストリーミングして行積分する簡易版．
+// USE_SIMPLE_DIRECT_P=1で有効化．
 // USE_SIMPLE_DIRECT_P=0で従来のSRAMバッファ経由
 #define USE_SIMPLE_DIRECT_P 1
 
-// 輝度正規化（明るさに依存しない深度推定）
-// 1 = 各行ごとにコントラストを正規化（薄暗い/明るい環境でも同じ深度）
-// 0 = 正規化なし（従来動作）
+// 輝度正規化(明るさに依存しない深度推定)
+// 1 = 各行ごとにコントラストを正規化(薄暗い/明るい環境でも同じ深度)
+// 0 = 正規化なし(従来動作)
 #ifndef USE_BRIGHTNESS_NORMALIZATION
-/* NOTE: 行ごとのヒストグラム伸長は、白い物体/ハイライトがあると
- * 勾配が過剰に強調されて「近い」判定になりやすいので、既定はOFF。
+/* NOTE: 行ごとのヒストグラム伸長は，白い物体/ハイライトがあると
+ * 勾配が過剰に強調されて「近い」判定になりやすいので，既定はOFF．
  */
 #define USE_BRIGHTNESS_NORMALIZATION 0
 #endif
@@ -116,8 +116,8 @@ static inline uint32_t fc128_cyc_to_us(uint32_t cyc)
 #define FRAME_WIDTH 320
 #define FRAME_HEIGHT 240
 #define FRAME_SIZE (FRAME_WIDTH * FRAME_HEIGHT * 2) // YUV422 = 2 bytes/pixel
-#define GRADIENT_OFFSET FRAME_SIZE                  // p,q勾配マップを配置（2チャンネル×8bit）
-#define DEPTH_OFFSET (FRAME_SIZE * 2)               // 深度マップ（8bit grayscale: 320×240 = 76,800バイト）
+#define GRADIENT_OFFSET FRAME_SIZE                  // p,q勾配マップを配置(2チャンネル×8bit)
+#define DEPTH_OFFSET (FRAME_SIZE * 2)               // 深度マップ(8bit grayscale: 320×240 = 76,800バイト)
 
 #define DEPTH_BYTES ((uint32_t)(FRAME_WIDTH * FRAME_HEIGHT))
 
@@ -1451,7 +1451,7 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
         (void)hyperram_b_read(row_z, (void *)(frame_base_offset + FC128_Z_REAL + base), (uint32_t)sizeof(row_z));
 
 #if USE_HELIUM_MVE
-        // MVE版: 4要素単位でロードし、スカラーでmin/max更新（ツールチェーン互換）
+        // MVE版: 4要素単位でロードし，スカラーでmin/max更新(ツールチェーン互換)
         {
             int x;
             for (x = 0; x < FC_RESULT_N - 3; x += 4)
@@ -2980,10 +2980,10 @@ static int g_mg_level_count = 0;
 static bool g_mg_layout_ready = false;
 #endif
 
-// Shape from Shading 光源パラメータ（変数）
+// Shape from Shading 光源パラメータ(変数)
 static float g_light_ps = 0.0f; // 光源方向x成分
 static float g_light_qs = 0.0f; // 光源方向y成分
-static float g_light_ts = 1.0f; // 光源方向z成分（正規化された垂直光源）
+static float g_light_ts = 1.0f; // 光源方向z成分(正規化された垂直光源)
 
 /* Force light source to be straight above (0,0,1). */
 #ifndef FIX_LIGHT_SOURCE_OVERHEAD
@@ -3024,7 +3024,7 @@ void update_light_source(float ps, float qs, float ts)
     }
     else
     {
-        // デフォルト値（垂直光源）
+        // デフォルト値(垂直光源)
         g_light_ps = 0.0f;
         g_light_qs = 0.0f;
         g_light_ts = 1.0f;
@@ -3060,7 +3060,7 @@ static void normalize_brightness(uint8_t *y_line, int width)
     {
         uint8x16_t vec = vld1q_u8(&y_line[x]);
 
-        // ベクトル内の各要素をチェック（リダクション命令がないため）
+        // ベクトル内の各要素をチェック(リダクション命令がないため)
         uint8_t temp[16];
         vst1q_u8(temp, vec);
         for (int i = 0; i < 16; i++)
@@ -3091,18 +3091,18 @@ static void normalize_brightness(uint8_t *y_line, int width)
     }
 #endif
 
-    // コントラストが低すぎる場合はスキップ（ノイズ対策）
+    // コントラストが低すぎる場合はスキップ(ノイズ対策)
     int range = max_val - min_val;
     if (range < 20)
     {
         return;
     }
 
-    // フェーズ2: 0-255の範囲に伸長（ヒストグラム伸長）
+    // フェーズ2: 0-255の範囲に伸長(ヒストグラム伸長)
     float scale = 255.0f / (float)range;
 
 #if USE_HELIUM_MVE
-    // MVE版: 真のベクトル処理（16要素単位）
+    // MVE版: 真のベクトル処理(16要素単位)
     // 固定小数点スケール: scale_fixed = scale * 256
     uint32_t scale_fixed = (uint32_t)(scale * 256.0f + 0.5f);
     uint8x16_t min_vec = vdupq_n_u8(min_val);
@@ -3112,14 +3112,14 @@ static void normalize_brightness(uint8_t *y_line, int width)
         // 16バイトロード
         uint8x16_t data = vld1q_u8(&y_line[x]);
 
-        // min_val減算（飽和減算）
+        // min_val減算(飽和減算)
         uint8x16_t adjusted = vqsubq_u8(data, min_vec);
 
         // 下位8バイトを16ビットに拡張
         uint16x8_t low = vmovlbq_u8(adjusted);
-        // スケール乗算（固定小数点）
+        // スケール乗算(固定小数点)
         low = vmulq_n_u16(low, (uint16_t)scale_fixed);
-        // 8ビット右シフトで÷256（飽和シフト付き狭窄でuint8に戻す）
+        // 8ビット右シフトで÷256(飽和シフト付き狭窄でuint8に戻す)
         uint8x16_t result = vqshrnbq_n_u16(vuninitializedq_u8(), low, 8);
 
         // 上位8バイトを16ビットに拡張
@@ -3157,24 +3157,24 @@ static void normalize_brightness(uint8_t *y_line, int width)
 }
 #endif
 
-/* YUV422からY成分（輝度）を抽出
+/* YUV422からY成分(輝度)を抽出
  * YUV422フォーマット: [V0 Y1 U0 Y0] (リトルエンディアン)
  */
 #if USE_HELIUM_MVE
 static void extract_y_component(uint8_t *yuv_line, uint8_t *y_line, int width)
 {
-    // MVEベクトル化: 16ピクセル（32バイト）単位で処理
+    // MVEベクトル化: 16ピクセル(32バイト)単位で処理
     // YUV422: [V0 Y1 U0 Y0] [V1 Y3 U1 Y2] (4バイト=2ピクセル)
     // Y成分位置: byte[3]=Y0, byte[1]=Y1, byte[7]=Y2, byte[5]=Y3, ...
 
     int x;
     for (x = 0; x < width - 15; x += 16)
     {
-        // 32バイト読み込み（16ピクセル分のYUV422データ）
+        // 32バイト読み込み(16ピクセル分のYUV422データ)
         uint8x16_t yuv_low = vld1q_u8(&yuv_line[x * 2]);
         uint8x16_t yuv_high = vld1q_u8(&yuv_line[x * 2 + 16]);
 
-        // Y成分を抽出（MVE効率的処理）
+        // Y成分を抽出(MVE効率的処理)
         // Y0,Y1,Y2,Y3,...,Y15の順に並べる
         uint8_t temp[16];
         temp[0] = yuv_low[3];    // Y0
@@ -3254,7 +3254,7 @@ static FC128_UNUSED fsp_err_t load_y_line_from_hyperram(int requested_row,
     extract_y_component(yuv_line, y_line, FRAME_WIDTH);
 
 #if USE_BRIGHTNESS_NORMALIZATION
-    // 輝度を正規化（明るさに依存しない深度推定）
+    // 輝度を正規化(明るさに依存しない深度推定)
     normalize_brightness(y_line, FRAME_WIDTH);
 #endif
 
@@ -3271,12 +3271,12 @@ static FC128_UNUSED void duplicate_line_buffer(uint8_t dst_yuv[FRAME_WIDTH * 2],
 }
 
 /* Sobelフィルタでエッジ検出
- * 入力: 3行分のY成分（前の行、現在の行、次の行）
- * 出力: エッジ強度（0-255）
+ * 入力: 3行分のY成分(前の行，現在の行，次の行)
+ * 出力: エッジ強度(0-255)
  */
 
 #if USE_HELIUM_MVE
-// Helium MVE版 - シンプルで安全な実装（スカラー計算 + ベクトル後処理）
+// Helium MVE版 - シンプルで安全な実装(スカラー計算 + ベクトル後処理)
 static FC128_UNUSED void apply_sobel_filter(uint8_t y_prev[FRAME_WIDTH],
                                             uint8_t y_curr[FRAME_WIDTH],
                                             uint8_t y_next[FRAME_WIDTH],
@@ -3286,7 +3286,7 @@ static FC128_UNUSED void apply_sobel_filter(uint8_t y_prev[FRAME_WIDTH],
     edge_out[0] = y_curr[0];
     edge_out[FRAME_WIDTH - 1] = y_curr[FRAME_WIDTH - 1];
 
-    // 8ピクセル単位で処理（スカラー計算 + MVEベクトル後処理）
+    // 8ピクセル単位で処理(スカラー計算 + MVEベクトル後処理)
     int x;
     for (x = 1; x < FRAME_WIDTH - 8; x += 8)
     {
@@ -3298,12 +3298,12 @@ static FC128_UNUSED void apply_sobel_filter(uint8_t y_prev[FRAME_WIDTH],
         {
             int px = x + i;
 
-            // Sobel X勾配（スカラー計算）
+            // Sobel X勾配(スカラー計算)
             int gx = -1 * y_prev[px - 1] + 1 * y_prev[px + 1] +
                      -2 * y_curr[px - 1] + 2 * y_curr[px + 1] +
                      -1 * y_next[px - 1] + 1 * y_next[px + 1];
 
-            // Sobel Y勾配（スカラー計算）
+            // Sobel Y勾配(スカラー計算)
             int gy = -1 * y_prev[px - 1] - 2 * y_prev[px] - 1 * y_prev[px + 1] +
                      1 * y_next[px - 1] + 2 * y_next[px] + 1 * y_next[px + 1];
 
@@ -3311,11 +3311,11 @@ static FC128_UNUSED void apply_sobel_filter(uint8_t y_prev[FRAME_WIDTH],
             gy_buf[i] = (int16_t)gy;
         }
 
-        // ベクトルロード（MVE）
+        // ベクトルロード(MVE)
         int16x8_t gx_vec = vld1q_s16(gx_buf);
         int16x8_t gy_vec = vld1q_s16(gy_buf);
 
-        // ベクトル演算で後処理（MVE）
+        // ベクトル演算で後処理(MVE)
         // 1. 絶対値
         int16x8_t abs_gx = vabsq_s16(gx_vec);
         int16x8_t abs_gy = vabsq_s16(gy_vec);
@@ -3402,7 +3402,7 @@ static FC128_UNUSED void apply_sobel_filter(uint8_t y_prev[FRAME_WIDTH],
 
         // 閾値処理とスケーリング
         magnitude = magnitude / 2; // 強度を1/2に
-        if (magnitude < 20)        // 閾値以下は0（ノイズ除去）
+        if (magnitude < 20)        // 閾値以下は0(ノイズ除去)
             magnitude = 0;
         else if (magnitude > 255)
             magnitude = 255;
@@ -3417,10 +3417,10 @@ static FC128_UNUSED void apply_sobel_filter(uint8_t y_prev[FRAME_WIDTH],
  * q = ∂z/∂y (y方向の表面勾配)
  *
  * 反射率方程式: R(x,y) = ρ(x,y) * (p*ps + q*qs + 1) / sqrt((1+p²+q²)(1+ps²+qs²+ts²))
- * 光源定数の場合、正規化輝度 E = R/ρ から:
+ * 光源定数の場合，正規化輝度 E = R/ρ から:
  * E * sqrt(1+p²+q²) * sqrt(1+ps²+qs²+ts²) = p*ps + q*qs + 1
  *
- * 簡易推定: I(x,y) ≈ (1 - p*Gx - q*Gy) として、ローカル勾配から推定
+ * 簡易推定: I(x,y) ≈ (1 - p*Gx - q*Gy) として，ローカル勾配から推定
  */
 static FC128_UNUSED void compute_pq_gradients(uint8_t y_prev[FRAME_WIDTH], uint8_t y_curr[FRAME_WIDTH],
                                               uint8_t y_next[FRAME_WIDTH], uint8_t pq_out[FRAME_WIDTH * 2])
@@ -3436,11 +3436,11 @@ static FC128_UNUSED void compute_pq_gradients(uint8_t y_prev[FRAME_WIDTH], uint8
     int x;
     for (x = 1; x < FRAME_WIDTH - 8; x += 8)
     {
-        // 3行×10ピクセル（中央8 + 左右各1）をロード
+        // 3行×10ピクセル(中央8 + 左右各1)をロード
         int16x8_t gx_vec = vdupq_n_s16(0);
         int16x8_t gy_vec = vdupq_n_s16(0);
 
-        // 上段（y_prev）: Sobel_x: [-1, 0, 1], Sobel_y: [-1, -2, -1]
+        // 上段(y_prev): Sobel_x: [-1, 0, 1], Sobel_y: [-1, -2, -1]
         uint16x8_t prev_left = vmovlbq_u8(vld1q_u8(&y_prev[x - 1]));  // 左シフト
         uint16x8_t prev_center = vmovlbq_u8(vld1q_u8(&y_prev[x]));    // 中央
         uint16x8_t prev_right = vmovlbq_u8(vld1q_u8(&y_prev[x + 1])); // 右シフト
@@ -3451,14 +3451,14 @@ static FC128_UNUSED void compute_pq_gradients(uint8_t y_prev[FRAME_WIDTH], uint8
         gy_vec = vsubq_s16(gy_vec, vshlq_n_s16(vreinterpretq_s16_u16(prev_center), 1)); // -2 * center
         gy_vec = vsubq_s16(gy_vec, vreinterpretq_s16_u16(prev_right));                  // -1 * right
 
-        // 中段（y_curr）: Sobel_x: [-2, 0, 2], Sobel_y: [0, 0, 0]
+        // 中段(y_curr): Sobel_x: [-2, 0, 2], Sobel_y: [0, 0, 0]
         uint16x8_t curr_left = vmovlbq_u8(vld1q_u8(&y_curr[x - 1]));
         uint16x8_t curr_right = vmovlbq_u8(vld1q_u8(&y_curr[x + 1]));
 
         gx_vec = vsubq_s16(gx_vec, vshlq_n_s16(vreinterpretq_s16_u16(curr_left), 1));  // -2 * left
         gx_vec = vaddq_s16(gx_vec, vshlq_n_s16(vreinterpretq_s16_u16(curr_right), 1)); // +2 * right
 
-        // 下段（y_next）: Sobel_x: [-1, 0, 1], Sobel_y: [1, 2, 1]
+        // 下段(y_next): Sobel_x: [-1, 0, 1], Sobel_y: [1, 2, 1]
         uint16x8_t next_left = vmovlbq_u8(vld1q_u8(&y_next[x - 1]));
         uint16x8_t next_center = vmovlbq_u8(vld1q_u8(&y_next[x]));
         uint16x8_t next_right = vmovlbq_u8(vld1q_u8(&y_next[x + 1]));
@@ -3469,7 +3469,7 @@ static FC128_UNUSED void compute_pq_gradients(uint8_t y_prev[FRAME_WIDTH], uint8
         gy_vec = vaddq_s16(gy_vec, vshlq_n_s16(vreinterpretq_s16_u16(next_center), 1)); // +2 * center
         gy_vec = vaddq_s16(gy_vec, vreinterpretq_s16_u16(next_right));                  // +1 * right
 
-        // ÷8でスケーリング（算術右シフト）
+        // ÷8でスケーリング(算術右シフト)
         int16x8_t p_vec = vshrq_n_s16(gx_vec, 3);
         int16x8_t q_vec = vshrq_n_s16(gy_vec, 3);
 
@@ -3571,9 +3571,9 @@ static FC128_UNUSED void compute_pq_gradients(uint8_t y_prev[FRAME_WIDTH], uint8
 #endif
 }
 
-/* 簡易深度復元（行方向積分）
+/* 簡易深度復元(行方向積分)
  * p,q勾配から深度マップを生成
- * 簡易版：行ごとにp勾配を積分（∫p dx）
+ * 簡易版：行ごとにp勾配を積分(∫p dx)
  */
 #if USE_HELIUM_MVE
 // Helium MVE版 - 真のベクトル命令による高速化
@@ -3582,24 +3582,24 @@ static FC128_UNUSED void reconstruct_depth_simple(uint8_t pq_data[FRAME_WIDTH * 
     float z = 0.0f;           // 深度の累積値
     const float scale = 2.0f; // スケーリングファクタ
 
-    // 16ピクセル単位でMVEベクトル処理（128-bit）
+    // 16ピクセル単位でMVEベクトル処理(128-bit)
     int x;
     for (x = 0; x < FRAME_WIDTH - 15; x += 16)
     {
-        // 16ピクセル分のp勾配を抽出（128-bit MVEロード用）
+        // 16ピクセル分のp勾配を抽出(128-bit MVEロード用)
         uint8_t p_bytes[16] __attribute__((aligned(16)));
         for (int i = 0; i < 16; i++)
         {
             p_bytes[i] = pq_data[(x + i) * 2 + 1]; // p成分
         }
 
-        // MVEベクトルロード（128-bit = 16バイト）
+        // MVEベクトルロード(128-bit = 16バイト)
         uint8x16_t p_u8_vec = vld1q_u8(p_bytes);
 
-        // uint8 → int16 拡張（MVE: 下位8バイト）
+        // uint8 → int16 拡張(MVE: 下位8バイト)
         int16x8_t p_s16_low = vreinterpretq_s16_u16(vmovlbq_u8(p_u8_vec));
 
-        // -127オフセット適用（MVEベクトル減算）
+        // -127オフセット適用(MVEベクトル減算)
         int16x8_t offset = vdupq_n_s16(127);
         int16x8_t p_adjusted_low = vsubq_s16(p_s16_low, offset);
 
@@ -3607,7 +3607,7 @@ static FC128_UNUSED void reconstruct_depth_simple(uint8_t pq_data[FRAME_WIDTH * 
         int16_t p_raw[8] __attribute__((aligned(16)));
         vst1q_s16(p_raw, p_adjusted_low);
 
-        // 積分処理（前半8ピクセル）
+        // 積分処理(前半8ピクセル)
         for (int i = 0; i < 8; i++)
         {
             z += (float)p_raw[i] * scale;
@@ -3627,12 +3627,12 @@ static FC128_UNUSED void reconstruct_depth_simple(uint8_t pq_data[FRAME_WIDTH * 
             depth_line[x + i] = (uint8_t)depth_val;
         }
 
-        // uint8 → int16 拡張（MVE: 上位8バイト）
+        // uint8 → int16 拡張(MVE: 上位8バイト)
         int16x8_t p_s16_high = vreinterpretq_s16_u16(vmovltq_u8(p_u8_vec));
         int16x8_t p_adjusted_high = vsubq_s16(p_s16_high, offset);
         vst1q_s16(p_raw, p_adjusted_high);
 
-        // 積分処理（後半8ピクセル）
+        // 積分処理(後半8ピクセル)
         for (int i = 0; i < 8; i++)
         {
             z += (float)p_raw[i] * scale;
@@ -3675,19 +3675,19 @@ static FC128_UNUSED void reconstruct_depth_simple(uint8_t pq_data[FRAME_WIDTH * 
     }
 }
 #else
-// 標準版（MVEなし）
+// 標準版(MVEなし)
 static FC128_UNUSED void reconstruct_depth_simple(uint8_t pq_data[FRAME_WIDTH * 2], uint8_t depth_line[FRAME_WIDTH])
 {
-    // p勾配を符号付きに戻す（0〜254 → -127〜+127）
+    // p勾配を符号付きに戻す(0〜254 → -127〜+127)
     float z = 0.0f;           // 深度の累積値
     const float scale = 2.0f; // スケーリングファクタ
 
     for (int x = 0; x < FRAME_WIDTH; x++)
     {
-        // p勾配を取得（偶数インデックス）
+        // p勾配を取得(偶数インデックス)
         int p_raw = (int)pq_data[x * 2 + 1] - 127; // -127〜+127
 
-        // 深度を積分（z += p * dx、ここでdx=1ピクセル）
+        // 深度を積分(z += p * dx，ここでdx=1ピクセル)
         z += (float)p_raw * scale;
 
         // 0〜255の範囲にマッピング
@@ -3703,8 +3703,8 @@ static FC128_UNUSED void reconstruct_depth_simple(uint8_t pq_data[FRAME_WIDTH * 
 #endif
 
 #if USE_SIMPLE_DIRECT_P
-/* HyperRAMから直接p勾配をストリーミングして行積分する簡易版。
- * USE_SIMPLE_DIRECT_P=0で従来のSRAMバッファ経由に戻せる。 */
+/* HyperRAMから直接p勾配をストリーミングして行積分する簡易版．
+ * USE_SIMPLE_DIRECT_P=0で従来のSRAMバッファ経由に戻せる． */
 static FC128_UNUSED void reconstruct_depth_simple_direct(uint32_t gradient_line_offset, uint8_t depth_line[FRAME_WIDTH])
 {
     float z = 0.0f;
@@ -3761,9 +3761,9 @@ static FC128_UNUSED void reconstruct_depth_simple_direct(uint32_t gradient_line_
 }
 #endif
 
-/* エッジ強度をYUV422形式に変換（MATLAB yuv422_to_rgb_fast完全対応）
- * Y = エッジ強度, U = V = 128（グレースケール）
- * YUV422フォーマット（リトルエンディアン）:
+/* エッジ強度をYUV422形式に変換(MATLAB yuv422_to_rgb_fast完全対応)
+ * Y = エッジ強度, U = V = 128(グレースケール)
+ * YUV422フォーマット(リトルエンディアン):
  *   8バイト = 4ピクセル
  *   [V0 Y1 U0 Y0] [V1 Y3 U1 Y2]
  * MATLAB yuv422_to_rgb_fast デコード順序:
@@ -3775,7 +3775,7 @@ static FC128_UNUSED void reconstruct_depth_simple_direct(uint32_t gradient_line_
  */
 static FC128_UNUSED void edge_to_yuv422(uint8_t edge_line[FRAME_WIDTH], uint8_t yuv_line[FRAME_WIDTH * 2])
 {
-    // 4ピクセル（8バイト）単位で処理
+    // 4ピクセル(8バイト)単位で処理
     for (int x = 0; x < FRAME_WIDTH; x += 4)
     {
         int yuv_index = x * 2; // 8バイト単位のオフセット
@@ -3919,12 +3919,12 @@ static void mg_compute_divergence_to_hyperram(const mg_level_t *level)
             div_row[width - 1] = 0.0f;
 
 #if USE_HELIUM_MVE
-            // MVE版: 8ピクセル単位で処理（発散計算の高速化）
+            // MVE版: 8ピクセル単位で処理(発散計算の高速化)
             // div = -(∂p/∂x + ∂q/∂y) = -((p_curr - p_prev) + (q_curr - q_prev))
             int x;
             for (x = 1; x < width - 8; x += 8)
             {
-                // p成分を抽出（8ピクセル分）
+                // p成分を抽出(8ピクセル分)
                 uint8_t p_curr_buf[8] __attribute__((aligned(16)));
                 uint8_t p_prev_buf[8] __attribute__((aligned(16)));
                 uint8_t q_curr_buf[8] __attribute__((aligned(16)));
@@ -3944,7 +3944,7 @@ static void mg_compute_divergence_to_hyperram(const mg_level_t *level)
                 uint8x16_t q_curr_u8 = vld1q_u8(q_curr_buf);
                 uint8x16_t q_prev_u8 = vld1q_u8(q_prev_buf);
 
-                // uint8 → int16 拡張（下位8バイト）
+                // uint8 → int16 拡張(下位8バイト)
                 int16x8_t p_curr_s16 = vreinterpretq_s16_u16(vmovlbq_u8(p_curr_u8));
                 int16x8_t p_prev_s16 = vreinterpretq_s16_u16(vmovlbq_u8(p_prev_u8));
                 int16x8_t q_curr_s16 = vreinterpretq_s16_u16(vmovlbq_u8(q_curr_u8));
@@ -4059,11 +4059,11 @@ static void mg_gauss_seidel(const mg_level_t *level, int iterations)
                 int start_x = 1 + ((y + color) & 1);
 
 #if USE_MVE_FOR_GAUSS_SEIDEL
-                // MVE版: 4ピクセル並列処理（Red-Blackパターン、stride=2）
+                // MVE版: 4ピクセル並列処理(Red-Blackパターン，stride=2)
                 int x;
                 for (x = start_x; x < width - 8; x += 8)
                 {
-                    // 4つのRed/Blackピクセル（x, x+2, x+4, x+6）とその隣接ピクセルをロード
+                    // 4つのRed/Blackピクセル(x, x+2, x+4, x+6)とその隣接ピクセルをロード
                     // 左隣: x-1, x+1, x+3, x+5
                     float32x4_t left = {row_curr[x - 1], row_curr[x + 1], row_curr[x + 3], row_curr[x + 5]};
                     // 右隣: x+1, x+3, x+5, x+7
@@ -4084,7 +4084,7 @@ static void mg_gauss_seidel(const mg_level_t *level, int iterations)
                     sum = vsubq_f32(sum, rhs_vec);
                     float32x4_t result = vmulq_n_f32(sum, 0.25f);
 
-                    // ストア（stride=2でスカラー保存）
+                    // ストア(stride=2でスカラー保存)
                     float result_arr[4];
                     vst1q_f32(result_arr, result);
                     row_curr[x] = result_arr[0];
@@ -4127,7 +4127,7 @@ static void mg_gauss_seidel(const mg_level_t *level, int iterations)
             }
         }
 
-        // Red-Black両パス完了後、Neumann境界条件を適用
+        // Red-Black両パス完了後，Neumann境界条件を適用
         // 上下境界: y=0とy=height-1を隣接行で設定
         hyperram_b_read(row_curr, (void *)(level->z_offset + row_bytes), row_bytes); // y=1
         hyperram_b_write(row_curr, (void *)(level->z_offset + 0), row_bytes);        // y=0 = y=1
@@ -4200,16 +4200,16 @@ static void mg_compute_residual(const mg_level_t *level, uint32_t residual_offse
         {
             // 5点ステンシルLaplacian: lap = left + right + top + bottom - 4*center
 
-            // 左隣（x-1, x, x+1, x+2）
+            // 左隣(x-1, x, x+1, x+2)
             float32x4_t left = vld1q_f32(&row_curr[x - 1]);
 
-            // 右隣（x+1, x+2, x+3, x+4）
+            // 右隣(x+1, x+2, x+3, x+4)
             float32x4_t right = vld1q_f32(&row_curr[x + 1]);
 
-            // 中央（x, x+1, x+2, x+3）
+            // 中央(x, x+1, x+2, x+3)
             float32x4_t center = vld1q_f32(&row_curr[x]);
 
-            // 上下（x, x+1, x+2, x+3）
+            // 上下(x, x+1, x+2, x+3)
             float32x4_t top = vld1q_f32(&row_prev[x]);
             float32x4_t bottom = vld1q_f32(&row_next[x]);
 
@@ -4304,7 +4304,7 @@ static void mg_restrict_residual(const mg_level_t *fine, const mg_level_t *coars
         }
 
 #if USE_MVE_FOR_MG_RESTRICT
-        // MVE版: 4ピクセル並列処理（9点ステンシル）
+        // MVE版: 4ピクセル並列処理(9点ステンシル)
         int cx;
         for (cx = 0; cx < coarse_w - 3; cx += 4)
         {
@@ -4343,7 +4343,7 @@ static void mg_restrict_residual(const mg_level_t *fine, const mg_level_t *coars
                                      row_below[fx2] * 2.0f, row_below[fx3] * 2.0f};
                 sum = vaddq_f32(sum, below);
             }
-            // 対角4点（条件付き加算は簡略化のためスカラーで処理）
+            // 対角4点(条件付き加算は簡略化のためスカラーで処理)
             float result[4];
             vst1q_f32(result, sum);
             for (int i = 0; i < 4; i++)
@@ -4458,7 +4458,7 @@ static void mg_prolong_correction(const mg_level_t *coarse, const mg_level_t *fi
         }
 
 #if USE_MVE_FOR_MG_RESTRICT
-        // MVE版: 4ピクセル並列処理（双線形補間）
+        // MVE版: 4ピクセル並列処理(双線形補間)
         int cx;
         for (cx = 0; cx < coarse_w - 3; cx += 4)
         {

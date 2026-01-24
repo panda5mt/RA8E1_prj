@@ -1,8 +1,8 @@
 function viewQVGAfromYUV(filename)
     %{
-    TeraTermログ 'filename' を読み込み、
-    "!srt" 以降にある "0xXXXXXXXX" (32bit) を 2ピクセル=YUV422(YUYV) としてパース。
-    QVGA(320×240) 1フレームを RGB画像として表示するサンプル。
+    TeraTermログ 'filename' を読み込み，
+    "!srt" 以降にある "0xXXXXXXXX" (32bit) を 2ピクセル=YUV422(YUYV) としてパース．
+    QVGA(320×240) 1フレームを RGB画像として表示するサンプル．
 
     【前提】
      - 1行32bit が 2画素ぶん 
@@ -14,7 +14,7 @@ function viewQVGAfromYUV(filename)
     % 0) ファイルパスの自動補完
     %==============================
     if ~isfile(filename)
-        % ファイルが見つからない場合、matlabフォルダ内を探す
+        % ファイルが見つからない場合，matlabフォルダ内を探す
         scriptPath = fileparts(mfilename('fullpath'));
         altPath = fullfile(scriptPath, filename);
         if isfile(altPath)
@@ -38,11 +38,11 @@ function viewQVGAfromYUV(filename)
     %==============================
     startIndex = find(contains(lines, '!srt'), 1, 'first');
     if isempty(startIndex)
-        error('ファイル内に "!srt" が見つかりませんでした。');
+        error('ファイル内に "!srt" が見つかりませんでした．');
     end
     
     %==============================
-    % 3) "!srt" 以降の行を抽出し、"0xXXXXXXXX" のみ残す
+    % 3) "!srt" 以降の行を抽出し，"0xXXXXXXXX" のみ残す
     %==============================
     dataLines = lines(startIndex+1:end);
     dataLines = dataLines(startsWith(dataLines, '0x'));
@@ -140,7 +140,7 @@ function viewQVGAfromYUV(filename)
     %==============================
     % [320,240] (幅,高さ) → 転置 → (240×320) 行列
     if length(Y_ch) ~= 76800
-        error('画素数が一致しません。(想定:76800, 実際:%d)', length(Y_ch));
+        error('画素数が一致しません．(想定:76800, 実際:%d)', length(Y_ch));
     end
     Ymat = reshape(Y_ch, [320, 240])';  % (240 x 320)
     Umat = reshape(U_ch, [320, 240])';
@@ -150,7 +150,7 @@ function viewQVGAfromYUV(filename)
     % 8) YUV → RGBへ変換
     %==============================
     % ここでは簡単な BT.601 変換を例示 (Y[16..235],U[16..240],V[16..240]想定)
-    % YUV値が0-255で取れているとして、(実際にはフォーマットにより範囲が異なる場合あり)
+    % YUV値が0-255で取れているとして，(実際にはフォーマットにより範囲が異なる場合あり)
     % R = 1.164*(Y-16) + 1.596*(V-128)
     % G = 1.164*(Y-16) - 0.813*(V-128) - 0.391*(U-128)
     % B = 1.164*(Y-16) + 2.018*(U-128)

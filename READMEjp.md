@@ -205,7 +205,7 @@ cmake --build build/Debug
 
 ## 使用方法
 
-MATLAB側で HLAC/LDA の学習＋オンライン推論まで行う場合は [matlab/QUICKSTART.md](matlab/QUICKSTART.md) を参照してください。
+MATLAB側で HLAC/LDA の学習＋オンライン推論まで行う場合は [matlab/QUICKSTART.md](matlab/QUICKSTART.md) を参照してください．
 
 ### MATLAB受信側
 ```matlab
@@ -216,20 +216,20 @@ udp_photo_receiver
 % 停止: Ctrl+C または画像ウィンドウを閉じる
 ```
 
-### HLAC + LDA（MATLAB）
+### HLAC + LDA(MATLAB)
 
-深度/|P|+|Q| を 8bit フレームとして受信し、学習＋推論を行う場合:
+深度/|P|+|Q| を 8bit フレームとして受信し，学習＋推論を行う場合:
 
 ```matlab
 cd matlab
-hlac_lda_workflow           % 学習（デフォルト: Sobel OFF）
-hlac_udp_inference          % 推論（デフォルト: Sobel OFF）
+hlac_lda_workflow           % 学習(デフォルト: Sobel OFF)
+hlac_udp_inference          % 推論(デフォルト: Sobel OFF)
 ```
 
 ### 通信プロトコル
 - **動作モード**: マルチフレーム動画送信
-- **チャンク送信間隔**: 設定可変（デフォルト ~1ms）
-- **フレーム間隔**: 設定可変（デフォルト ~5ms）
+- **チャンク送信間隔**: 設定可変(デフォルト ~1ms)
+- **フレーム間隔**: 設定可変(デフォルト ~5ms)
 - **フレーム数**: 無制限(total_frames = -1)または指定数
 - **チャンクサイズ**: 512バイト/パケット
 - **総パケット数**: 1フレームあたり `ceil(total_size / 512)`
@@ -237,8 +237,8 @@ hlac_udp_inference          % 推論（デフォルト: Sobel OFF）
 - **実効フレームレート**: 約1-2 fps(ネットワーク環境依存)
 
 補足:
-- `total_size` は 320x240 固定の場合と、ROIちょうど（例: 256x128）の可変サイズの場合があります。
-- UDPは取りこぼしが起き得るため、欠損が増えると `missing` が増えます。
+- `total_size` は 320x240 固定の場合と，ROIちょうど(例: 256x128)の可変サイズの場合があります．
+- UDPは取りこぼしが起き得るため，欠損が増えると `missing` が増えます．
 
 ## ネットワーク接続
 
@@ -306,7 +306,7 @@ udp_photo_receiver
 
 ### C側設定(main_thread1_entry.c)
 ```c
-// src/main_thread1_entry.c のマクロで調整（ミリ秒）
+// src/main_thread1_entry.c のマクロで調整(ミリ秒)
 #define UDP_PACKET_INTERVAL_MS 1
 #define UDP_FRAME_INTERVAL_MS  5
 
@@ -322,17 +322,17 @@ udp_photo_receiver
 **深度再構成モード**:
 - **USE_DEPTH_METHOD = 1**: マルチグリッド・ポアソン解法
   - 処理時間: 約0.5〜2秒/フレーム
-  - 中品質。HyperRAM上にワークスペースを展開
+  - 中品質．HyperRAM上にワークスペースを展開
   - 品質重視または後処理向け
 
 - **USE_DEPTH_METHOD = 0**: 簡易行積分法
   - 処理時間: 1ms未満/フレーム
   - MVE最適化済み(Helium命令で20-25%高速化)
-  - リアルタイム用途に最適。表面品質は低め
+  - リアルタイム用途に最適．表面品質は低め
 
 **簡易版バリアント**:
-- **USE_SIMPLE_DIRECT_P = 1**: p勾配をHyperRAMから直接ストリーミング（最速・RAM節約）
-- **USE_SIMPLE_DIRECT_P = 0**: 従来のSRAMバッファ経由（デバッグや他形式出力が必要な場合）
+- **USE_SIMPLE_DIRECT_P = 1**: p勾配をHyperRAMから直接ストリーミング(最速・RAM節約)
+- **USE_SIMPLE_DIRECT_P = 0**: 従来のSRAMバッファ経由(デバッグや他形式出力が必要な場合)
 
 ### MATLAB側設定(udp_photo_receiver.m)
 ```matlab

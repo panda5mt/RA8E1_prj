@@ -10,9 +10,9 @@
 #define FFT_TEST_SIZE 16 // 16x16 = 256ポイント
 #define FFT_TEST_POINTS (FFT_TEST_SIZE * FFT_TEST_SIZE)
 
-/* HyperRAM上のFFTテスト用バッファオフセット（8MB中の空き領域を使用） */
-// Multigrid: 0x05DD00～0x18A000 (1.2MB)なので、2MB位置は安全
-#define FFT_TEST_OFFSET 0x200000 // 2MB位置から開始（Multigrid領域の後）
+/* HyperRAM上のFFTテスト用バッファオフセット(8MB中の空き領域を使用) */
+// Multigrid: 0x05DD00～0x18A000 (1.2MB)なので，2MB位置は安全
+#define FFT_TEST_OFFSET 0x200000 // 2MB位置から開始(Multigrid領域の後)
 #define FFT_REAL_OFFSET (FFT_TEST_OFFSET)
 #define FFT_IMAG_OFFSET (FFT_TEST_OFFSET + FFT_TEST_POINTS * sizeof(float))
 #define FFT_ORIGINAL_OFFSET (FFT_TEST_OFFSET + FFT_TEST_POINTS * sizeof(float) * 2)
@@ -27,8 +27,8 @@ void fft_test_impulse(void);             // インパルス応答テスト
 void fft_test_sine_wave(void);           // 正弦波テスト
 void fft_test_round_trip(void);          // FFT→IFFT往復テスト
 void fft_test_hyperram_round_trip(void); // HyperRAMベースFFT→IFFT往復テスト
-void fft_test_hyperram_128x128(void);    // 128×128大規模FFT→IFFTテスト（ブロック処理）
-void fft_test_hyperram_256x256(void);    // 256×256大規模FFT→IFFTテスト（FULL版）
+void fft_test_hyperram_128x128(void);    // 128×128大規模FFT→IFFTテスト(ブロック処理)
+void fft_test_hyperram_256x256(void);    // 256×256大規模FFT→IFFTテスト(FULL版)
 
 /* 1D FFT/IFFT (MVE最適化版) */
 void fft_1d_mve(float *real, float *imag, int N, bool is_inverse);
@@ -36,7 +36,7 @@ void fft_1d_mve(float *real, float *imag, int N, bool is_inverse);
 /* 2D FFT/IFFT */
 void fft_2d(float *real, float *imag, int rows, int cols, bool is_inverse);
 
-/* HyperRAMベース2D FFT/IFFT（メモリ効率版） */
+/* HyperRAMベース2D FFT/IFFT(メモリ効率版) */
 void fft_2d_hyperram(
     uint32_t hyperram_input_real_offset,
     uint32_t hyperram_input_imag_offset,
@@ -44,7 +44,7 @@ void fft_2d_hyperram(
     uint32_t hyperram_output_imag_offset,
     int rows, int cols, bool is_inverse);
 
-/* HyperRAMベース2D FFT/IFFT（32x32ブロック処理：128x128で実績あり） */
+/* HyperRAMベース2D FFT/IFFT(32x32ブロック処理：128x128で実績あり) */
 void fft_2d_hyperram_blocked(
     uint32_t hyperram_input_real_offset,
     uint32_t hyperram_input_imag_offset,
@@ -53,10 +53,10 @@ void fft_2d_hyperram_blocked(
     int rows, int cols, bool is_inverse);
 
 /*
- * HyperRAMベース「真の」2D FFT/IFFT（rows点×cols点）。
+ * HyperRAMベース「真の」2D FFT/IFFT(rows点×cols点)．
  * - 行FFT(cols点) → 転置(HyperRAM上) → 行FFT(rows点) → 逆転置
- * - 追加の作業領域として、転置用の tmp_real/tmp_imag（サイズ=rows*cols要素）が必要です。
- *   例: 128x128なら tmp_real/tmp_imag それぞれ64KB。
+ * - 追加の作業領域として，転置用の tmp_real/tmp_imag(サイズ=rows*cols要素)が必要です．
+ *   例: 128x128なら tmp_real/tmp_imag それぞれ64KB．
  */
 void fft_2d_hyperram_full(
     uint32_t hyperram_input_real_offset,

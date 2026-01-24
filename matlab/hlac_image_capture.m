@@ -1,21 +1,21 @@
 function hlac_image_capture()
     % HLAC学習用画像キャプチャツール
-    % RA8E1からUDP経由で画像を受信し、キーボード入力でクラスラベル付き保存
+    % RA8E1からUDP経由で画像を受信し，キーボード入力でクラスラベル付き保存
     % 
     % 使い方:
     %   - 数字キー(0-9): 対応するクラスラベルで画像を保存
     %   - 's': 統計情報を表示
     %   - 'q': 終了
-    %   - Space: 現在のフレームを表示のみ（保存なし）
+    %   - Space: 現在のフレームを表示のみ(保存なし)
     
     close all;
     
     % 設定
     udp_port = 9000;
     save_dir = 'hlac_training_data';  % 保存先ディレクトリ
-    rejected_subdir = '_rejected';    % 欠損が多いフレームの退避先（学習には使わない）
+    rejected_subdir = '_rejected';    % 欠損が多いフレームの退避先(学習には使わない)
     
-    % クラスラベル定義（0-9まで使用可能）
+    % クラスラベル定義(0-9まで使用可能)
     class_names = {'class0', 'class1', 'class2', 'class3', 'class4', ...
                    'class5', 'class6', 'class7', 'class8', 'class9'};
     
@@ -103,7 +103,7 @@ function [stats, total_saved] = capture_loop(udp_obj, ax, fig, save_dir, class_n
     
     header_size = 24;
 
-    % このプロジェクトの送信データ想定（udp_photo_receiver.m と同じ）
+    % このプロジェクトの送信データ想定(udp_photo_receiver.m と同じ)
     frame_width = 320;
     frame_height = 240;
     
@@ -114,7 +114,7 @@ function [stats, total_saved] = capture_loop(udp_obj, ax, fig, save_dir, class_n
     current_frame = [];
 
     % 保存品質管理
-    max_missing_chunks_to_save = 5; % この数以下の欠損なら保存する（表示は常に行う）
+    max_missing_chunks_to_save = 5; % この数以下の欠損なら保存する(表示は常に行う)
     save_rejected_frames = true;    % 欠損が多いフレームは _rejected に退避保存
     current_frame_id = 0;
     last_frame_id = -1;
@@ -128,7 +128,7 @@ function [stats, total_saved] = capture_loop(udp_obj, ax, fig, save_dir, class_n
     last_status_time = tic;
     received_frames = 0;
 
-    % UDPは順序入れ替わり得るため、受信済みチャンク数で完了判定する
+    % UDPは順序入れ替わり得るため，受信済みチャンク数で完了判定する
     received_mask = [];
     received_count = 0;
     frame_completed = false;
@@ -137,7 +137,7 @@ function [stats, total_saved] = capture_loop(udp_obj, ax, fig, save_dir, class_n
     
     while ishandle(fig)
         try
-            % 高速パケット連続受信（バッファ蓄積対応）
+            % 高速パケット連続受信(バッファ蓄積対応)
             packets_in_loop = 0;
             while packets_in_loop < 20  % 最大20パケット連続処理
                 data = udp_obj();
@@ -213,7 +213,7 @@ function [stats, total_saved] = capture_loop(udp_obj, ax, fig, save_dir, class_n
                             end
                         end
 
-                        % 全チャンク受信でフレーム完成（順序入れ替わりに対応）
+                        % 全チャンク受信でフレーム完成(順序入れ替わりに対応)
                         if ~frame_completed && ~isempty(packets) && received_count == total_chunks
                             [current_frame, last_missing_chunks] = reconstruct_depth_frame(packets, total_chunks, total_size, frame_width, frame_height);
                             last_frame_id = current_frame_id;
@@ -300,7 +300,7 @@ function [frame, missing_count] = reconstruct_depth_frame(packets, total_chunks,
             return;
         end
 
-        % 欠損があってもゼロ埋めで復元する（表示・保存を優先）
+        % 欠損があってもゼロ埋めで復元する(表示・保存を優先)
         frame_data = zeros(total_size, 1, 'uint8');
 
         for i = 1:total_chunks
@@ -415,7 +415,7 @@ function success = save_image(frame, save_dir, class_name, frame_id, missing_chu
             mkdir(out_dir);
         end
 
-        % ファイル名生成（タイムスタンプ＋品質情報付き）
+        % ファイル名生成(タイムスタンプ＋品質情報付き)
         timestamp = datestr(now, 'yyyymmdd_HHMMSS_FFF');
         filename = sprintf('%s_%s_f%05d_m%03d.png', name_prefix, timestamp, frame_id, missing_chunks);
         filepath = fullfile(out_dir, filename);

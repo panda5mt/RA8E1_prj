@@ -1,20 +1,20 @@
 # HLAC-LDA Classification System for RA8E1
 
-RA8E1マイコンとPC（MATLAB）を使用したHLAC特徴量抽出とLDA分類システムの実装ガイド
+RA8E1マイコンとPC(MATLAB)を使用したHLAC特徴量抽出とLDA分類システムの実装ガイド
 
 ## 概要
 
-このシステムは、以下の構成で画像分類を行います：
+このシステムは，以下の構成で画像分類を行います：
 
-1. **PC（MATLAB）側**：
+1. **PC(MATLAB)側**：
    - RA8E1からUDP経由で画像を受信・保存
    - HLAC特徴量の抽出
-   - LDA分類器の学習（W、bパラメータの生成）
+   - LDA分類器の学習(W，bパラメータの生成)
 
 2. **RA8E1側**：
    - 画像キャプチャ
    - HLAC特徴量の抽出
-   - LDA分類器による推論（PC側で学習したW、bを使用）
+   - LDA分類器による推論(PC側で学習したW，bを使用)
 
 ## システム構成
 
@@ -39,7 +39,7 @@ PC (MATLAB)                          RA8E1
 
 ### ステップ1: 画像データの収集
 
-1. RA8E1を起動し、UDP経由で画像を送信する状態にする
+1. RA8E1を起動し，UDP経由で画像を送信する状態にする
 
 2. MATLABで画像キャプチャツールを起動：
 ```matlab
@@ -52,7 +52,7 @@ PC (MATLAB)                          RA8E1
    - `s`：統計情報を表示
    - `q`：終了
 
-4. 各クラスごとに十分な枚数（最低20枚以上推奨）の画像を収集
+4. 各クラスごとに十分な枚数(最低20枚以上推奨)の画像を収集
 
 保存先ディレクトリ構成：
 ```
@@ -79,10 +79,10 @@ MATLABで特徴量を抽出：
 % データディレクトリ
 >> data_dir = 'hlac_training_data';
 
-% HLAC特徴量抽出（2次、25次元）
+% HLAC特徴量抽出(2次，25次元)
 >> features_table = extract_hlac_from_dataset(data_dir, class_names, 2);
 
-% 特徴量の可視化（PCA）
+% 特徴量の可視化(PCA)
 >> visualize_hlac_features(features_table, class_names);
 
 % 保存
@@ -94,7 +94,7 @@ MATLABで特徴量を抽出：
 MATLABでLDA分類器を学習：
 
 ```matlab
-% 特徴量データ読み込み（既に抽出済みの場合）
+% 特徴量データ読み込み(既に抽出済みの場合)
 >> load('hlac_features.mat');
 
 % LDA学習とパラメータ出力
@@ -108,8 +108,8 @@ MATLABでLDA分類器を学習：
 ```
 lda_model/
 ├── lda_model.mat           # MATLAB形式のモデル
-├── lda_weights_W.csv       # 重み行列（CSV）
-├── lda_bias_b.csv          # バイアスベクトル（CSV）
+├── lda_weights_W.csv       # 重み行列(CSV)
+├── lda_bias_b.csv          # バイアスベクトル(CSV)
 ├── lda_params.h            # C言語用ヘッダファイル ★重要★
 ├── lda_params_info.txt     # パラメータ情報
 └── confusion_matrix.png    # 混同行列
@@ -170,33 +170,33 @@ void process_rgb_camera_frame(uint8_t *rgb_frame, uint16_t width, uint16_t heigh
 
 ## ファイル構成
 
-### MATLAB側（学習用）
+### MATLAB側(学習用)
 ```
 matlab/
 ├── hlac_image_capture.m        # 画像キャプチャツール
 ├── extract_hlac_features.m     # HLAC特徴量抽出
 ├── train_lda_classifier.m      # LDA学習
-├── udp_photo_receiver.m        # リアルタイム動画表示（既存）
-└── viewQVGA_YUV.m             # YUV表示ユーティリティ（既存）
+├── udp_photo_receiver.m        # リアルタイム動画表示(既存)
+└── viewQVGA_YUV.m             # YUV表示ユーティリティ(既存)
 ```
 
-### RA8E1側（推論用）
+### RA8E1側(推論用)
 ```
 src/
 ├── hlac_extract.h              # HLAC特徴量抽出
 ├── lda_inference.h             # LDA推論
-├── lda_params.h                # 学習済みパラメータ（MATLABで生成）
+├── lda_params.h                # 学習済みパラメータ(MATLABで生成)
 └── hlac_lda_example.c          # 使用例
 ```
 
 ## HLAC特徴量について
 
-### 1次HLAC（5次元）
+### 1次HLAC(5次元)
 - パターン: 中心ピクセルと隣接ピクセルの1次自己相関
 - 特徴数: 5
 - 計算コスト: 低
 
-### 2次HLAC（25次元）
+### 2次HLAC(25次元)
 - パターン: 3×3近傍の2次自己相関
 - 特徴数: 25
 - 計算コスト: 中
@@ -204,13 +204,13 @@ src/
 
 ## パフォーマンス
 
-### メモリ使用量（2次HLAC、5クラスの場合）
+### メモリ使用量(2次HLAC，5クラスの場合)
 - HLAC特徴量: 25 × 4 bytes = 100 bytes
 - LDAスコア: 5 × 4 bytes = 20 bytes
 - 合計: ~120 bytes
 
-### 処理時間の目安（QVGA 320×240）
-- HLAC特徴抽出: ~10-50ms（実装による）
+### 処理時間の目安(QVGA 320×240)
+- HLAC特徴抽出: ~10-50ms(実装による)
 - LDA推論: ~1ms未満
 - 合計: ~10-50ms
 
@@ -224,15 +224,15 @@ src/
 
 2. **特徴量の確認**
    - `visualize_hlac_features()`で特徴空間の分布を確認
-   - クラス間の分離が不十分な場合は、異なる特徴量を検討
+   - クラス間の分離が不十分な場合は，異なる特徴量を検討
 
 3. **HLAC次数の変更**
-   - 2次HLAC（25次元）を使用（推奨）
+   - 2次HLAC(25次元)を使用(推奨)
    - より複雑なパターン認識が可能
 
 ### UDP通信エラー
 1. ファイアウォール設定を確認
-2. ポート番号（9000）が使用可能か確認
+2. ポート番号(9000)が使用可能か確認
 3. RA8E1のIPアドレス設定を確認
 
 ### RA8E1での推論エラー
@@ -287,7 +287,7 @@ void send_classification_result(int class_id, float *scores)
 
 ## ライセンス
 
-このコードはMITライセンスの下で提供されています。
+このコードはMITライセンスの下で提供されています．
 
 ## 更新履歴
 

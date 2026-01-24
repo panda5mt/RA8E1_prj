@@ -44,12 +44,12 @@ typedef enum
 } yuv422_order_t;
 
 /*
- * YUV422バイト順の固定設定（MATLAB側は変更しない前提）
- * CEU設定が CB0Y0CR0Y1 (= UYVY) のため、デフォルトは UYVY。
- * もし「Y成分っぽいが、偶奇ピクセルが入れ替わって見える」場合は
+ * YUV422バイト順の固定設定(MATLAB側は変更しない前提)
+ * CEU設定が CB0Y0CR0Y1 (= UYVY) のため，デフォルトは UYVY．
+ * もし「Y成分っぽいが，偶奇ピクセルが入れ替わって見える」場合は
  *   - YUV422_ORDER_UYVY_SWAP_Y
  *   - YUV422_ORDER_YUYV_SWAP_Y
- * を試してください（Yのみを入れ替えます）。
+ * を試してください(Yのみを入れ替えます)．
  */
 #ifndef UDP_GRAYSCALE_YUV422_ORDER
 #define UDP_GRAYSCALE_YUV422_ORDER YUV422_ORDER_UYVY_SWAP_Y
@@ -58,7 +58,7 @@ typedef enum
 static const yuv422_order_t g_yuv422_order_fixed = (yuv422_order_t)UDP_GRAYSCALE_YUV422_ORDER;
 
 /*
- * 4px束の順番補正（グレースケール送信のみ）
+ * 4px束の順番補正(グレースケール送信のみ)
  * 0: 無効
  * 1: 4px(=4バイト)ごとに [0..1] と [2..3] を入れ替え (Y2 Y3 Y0 Y1 型)
  */
@@ -129,8 +129,8 @@ static void extract_y_from_yuv422(const uint8_t *yuv, uint8_t *y_out, uint32_t y
 #define UDP_PORT_DEST 9000
 #define FRAME_SIZE (320 * 240 * 2)    // YUV422 = 2 bytes/pixel
 #define MONO_OFFSET FRAME_SIZE        // モノクロ画像オフセット
-#define GRADIENT_OFFSET FRAME_SIZE    // p,q勾配マップオフセット（MONO_OFFSETと同じ位置）
-#define DEPTH_OFFSET (FRAME_SIZE * 2) // 深度マップオフセット（8bit grayscale: 320×240 = 76,800バイト）
+#define GRADIENT_OFFSET FRAME_SIZE    // p,q勾配マップオフセット(MONO_OFFSETと同じ位置)
+#define DEPTH_OFFSET (FRAME_SIZE * 2) // 深度マップオフセット(8bit grayscale: 320×240 = 76,800バイト)
 
 /*
  * UDP pacing:
@@ -226,7 +226,7 @@ typedef struct __attribute__((packed))
     uint32_t total_size;      // 写真データの総サイズ
     uint32_t chunk_index;     // 現在のチャンクインデックス (0から開始)
     uint32_t total_chunks;    // 総チャンク数
-    uint32_t chunk_offset;    // このチャンクのオフセット（バイト）
+    uint32_t chunk_offset;    // このチャンクのオフセット(バイト)
     uint16_t chunk_data_size; // このチャンクのデータサイズ
     uint16_t checksum;        // ヘッダーのチェックサム
 } udp_photo_header_t;
@@ -246,7 +246,7 @@ typedef struct
     uint8_t *photo_data; // 写真データのポインタ
     uint32_t photo_size; // 写真データの総サイズ
     uint32_t sent_bytes; // 送信済みバイト数
-    uint32_t chunk_size; // 1回の送信サイズ（512バイト）
+    uint32_t chunk_size; // 1回の送信サイズ(512バイト)
     bool is_photo_mode;  // 写真モードかどうか
 
     // マルチフレーム動画送信用
@@ -292,7 +292,7 @@ static uint16_t calc_header_checksum(udp_photo_header_t *header)
 /* DHCP完了待ち用セマフォ */
 static SemaphoreHandle_t g_ip_ready_sem = NULL;
 
-/* 静的UDP送信コンテキスト（ヒープ不要） */
+/* 静的UDP送信コンテキスト(ヒープ不要) */
 static udp_send_ctx_t g_udp_send_ctx;
 
 /* ====== 受信コールバック ====== */
@@ -308,7 +308,7 @@ static void udp_rx_cb(void *arg, struct udp_pcb *upcb, struct pbuf *p,
 
     char head[65] = {0};
     u16_t cpy = (p->tot_len < 64) ? p->tot_len : 64;
-    /* p->payload は線形とは限らないが、ここでは小さく読むだけなので p->payload を直接 */
+    /* p->payload は線形とは限らないが，ここでは小さく読むだけなので p->payload を直接 */
     memcpy(head, p->payload, cpy);
 
     xprintf("[UDP RX] %s:%u len=%u data=\"%s\"\n",
@@ -317,7 +317,7 @@ static void udp_rx_cb(void *arg, struct udp_pcb *upcb, struct pbuf *p,
     pbuf_free(p);
 }
 
-/* ====== 送信タイマ（tcpip_thread 上で実行） ====== */
+/* ====== 送信タイマ(tcpip_thread 上で実行) ====== */
 static void udp_send_timer_cb(void *arg)
 {
     udp_send_ctx_t *ctx = (udp_send_ctx_t *)arg;
@@ -364,7 +364,7 @@ static void udp_send_timer_cb(void *arg)
             /* Y成分抽出は2ピクセル(=2バイト)単位で行うため偶数に丸める */
             send_size &= ~(size_t)1U;
 #if UDP_GRAYSCALE_REORDER_4PX_MODE == 1
-            /* 4px束並び替えを行う場合、4バイト境界に揃える */
+            /* 4px束並び替えを行う場合，4バイト境界に揃える */
             send_size &= ~(size_t)3U;
 #endif
         }
@@ -375,7 +375,7 @@ static void udp_send_timer_cb(void *arg)
 
         if (!p)
         {
-            // pbuf確保失敗時は短い間隔でリトライ（間隔0でも安全）
+            // pbuf確保失敗時は短い間隔でリトライ(間隔0でも安全)
             sys_timeout((ctx->interval_ms > 0) ? ctx->interval_ms : 1, udp_send_timer_cb, ctx);
             return;
         }
@@ -395,17 +395,17 @@ static void udp_send_timer_cb(void *arg)
             // パケットにヘッダーをコピー
             memcpy(p->payload, &header, sizeof(udp_photo_header_t));
 
-            // HyperRAMからYUV422データを読み込み、Y成分のみを抽出してグレースケール送信
+            // HyperRAMからYUV422データを読み込み，Y成分のみを抽出してグレースケール送信
             uint8_t *dest_ptr = (uint8_t *)p->payload + sizeof(udp_photo_header_t);
 
-            // YUV422から必要なバイト数の2倍を読み込む（Y成分は2バイトごと）
-            uint8_t yuv_buffer[1024]; // 一時バッファ（最大512バイトのグレースケール = 1024バイトのYUV422）
+            // YUV422から必要なバイト数の2倍を読み込む(Y成分は2バイトごと)
+            uint8_t yuv_buffer[1024]; // 一時バッファ(最大512バイトのグレースケール = 1024バイトのYUV422)
             uint32_t yuv_read_size = (uint32_t)(send_size * 2U);
             uint32_t yuv_offset = (uint32_t)(ctx->sent_bytes * 2U); // グレースケールオフセットをYUV422オフセットに変換
 
             if (yuv_read_size > sizeof(yuv_buffer))
             {
-                /* 想定外（chunk_size変更など）: バッファに収まる範囲へ制限 */
+                /* 想定外(chunk_size変更など): バッファに収まる範囲へ制限 */
                 yuv_read_size = (uint32_t)sizeof(yuv_buffer);
                 send_size = (size_t)(yuv_read_size / 2U);
             }
@@ -470,7 +470,7 @@ static void udp_send_timer_cb(void *arg)
             if (e == ERR_OK)
             {
                 ctx->sent_bytes += send_size;
-                // ログ出力を大幅に削減（パフォーマンス向上）
+                // ログ出力を大幅に削減(パフォーマンス向上)
                 if ((ctx->sent_bytes / ctx->chunk_size) % 100 == 0)
                 {
                     if (ctx->is_video_mode)
@@ -479,7 +479,7 @@ static void udp_send_timer_cb(void *arg)
                     }
                 }
             }
-            // ログ出力を最小限に抑制（高速化）
+            // ログ出力を最小限に抑制(高速化)
             // 動画モードではログをほぼ出力しない
         }
     }
@@ -555,7 +555,7 @@ static void udp_send_timer_cb(void *arg)
                 }
                 should_continue = true;
                 next_interval = ctx->frame_interval_ms; // フレーム間は長めの間隔
-                // ログ出力を削減（100フレームごと）
+                // ログ出力を削減(100フレームごと)
                 if (ctx->current_frame % 100 == 0)
                 {
                     if (is_unlimited)
@@ -609,7 +609,7 @@ static void udp_send_timer_cb(void *arg)
     }
 }
 
-/* ====== netif ステータスコールバック（tcpip_thread から呼ばれる） ====== */
+/* ====== netif ステータスコールバック(tcpip_thread から呼ばれる) ====== */
 static void netif_status_cb(struct netif *n)
 {
     if (!ip4_addr_isany_val(*netif_ip4_addr(n)))
@@ -645,14 +645,14 @@ void main_thread1_entry(void *pvParameters)
     IP_ADDR4(&netmask, 0, 0, 0, 0); // IPADDR_ANY
     IP_ADDR4(&gw, 0, 0, 0, 0);      // IPADDR_ANY
 
-    /* LwIP: tcpip_thread を起動（以後のタイマ/DHCP/ARP はこのスレッドが管理） */
+    /* LwIP: tcpip_thread を起動(以後のタイマ/DHCP/ARP はこのスレッドが管理) */
     tcpip_init(NULL, NULL);
 
     vTaskDelay(pdMS_TO_TICKS(100)); // ← tcpip_thread 起動を待つ
 
-    /* rm_lwip_ether 初期化（input は tcpip_input を指定） */
+    /* rm_lwip_ether 初期化(input は tcpip_input を指定) */
     netif_add(&netif, &ipaddr, &netmask, &gw,
-              &g_lwip_ether0_instance, /* ← プロジェクト固有。名前が違う場合は置換 */
+              &g_lwip_ether0_instance, /* ← プロジェクト固有．名前が違う場合は置換 */
               rm_lwip_ether_init,
               tcpip_input);
     netif_set_default(&netif);
@@ -665,10 +665,10 @@ void main_thread1_entry(void *pvParameters)
     netifapi_netif_set_up(&netif);
     netifapi_netif_set_link_up(&netif);
 
-    /* DHCP 開始（tcpip_thread に依頼） */
+    /* DHCP 開始(tcpip_thread に依頼) */
     netifapi_dhcp_start(&netif);
 
-    /* DHCP 完了待ち（sys_check_timeouts は不要） */
+    /* DHCP 完了待ち(sys_check_timeouts は不要) */
     if (xSemaphoreTake(g_ip_ready_sem, pdMS_TO_TICKS(20000)) == pdTRUE)
     {
         xprintf("[LwIP] DHCP IP: %s\n", ip4addr_ntoa(netif_ip4_addr(&netif)));
@@ -732,7 +732,7 @@ void main_thread1_entry(void *pvParameters)
         ip_addr_t dest_ip;
         ip_addr_copy_from_ip4(dest_ip, bcast4);
 
-        /* PCB 生成・受信ポートに bind（受信も見たい場合） */
+        /* PCB 生成・受信ポートに bind(受信も見たい場合) */
         struct udp_pcb *pcb = udp_new();
         if (!pcb)
         {
@@ -758,10 +758,10 @@ void main_thread1_entry(void *pvParameters)
         ctx->port = UDP_PORT_DEST;
         ctx->interval_ms = UDP_PACKET_INTERVAL_MS;
 
-        // 動画データ送信モード（グレースケール送信：Y成分のみ）
+        // 動画データ送信モード(グレースケール送信：Y成分のみ)
         ctx->is_video_mode = true;
         ctx->is_photo_mode = false;
-        ctx->photo_data = (uint8_t *)HYPERRAM_BASE_ADDR; // 使用しない（hyperram_b_readで直接指定）
+        ctx->photo_data = (uint8_t *)HYPERRAM_BASE_ADDR; // 使用しない(hyperram_b_readで直接指定)
         ctx->photo_size = 320 * 240;                     // グレースケール: 320x240x1 = 76,800 bytes
         ctx->sent_bytes = 0;
         ctx->chunk_size = 512; // 512バイトずつ送信
@@ -776,7 +776,7 @@ void main_thread1_entry(void *pvParameters)
         xprintf("[VIDEO] Starting grayscale transmission (Y component): %d bytes/frame, %d chunks/frame\n",
                 ctx->photo_size, (ctx->photo_size + ctx->chunk_size - 1) / ctx->chunk_size);
 
-        /* 1発目をスケジュール（ネットワーク安定化のため500ms待機） */
+        /* 1発目をスケジュール(ネットワーク安定化のため500ms待機) */
         sys_timeout(500, udp_send_timer_cb, ctx);
     }
 

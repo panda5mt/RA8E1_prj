@@ -5,10 +5,10 @@ fprintf('====================================\n');
 fprintf('Sobel効果の統計分析\n');
 fprintf('====================================\n\n');
 
-fprintf('特徴量抽出中（Sobelなし）...\n');
+fprintf('特徴量抽出中(Sobelなし)...\n');
 features_table_without = extract_hlac_from_dataset(data_dir, class_names, 2, false);
 
-fprintf('\n特徴量抽出中（Sobelあり）...\n');
+fprintf('\n特徴量抽出中(Sobelあり)...\n');
 features_table_with = extract_hlac_from_dataset(data_dir, class_names, 2, true);
 
 feature_cols = features_table_without.Properties.VariableNames;
@@ -32,7 +32,7 @@ for c = 0:length(class_names)-1
 end
 xlabel('第1主成分');
 ylabel('第2主成分');
-title('特徴空間分布（Sobelなし）');
+title('特徴空間分布(Sobelなし)');
 legend('Location', 'best');
 grid on;
 hold off;
@@ -45,7 +45,7 @@ for c = 0:length(class_names)-1
 end
 xlabel('第1主成分');
 ylabel('第2主成分');
-title('特徴空間分布（Sobelあり）');
+title('特徴空間分布(Sobelあり)');
 legend('Location', 'best');
 grid on;
 hold off;

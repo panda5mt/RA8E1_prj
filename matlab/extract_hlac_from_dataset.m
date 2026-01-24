@@ -1,11 +1,11 @@
 function features_table = extract_hlac_from_dataset(data_dir, class_names, order, use_sobel)
-% データセット全体からHLAC特徴量を抽出（任意でSobel前処理）
+% データセット全体からHLAC特徴量を抽出(任意でSobel前処理)
 %
 % 入力:
 %   data_dir    - データセットディレクトリ
 %   class_names - クラス名のセル配列
-%   order       - HLAC次数（デフォルト=2）
-%   use_sobel   - Sobelフィルタを使用するか（デフォルト=false）
+%   order       - HLAC次数(デフォルト=2)
+%   use_sobel   - Sobelフィルタを使用するか(デフォルト=false)
 %
 % 出力:
 %   features_table - 特徴量とラベルを含むテーブル

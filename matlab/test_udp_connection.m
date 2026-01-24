@@ -1,6 +1,6 @@
 function test_udp_connection()
     % UDP接続のテストツール
-    % hlac_image_captureで画像が表示されない場合、このスクリプトで診断
+    % hlac_image_captureで画像が表示されない場合，このスクリプトで診断
     
     close all;
     clc;
@@ -10,7 +10,7 @@ function test_udp_connection()
     fprintf('====================================\n\n');
     
     udp_port = 9000;
-    test_duration = 10;  % テスト時間（秒）
+    test_duration = 10;  % テスト時間(秒)
     
     fprintf('設定:\n');
     fprintf('  UDPポート: %d\n', udp_port);
@@ -79,7 +79,7 @@ function test_udp_connection()
                             fprintf('  期待パケット数: %d\n', total_chunks);
                         end
                         
-                        % 進捗表示（10パケットごと）
+                        % 進捗表示(10パケットごと)
                         if mod(valid_packets, 10) == 0
                             fprintf('.');
                         end
@@ -120,11 +120,11 @@ function test_udp_connection()
             fprintf('  4. ポート番号が一致していない\n');
             fprintf('\n対策:\n');
             fprintf('  1. RA8E1のプログラムが動作しているか確認\n');
-            fprintf('  2. PC のIPアドレスを確認（ipconfig コマンド）\n');
+            fprintf('  2. PC のIPアドレスを確認(ipconfig コマンド)\n');
             fprintf('  3. ファイアウォール設定を確認\n');
             fprintf('  4. ポート%dが使用可能か確認\n', udp_port);
         elseif valid_packets == 0
-            fprintf('✗ パケットは受信されますが、フォーマットが不正です\n');
+            fprintf('✗ パケットは受信されますが，フォーマットが不正です\n');
             fprintf('\n考えられる原因:\n');
             fprintf('  1. RA8E1のプログラムバージョンが古い\n');
             fprintf('  2. 別のプログラムからのパケット\n');
@@ -132,7 +132,7 @@ function test_udp_connection()
             fprintf('  1. RA8E1のファームウェアを確認\n');
             fprintf('  2. マジックナンバーを確認\n');
         elseif frame_count == 0
-            fprintf('⚠ 有効なパケットはありますが、フレームが完成していません\n');
+            fprintf('⚠ 有効なパケットはありますが，フレームが完成していません\n');
             fprintf('\n考えられる原因:\n');
             fprintf('  1. パケットロスが多い\n');
             fprintf('  2. ネットワークが不安定\n');
@@ -147,7 +147,7 @@ function test_udp_connection()
             fprintf('  1. 画像デコード処理の問題\n');
             fprintf('  2. 表示処理の問題\n');
             fprintf('\n次のステップ:\n');
-            fprintf('  >> test_image_decode  （デコードテスト）\n');
+            fprintf('  >> test_image_decode  (デコードテスト)\n');
         end
         
         fprintf('====================================\n');

@@ -86,7 +86,7 @@ spi_flash_direct_transfer_t g_ospi0_trans;
 bool ospi_b_dma_sent = false;
 static bool g_ospi_initialized = false;
 
-/* HyperRAMスレッドセーフアクセス管理（ミューテックスベース） */
+/* HyperRAMスレッドセーフアクセス管理(ミューテックスベース) */
 static SemaphoreHandle_t g_hyperram_mutex = NULL;
 
 /* HyperRAM write verify/retry counters (for diagnostics). */
@@ -231,7 +231,7 @@ fsp_err_t ospi_raw_trans(spi_flash_direct_transfer_t *p_trans,
     return err;
 }
 
-// ★ OSPI レジスタの要点ダンプ（ch=0/1 の両方見ます）
+// ★ OSPI レジスタの要点ダンプ(ch=0/1 の両方見ます)
 void ospi_dump_regs(void)
 {
     R_XSPI0_Type *p = R_XSPI0;
@@ -387,7 +387,7 @@ fsp_err_t hyperram_init(void)
 
     g_ospi_initialized = true;
 
-    // スレッドセーフアクセス用ミューテックス作成（優先度継承付き）
+    // スレッドセーフアクセス用ミューテックス作成(優先度継承付き)
     if (g_hyperram_mutex == NULL)
     {
         g_hyperram_mutex = xSemaphoreCreateMutex();

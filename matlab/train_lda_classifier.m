@@ -4,7 +4,7 @@ function [lda_model, W, b] = train_lda_classifier(features_table, class_names, o
     % 入力:
     %   features_table - extract_hlac_from_datasetで生成された特徴量テーブル
     %   class_names    - クラス名のセル配列
-    %   output_dir     - パラメータ出力先ディレクトリ（オプション）
+    %   output_dir     - パラメータ出力先ディレクトリ(オプション)
     %
     % 出力:
     %   lda_model - 学習済みLDAモデル
@@ -45,13 +45,13 @@ function [lda_model, W, b] = train_lda_classifier(features_table, class_names, o
     end
     fprintf('\n');
 
-    % 利用クラス（データが存在するラベル）だけに絞り、必要ならラベルを連番化
+    % 利用クラス(データが存在するラベル)だけに絞り，必要ならラベルを連番化
     present_labels = unique(Y);
     present_labels = sort(present_labels(:));
     used_class_names = class_names(present_labels + 1);
     num_classes = numel(present_labels);
     if num_classes < 2
-        error('LDA学習には最低2クラス必要です。現在のクラス数=%d', num_classes);
+        error('LDA学習には最低2クラス必要です．現在のクラス数=%d', num_classes);
     end
 
     % Map original labels -> 0..K-1
@@ -60,7 +60,7 @@ function [lda_model, W, b] = train_lda_classifier(features_table, class_names, o
         Y_mapped(Y == present_labels(i)) = i - 1;
     end
     
-    % データを訓練とテストに分割（Toolbox無しでも動くようにフォールバック）
+    % データを訓練とテストに分割(Toolbox無しでも動くようにフォールバック)
     holdout = 0.3;
     [train_idx, test_idx] = local_holdout_split(Y_mapped, holdout);
     X_train = X(train_idx, :);
@@ -71,11 +71,11 @@ function [lda_model, W, b] = train_lda_classifier(features_table, class_names, o
     fprintf('訓練データ: %d samples\n', size(X_train, 1));
     fprintf('テストデータ: %d samples\n\n', size(X_test, 1));
     
-    % 特徴量の標準化（学習・推論で一致させる）
+    % 特徴量の標準化(学習・推論で一致させる)
     [X_train_z, feat_mean, feat_std] = local_zscore_fit_transform(X_train);
     X_test_z = local_zscore_apply(X_test, feat_mean, feat_std);
 
-    % LDA学習（Statistics and Machine Learning Toolbox が無い場合は自前実装）
+    % LDA学習(Statistics and Machine Learning Toolbox が無い場合は自前実装)
     fprintf('LDA学習中...\n');
     use_builtin = (exist('fitcdiscr', 'file') == 2);
     if use_builtin
@@ -109,8 +109,8 @@ function [lda_model, W, b] = train_lda_classifier(features_table, class_names, o
     fprintf('テスト精度: %.2f%%\n', test_accuracy);
     fprintf('====================================\n\n');
     
-    % 混同行列表示（Toolbox無しでも動くように自前で作成）
-    fprintf('混同行列（テストデータ）:\n');
+    % 混同行列表示(Toolbox無しでも動くように自前で作成)
+    fprintf('混同行列(テストデータ):\n');
     confMat = local_confusion_matrix(Y_test, Y_pred_test, num_classes);
     disp(confMat);
     fprintf('\n');
@@ -120,10 +120,10 @@ function [lda_model, W, b] = train_lda_classifier(features_table, class_names, o
     fprintf('  b (バイアス): %dx1\n', size(b, 1));
     fprintf('\n');
     
-    % パラメータ保存（使用クラスのみ）
+    % パラメータ保存(使用クラスのみ)
     save_lda_parameters(W, b, lda_model, output_dir, used_class_names);
     
-    % 混同行列を可視化（可能ならconfusionchart、無ければimagesc）
+    % 混同行列を可視化(可能ならconfusionchart，無ければimagesc)
     try
         if exist('confusionchart', 'file') == 2
             figure('Name', 'Confusion Matrix');
@@ -275,7 +275,7 @@ function [W, b] = extract_lda_parameters(lda_model)
     % LDAモデルから重みとバイアスを抽出
     %
     % LDAの判別関数: y = W' * x + b
-    % ここで、W は特徴次元×クラス数の行列
+    % ここで，W は特徴次元×クラス数の行列
     %       b はクラス数×1のバイアスベクトル
     
     % クラス数と特徴次元
@@ -287,12 +287,12 @@ function [W, b] = extract_lda_parameters(lda_model)
     b = zeros(num_classes, 1);
     
     % 各クラスペアから係数を抽出して統合
-    % MATLABのLDAは各クラスペアごとの係数を保持しているため、
+    % MATLABのLDAは各クラスペアごとの係数を保持しているため，
     % クラス1を基準として他のクラスとの判別境界から係数を抽出
     
     for i = 1:num_classes
         if i == 1
-            % 基準クラス（通常はゼロベクトル）
+            % 基準クラス(通常はゼロベクトル)
             W(:, i) = zeros(num_features, 1);
             b(i) = 0;
         else
@@ -309,15 +309,15 @@ function save_lda_parameters(W, b, lda_model, output_dir, class_names)
     
     % 1. MATLAB形式で保存
     %    - W,b は「標準化後特徴量」に対するパラメータ
-    %    - feature_mean/feature_std を一緒に保存し、推論側で同じ標準化を適用する
+    %    - feature_mean/feature_std を一緒に保存し，推論側で同じ標準化を適用する
     save(fullfile(output_dir, 'lda_model.mat'), 'lda_model', 'W', 'b', 'class_names');
     fprintf('保存: lda_model.mat\n');
     
-    % 2. CSV形式で保存（W行列）
+    % 2. CSV形式で保存(W行列)
     csvwrite(fullfile(output_dir, 'lda_weights_W.csv'), W);
     fprintf('保存: lda_weights_W.csv\n');
     
-    % 3. CSV形式で保存（bベクトル）
+    % 3. CSV形式で保存(bベクトル)
     csvwrite(fullfile(output_dir, 'lda_bias_b.csv'), b);
     fprintf('保存: lda_bias_b.csv\n');
     
@@ -325,7 +325,7 @@ function save_lda_parameters(W, b, lda_model, output_dir, class_names)
     generate_c_header(W, b, output_dir, class_names);
     fprintf('保存: lda_params.h (C言語用)\n');
 
-    % 4b. RA8E1 firmware用モデルファイル生成（src/hlac_lda_model.c を置き換え）
+    % 4b. RA8E1 firmware用モデルファイル生成(src/hlac_lda_model.c を置き換え)
     try
         generate_ra8e1_hlac_lda_model_c(W, b, lda_model, output_dir);
         fprintf('保存: hlac_lda_model.c (RA8E1 firmware用)\n');
@@ -522,7 +522,7 @@ function generate_c_header(W, b, output_dir, class_names)
     end
     fprintf(fid, '\n');
     
-    % 重み行列W（列優先）
+    % 重み行列W(列優先)
     fprintf(fid, '/* Weight matrix W [%d x %d] (column-major) */\n', num_features, num_classes);
     fprintf(fid, 'static const float lda_weights[LDA_NUM_FEATURES * LDA_NUM_CLASSES] = {\n');
     
