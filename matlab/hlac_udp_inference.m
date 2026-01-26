@@ -389,6 +389,9 @@ if total_size == 320 * 240
 elseif total_size == 256 * 128
     w = 256;
     h = 128;
+elseif total_size == 256 * 256
+    w = 256;
+    h = 256;
 elseif total_size == 128 * 128
     w = 128;
     h = 128;
@@ -400,7 +403,7 @@ elseif mod(total_size, 320) == 0
     end
 elseif mod(total_size, 256) == 0
     cand_h = total_size / 256;
-    if cand_h >= 1 && cand_h <= 240
+    if cand_h >= 1 && cand_h <= 512
         w = 256;
         h = cand_h;
     end

@@ -161,6 +161,10 @@ public partial class Form1 : Form
         {
             return (256, 128);
         }
+        if (totalSize == 256 * 256)
+        {
+            return (256, 256);
+        }
         if (totalSize == 128 * 128)
         {
             return (128, 128);
@@ -178,7 +182,7 @@ public partial class Form1 : Form
         if (totalSize % 256 == 0)
         {
             int h = totalSize / 256;
-            if (h >= 1 && h <= 240)
+            if (h >= 1 && h <= 512)
             {
                 return (256, h);
             }
@@ -186,7 +190,7 @@ public partial class Form1 : Form
         if (totalSize % 128 == 0)
         {
             int h = totalSize / 128;
-            if (h >= 1 && h <= 240)
+            if (h >= 1 && h <= 512)
             {
                 return (128, h);
             }
