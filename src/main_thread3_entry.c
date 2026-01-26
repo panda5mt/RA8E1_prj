@@ -278,7 +278,7 @@ static inline uint32_t fc128_cyc_to_us(uint32_t cyc)
  * Example: PQ128_SAMPLE_STRIDE_X=2, PQ128_SAMPLE_STRIDE_Y=1 samples a 256x128 region.
  */
 #ifndef PQ128_SAMPLE_STRIDE_X
-#define PQ128_SAMPLE_STRIDE_X (2)
+#define PQ128_SAMPLE_STRIDE_X (1)
 #endif
 
 #ifndef PQ128_SAMPLE_STRIDE_Y
