@@ -22,6 +22,14 @@ volatile uint32_t g_video_frame_seq = 0;
 // #define VGA_HEIGHT (256)
 // #define BYTE_PER_PIXEL (2)
 
+/*
+ * Camera capture pacing (ms).
+ * NOTE: This is the dominant contributor to the perceived “shutter interval”.
+ */
+#ifndef CAMERA_CAPTURE_INTERVAL_MS
+#define CAMERA_CAPTURE_INTERVAL_MS 125
+#endif
+
 #define RAM_DATA_LENGTH (64U) //
 // void putchar_ra8usb(uint8_t c);
 
@@ -144,7 +152,7 @@ void main_thread0_entry(void *pvParameters)
 
         // フレーム間隔：動画ストリーミングのフレームレートに合わせる
         // 500msに変更してHyperRAM競合を軽減
-        vTaskDelay(pdMS_TO_TICKS(500));
+        vTaskDelay(pdMS_TO_TICKS(CAMERA_CAPTURE_INTERVAL_MS));
     }
 
     ////////////////////////////
