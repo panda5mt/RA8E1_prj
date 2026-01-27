@@ -27,7 +27,7 @@ volatile uint32_t g_video_frame_seq = 0;
  * NOTE: This is the dominant contributor to the perceived “shutter interval”.
  */
 #ifndef CAMERA_CAPTURE_INTERVAL_MS
-#define CAMERA_CAPTURE_INTERVAL_MS 125
+#define CAMERA_CAPTURE_INTERVAL_MS (100)
 #endif
 
 #define RAM_DATA_LENGTH (64U) //
