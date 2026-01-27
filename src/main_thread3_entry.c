@@ -1750,6 +1750,37 @@ static void fc128_export_depth_u8_320x240(uint32_t frame_base_offset)
 }
 
 #if HLAC_ENABLE
+/* Optional: compute a true 256x256 |P|+|Q| map directly from the Y image.
+ * - No stride duplication (unlike hlac_export_pq_mag_u8_roi).
+ * - ROI is centered; out-of-frame rows/cols are zero-padded.
+ *
+ * When enabled, HLAC no longer needs PQ128 p/q planes, so we can skip PQ128
+ * generation to save CPU.
+ */
+#ifndef HLAC_PQ_MAG_TRUE_256
+/* Default ON: when HLAC is enabled, export a true 256x256 |P|+|Q| map directly
+ * from Y (no stride duplication). You can force the old PQ-derived ROI export
+ * by defining HLAC_PQ_MAG_TRUE_256=0.
+ */
+#define HLAC_PQ_MAG_TRUE_256 (1)
+#endif
+
+#if HLAC_PQ_MAG_TRUE_256
+#define HLAC_PQ_MAG_TRUE_W (256)
+#define HLAC_PQ_MAG_TRUE_H (256)
+#define HLAC_PQ_MAG_TRUE_X0 ((FRAME_WIDTH - HLAC_PQ_MAG_TRUE_W) / 2)
+#define HLAC_PQ_MAG_TRUE_Y0 ((FRAME_HEIGHT - HLAC_PQ_MAG_TRUE_H) / 2)
+#endif
+
+#if HLAC_PQ_MAG_TRUE_256
+/* Forward declarations (definitions appear later in this file). */
+static FC128_UNUSED void load_y_line_from_hyperram_or_zero(uint32_t frame_base_offset,
+                                                           int requested_row,
+                                                           uint8_t yuv_line[FRAME_WIDTH * 2],
+                                                           uint8_t y_line[FRAME_WIDTH]);
+static inline uint8_t pq128_get_y_or_zero(const uint8_t y_line[FRAME_WIDTH], int x);
+#endif
+
 static inline uint8_t hlac_pq_mag_u8(int16_t p, int16_t q)
 {
     int ap = (p < 0) ? -(int)p : (int)p;
@@ -1815,6 +1846,43 @@ static void hlac_export_pq_mag_u8_roi(uint32_t frame_base_offset)
                                (uint32_t)sizeof(line));
     }
 }
+
+#if HLAC_PQ_MAG_TRUE_256
+static void hlac_export_pq_mag_u8_true256_from_y(uint32_t frame_base_offset)
+{
+    uint8_t yuv_tmp[FRAME_WIDTH * 2];
+    uint8_t y_prev[FRAME_WIDTH];
+    uint8_t y_curr[FRAME_WIDTH];
+    uint8_t y_next[FRAME_WIDTH];
+    uint8_t line[HLAC_PQ_MAG_TRUE_W];
+
+    for (int oy = 0; oy < HLAC_PQ_MAG_TRUE_H; oy++)
+    {
+        const int src_y = HLAC_PQ_MAG_TRUE_Y0 + oy;
+        load_y_line_from_hyperram_or_zero(frame_base_offset, src_y - 1, yuv_tmp, y_prev);
+        load_y_line_from_hyperram_or_zero(frame_base_offset, src_y + 0, yuv_tmp, y_curr);
+        load_y_line_from_hyperram_or_zero(frame_base_offset, src_y + 1, yuv_tmp, y_next);
+
+        for (int ox = 0; ox < HLAC_PQ_MAG_TRUE_W; ox++)
+        {
+            const int src_x = HLAC_PQ_MAG_TRUE_X0 + ox;
+
+            const int raw_xm1 = (int)pq128_get_y_or_zero(y_curr, src_x - 1);
+            const int raw_xp1 = (int)pq128_get_y_or_zero(y_curr, src_x + 1);
+            const int raw_ym1 = (int)pq128_get_y_or_zero(y_prev, src_x);
+            const int raw_yp1 = (int)pq128_get_y_or_zero(y_next, src_x);
+
+            const int16_t p = (int16_t)(raw_xp1 - raw_xm1);
+            const int16_t q = (int16_t)(raw_yp1 - raw_ym1);
+            line[ox] = hlac_pq_mag_u8(p, q);
+        }
+
+        (void)hyperram_b_write(line,
+                               (void *)(frame_base_offset + (uint32_t)DEPTH_OFFSET + (uint32_t)oy * (uint32_t)HLAC_PQ_MAG_TRUE_W),
+                               (uint32_t)sizeof(line));
+    }
+}
+#endif
 #endif
 
 static void fc128_compute_depth_and_store(uint32_t frame_base_offset, uint32_t frame_seq)
@@ -1823,26 +1891,39 @@ static void fc128_compute_depth_and_store(uint32_t frame_base_offset, uint32_t f
     g_depth_size_bytes = 0;
 
 #if HLAC_ENABLE
-    /* In HLAC mode, reuse the depth export slot to record |P|+|Q| (u8 320x240).
+    /* In HLAC mode, reuse the depth export slot to record |P|+|Q| (u8).
      * This avoids the heavy FC FFT pipeline.
      */
+#if HLAC_PQ_MAG_TRUE_256
+    const uint32_t out_bytes = (uint32_t)HLAC_PQ_MAG_TRUE_W * (uint32_t)HLAC_PQ_MAG_TRUE_H;
+#else
     const uint32_t out_bytes = (uint32_t)PQ128_SRC_W * (uint32_t)PQ128_SRC_H;
+#endif
     if ((frame_base_offset + (uint32_t)DEPTH_OFFSET + out_bytes) > (uint32_t)HYPERRAM_SIZE)
     {
         return;
     }
+
+#if HLAC_PQ_MAG_TRUE_256
+    hlac_export_pq_mag_u8_true256_from_y(frame_base_offset);
+#else
     if ((frame_base_offset + (uint32_t)PQ128_Q_OFFSET + (uint32_t)PQ128_PLANE_BYTES) > (uint32_t)HYPERRAM_SIZE)
     {
         return;
     }
-
     hlac_export_pq_mag_u8_roi(frame_base_offset);
+#endif
 
 #if HLAC_LDA_INFER_ENABLE
     float feats[25];
     hlac25_compute_from_u8_hyperram(frame_base_offset + (uint32_t)DEPTH_OFFSET,
+#if HLAC_PQ_MAG_TRUE_256
+                                    (uint32_t)HLAC_PQ_MAG_TRUE_W,
+                                    (uint32_t)HLAC_PQ_MAG_TRUE_H,
+#else
                                     (uint32_t)PQ128_SRC_W,
                                     (uint32_t)PQ128_SRC_H,
+#endif
                                     feats);
     int pred = hlac_lda_predict(feats, NULL);
     {
@@ -4055,7 +4136,7 @@ static void mg_gauss_seidel(const mg_level_t *level, int iterations)
 
             for (int y = 1; y < height - 1; y++)
             {
-                hyperram_b_read(rhs_curr, (void *)(level->rhs_offset + y * row_bytes), row_bytes);
+                hyperram_b_read(rhs_curr, (void *)(level->rhs_offset + (uint32_t)y * row_bytes), row_bytes);
                 int start_x = 1 + ((y + color) & 1);
 
 #if USE_MVE_FOR_GAUSS_SEIDEL
@@ -4108,7 +4189,7 @@ static void mg_gauss_seidel(const mg_level_t *level, int iterations)
                 }
 #endif
 
-                hyperram_b_write(row_curr, (void *)(level->z_offset + y * row_bytes), row_bytes);
+                hyperram_b_write(row_curr, (void *)(level->z_offset + (uint32_t)y * row_bytes), row_bytes);
 
                 if (y < height - 2)
                 {
@@ -4117,7 +4198,7 @@ static void mg_gauss_seidel(const mg_level_t *level, int iterations)
                     int next_index = y + 2;
                     if (next_index < height)
                     {
-                        hyperram_b_read(row_next, (void *)(level->z_offset + next_index * row_bytes), row_bytes);
+                        hyperram_b_read(row_next, (void *)(level->z_offset + (uint32_t)next_index * row_bytes), row_bytes);
                     }
                     else
                     {
@@ -4132,16 +4213,16 @@ static void mg_gauss_seidel(const mg_level_t *level, int iterations)
         hyperram_b_read(row_curr, (void *)(level->z_offset + row_bytes), row_bytes); // y=1
         hyperram_b_write(row_curr, (void *)(level->z_offset + 0), row_bytes);        // y=0 = y=1
 
-        hyperram_b_read(row_curr, (void *)(level->z_offset + (height - 2) * row_bytes), row_bytes);  // y=h-2
-        hyperram_b_write(row_curr, (void *)(level->z_offset + (height - 1) * row_bytes), row_bytes); // y=h-1 = y=h-2
+        hyperram_b_read(row_curr, (void *)(level->z_offset + (uint32_t)(height - 2) * row_bytes), row_bytes);  // y=h-2
+        hyperram_b_write(row_curr, (void *)(level->z_offset + (uint32_t)(height - 1) * row_bytes), row_bytes); // y=h-1 = y=h-2
 
         // 左右境界: 全行でx=0とx=width-1を隣接ピクセルで設定
         for (int y = 0; y < height; y++)
         {
-            hyperram_b_read(row_curr, (void *)(level->z_offset + y * row_bytes), row_bytes);
+            hyperram_b_read(row_curr, (void *)(level->z_offset + (uint32_t)y * row_bytes), row_bytes);
             row_curr[0] = row_curr[1];
             row_curr[width - 1] = row_curr[width - 2];
-            hyperram_b_write(row_curr, (void *)(level->z_offset + y * row_bytes), row_bytes);
+            hyperram_b_write(row_curr, (void *)(level->z_offset + (uint32_t)y * row_bytes), row_bytes);
         }
     }
 }
@@ -4285,18 +4366,18 @@ static void mg_restrict_residual(const mg_level_t *fine, const mg_level_t *coars
 
         if (fy == 0)
         {
-            hyperram_b_read(row_center, (void *)(residual_offset + fy * fine_row_bytes), fine_row_bytes);
+            hyperram_b_read(row_center, (void *)(residual_offset + (uint32_t)fy * fine_row_bytes), fine_row_bytes);
             memcpy(row_above, row_center, fine_row_bytes);
         }
         else
         {
-            hyperram_b_read(row_above, (void *)(residual_offset + (fy - 1) * fine_row_bytes), fine_row_bytes);
-            hyperram_b_read(row_center, (void *)(residual_offset + fy * fine_row_bytes), fine_row_bytes);
+            hyperram_b_read(row_above, (void *)(residual_offset + (uint32_t)(fy - 1) * fine_row_bytes), fine_row_bytes);
+            hyperram_b_read(row_center, (void *)(residual_offset + (uint32_t)fy * fine_row_bytes), fine_row_bytes);
         }
 
         if (fy + 1 < fine_h)
         {
-            hyperram_b_read(row_below, (void *)(residual_offset + (fy + 1) * fine_row_bytes), fine_row_bytes);
+            hyperram_b_read(row_below, (void *)(residual_offset + (uint32_t)(fy + 1) * fine_row_bytes), fine_row_bytes);
         }
         else
         {
@@ -4429,7 +4510,7 @@ static void mg_restrict_residual(const mg_level_t *fine, const mg_level_t *coars
         }
 #endif
 
-        hyperram_b_write(coarse_row, (void *)(coarse->rhs_offset + cy * coarse_row_bytes), coarse_row_bytes);
+        hyperram_b_write(coarse_row, (void *)(coarse->rhs_offset + (uint32_t)cy * coarse_row_bytes), coarse_row_bytes);
     }
 }
 
@@ -4449,12 +4530,12 @@ static void mg_prolong_correction(const mg_level_t *coarse, const mg_level_t *fi
     for (int cy = 0; cy < coarse_h; cy++)
     {
         int fy = cy * 2;
-        hyperram_b_read(coarse_row, (void *)(coarse->z_offset + cy * coarse_row_bytes), coarse_row_bytes);
-        hyperram_b_read(fine_row_even, (void *)(fine->z_offset + fy * fine_row_bytes), fine_row_bytes);
+        hyperram_b_read(coarse_row, (void *)(coarse->z_offset + (uint32_t)cy * coarse_row_bytes), coarse_row_bytes);
+        hyperram_b_read(fine_row_even, (void *)(fine->z_offset + (uint32_t)fy * fine_row_bytes), fine_row_bytes);
         bool has_odd = (fy + 1) < fine_h;
         if (has_odd)
         {
-            hyperram_b_read(fine_row_odd, (void *)(fine->z_offset + (fy + 1) * fine_row_bytes), fine_row_bytes);
+            hyperram_b_read(fine_row_odd, (void *)(fine->z_offset + (uint32_t)(fy + 1) * fine_row_bytes), fine_row_bytes);
         }
 
 #if USE_MVE_FOR_MG_RESTRICT
@@ -4549,10 +4630,10 @@ static void mg_prolong_correction(const mg_level_t *coarse, const mg_level_t *fi
         }
 #endif
 
-        hyperram_b_write(fine_row_even, (void *)(fine->z_offset + fy * fine_row_bytes), fine_row_bytes);
+        hyperram_b_write(fine_row_even, (void *)(fine->z_offset + (uint32_t)fy * fine_row_bytes), fine_row_bytes);
         if (has_odd)
         {
-            hyperram_b_write(fine_row_odd, (void *)(fine->z_offset + (fy + 1) * fine_row_bytes), fine_row_bytes);
+            hyperram_b_write(fine_row_odd, (void *)(fine->z_offset + (uint32_t)(fy + 1) * fine_row_bytes), fine_row_bytes);
         }
     }
 }
@@ -4846,9 +4927,13 @@ void main_thread3_entry(void *pvParameters)
 
     // hyperram_b_read(read_data, (void *)HYPERRAM_BASE_ADDR, sizeof(test_data));
 
+#if HLAC_ENABLE && HLAC_PQ_MAG_TRUE_256
+    xprintf("[Thread3] HLAC true256: exporting |P|+|Q| as 256x256 directly from Y (skip PQ128)\n");
+#else
     xprintf("[Thread3] PQ128 mode: generating p/q (int16) in HyperRAM\n");
     xprintf("[Thread3] ROI: %dx%d at (%d,%d) from Y (UYVY_SWAP_Y + 4px reorder)\n",
             (int)PQ128_SIZE, (int)PQ128_SIZE, (int)PQ128_X0, (int)PQ128_Y0);
+#endif
 
     uint32_t last_seq = 0;
     while (1)
@@ -4861,7 +4946,9 @@ void main_thread3_entry(void *pvParameters)
         }
 
         uint32_t frame_base = (uint32_t)g_video_frame_base_offset;
+#if !(HLAC_ENABLE && HLAC_PQ_MAG_TRUE_256)
         pq128_compute_and_store(frame_base, seq);
+#endif
 
 #if ENABLE_FC128_DEPTH
         fc128_compute_depth_and_store(frame_base, seq);
