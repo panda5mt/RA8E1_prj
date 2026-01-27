@@ -85,3 +85,8 @@ lda_model/
 # MATLAB data files (ignore anywhere)
 *.mat
 *.[mM][aA][tT]
+
+# C# build artifacts (only under csharp/)
+csharp/**/bin/
+csharp/**/obj/
+csharp/**/.vs/
