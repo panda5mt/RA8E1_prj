@@ -1851,26 +1851,37 @@ static void hlac_export_pq_mag_u8_roi(uint32_t frame_base_offset)
 static void hlac_export_pq_mag_u8_true256_from_y(uint32_t frame_base_offset)
 {
     uint8_t yuv_tmp[FRAME_WIDTH * 2];
-    uint8_t y_prev[FRAME_WIDTH];
-    uint8_t y_curr[FRAME_WIDTH];
-    uint8_t y_next[FRAME_WIDTH];
+    uint8_t y_buf0[FRAME_WIDTH];
+    uint8_t y_buf1[FRAME_WIDTH];
+    uint8_t y_buf2[FRAME_WIDTH];
+    uint8_t *y_prev = y_buf0;
+    uint8_t *y_curr = y_buf1;
+    uint8_t *y_next = y_buf2;
     uint8_t line[HLAC_PQ_MAG_TRUE_W];
+
+    /* This ROI is fully inside the frame horizontally for FRAME_WIDTH=320.
+     * Use direct indexing for speed.
+     */
+    const int src_x0 = HLAC_PQ_MAG_TRUE_X0;
+
+    /* Prime 3-line window. Out-of-frame rows are zero-filled. */
+    const int src_y0 = HLAC_PQ_MAG_TRUE_Y0;
+    load_y_line_from_hyperram_or_zero(frame_base_offset, src_y0 - 1, yuv_tmp, y_prev);
+    load_y_line_from_hyperram_or_zero(frame_base_offset, src_y0 + 0, yuv_tmp, y_curr);
+    load_y_line_from_hyperram_or_zero(frame_base_offset, src_y0 + 1, yuv_tmp, y_next);
 
     for (int oy = 0; oy < HLAC_PQ_MAG_TRUE_H; oy++)
     {
-        const int src_y = HLAC_PQ_MAG_TRUE_Y0 + oy;
-        load_y_line_from_hyperram_or_zero(frame_base_offset, src_y - 1, yuv_tmp, y_prev);
-        load_y_line_from_hyperram_or_zero(frame_base_offset, src_y + 0, yuv_tmp, y_curr);
-        load_y_line_from_hyperram_or_zero(frame_base_offset, src_y + 1, yuv_tmp, y_next);
+        const int src_y = src_y0 + oy;
 
         for (int ox = 0; ox < HLAC_PQ_MAG_TRUE_W; ox++)
         {
-            const int src_x = HLAC_PQ_MAG_TRUE_X0 + ox;
+            const int x = src_x0 + ox;
 
-            const int raw_xm1 = (int)pq128_get_y_or_zero(y_curr, src_x - 1);
-            const int raw_xp1 = (int)pq128_get_y_or_zero(y_curr, src_x + 1);
-            const int raw_ym1 = (int)pq128_get_y_or_zero(y_prev, src_x);
-            const int raw_yp1 = (int)pq128_get_y_or_zero(y_next, src_x);
+            const int raw_xm1 = (int)y_curr[x - 1];
+            const int raw_xp1 = (int)y_curr[x + 1];
+            const int raw_ym1 = (int)y_prev[x];
+            const int raw_yp1 = (int)y_next[x];
 
             const int16_t p = (int16_t)(raw_xp1 - raw_xm1);
             const int16_t q = (int16_t)(raw_yp1 - raw_ym1);
@@ -1880,6 +1891,16 @@ static void hlac_export_pq_mag_u8_true256_from_y(uint32_t frame_base_offset)
         (void)hyperram_b_write(line,
                                (void *)(frame_base_offset + (uint32_t)DEPTH_OFFSET + (uint32_t)oy * (uint32_t)HLAC_PQ_MAG_TRUE_W),
                                (uint32_t)sizeof(line));
+
+        /* Slide window: prev<-curr, curr<-next, next<-new. */
+        if (oy + 1 < HLAC_PQ_MAG_TRUE_H)
+        {
+            uint8_t *tmp = y_prev;
+            y_prev = y_curr;
+            y_curr = y_next;
+            y_next = tmp;
+            load_y_line_from_hyperram_or_zero(frame_base_offset, src_y + 2, yuv_tmp, y_next);
+        }
     }
 }
 #endif
