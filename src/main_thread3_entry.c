@@ -4949,7 +4949,7 @@ void main_thread3_entry(void *pvParameters)
     // hyperram_b_read(read_data, (void *)HYPERRAM_BASE_ADDR, sizeof(test_data));
 
 #if HLAC_ENABLE && HLAC_PQ_MAG_TRUE_256
-    xprintf("[Thread3] HLAC true256: exporting |P|+|Q| as 256x256 directly from Y (skip PQ128)\n");
+    xprintf("[Thread3] HLAC true256: exporting |P|+|Q|\n as 256x256 directly from Y (skip PQ128)\n");
 #else
     xprintf("[Thread3] PQ128 mode: generating p/q (int16) in HyperRAM\n");
     xprintf("[Thread3] ROI: %dx%d at (%d,%d) from Y (UYVY_SWAP_Y + 4px reorder)\n",

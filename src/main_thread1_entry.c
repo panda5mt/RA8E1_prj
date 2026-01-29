@@ -475,7 +475,7 @@ static void udp_send_timer_cb(void *arg)
                 {
                     if (ctx->is_video_mode)
                     {
-                        xprintf("[VIDEO] F%u: %u/%u\n", ctx->current_frame + 1, ctx->sent_bytes, ctx->photo_size);
+                        // xprintf("[VIDEO] F%u: %u/%u\n", ctx->current_frame + 1, ctx->sent_bytes, ctx->photo_size);
                     }
                 }
             }
@@ -773,7 +773,7 @@ void main_thread1_entry(void *pvParameters)
         ctx->is_frame_complete = false;
         ctx->frame_base_offset = (uint32_t)g_video_frame_base_offset;
 
-        xprintf("[VIDEO] Starting grayscale transmission (Y component): %d bytes/frame, %d chunks/frame\n",
+        xprintf("[VIDEO] Starting grayscale transmission (Y component):\n %d bytes/frame, %d chunks/frame\n",
                 ctx->photo_size, (ctx->photo_size + ctx->chunk_size - 1) / ctx->chunk_size);
 
         /* 1発目をスケジュール(ネットワーク安定化のため500ms待機) */
