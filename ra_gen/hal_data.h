@@ -4,17 +4,37 @@
 #include <stdint.h>
 #include "bsp_api.h"
 #include "common_data.h"
+#include "r_gpt.h"
+#include "r_timer_api.h"
 #include "r_dmac.h"
 #include "r_transfer_api.h"
 #include "r_ospi_b.h"
 #include "r_spi_flash_api.h"
-#include "r_gpt.h"
-#include "r_timer_api.h"
 #include "r_iic_master.h"
 #include "r_i2c_master_api.h"
 #include "r_capture_api.h"
             #include "r_ceu.h"
 FSP_HEADER
+/** Timer on GPT Instance. */
+extern const timer_instance_t g_timer1;
+
+/** Access the GPT instance using these structures when calling API functions directly (::p_api is not used). */
+extern gpt_instance_ctrl_t g_timer1_ctrl;
+extern const timer_cfg_t g_timer1_cfg;
+
+#ifndef NULL
+void NULL(timer_callback_args_t * p_args);
+#endif
+/** Timer on GPT Instance. */
+extern const timer_instance_t g_timer0;
+
+/** Access the GPT instance using these structures when calling API functions directly (::p_api is not used). */
+extern gpt_instance_ctrl_t g_timer0_ctrl;
+extern const timer_cfg_t g_timer0_cfg;
+
+#ifndef NULL
+void NULL(timer_callback_args_t * p_args);
+#endif
 /* Transfer on DMAC Instance. */
 extern const transfer_instance_t g_transfer0;
 

@@ -147,7 +147,7 @@ QueueHandle_t g_usb_read_queue;
 QueueHandle_t xQueueMes;
                 #if 1
                 StaticQueue_t xQueueMes_memory;
-                uint8_t xQueueMes_queue_memory[64 * 3];
+                uint8_t xQueueMes_queue_memory[256 * 16];
                 #endif
                 void rtos_startup_err_callback(void * p_instance, void * p_data);
 void g_common_init(void) {
@@ -188,8 +188,8 @@ xQueueMes =
                 #else
                 xQueueCreate(
                 #endif
-                3,
-                64
+                16,
+                256
                 #if 1
                 , &xQueueMes_queue_memory[0],
                 &xQueueMes_memory

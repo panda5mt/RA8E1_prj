@@ -103,6 +103,10 @@
       <configSetting altId="ether_rmii.rmii0_txd0.p304" configurationId="ether_rmii.rmii0_txd0" isUsedByDriver="true" peripheral="ETHER_RMII"/>
       <configSetting altId="ether_rmii.rmii0_txd1.p305" configurationId="ether_rmii.rmii0_txd1" isUsedByDriver="true" peripheral="ETHER_RMII"/>
       <configSetting altId="ether_rmii.rmii0_txd_en.p306" configurationId="ether_rmii.rmii0_txd_en" isUsedByDriver="true" peripheral="ETHER_RMII"/>
+      <configSetting altId="gpt0.gtioc0a.p211" configurationId="gpt0.gtioc0a" isUsedByDriver="true" peripheral="GPT0"/>
+      <configSetting altId="gpt0.gtioc0b.p210" configurationId="gpt0.gtioc0b" isUsedByDriver="true" peripheral="GPT0"/>
+      <configSetting altId="gpt1.gtioc1a.p209" configurationId="gpt1.gtioc1a" isUsedByDriver="true" peripheral="GPT1"/>
+      <configSetting altId="gpt1.gtioc1b.p208" configurationId="gpt1.gtioc1b" isUsedByDriver="true" peripheral="GPT1"/>
       <configSetting altId="gpt2.gtioc2a.p113" configurationId="gpt2.gtioc2a" isUsedByDriver="true" peripheral="GPT2"/>
       <configSetting altId="gpt3.gtioc3a.p403" configurationId="gpt3.gtioc3a" isUsedByDriver="true" peripheral="GPT3"/>
       <configSetting altId="gpt5.gtioc5a.p115" configurationId="gpt5.gtioc5a" peripheral="GPT5"/>
@@ -111,10 +115,6 @@
       <configSetting altId="irq11.irq11_dash_ds.p006" configurationId="irq11.irq11_dash_ds" peripheral="IRQ11"/>
       <configSetting altId="irq13.irq13_dash_ds.p009" configurationId="irq13.irq13_dash_ds" peripheral="IRQ13"/>
       <configSetting altId="irq14.irq14.p010" configurationId="irq14.irq14" peripheral="IRQ14"/>
-      <configSetting altId="jtag_fslash_swd.tck.p211" configurationId="jtag_fslash_swd.tck" peripheral="JTAG/SWD"/>
-      <configSetting altId="jtag_fslash_swd.tdi.p208" configurationId="jtag_fslash_swd.tdi" peripheral="JTAG/SWD"/>
-      <configSetting altId="jtag_fslash_swd.tdo.p209" configurationId="jtag_fslash_swd.tdo" peripheral="JTAG/SWD"/>
-      <configSetting altId="jtag_fslash_swd.tms.p210" configurationId="jtag_fslash_swd.tms" peripheral="JTAG/SWD"/>
       <configSetting altId="ospi.om_cs0.p107" configurationId="ospi.om_cs0" isUsedByDriver="true" peripheral="OSPI"/>
       <configSetting altId="ospi.om_cs1.p104" configurationId="ospi.om_cs1" isUsedByDriver="true" peripheral="OSPI"/>
       <configSetting altId="ospi.om_dqs.p801" configurationId="ospi.om_dqs" isUsedByDriver="true" peripheral="OSPI"/>
@@ -172,9 +172,13 @@
       <configSetting altId="p203.gpio_mode.gpio_mode_in" configurationId="p203.gpio_mode"/>
       <configSetting altId="p204.input" configurationId="p204"/>
       <configSetting altId="p204.gpio_mode.gpio_mode_in" configurationId="p204.gpio_mode"/>
+      <configSetting altId="p208.gpio_speed.gpio_speed_h" configurationId="p208.gpio_drivecapacity"/>
       <configSetting altId="p208.gpio_mode.gpio_mode_peripheral" configurationId="p208.gpio_mode"/>
+      <configSetting altId="p209.gpio_speed.gpio_speed_h" configurationId="p209.gpio_drivecapacity"/>
       <configSetting altId="p209.gpio_mode.gpio_mode_peripheral" configurationId="p209.gpio_mode"/>
+      <configSetting altId="p210.gpio_speed.gpio_speed_h" configurationId="p210.gpio_drivecapacity"/>
       <configSetting altId="p210.gpio_mode.gpio_mode_peripheral" configurationId="p210.gpio_mode"/>
+      <configSetting altId="p211.gpio_speed.gpio_speed_h" configurationId="p211.gpio_drivecapacity"/>
       <configSetting altId="p211.gpio_mode.gpio_mode_peripheral" configurationId="p211.gpio_mode"/>
       <configSetting altId="p300.gpio_speed.gpio_speed_h" configurationId="p300.gpio_drivecapacity"/>
       <configSetting altId="p300.gpio_mode.gpio_mode_peripheral" configurationId="p300.gpio_mode"/>
