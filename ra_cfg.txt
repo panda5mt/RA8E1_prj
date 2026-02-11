@@ -1203,7 +1203,7 @@ FSP Configuration
     Instance "g_timer0 Timer, General PWM (r_gpt)"
       General: Name: g_timer0
       General: Channel: 0
-      General: Mode: Periodic
+      General: Mode: Saw-wave PWM
       General: Period: 0x10000
       General: Compare Match: Compare Match A: Status: Disabled
       General: Compare Match: Compare Match A: Compare match value: 0x10000
@@ -1269,7 +1269,7 @@ FSP Configuration
     Instance "g_timer1 Timer, General PWM (r_gpt)"
       General: Name: g_timer1
       General: Channel: 1
-      General: Mode: Periodic
+      General: Mode: Saw-wave PWM
       General: Period: 0x10000
       General: Compare Match: Compare Match A: Status: Disabled
       General: Compare Match: Compare Match A: Compare match value: 0x10000

@@ -109,7 +109,7 @@ const gpt_extended_cfg_t g_timer1_extend =
 
 const timer_cfg_t g_timer1_cfg =
 {
-    .mode                = TIMER_MODE_PERIODIC,
+    .mode                = TIMER_MODE_PWM,
     /* Actual period: 0.0005461333333333333 seconds. Actual duty: 79.998779296875%. */ .period_counts = (uint32_t) 0x10000, .duty_cycle_counts = 0xcccc, .source_div = (timer_source_div_t)0,
     .channel             = 1,
     .p_callback          = NULL,
@@ -242,7 +242,7 @@ const gpt_extended_cfg_t g_timer0_extend =
 
 const timer_cfg_t g_timer0_cfg =
 {
-    .mode                = TIMER_MODE_PERIODIC,
+    .mode                = TIMER_MODE_PWM,
     /* Actual period: 0.0005461333333333333 seconds. Actual duty: 79.998779296875%. */ .period_counts = (uint32_t) 0x10000, .duty_cycle_counts = 0xcccc, .source_div = (timer_source_div_t)0,
     .channel             = 0,
     .p_callback          = NULL,

@@ -123,7 +123,7 @@ void mypwm_init()
 
     xprintf("[PWM/GPT] init begin\n");
 
-    pwm_override_gtioc_pins();
+    // pwm_override_gtioc_pins();
 
     if (!s_pwm_cfg_ready)
     {
@@ -153,9 +153,9 @@ void mypwm_init()
         err = R_GPT_OutputEnable(&g_timer0_ctrl, GPT_IO_PIN_GTIOCB);
         xprintf("[PWM/GPT] CH0: outB enable rc=%d\n", (int)err);
 
-        err = R_GPT_DutyCycleSet(&g_timer0_ctrl, s_timer0_pwm_cfg.duty_cycle_counts, GPT_IO_PIN_GTIOCA);
+        err = R_GPT_DutyCycleSet(&g_timer0_ctrl, s_timer0_pwm_cfg.duty_cycle_counts * 0, GPT_IO_PIN_GTIOCA);
         xprintf("[PWM/GPT] CH0: dutyA set rc=%d\n", (int)err);
-        err = R_GPT_DutyCycleSet(&g_timer0_ctrl, s_timer0_pwm_cfg.duty_cycle_counts * 0, GPT_IO_PIN_GTIOCB);
+        err = R_GPT_DutyCycleSet(&g_timer0_ctrl, s_timer0_pwm_cfg.duty_cycle_counts * 0.8, GPT_IO_PIN_GTIOCB);
         xprintf("[PWM/GPT] CH0: dutyB set rc=%d\n", (int)err);
 
         err = R_GPT_Start(&g_timer0_ctrl);
@@ -182,9 +182,9 @@ void mypwm_init()
         err = R_GPT_OutputEnable(&g_timer1_ctrl, GPT_IO_PIN_GTIOCB);
         xprintf("[PWM/GPT] CH1: outB enable rc=%d\n", (int)err);
 
-        err = R_GPT_DutyCycleSet(&g_timer1_ctrl, s_timer1_pwm_cfg.duty_cycle_counts * 0, GPT_IO_PIN_GTIOCA);
+        err = R_GPT_DutyCycleSet(&g_timer1_ctrl, s_timer1_pwm_cfg.duty_cycle_counts * 0.8, GPT_IO_PIN_GTIOCA);
         xprintf("[PWM/GPT] CH1: dutyA set rc=%d\n", (int)err);
-        err = R_GPT_DutyCycleSet(&g_timer1_ctrl, s_timer1_pwm_cfg.duty_cycle_counts, GPT_IO_PIN_GTIOCB);
+        err = R_GPT_DutyCycleSet(&g_timer1_ctrl, s_timer1_pwm_cfg.duty_cycle_counts * 0, GPT_IO_PIN_GTIOCB);
         xprintf("[PWM/GPT] CH1: dutyB set rc=%d\n", (int)err);
 
         err = R_GPT_Start(&g_timer1_ctrl);
