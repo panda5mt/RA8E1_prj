@@ -87,24 +87,27 @@ static void pwm_override_gtioc_pins(void)
     fsp_err_t err;
     /* Some devices map GTIOC pins under a specific GPT PSEL group.
      * If one channel works and another doesn't, try the same PSEL group for all GTIOC pins. */
-    uint32_t const cfg_gpt = (uint32_t)IOPORT_CFG_DRIVE_HIGH |
-                             (uint32_t)IOPORT_CFG_PERIPHERAL_PIN |
-                             (uint32_t)IOPORT_PERIPHERAL_GPT0;
+    uint32_t const cfg_gpt1 = (uint32_t)IOPORT_CFG_DRIVE_HIGH |
+                              (uint32_t)IOPORT_CFG_PERIPHERAL_PIN |
+                              (uint32_t)IOPORT_PERIPHERAL_GPT1;
 
     xprintf("[PWM/GPT] pin mux: forcing PSEL=IOPORT_PERIPHERAL_GPT0 for GTIOC pins\n");
 
-    /* P211: GTIOC0A (GPT0 / A) */
-    // err = g_ioport.p_api->pinCfg(&g_ioport_ctrl, BSP_IO_PORT_02_PIN_11, cfg_gpt);
+    // P211,210は下記設定は行なわない。とまってしまう。
+    // /* P211: GTIOC0A (GPT0 / A) */
+    // err = g_ioport.p_api->pinCfg(&g_ioport_ctrl, BSP_IO_PORT_02_PIN_11, cfg_gpt0);
     // xprintf("[PWM/GPT] pin P211(GTIOC0A) cfg rc=%d\n", (int)err);
 
-    /* P210: GTIOC0B (GPT0 / B) */
-    err = g_ioport.p_api->pinCfg(&g_ioport_ctrl, BSP_IO_PORT_02_PIN_10, cfg_gpt);
-    xprintf("[PWM/GPT] pin P210(GTIOC0B) cfg rc=%d\n", (int)err);
+    // /* P210: GTIOC0B (GPT0 / B) */
+    // err = g_ioport.p_api->pinCfg(&g_ioport_ctrl, BSP_IO_PORT_02_PIN_10, cfg_gpt0);
+    // xprintf("[PWM/GPT] pin P210(GTIOC0B) cfg rc=%d\n", (int)err);
 
-    /* P209: GTIOC1A (GPT1 / A), P208: GTIOC1B (GPT1 / B) */
-    // err = g_ioport.p_api->pinCfg(&g_ioport_ctrl, BSP_IO_PORT_02_PIN_09, cfg_gpt);
-    // xprintf("[PWM/GPT] pin P209(GTIOC1A) cfg rc=%d\n", (int)err);
-    err = g_ioport.p_api->pinCfg(&g_ioport_ctrl, BSP_IO_PORT_02_PIN_08, cfg_gpt);
+    /* P209: GTIOC1A (GPT1 / A)*/
+    err = g_ioport.p_api->pinCfg(&g_ioport_ctrl, BSP_IO_PORT_02_PIN_09, cfg_gpt1);
+    xprintf("[PWM/GPT] pin P209(GTIOC1A) cfg rc=%d\n", (int)err);
+
+    /* P208: GTIOC1B (GPT1 / B) */
+    err = g_ioport.p_api->pinCfg(&g_ioport_ctrl, BSP_IO_PORT_02_PIN_08, cfg_gpt1);
     xprintf("[PWM/GPT] pin P208(GTIOC1B) cfg rc=%d\n", (int)err);
 }
 
@@ -150,9 +153,9 @@ void mypwm_init()
         err = R_GPT_OutputEnable(&g_timer0_ctrl, GPT_IO_PIN_GTIOCB);
         xprintf("[PWM/GPT] CH0: outB enable rc=%d\n", (int)err);
 
-        err = R_GPT_DutyCycleSet(&g_timer0_ctrl, s_timer0_pwm_cfg.duty_cycle_counts, GPT_IO_PIN_GTIOCA);
+        err = R_GPT_DutyCycleSet(&g_timer0_ctrl, s_timer0_pwm_cfg.duty_cycle_counts / 2, GPT_IO_PIN_GTIOCA);
         xprintf("[PWM/GPT] CH0: dutyA set rc=%d\n", (int)err);
-        err = R_GPT_DutyCycleSet(&g_timer0_ctrl, s_timer0_pwm_cfg.duty_cycle_counts, GPT_IO_PIN_GTIOCB);
+        err = R_GPT_DutyCycleSet(&g_timer0_ctrl, s_timer0_pwm_cfg.duty_cycle_counts * 0, GPT_IO_PIN_GTIOCB);
         xprintf("[PWM/GPT] CH0: dutyB set rc=%d\n", (int)err);
 
         err = R_GPT_Start(&g_timer0_ctrl);
@@ -179,7 +182,7 @@ void mypwm_init()
         err = R_GPT_OutputEnable(&g_timer1_ctrl, GPT_IO_PIN_GTIOCB);
         xprintf("[PWM/GPT] CH1: outB enable rc=%d\n", (int)err);
 
-        err = R_GPT_DutyCycleSet(&g_timer1_ctrl, s_timer1_pwm_cfg.duty_cycle_counts, GPT_IO_PIN_GTIOCA);
+        err = R_GPT_DutyCycleSet(&g_timer1_ctrl, s_timer1_pwm_cfg.duty_cycle_counts * 0, GPT_IO_PIN_GTIOCA);
         xprintf("[PWM/GPT] CH1: dutyA set rc=%d\n", (int)err);
         err = R_GPT_DutyCycleSet(&g_timer1_ctrl, s_timer1_pwm_cfg.duty_cycle_counts, GPT_IO_PIN_GTIOCB);
         xprintf("[PWM/GPT] CH1: dutyB set rc=%d\n", (int)err);
