@@ -196,6 +196,22 @@ static inline uint32_t fc128_cyc_to_us(uint32_t cyc)
 #endif
 #endif
 
+#include "motor_control.h"
+
+/* Motor command gating for noisy frames.
+ *
+ * - When HLAC inference is unstable (motion blur / rotation), skip posting pred.
+ * - Require N consecutive identical preds before posting.
+ * - Optionally require best_score >= threshold.
+ */
+#ifndef MOTOR_PRED_STABLE_COUNT
+#define MOTOR_PRED_STABLE_COUNT (2)
+#endif
+
+#ifndef MOTOR_PRED_MIN_BEST_SCORE
+#define MOTOR_PRED_MIN_BEST_SCORE (-INFINITY)
+#endif
+
 #ifndef FC128_EXPORT_USE_ZMINMAX_EMA
 #define FC128_EXPORT_USE_ZMINMAX_EMA (1)
 #endif
@@ -1946,9 +1962,12 @@ static void fc128_compute_depth_and_store(uint32_t frame_base_offset, uint32_t f
                                     (uint32_t)PQ128_SRC_H,
 #endif
                                     feats);
-    int pred = hlac_lda_predict(feats, NULL);
+    float best_score = 0.0f;
+    int pred = hlac_lda_predict(feats, &best_score);
     {
         static int s_last_pred = -9999;
+        static int s_stable_pred = -9999;
+        static uint32_t s_stable_count = 0U;
         bool do_print = false;
         if (HLAC_UART_LOG_ON_CHANGE)
         {
@@ -1968,6 +1987,29 @@ static void fc128_compute_depth_and_store(uint32_t frame_base_offset, uint32_t f
         {
             xprintf("pred=%d\n", pred);
             s_last_pred = pred;
+        }
+
+        /* Motor command update: only post when pred is stable. */
+        if (best_score >= (float)MOTOR_PRED_MIN_BEST_SCORE)
+        {
+            if (pred == s_stable_pred)
+            {
+                if (s_stable_count < 0xFFFFFFFFU)
+                {
+                    s_stable_count++;
+                }
+            }
+            else
+            {
+                s_stable_pred = pred;
+                s_stable_count = 1U;
+            }
+
+            if (s_stable_count >= (uint32_t)MOTOR_PRED_STABLE_COUNT)
+            {
+                motor_control_post_pred(pred);
+                s_stable_count = 0U;
+            }
         }
     }
 #endif
