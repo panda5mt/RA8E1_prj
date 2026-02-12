@@ -46,11 +46,7 @@ typedef struct st_motor_pred_rule
  * - Change per-action speed by editing speed_permille.
  */
 static const motor_pred_rule_t g_pred_rules[] = {
-    /* User mapping (edit as needed):
-     * - pred=0 : forward
-     * - pred=1 : half rotation
-     * - pred=2 : quarter rotation
-     *
+    /*
      * Rotation amount depends on your robot; tune via speed_permille.
      */
     {0, 0, MOTOR_ACTION_FORWARD, MOTOR_DEFAULT_SPEED_PERMILLE},
