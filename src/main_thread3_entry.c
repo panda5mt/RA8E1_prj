@@ -205,7 +205,7 @@ static inline uint32_t fc128_cyc_to_us(uint32_t cyc)
  * - Optionally require best_score >= threshold.
  */
 #ifndef MOTOR_PRED_STABLE_COUNT
-#define MOTOR_PRED_STABLE_COUNT (2)
+#define MOTOR_PRED_STABLE_COUNT (3U)
 #endif
 
 #ifndef MOTOR_PRED_MIN_BEST_SCORE

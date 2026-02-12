@@ -10,6 +10,17 @@
 
 #include <string.h>
 
+/* Set to 1 if you want event-driven behavior (ignore consecutive identical preds).
+ * Default is 0 because identical pred results can be meaningful and should retrigger motion.
+ */
+#ifndef MOTOR_FILTER_DUPLICATE_PRED
+#define MOTOR_FILTER_DUPLICATE_PRED (0)
+#endif
+
+#if MOTOR_FILTER_DUPLICATE_PRED
+#include <limits.h>
+#endif
+
 #ifndef MOTOR_CONTROL_TASK_STACK_WORDS
 #define MOTOR_CONTROL_TASK_STACK_WORDS (1024U)
 #endif
@@ -28,6 +39,11 @@
 
 #ifndef MOTOR_DEFAULT_SPEED_PERMILLE
 #define MOTOR_DEFAULT_SPEED_PERMILLE (600U)
+#endif
+
+/* Special pred meaning: repeat the previous action. */
+#ifndef MOTOR_REPEAT_LAST_PRED
+#define MOTOR_REPEAT_LAST_PRED (2)
 #endif
 
 typedef struct st_motor_pred_rule
@@ -51,7 +67,6 @@ static const motor_pred_rule_t g_pred_rules[] = {
      */
     {0, 0, MOTOR_ACTION_FORWARD, MOTOR_DEFAULT_SPEED_PERMILLE},
     {1, 1, MOTOR_ACTION_BACKWARD, MOTOR_DEFAULT_SPEED_PERMILLE},
-    {2, 2, MOTOR_ACTION_ROTATE_LEFT, (MOTOR_DEFAULT_SPEED_PERMILLE)},
     {3, 3, MOTOR_ACTION_ROTATE_RIGHT, MOTOR_DEFAULT_SPEED_PERMILLE},
 };
 
@@ -59,6 +74,10 @@ static QueueHandle_t s_pred_queue;
 static TaskHandle_t s_task;
 static uint32_t s_period0 = 0;
 static uint32_t s_period1 = 0;
+
+#if MOTOR_FILTER_DUPLICATE_PRED
+static int s_last_posted_pred = INT_MIN;
+#endif
 
 static motor_pred_rule_t const *motor_rule_for_pred(int pred)
 {
@@ -158,6 +177,10 @@ static void motor_control_task(void *pvParameters)
     bool pred_locked = false;
     TickType_t expire_tick = 0;
 
+    bool last_valid = false;
+    motor_action_t last_action = MOTOR_ACTION_STOP;
+    uint16_t last_speed_permille = 0U;
+
     for (;;)
     {
         /* Defer pred updates while an action is active.
@@ -175,19 +198,57 @@ static void motor_control_task(void *pvParameters)
             if (xQueueReceive(s_pred_queue, &rx_pred, pdMS_TO_TICKS(MOTOR_CONTROL_UPDATE_PERIOD_MS)) == pdTRUE)
             {
                 pred = rx_pred;
-                const motor_pred_rule_t *rule = motor_rule_for_pred(pred);
-                if (!rule)
+
+                motor_action_t action = MOTOR_ACTION_STOP;
+                uint16_t speed_permille = 0U;
+
+                if (pred == (int)MOTOR_REPEAT_LAST_PRED)
+                {
+                    if (last_valid)
+                    {
+                        action = last_action;
+                        speed_permille = last_speed_permille;
+                    }
+                    else
+                    {
+                        action = MOTOR_ACTION_STOP;
+                        speed_permille = 0U;
+                    }
+                }
+                else
+                {
+                    const motor_pred_rule_t *rule = motor_rule_for_pred(pred);
+                    if (rule)
+                    {
+                        action = rule->action;
+                        speed_permille = rule->speed_permille;
+                    }
+                    else
+                    {
+                        action = MOTOR_ACTION_STOP;
+                        speed_permille = 0U;
+                    }
+                }
+
+                if (action == MOTOR_ACTION_STOP)
                 {
                     motor_stop_all();
                     active = false;
                     pred_locked = false;
+                    last_valid = true;
+                    last_action = MOTOR_ACTION_STOP;
+                    last_speed_permille = 0U;
                 }
                 else
                 {
-                    motor_apply_action(rule->action, rule->speed_permille);
-                    active = (rule->action != MOTOR_ACTION_STOP);
+                    motor_apply_action(action, speed_permille);
+                    active = true;
                     pred_locked = active;
                     expire_tick = xTaskGetTickCount() + pdMS_TO_TICKS(MOTOR_CMD_HOLD_MS);
+
+                    last_valid = true;
+                    last_action = action;
+                    last_speed_permille = speed_permille;
                 }
             }
         }
@@ -250,5 +311,16 @@ void motor_control_post_pred(int pred)
         return;
     }
 
+#if MOTOR_FILTER_DUPLICATE_PRED
+    /* Optional: event-driven mode (ignore consecutive identical preds). */
+    taskENTER_CRITICAL();
+    if (pred != s_last_posted_pred)
+    {
+        s_last_posted_pred = pred;
+        (void)xQueueOverwrite(s_pred_queue, &pred);
+    }
+    taskEXIT_CRITICAL();
+#else
     (void)xQueueOverwrite(s_pred_queue, &pred);
+#endif
 }
