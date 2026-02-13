@@ -38,6 +38,14 @@
 #endif
 
 /*
+ * If set to 1 (default), new preds are deferred while an action is active.
+ * If set to 0, preds are applied immediately while moving (better for gradual steering).
+ */
+#ifndef MOTOR_LOCK_PRED_DURING_ACTIVE
+#define MOTOR_LOCK_PRED_DURING_ACTIVE (1)
+#endif
+
+/*
  * If set to 1 (default), the motor is forcibly stopped after each hold window.
  * If set to 0, the motor keeps running after the hold window and only changes
  * when a new pred is applied (or a STOP action is selected).
@@ -48,6 +56,23 @@
 
 #ifndef MOTOR_DEFAULT_SPEED_PERMILLE
 #define MOTOR_DEFAULT_SPEED_PERMILLE (600U)
+#endif
+
+/*
+ * Inner-wheel speed during TURN_LEFT/RIGHT.
+ * - 0: pivot-style turn (inner wheel stops)
+ * - >0: gentle arc turn (both wheels move)
+ */
+#ifndef MOTOR_TURN_INNER_SPEED_PERMILLE
+#define MOTOR_TURN_INNER_SPEED_PERMILLE (0U)
+#endif
+
+/*
+ * Optional safety: stop motors if no fresh pred arrives for this long.
+ * Set to 0 to disable.
+ */
+#ifndef MOTOR_PRED_WATCHDOG_MS
+#define MOTOR_PRED_WATCHDOG_MS (0U)
 #endif
 
 /* Special pred meaning: repeat the previous action. */
@@ -62,6 +87,12 @@ typedef struct st_motor_pred_rule
     motor_action_t action;
     uint16_t speed_permille; /* 0..1000 */
 } motor_pred_rule_t;
+
+typedef struct st_motor_pred_msg
+{
+    int pred;
+    TickType_t post_tick;
+} motor_pred_msg_t;
 
 /*
  * pred -> action mapping (edit here).
@@ -160,14 +191,14 @@ static void motor_apply_action(motor_action_t action, uint16_t speed_permille)
         break;
 
     case MOTOR_ACTION_TURN_LEFT:
-        /* Simple pivot: left stop, right forward */
-        motor_set_one(&g_timer0_ctrl, s_period0, true, 0U);
+        /* Turn while moving: inner wheel uses MOTOR_TURN_INNER_SPEED_PERMILLE */
+        motor_set_one(&g_timer0_ctrl, s_period0, true, (uint16_t)MOTOR_TURN_INNER_SPEED_PERMILLE);
         motor_set_one(&g_timer1_ctrl, s_period1, true, speed_permille);
         break;
 
     case MOTOR_ACTION_TURN_RIGHT:
         motor_set_one(&g_timer0_ctrl, s_period0, true, speed_permille);
-        motor_set_one(&g_timer1_ctrl, s_period1, true, 0U);
+        motor_set_one(&g_timer1_ctrl, s_period1, true, (uint16_t)MOTOR_TURN_INNER_SPEED_PERMILLE);
         break;
 
     case MOTOR_ACTION_ROTATE_LEFT:
@@ -191,6 +222,8 @@ static void motor_control_task(void *pvParameters)
     bool pred_locked = false;
     TickType_t expire_tick = 0;
 
+    TickType_t last_pred_tick = 0;
+
     bool last_valid = false;
     motor_action_t last_action = MOTOR_ACTION_STOP;
     uint16_t last_speed_permille = 0U;
@@ -203,15 +236,19 @@ static void motor_control_task(void *pvParameters)
          */
         if (pred_locked)
         {
-            int peek_pred;
-            (void)xQueuePeek(s_pred_queue, &peek_pred, pdMS_TO_TICKS(MOTOR_CONTROL_UPDATE_PERIOD_MS));
+            motor_pred_msg_t peek_msg;
+            if (xQueuePeek(s_pred_queue, &peek_msg, pdMS_TO_TICKS(MOTOR_CONTROL_UPDATE_PERIOD_MS)) == pdTRUE)
+            {
+                last_pred_tick = peek_msg.post_tick;
+            }
         }
         else
         {
-            int rx_pred;
-            if (xQueueReceive(s_pred_queue, &rx_pred, pdMS_TO_TICKS(MOTOR_CONTROL_UPDATE_PERIOD_MS)) == pdTRUE)
+            motor_pred_msg_t rx_msg;
+            if (xQueueReceive(s_pred_queue, &rx_msg, pdMS_TO_TICKS(MOTOR_CONTROL_UPDATE_PERIOD_MS)) == pdTRUE)
             {
-                pred = rx_pred;
+                pred = rx_msg.pred;
+                last_pred_tick = rx_msg.post_tick;
 
                 motor_action_t action = MOTOR_ACTION_STOP;
                 uint16_t speed_permille = 0U;
@@ -257,8 +294,11 @@ static void motor_control_task(void *pvParameters)
                 {
                     motor_apply_action(action, speed_permille);
                     active = true;
-                    pred_locked = active;
-                    expire_tick = xTaskGetTickCount() + pdMS_TO_TICKS(MOTOR_CMD_HOLD_MS);
+                    pred_locked = (MOTOR_LOCK_PRED_DURING_ACTIVE ? active : false);
+                    if (MOTOR_CMD_HOLD_MS > 0U)
+                    {
+                        expire_tick = xTaskGetTickCount() + pdMS_TO_TICKS(MOTOR_CMD_HOLD_MS);
+                    }
 
                     last_valid = true;
                     last_action = action;
@@ -267,10 +307,21 @@ static void motor_control_task(void *pvParameters)
             }
         }
 
+        if ((MOTOR_PRED_WATCHDOG_MS > 0U) && active)
+        {
+            TickType_t now = xTaskGetTickCount();
+            if ((last_pred_tick != 0) && ((now - last_pred_tick) > pdMS_TO_TICKS(MOTOR_PRED_WATCHDOG_MS)))
+            {
+                motor_stop_all();
+                active = false;
+                pred_locked = false;
+            }
+        }
+
         if (active)
         {
             TickType_t now = xTaskGetTickCount();
-            if ((int32_t)(now - expire_tick) >= 0)
+            if ((MOTOR_CMD_HOLD_MS > 0U) && ((int32_t)(now - expire_tick) >= 0))
             {
                 if (MOTOR_FORCE_STOP_AFTER_HOLD)
                 {
@@ -304,7 +355,7 @@ void motor_control_start(void)
         s_period1 = info.period_counts;
     }
 
-    s_pred_queue = xQueueCreate(1, sizeof(int));
+    s_pred_queue = xQueueCreate(1, sizeof(motor_pred_msg_t));
     if (!s_pred_queue)
     {
         return;
@@ -328,16 +379,20 @@ void motor_control_post_pred(int pred)
         return;
     }
 
+    motor_pred_msg_t msg;
+    msg.pred = pred;
+    msg.post_tick = xTaskGetTickCount();
+
 #if MOTOR_FILTER_DUPLICATE_PRED
     /* Optional: event-driven mode (ignore consecutive identical preds). */
     taskENTER_CRITICAL();
     if (pred != s_last_posted_pred)
     {
         s_last_posted_pred = pred;
-        (void)xQueueOverwrite(s_pred_queue, &pred);
+        (void)xQueueOverwrite(s_pred_queue, &msg);
     }
     taskEXIT_CRITICAL();
 #else
-    (void)xQueueOverwrite(s_pred_queue, &pred);
+    (void)xQueueOverwrite(s_pred_queue, &msg);
 #endif
 }
