@@ -37,6 +37,15 @@
 #define MOTOR_CMD_HOLD_MS (500U)
 #endif
 
+/*
+ * If set to 1 (default), the motor is forcibly stopped after each hold window.
+ * If set to 0, the motor keeps running after the hold window and only changes
+ * when a new pred is applied (or a STOP action is selected).
+ */
+#ifndef MOTOR_FORCE_STOP_AFTER_HOLD
+#define MOTOR_FORCE_STOP_AFTER_HOLD (1)
+#endif
+
 #ifndef MOTOR_DEFAULT_SPEED_PERMILLE
 #define MOTOR_DEFAULT_SPEED_PERMILLE (600U)
 #endif
@@ -64,6 +73,11 @@ typedef struct st_motor_pred_rule
 static const motor_pred_rule_t g_pred_rules[] = {
     /*
      * Rotation amount depends on your robot; tune via speed_permille.
+     *
+     * NOTE:
+     * - pred==MOTOR_REPEAT_LAST_PRED (default: 2) is reserved for "現状維持".
+     *   It repeats the previously executed action for another 500ms window.
+     *   Therefore pred=2 is intentionally NOT listed in g_pred_rules[].
      */
     {0, 0, MOTOR_ACTION_FORWARD, MOTOR_DEFAULT_SPEED_PERMILLE},
     {1, 1, MOTOR_ACTION_BACKWARD, MOTOR_DEFAULT_SPEED_PERMILLE},
@@ -258,7 +272,10 @@ static void motor_control_task(void *pvParameters)
             TickType_t now = xTaskGetTickCount();
             if ((int32_t)(now - expire_tick) >= 0)
             {
-                motor_stop_all();
+                if (MOTOR_FORCE_STOP_AFTER_HOLD)
+                {
+                    motor_stop_all();
+                }
                 active = false;
                 pred_locked = false;
             }
