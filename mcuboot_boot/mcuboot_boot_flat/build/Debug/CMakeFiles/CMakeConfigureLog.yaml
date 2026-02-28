@@ -1,0 +1,302 @@
+
+---
+events:
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeDetermineSystem.cmake:200 (message)"
+      - "CMakeLists.txt:43 (project)"
+    message: |
+      The target system is: Generic -  - arm
+      The host system is: Windows - 10.0.26200 - AMD64
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:43 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+      Compiler: C:/Renesas/RA/e2studio_v2025-12_fsp_v6.3.0/toolchains/llvm_arm/ATfE-21.1.1-Windows-x86_64/bin/clang.exe 
+      Build flags: 
+      Id flags: -c;--target=arm-none-eabi 
+      
+      The output was:
+      0
+      
+      
+      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CMakeCCompilerId.o"
+      
+      The C compiler identification is Clang, found in:
+        C:/Users/lynxe/Documents/GitHub/RA8E1_prj/mcuboot_boot/mcuboot_boot_flat/build/Debug/CMakeFiles/3.30.0-rc3/CompilerIdC/CMakeCCompilerId.o
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:43 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+      Compiler: C:/Renesas/RA/e2studio_v2025-12_fsp_v6.3.0/toolchains/llvm_arm/ATfE-21.1.1-Windows-x86_64/bin/clang++.exe 
+      Build flags: 
+      Id flags: -c;--target=arm-none-eabi 
+      
+      The output was:
+      0
+      
+      
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CMakeCXXCompilerId.o"
+      
+      The CXX compiler identification is Clang, found in:
+        C:/Users/lynxe/Documents/GitHub/RA8E1_prj/mcuboot_boot/mcuboot_boot_flat/build/Debug/CMakeFiles/3.30.0-rc3/CompilerIdCXX/CMakeCXXCompilerId.o
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeDetermineCompilerId.cmake:1205 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeDetermineASMCompiler.cmake:135 (CMAKE_DETERMINE_COMPILER_ID_VENDOR)"
+      - "CMakeLists.txt:43 (project)"
+    message: |
+      Checking whether the ASM compiler is GNU using "--version" did not match "(GNU assembler)|(GCC)|(Free Software Foundation)":
+      clang version 21.1.1
+      Target: aarch64-unknown-linux-gnu
+      Thread model: posix
+      InstalledDir: C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin
+      Arm Toolchain ID: E0058 (1bbd3573)
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeDetermineCompilerId.cmake:1205 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeDetermineASMCompiler.cmake:135 (CMAKE_DETERMINE_COMPILER_ID_VENDOR)"
+      - "CMakeLists.txt:43 (project)"
+    message: |
+      Checking whether the ASM compiler is AppleClang using "--version" did not match "(Apple (clang|LLVM) version)":
+      clang version 21.1.1
+      Target: aarch64-unknown-linux-gnu
+      Thread model: posix
+      InstalledDir: C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin
+      Arm Toolchain ID: E0058 (1bbd3573)
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeDetermineCompilerId.cmake:1192 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeDetermineASMCompiler.cmake:135 (CMAKE_DETERMINE_COMPILER_ID_VENDOR)"
+      - "CMakeLists.txt:43 (project)"
+    message: |
+      Checking whether the ASM compiler is Clang using "--version" matched "(clang version)":
+      clang version 21.1.1
+      Target: aarch64-unknown-linux-gnu
+      Thread model: posix
+      InstalledDir: C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin
+      Arm Toolchain ID: E0058 (1bbd3573)
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:74 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:43 (project)"
+    checks:
+      - "Detecting C compiler ABI info"
+    directories:
+      source: "C:/Users/lynxe/Documents/GitHub/RA8E1_prj/mcuboot_boot/mcuboot_boot_flat/build/Debug/CMakeFiles/CMakeScratch/TryCompile-dgfkn0"
+      binary: "C:/Users/lynxe/Documents/GitHub/RA8E1_prj/mcuboot_boot/mcuboot_boot_flat/build/Debug/CMakeFiles/CMakeScratch/TryCompile-dgfkn0"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS-NOTFOUND"
+      CMAKE_CXX_COMPILER_TARGET: "arm-none-eabi"
+      CMAKE_C_COMPILER_TARGET: "arm-none-eabi"
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "CMAKE_C_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/lynxe/Documents/GitHub/RA8E1_prj/mcuboot_boot/mcuboot_boot_flat/build/Debug/CMakeFiles/CMakeScratch/TryCompile-dgfkn0'
+        
+        Run Build Command(s): C:/Users/lynxe/Documents/ninja-win/ninja.exe -v cmTC_b98b7
+        [1/2] C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin\\clang.exe --target=arm-none-eabi   -v -MD -MT CMakeFiles/cmTC_b98b7.dir/CMakeCCompilerABI.c.obj -MF CMakeFiles\\cmTC_b98b7.dir\\CMakeCCompilerABI.c.obj.d -o CMakeFiles/cmTC_b98b7.dir/CMakeCCompilerABI.c.obj -c "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeCCompilerABI.c"
+        clang version 21.1.1
+        Target: arm-unknown-none-eabi
+        Thread model: posix
+        InstalledDir: C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin
+        Arm Toolchain ID: E0058 (1bbd3573)
+         (in-process)
+         "C:\\\\Renesas\\\\RA\\\\e2studio_v2025-12_fsp_v6.3.0\\\\toolchains\\\\llvm_arm\\\\ATfE-21.1.1-Windows-x86_64\\\\bin\\\\clang.exe" -cc1 -triple armv4t-unknown-none-eabi -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model static -mframe-pointer=none -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -nostdsysteminc -target-cpu arm7tdmi -target-feature +soft-float-abi -target-feature -vfp2 -target-feature -vfp2sp -target-feature -vfp3 -target-feature -vfp3d16 -target-feature -vfp3d16sp -target-feature -vfp3sp -target-feature -fp16 -target-feature -vfp4 -target-feature -vfp4d16 -target-feature -vfp4d16sp -target-feature -vfp4sp -target-feature -fp-armv8 -target-feature -fp-armv8d16 -target-feature -fp-armv8d16sp -target-feature -fp-armv8sp -target-feature -fullfp16 -target-feature -fp64 -target-feature -d32 -target-feature -neon -target-feature -sha2 -target-feature -aes -target-feature -dotprod -target-feature -fp16fml -target-feature -bf16 -target-feature -mve.fp -target-feature -fpregs -target-feature +strict-align -target-abi aapcs -mfloat-abi soft -Wunaligned-access -debugger-tuning=gdb "-fdebug-compilation-dir=C:\\\\Users\\\\lynxe\\\\Documents\\\\GitHub\\\\RA8E1_prj\\\\mcuboot_boot\\\\mcuboot_boot_flat\\\\build\\\\Debug\\\\CMakeFiles\\\\CMakeScratch\\\\TryCompile-dgfkn0" -v "-fcoverage-compilation-dir=C:\\\\Users\\\\lynxe\\\\Documents\\\\GitHub\\\\RA8E1_prj\\\\mcuboot_boot\\\\mcuboot_boot_flat\\\\build\\\\Debug\\\\CMakeFiles\\\\CMakeScratch\\\\TryCompile-dgfkn0" -resource-dir "C:\\\\Renesas\\\\RA\\\\e2studio_v2025-12_fsp_v6.3.0\\\\toolchains\\\\llvm_arm\\\\ATfE-21.1.1-Windows-x86_64\\\\lib\\\\clang\\\\21" -dependency-file "CMakeFiles\\\\cmTC_b98b7.dir\\\\CMakeCCompilerABI.c.obj.d" -MT CMakeFiles/cmTC_b98b7.dir/CMakeCCompilerABI.c.obj -sys-header-deps -internal-isystem "C:\\\\Renesas\\\\RA\\\\e2studio_v2025-12_fsp_v6.3.0\\\\toolchains\\\\llvm_arm\\\\ATfE-21.1.1-Windows-x86_64\\\\lib\\\\clang\\\\21\\\\include" -internal-isystem "C:\\\\Renesas\\\\RA\\\\e2studio_v2025-12_fsp_v6.3.0\\\\toolchains\\\\llvm_arm\\\\ATfE-21.1.1-Windows-x86_64\\\\bin\\\\..\\\\lib\\\\clang-runtimes\\\\arm-none-eabi/armv4t_exn_rtti_size/include" -internal-isystem "C:\\\\Renesas\\\\RA\\\\e2studio_v2025-12_fsp_v6.3.0\\\\toolchains\\\\llvm_arm\\\\ATfE-21.1.1-Windows-x86_64\\\\bin\\\\..\\\\lib\\\\clang-runtimes\\\\arm-none-eabi/include" -ferror-limit 19 -fno-signed-char -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -faddrsig -o CMakeFiles/cmTC_b98b7.dir/CMakeCCompilerABI.c.obj -x c "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeCCompilerABI.c"
+        clang -cc1 version 21.1.1 based upon LLVM 21.1.1 default target aarch64-unknown-linux-gnu
+        ignoring nonexistent directory "C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin\\..\\lib\\clang-runtimes\\arm-none-eabi/armv4t_exn_rtti_size/include"
+        ignoring duplicate directory "C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\lib\\clang\\21\\include"\x0d
+        #include "..." search starts here:\x0d
+        #include <...> search starts here:\x0d
+         C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\lib\\clang\\21\\include\x0d
+         C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin\\..\\lib\\clang-runtimes\\arm-none-eabi/include\x0d
+        End of search list.\x0d
+        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\Program Files\\CMake\\bin\\cmake.exe" -E rm -f libcmTC_b98b7.a && C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin\\llvm-ar.exe qc libcmTC_b98b7.a  CMakeFiles/cmTC_b98b7.dir/CMakeCCompilerABI.c.obj && C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin\\llvm-ranlib.exe libcmTC_b98b7.a && cd ."
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:182 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:43 (project)"
+    message: |
+      Parsed C implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [C:/Renesas/RA/e2studio_v2025-12_fsp_v6.3.0/toolchains/llvm_arm/ATfE-21.1.1-Windows-x86_64/lib/clang/21/include]
+          add: [C:/Renesas/RA/e2studio_v2025-12_fsp_v6.3.0/toolchains/llvm_arm/ATfE-21.1.1-Windows-x86_64/bin/../lib/clang-runtimes/arm-none-eabi/include]
+        end of search list found
+        collapse include dir [C:/Renesas/RA/e2studio_v2025-12_fsp_v6.3.0/toolchains/llvm_arm/ATfE-21.1.1-Windows-x86_64/lib/clang/21/include] ==> [C:/Renesas/RA/e2studio_v2025-12_fsp_v6.3.0/toolchains/llvm_arm/ATfE-21.1.1-Windows-x86_64/lib/clang/21/include]
+        collapse include dir [C:/Renesas/RA/e2studio_v2025-12_fsp_v6.3.0/toolchains/llvm_arm/ATfE-21.1.1-Windows-x86_64/bin/../lib/clang-runtimes/arm-none-eabi/include] ==> [C:/Renesas/RA/e2studio_v2025-12_fsp_v6.3.0/toolchains/llvm_arm/ATfE-21.1.1-Windows-x86_64/lib/clang-runtimes/arm-none-eabi/include]
+        implicit include dirs: [C:/Renesas/RA/e2studio_v2025-12_fsp_v6.3.0/toolchains/llvm_arm/ATfE-21.1.1-Windows-x86_64/lib/clang/21/include;C:/Renesas/RA/e2studio_v2025-12_fsp_v6.3.0/toolchains/llvm_arm/ATfE-21.1.1-Windows-x86_64/lib/clang-runtimes/arm-none-eabi/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:218 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:43 (project)"
+    message: |
+      Parsed C implicit link information:
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?))("|,| |$)]
+        ignore line: [Change Dir: 'C:/Users/lynxe/Documents/GitHub/RA8E1_prj/mcuboot_boot/mcuboot_boot_flat/build/Debug/CMakeFiles/CMakeScratch/TryCompile-dgfkn0']
+        ignore line: []
+        ignore line: [Run Build Command(s): C:/Users/lynxe/Documents/ninja-win/ninja.exe -v cmTC_b98b7]
+        ignore line: [[1/2] C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin\\clang.exe --target=arm-none-eabi   -v -MD -MT CMakeFiles/cmTC_b98b7.dir/CMakeCCompilerABI.c.obj -MF CMakeFiles\\cmTC_b98b7.dir\\CMakeCCompilerABI.c.obj.d -o CMakeFiles/cmTC_b98b7.dir/CMakeCCompilerABI.c.obj -c "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeCCompilerABI.c"]
+        ignore line: [clang version 21.1.1]
+        ignore line: [Target: arm-unknown-none-eabi]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin]
+        ignore line: [Arm Toolchain ID: E0058 (1bbd3573)]
+        ignore line: [ (in-process)]
+        ignore line: [ "C:\\\\Renesas\\\\RA\\\\e2studio_v2025-12_fsp_v6.3.0\\\\toolchains\\\\llvm_arm\\\\ATfE-21.1.1-Windows-x86_64\\\\bin\\\\clang.exe" -cc1 -triple armv4t-unknown-none-eabi -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model static -mframe-pointer=none -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -nostdsysteminc -target-cpu arm7tdmi -target-feature +soft-float-abi -target-feature -vfp2 -target-feature -vfp2sp -target-feature -vfp3 -target-feature -vfp3d16 -target-feature -vfp3d16sp -target-feature -vfp3sp -target-feature -fp16 -target-feature -vfp4 -target-feature -vfp4d16 -target-feature -vfp4d16sp -target-feature -vfp4sp -target-feature -fp-armv8 -target-feature -fp-armv8d16 -target-feature -fp-armv8d16sp -target-feature -fp-armv8sp -target-feature -fullfp16 -target-feature -fp64 -target-feature -d32 -target-feature -neon -target-feature -sha2 -target-feature -aes -target-feature -dotprod -target-feature -fp16fml -target-feature -bf16 -target-feature -mve.fp -target-feature -fpregs -target-feature +strict-align -target-abi aapcs -mfloat-abi soft -Wunaligned-access -debugger-tuning=gdb "-fdebug-compilation-dir=C:\\\\Users\\\\lynxe\\\\Documents\\\\GitHub\\\\RA8E1_prj\\\\mcuboot_boot\\\\mcuboot_boot_flat\\\\build\\\\Debug\\\\CMakeFiles\\\\CMakeScratch\\\\TryCompile-dgfkn0" -v "-fcoverage-compilation-dir=C:\\\\Users\\\\lynxe\\\\Documents\\\\GitHub\\\\RA8E1_prj\\\\mcuboot_boot\\\\mcuboot_boot_flat\\\\build\\\\Debug\\\\CMakeFiles\\\\CMakeScratch\\\\TryCompile-dgfkn0" -resource-dir "C:\\\\Renesas\\\\RA\\\\e2studio_v2025-12_fsp_v6.3.0\\\\toolchains\\\\llvm_arm\\\\ATfE-21.1.1-Windows-x86_64\\\\lib\\\\clang\\\\21" -dependency-file "CMakeFiles\\\\cmTC_b98b7.dir\\\\CMakeCCompilerABI.c.obj.d" -MT CMakeFiles/cmTC_b98b7.dir/CMakeCCompilerABI.c.obj -sys-header-deps -internal-isystem "C:\\\\Renesas\\\\RA\\\\e2studio_v2025-12_fsp_v6.3.0\\\\toolchains\\\\llvm_arm\\\\ATfE-21.1.1-Windows-x86_64\\\\lib\\\\clang\\\\21\\\\include" -internal-isystem "C:\\\\Renesas\\\\RA\\\\e2studio_v2025-12_fsp_v6.3.0\\\\toolchains\\\\llvm_arm\\\\ATfE-21.1.1-Windows-x86_64\\\\bin\\\\..\\\\lib\\\\clang-runtimes\\\\arm-none-eabi/armv4t_exn_rtti_size/include" -internal-isystem "C:\\\\Renesas\\\\RA\\\\e2studio_v2025-12_fsp_v6.3.0\\\\toolchains\\\\llvm_arm\\\\ATfE-21.1.1-Windows-x86_64\\\\bin\\\\..\\\\lib\\\\clang-runtimes\\\\arm-none-eabi/include" -ferror-limit 19 -fno-signed-char -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -faddrsig -o CMakeFiles/cmTC_b98b7.dir/CMakeCCompilerABI.c.obj -x c "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeCCompilerABI.c"]
+        ignore line: [clang -cc1 version 21.1.1 based upon LLVM 21.1.1 default target aarch64-unknown-linux-gnu]
+        ignore line: [ignoring nonexistent directory "C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin\\..\\lib\\clang-runtimes\\arm-none-eabi/armv4t_exn_rtti_size/include"]
+        ignore line: [ignoring duplicate directory "C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\lib\\clang\\21\\include"\x0d]
+        ignore line: [#include "..." search starts here:\x0d]
+        ignore line: [#include <...> search starts here:\x0d]
+        ignore line: [ C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\lib\\clang\\21\\include\x0d]
+        ignore line: [ C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin\\..\\lib\\clang-runtimes\\arm-none-eabi/include\x0d]
+        ignore line: [End of search list.\x0d]
+        ignore line: [[2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\Program Files\\CMake\\bin\\cmake.exe" -E rm -f libcmTC_b98b7.a && C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin\\llvm-ar.exe qc libcmTC_b98b7.a  CMakeFiles/cmTC_b98b7.dir/CMakeCCompilerABI.c.obj && C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin\\llvm-ranlib.exe libcmTC_b98b7.a && cd ."]
+        ignore line: []
+        ignore line: []
+        implicit libs: []
+        implicit objs: []
+        implicit dirs: []
+        implicit fwks: []
+      
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:74 (try_compile)"
+      - "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:43 (project)"
+    checks:
+      - "Detecting CXX compiler ABI info"
+    directories:
+      source: "C:/Users/lynxe/Documents/GitHub/RA8E1_prj/mcuboot_boot/mcuboot_boot_flat/build/Debug/CMakeFiles/CMakeScratch/TryCompile-c8poi5"
+      binary: "C:/Users/lynxe/Documents/GitHub/RA8E1_prj/mcuboot_boot/mcuboot_boot_flat/build/Debug/CMakeFiles/CMakeScratch/TryCompile-c8poi5"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS-NOTFOUND"
+      CMAKE_CXX_COMPILER_TARGET: "arm-none-eabi"
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_FLAGS_DEBUG: "-g"
+      CMAKE_CXX_SCAN_FOR_MODULES: "OFF"
+      CMAKE_C_COMPILER_TARGET: "arm-none-eabi"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "CMAKE_CXX_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/lynxe/Documents/GitHub/RA8E1_prj/mcuboot_boot/mcuboot_boot_flat/build/Debug/CMakeFiles/CMakeScratch/TryCompile-c8poi5'
+        
+        Run Build Command(s): C:/Users/lynxe/Documents/ninja-win/ninja.exe -v cmTC_e455d
+        [1/2] C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin\\clang++.exe --target=arm-none-eabi   -v -MD -MT CMakeFiles/cmTC_e455d.dir/CMakeCXXCompilerABI.cpp.obj -MF CMakeFiles\\cmTC_e455d.dir\\CMakeCXXCompilerABI.cpp.obj.d -o CMakeFiles/cmTC_e455d.dir/CMakeCXXCompilerABI.cpp.obj -c "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp"
+        clang version 21.1.1
+        Target: arm-unknown-none-eabi
+        Thread model: posix
+        InstalledDir: C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin
+        Arm Toolchain ID: E0058 (1bbd3573)
+         (in-process)
+         "C:\\\\Renesas\\\\RA\\\\e2studio_v2025-12_fsp_v6.3.0\\\\toolchains\\\\llvm_arm\\\\ATfE-21.1.1-Windows-x86_64\\\\bin\\\\clang++.exe" -cc1 -triple armv4t-unknown-none-eabi -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model static -mframe-pointer=none -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -nostdsysteminc -target-cpu arm7tdmi -target-feature +soft-float-abi -target-feature -vfp2 -target-feature -vfp2sp -target-feature -vfp3 -target-feature -vfp3d16 -target-feature -vfp3d16sp -target-feature -vfp3sp -target-feature -fp16 -target-feature -vfp4 -target-feature -vfp4d16 -target-feature -vfp4d16sp -target-feature -vfp4sp -target-feature -fp-armv8 -target-feature -fp-armv8d16 -target-feature -fp-armv8d16sp -target-feature -fp-armv8sp -target-feature -fullfp16 -target-feature -fp64 -target-feature -d32 -target-feature -neon -target-feature -sha2 -target-feature -aes -target-feature -dotprod -target-feature -fp16fml -target-feature -bf16 -target-feature -mve.fp -target-feature -fpregs -target-feature +strict-align -target-abi aapcs -mfloat-abi soft -Wunaligned-access -debugger-tuning=gdb "-fdebug-compilation-dir=C:\\\\Users\\\\lynxe\\\\Documents\\\\GitHub\\\\RA8E1_prj\\\\mcuboot_boot\\\\mcuboot_boot_flat\\\\build\\\\Debug\\\\CMakeFiles\\\\CMakeScratch\\\\TryCompile-c8poi5" -v "-fcoverage-compilation-dir=C:\\\\Users\\\\lynxe\\\\Documents\\\\GitHub\\\\RA8E1_prj\\\\mcuboot_boot\\\\mcuboot_boot_flat\\\\build\\\\Debug\\\\CMakeFiles\\\\CMakeScratch\\\\TryCompile-c8poi5" -resource-dir "C:\\\\Renesas\\\\RA\\\\e2studio_v2025-12_fsp_v6.3.0\\\\toolchains\\\\llvm_arm\\\\ATfE-21.1.1-Windows-x86_64\\\\lib\\\\clang\\\\21" -dependency-file "CMakeFiles\\\\cmTC_e455d.dir\\\\CMakeCXXCompilerABI.cpp.obj.d" -MT CMakeFiles/cmTC_e455d.dir/CMakeCXXCompilerABI.cpp.obj -sys-header-deps -internal-isystem "C:\\\\Renesas\\\\RA\\\\e2studio_v2025-12_fsp_v6.3.0\\\\toolchains\\\\llvm_arm\\\\ATfE-21.1.1-Windows-x86_64\\\\bin\\\\..\\\\lib\\\\clang-runtimes\\\\arm-none-eabi/armv4t_exn_rtti_size/include\\\\c++\\\\v1" -internal-isystem "C:\\\\Renesas\\\\RA\\\\e2studio_v2025-12_fsp_v6.3.0\\\\toolchains\\\\llvm_arm\\\\ATfE-21.1.1-Windows-x86_64\\\\bin\\\\..\\\\lib\\\\clang-runtimes\\\\arm-none-eabi/include\\\\c++\\\\v1" -internal-isystem "C:\\\\Renesas\\\\RA\\\\e2studio_v2025-12_fsp_v6.3.0\\\\toolchains\\\\llvm_arm\\\\ATfE-21.1.1-Windows-x86_64\\\\lib\\\\clang\\\\21\\\\include" -internal-isystem "C:\\\\Renesas\\\\RA\\\\e2studio_v2025-12_fsp_v6.3.0\\\\toolchains\\\\llvm_arm\\\\ATfE-21.1.1-Windows-x86_64\\\\bin\\\\..\\\\lib\\\\clang-runtimes\\\\arm-none-eabi/armv4t_exn_rtti_size/include" -internal-isystem "C:\\\\Renesas\\\\RA\\\\e2studio_v2025-12_fsp_v6.3.0\\\\toolchains\\\\llvm_arm\\\\ATfE-21.1.1-Windows-x86_64\\\\bin\\\\..\\\\lib\\\\clang-runtimes\\\\arm-none-eabi/include" -fdeprecated-macro -ferror-limit 19 -fno-signed-char -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_e455d.dir/CMakeCXXCompilerABI.cpp.obj -x c++ "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp"
+        clang -cc1 version 21.1.1 based upon LLVM 21.1.1 default target aarch64-unknown-linux-gnu
+        ignoring nonexistent directory "C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin\\..\\lib\\clang-runtimes\\arm-none-eabi/armv4t_exn_rtti_size/include\\c++\\v1"
+        ignoring nonexistent directory "C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin\\..\\lib\\clang-runtimes\\arm-none-eabi/armv4t_exn_rtti_size/include"
+        ignoring duplicate directory "C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\lib\\clang\\21\\include"
+        #include "..." search starts here:
+        #include <...> search starts here:
+         C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin\\..\\lib\\clang-runtimes\\arm-none-eabi/include\\c++\\v1
+         C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\lib\\clang\\21\\include\x0d
+         C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin\\..\\lib\\clang-runtimes\\arm-none-eabi/include\x0d
+        End of search list.\x0d
+        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\Program Files\\CMake\\bin\\cmake.exe" -E rm -f libcmTC_e455d.a && C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin\\llvm-ar.exe qc libcmTC_e455d.a  CMakeFiles/cmTC_e455d.dir/CMakeCXXCompilerABI.cpp.obj && C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin\\llvm-ranlib.exe libcmTC_e455d.a && cd ."
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:182 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:43 (project)"
+    message: |
+      Parsed CXX implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [C:/Renesas/RA/e2studio_v2025-12_fsp_v6.3.0/toolchains/llvm_arm/ATfE-21.1.1-Windows-x86_64/bin/../lib/clang-runtimes/arm-none-eabi/include/c++/v1]
+          add: [C:/Renesas/RA/e2studio_v2025-12_fsp_v6.3.0/toolchains/llvm_arm/ATfE-21.1.1-Windows-x86_64/lib/clang/21/include]
+          add: [C:/Renesas/RA/e2studio_v2025-12_fsp_v6.3.0/toolchains/llvm_arm/ATfE-21.1.1-Windows-x86_64/bin/../lib/clang-runtimes/arm-none-eabi/include]
+        end of search list found
+        collapse include dir [C:/Renesas/RA/e2studio_v2025-12_fsp_v6.3.0/toolchains/llvm_arm/ATfE-21.1.1-Windows-x86_64/bin/../lib/clang-runtimes/arm-none-eabi/include/c++/v1] ==> [C:/Renesas/RA/e2studio_v2025-12_fsp_v6.3.0/toolchains/llvm_arm/ATfE-21.1.1-Windows-x86_64/lib/clang-runtimes/arm-none-eabi/include/c++/v1]
+        collapse include dir [C:/Renesas/RA/e2studio_v2025-12_fsp_v6.3.0/toolchains/llvm_arm/ATfE-21.1.1-Windows-x86_64/lib/clang/21/include] ==> [C:/Renesas/RA/e2studio_v2025-12_fsp_v6.3.0/toolchains/llvm_arm/ATfE-21.1.1-Windows-x86_64/lib/clang/21/include]
+        collapse include dir [C:/Renesas/RA/e2studio_v2025-12_fsp_v6.3.0/toolchains/llvm_arm/ATfE-21.1.1-Windows-x86_64/bin/../lib/clang-runtimes/arm-none-eabi/include] ==> [C:/Renesas/RA/e2studio_v2025-12_fsp_v6.3.0/toolchains/llvm_arm/ATfE-21.1.1-Windows-x86_64/lib/clang-runtimes/arm-none-eabi/include]
+        implicit include dirs: [C:/Renesas/RA/e2studio_v2025-12_fsp_v6.3.0/toolchains/llvm_arm/ATfE-21.1.1-Windows-x86_64/lib/clang-runtimes/arm-none-eabi/include/c++/v1;C:/Renesas/RA/e2studio_v2025-12_fsp_v6.3.0/toolchains/llvm_arm/ATfE-21.1.1-Windows-x86_64/lib/clang/21/include;C:/Renesas/RA/e2studio_v2025-12_fsp_v6.3.0/toolchains/llvm_arm/ATfE-21.1.1-Windows-x86_64/lib/clang-runtimes/arm-none-eabi/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:218 (message)"
+      - "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:43 (project)"
+    message: |
+      Parsed CXX implicit link information:
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?))("|,| |$)]
+        ignore line: [Change Dir: 'C:/Users/lynxe/Documents/GitHub/RA8E1_prj/mcuboot_boot/mcuboot_boot_flat/build/Debug/CMakeFiles/CMakeScratch/TryCompile-c8poi5']
+        ignore line: []
+        ignore line: [Run Build Command(s): C:/Users/lynxe/Documents/ninja-win/ninja.exe -v cmTC_e455d]
+        ignore line: [[1/2] C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin\\clang++.exe --target=arm-none-eabi   -v -MD -MT CMakeFiles/cmTC_e455d.dir/CMakeCXXCompilerABI.cpp.obj -MF CMakeFiles\\cmTC_e455d.dir\\CMakeCXXCompilerABI.cpp.obj.d -o CMakeFiles/cmTC_e455d.dir/CMakeCXXCompilerABI.cpp.obj -c "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp"]
+        ignore line: [clang version 21.1.1]
+        ignore line: [Target: arm-unknown-none-eabi]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin]
+        ignore line: [Arm Toolchain ID: E0058 (1bbd3573)]
+        ignore line: [ (in-process)]
+        ignore line: [ "C:\\\\Renesas\\\\RA\\\\e2studio_v2025-12_fsp_v6.3.0\\\\toolchains\\\\llvm_arm\\\\ATfE-21.1.1-Windows-x86_64\\\\bin\\\\clang++.exe" -cc1 -triple armv4t-unknown-none-eabi -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model static -mframe-pointer=none -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -nostdsysteminc -target-cpu arm7tdmi -target-feature +soft-float-abi -target-feature -vfp2 -target-feature -vfp2sp -target-feature -vfp3 -target-feature -vfp3d16 -target-feature -vfp3d16sp -target-feature -vfp3sp -target-feature -fp16 -target-feature -vfp4 -target-feature -vfp4d16 -target-feature -vfp4d16sp -target-feature -vfp4sp -target-feature -fp-armv8 -target-feature -fp-armv8d16 -target-feature -fp-armv8d16sp -target-feature -fp-armv8sp -target-feature -fullfp16 -target-feature -fp64 -target-feature -d32 -target-feature -neon -target-feature -sha2 -target-feature -aes -target-feature -dotprod -target-feature -fp16fml -target-feature -bf16 -target-feature -mve.fp -target-feature -fpregs -target-feature +strict-align -target-abi aapcs -mfloat-abi soft -Wunaligned-access -debugger-tuning=gdb "-fdebug-compilation-dir=C:\\\\Users\\\\lynxe\\\\Documents\\\\GitHub\\\\RA8E1_prj\\\\mcuboot_boot\\\\mcuboot_boot_flat\\\\build\\\\Debug\\\\CMakeFiles\\\\CMakeScratch\\\\TryCompile-c8poi5" -v "-fcoverage-compilation-dir=C:\\\\Users\\\\lynxe\\\\Documents\\\\GitHub\\\\RA8E1_prj\\\\mcuboot_boot\\\\mcuboot_boot_flat\\\\build\\\\Debug\\\\CMakeFiles\\\\CMakeScratch\\\\TryCompile-c8poi5" -resource-dir "C:\\\\Renesas\\\\RA\\\\e2studio_v2025-12_fsp_v6.3.0\\\\toolchains\\\\llvm_arm\\\\ATfE-21.1.1-Windows-x86_64\\\\lib\\\\clang\\\\21" -dependency-file "CMakeFiles\\\\cmTC_e455d.dir\\\\CMakeCXXCompilerABI.cpp.obj.d" -MT CMakeFiles/cmTC_e455d.dir/CMakeCXXCompilerABI.cpp.obj -sys-header-deps -internal-isystem "C:\\\\Renesas\\\\RA\\\\e2studio_v2025-12_fsp_v6.3.0\\\\toolchains\\\\llvm_arm\\\\ATfE-21.1.1-Windows-x86_64\\\\bin\\\\..\\\\lib\\\\clang-runtimes\\\\arm-none-eabi/armv4t_exn_rtti_size/include\\\\c++\\\\v1" -internal-isystem "C:\\\\Renesas\\\\RA\\\\e2studio_v2025-12_fsp_v6.3.0\\\\toolchains\\\\llvm_arm\\\\ATfE-21.1.1-Windows-x86_64\\\\bin\\\\..\\\\lib\\\\clang-runtimes\\\\arm-none-eabi/include\\\\c++\\\\v1" -internal-isystem "C:\\\\Renesas\\\\RA\\\\e2studio_v2025-12_fsp_v6.3.0\\\\toolchains\\\\llvm_arm\\\\ATfE-21.1.1-Windows-x86_64\\\\lib\\\\clang\\\\21\\\\include" -internal-isystem "C:\\\\Renesas\\\\RA\\\\e2studio_v2025-12_fsp_v6.3.0\\\\toolchains\\\\llvm_arm\\\\ATfE-21.1.1-Windows-x86_64\\\\bin\\\\..\\\\lib\\\\clang-runtimes\\\\arm-none-eabi/armv4t_exn_rtti_size/include" -internal-isystem "C:\\\\Renesas\\\\RA\\\\e2studio_v2025-12_fsp_v6.3.0\\\\toolchains\\\\llvm_arm\\\\ATfE-21.1.1-Windows-x86_64\\\\bin\\\\..\\\\lib\\\\clang-runtimes\\\\arm-none-eabi/include" -fdeprecated-macro -ferror-limit 19 -fno-signed-char -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_e455d.dir/CMakeCXXCompilerABI.cpp.obj -x c++ "C:/Program Files/CMake/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp"]
+        ignore line: [clang -cc1 version 21.1.1 based upon LLVM 21.1.1 default target aarch64-unknown-linux-gnu]
+        ignore line: [ignoring nonexistent directory "C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin\\..\\lib\\clang-runtimes\\arm-none-eabi/armv4t_exn_rtti_size/include\\c++\\v1"]
+        ignore line: [ignoring nonexistent directory "C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin\\..\\lib\\clang-runtimes\\arm-none-eabi/armv4t_exn_rtti_size/include"]
+        ignore line: [ignoring duplicate directory "C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\lib\\clang\\21\\include"]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin\\..\\lib\\clang-runtimes\\arm-none-eabi/include\\c++\\v1]
+        ignore line: [ C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\lib\\clang\\21\\include\x0d]
+        ignore line: [ C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin\\..\\lib\\clang-runtimes\\arm-none-eabi/include\x0d]
+        ignore line: [End of search list.\x0d]
+        ignore line: [[2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\Program Files\\CMake\\bin\\cmake.exe" -E rm -f libcmTC_e455d.a && C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin\\llvm-ar.exe qc libcmTC_e455d.a  CMakeFiles/cmTC_e455d.dir/CMakeCXXCompilerABI.cpp.obj && C:\\Renesas\\RA\\e2studio_v2025-12_fsp_v6.3.0\\toolchains\\llvm_arm\\ATfE-21.1.1-Windows-x86_64\\bin\\llvm-ranlib.exe libcmTC_e455d.a && cd ."]
+        ignore line: []
+        ignore line: []
+        implicit libs: []
+        implicit objs: []
+        implicit dirs: []
+        implicit fwks: []
+      
+      
+...

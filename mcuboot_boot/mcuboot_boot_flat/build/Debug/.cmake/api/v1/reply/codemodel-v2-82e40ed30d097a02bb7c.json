@@ -1,0 +1,87 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16.4"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "mcuboot_boot_flat",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "generate_content_mcuboot_boot_flat::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-generate_content_mcuboot_boot_flat-Debug-7ade971a59b27cb478a2.json",
+					"name" : "generate_content_mcuboot_boot_flat",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "generate_sbd_mcuboot_boot_flat::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-generate_sbd_mcuboot_boot_flat-Debug-50fd34768ce8dc66dafe.json",
+					"name" : "generate_sbd_mcuboot_boot_flat",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "mcuboot_boot_flat.elf::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-mcuboot_boot_flat.elf-Debug-d9963451d51b34f38791.json",
+					"name" : "mcuboot_boot_flat.elf",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "open_rasc_mcuboot_boot_flat::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-open_rasc_mcuboot_boot_flat-Debug-2edeee81b80b519f8825.json",
+					"name" : "open_rasc_mcuboot_boot_flat",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "C:/Users/lynxe/Documents/GitHub/RA8E1_prj/mcuboot_boot/mcuboot_boot_flat/build/Debug",
+		"source" : "C:/Users/lynxe/Documents/GitHub/RA8E1_prj/mcuboot_boot/mcuboot_boot_flat"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 7
+	}
+}

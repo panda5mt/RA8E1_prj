@@ -1,0 +1,6 @@
+/*
+                  Linker File for Renesas FSP (MCUboot primary-slot)
+*/
+
+INCLUDE memory_regions_mcuboot_primary.lld
+INCLUDE fsp_gen.lld

@@ -24,6 +24,23 @@ include(${CMAKE_CURRENT_LIST_DIR}/Config.cmake)
 
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/GeneratedCfg.cmake)
 
+# ---- Optional: link application into MCUboot primary slot ----
+#
+# For MCUboot, the application must be linked to the primary slot image region
+# (slot start + header size), not to the device's absolute flash base.
+#
+# We do this by switching the linker script from script/fsp.lld to
+# script/fsp_mcuboot_primary.lld, which includes an alternate memory regions
+# file overriding FLASH_START/FLASH_LENGTH.
+option(APP_USE_MCUBOOT_PRIMARY_SLOT_LINKER "Link app to MCUboot primary slot (uses script/fsp_mcuboot_primary.lld)" OFF)
+if (APP_USE_MCUBOOT_PRIMARY_SLOT_LINKER)
+	if (EXISTS "${CMAKE_CURRENT_LIST_DIR}/script/fsp_mcuboot_primary.lld")
+		list(TRANSFORM RASC_CMAKE_EXE_LINKER_FLAGS REPLACE "script/fsp.lld" "script/fsp_mcuboot_primary.lld")
+	else()
+		message(FATAL_ERROR "APP_USE_MCUBOOT_PRIMARY_SLOT_LINKER is ON but script/fsp_mcuboot_primary.lld was not found")
+	endif()
+endif()
+
 # ---- Guard for RASC pre/post build steps ----
 #
 # GeneratedSrc.cmake registers RASC pre-build and post-build commands when it thinks we are
