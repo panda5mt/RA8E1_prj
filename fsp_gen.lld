@@ -425,6 +425,11 @@ SECTIONS
        __ddsc_RAM_END = . ;
       
   }  > RAM
+  .ram.flat_nsc ALIGN(.,512) : 
+  {
+       __ddsc_RAM_NSC = . ;
+      
+  }  > RAM
 
   __flash_readonly$$  : 
   {
@@ -500,6 +505,11 @@ SECTIONS
   .flash.endof ALIGN(.,512) : 
   {
        __ddsc_FLASH_END = . ;
+      
+  }  > FLASH
+  .flash.flat_nsc ALIGN(.,512) : 
+  {
+       __ddsc_FLASH_NSC = . ;
       
   }  > FLASH
 

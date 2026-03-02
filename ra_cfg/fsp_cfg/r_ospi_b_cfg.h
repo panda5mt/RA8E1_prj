@@ -13,11 +13,9 @@ extern "C" {
 #define OSPI_B_CFG_COMBINATION_FUNCTION           (OSPI_B_COMBINATION_FUNCTION_64BYTE)
 #define OSPI_B_CFG_ROW_ADDRESSING_SUPPORT_ENABLE  (1)
 
-#if (2 == 0)
-    #define OSPI_B_CFG_DOTF_SUPPORT_ENABLE            (1)
+#define OSPI_B_CFG_DOTF_SUPPORT_ENABLE            (0)
+#if RA_NOT_DEFINED
     #define OSPI_B_CFG_DOTF_PROTECTED_MODE_SUPPORT_ENABLE
-#else
-    #define OSPI_B_CFG_DOTF_SUPPORT_ENABLE            (0)
 #endif
 
 #ifdef __cplusplus

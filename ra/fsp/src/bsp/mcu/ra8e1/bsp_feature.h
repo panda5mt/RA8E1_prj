@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020 - 2025 Renesas Electronics Corporation and/or its affiliates
+* Copyright (c) 2020 - 2026 Renesas Electronics Corporation and/or its affiliates
 *
 * SPDX-License-Identifier: BSD-3-Clause
 */
@@ -234,10 +234,12 @@
 #define BSP_FEATURE_DMAC_HAS_DMCTL                                      (0UL)           // DMCTL register is available in the DMA peripheral block.
 #define BSP_FEATURE_DMAC_HAS_REPEAT_BLOCK_MODE                          (1UL)           // DMTMD register's MD bit-field allows repeat-block transfers (value: 0b11).
 #define BSP_FEATURE_DMAC_NUM_CHANNELS                                   (8UL)           // Number of DMAC channels available.
+#define BSP_FEATURE_DMAC_SUPPORT_TRANSFER_8_BYTE                        (0UL)           // DMAC Support 64 bit transfer size.
 
 #define BSP_FEATURE_DOC_IS_AVAILABLE                                    (1UL)
 #define BSP_FEATURE_DOC_VERSION                                         (2UL)           // The version of the DOC peripheral.
 
+#define BSP_FEATURE_DTC_SUPPORT_TRANSFER_8_BYTE                         (0UL)           // DTC Support 64 bit transfer size.
 #define BSP_FEATURE_DTC_TRANSFER_INFO_ALIGNMENT                         (4UL)           // Byte alignment that must be used for DTC transfer info structs.
 
 #define BSP_FEATURE_DWT_CYCCNT                                          (1UL)           // CYCNT register is available on CM33 and higher devices.
