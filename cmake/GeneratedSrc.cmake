@@ -91,7 +91,8 @@ add_custom_command(
         ${PROJECT_NAME}.elf
     POST_BUILD
     COMMAND ${CMAKE_OBJCOPY} ${PROJECT_NAME}.elf -O ihex  ${PROJECT_NAME}.hex
-    COMMENT "Creating Intel Hex file in ${PROJECT_BINARY_DIR}"
+    COMMAND ${CMAKE_OBJCOPY} ${PROJECT_NAME}.elf -O binary ${PROJECT_NAME}.bin
+    COMMENT "Creating Intel Hex and Binary files in ${PROJECT_BINARY_DIR}"
 )
 
 
