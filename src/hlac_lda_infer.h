@@ -24,6 +24,20 @@ extern "C"
      */
     int hlac_lda_predict(const float feats25[25], float *out_best_score);
 
+    /* Extended predictor.
+     *
+     * - compute_softmax_prob != 0 and out_best_prob != NULL:
+     *     computes softmax probability of the best class.
+     * - otherwise:
+     *     skips softmax to reduce CPU load.
+     *
+     * Returns label in [0..num_classes-1], or -1 on error.
+     */
+    int hlac_lda_predict_ex(const float feats25[25],
+                            float *out_best_score,
+                            float *out_best_prob,
+                            int compute_softmax_prob);
+
 #ifdef __cplusplus
 }
 #endif

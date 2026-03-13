@@ -666,6 +666,23 @@ volatile uint32_t g_depth_size_bytes = 0;
 #define HLAC_UART_LOG_ON_CHANGE (0)
 #endif
 
+/*
+ * Optional confidence computation for HLAC inference.
+ * 0: score-only (fastest, no expf)
+ * 1: compute best-class softmax probability (extra CPU)
+ */
+#ifndef HLAC_INFER_SOFTMAX_ENABLE
+#define HLAC_INFER_SOFTMAX_ENABLE (0)
+#endif
+
+/*
+ * If softmax is enabled, require best_prob >= threshold before posting motor pred.
+ * Keep 0.0f to disable probability gating.
+ */
+#ifndef HLAC_INFER_MIN_BEST_PROB
+#define HLAC_INFER_MIN_BEST_PROB (0.0f)
+#endif
+
 #ifndef HLAC_PQ_MAG_SHIFT
 /* |P|+|Q| is typically ~[0..510]; shift by 1 maps roughly to [0..255]. */
 #define HLAC_PQ_MAG_SHIFT (1)
@@ -1963,7 +1980,12 @@ static void fc128_compute_depth_and_store(uint32_t frame_base_offset, uint32_t f
 #endif
                                     feats);
     float best_score = 0.0f;
-    int pred = hlac_lda_predict(feats, &best_score);
+#if HLAC_INFER_SOFTMAX_ENABLE
+    float best_prob = 0.0f;
+    int pred = hlac_lda_predict_ex(feats, &best_score, &best_prob, 1);
+#else
+    int pred = hlac_lda_predict_ex(feats, &best_score, NULL, 0);
+#endif
     {
         static int s_last_pred = -9999;
         static int s_stable_pred = -9999;
@@ -1985,12 +2007,20 @@ static void fc128_compute_depth_and_store(uint32_t frame_base_offset, uint32_t f
         }
         if (do_print)
         {
+#if HLAC_INFER_SOFTMAX_ENABLE
+            xprintf("pred=%d prob=%.3f\n", pred, best_prob);
+#else
             xprintf("pred=%d\n", pred);
+#endif
             s_last_pred = pred;
         }
 
         /* Motor command update: only post when pred is stable. */
-        if (best_score >= (float)MOTOR_PRED_MIN_BEST_SCORE)
+        bool pass_prob = true;
+#if HLAC_INFER_SOFTMAX_ENABLE
+        pass_prob = (best_prob >= (float)HLAC_INFER_MIN_BEST_PROB);
+#endif
+        if ((best_score >= (float)MOTOR_PRED_MIN_BEST_SCORE) && pass_prob)
         {
             if (pred == s_stable_pred)
             {

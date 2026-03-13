@@ -559,7 +559,10 @@ void hlac25_compute_from_u8_hyperram(uint32_t img_addr, uint32_t width, uint32_t
     }
 }
 
-int hlac_lda_predict(const float feats25[25], float *out_best_score)
+int hlac_lda_predict_ex(const float feats25[25],
+                        float *out_best_score,
+                        float *out_best_prob,
+                        int compute_softmax_prob)
 {
     if (!feats25)
     {
@@ -576,6 +579,7 @@ int hlac_lda_predict(const float feats25[25], float *out_best_score)
         C = HLAC_MAX_CLASSES;
     }
 
+    float scores[HLAC_MAX_CLASSES];
     int best = 0;
     float best_score = -INFINITY;
 
@@ -594,6 +598,8 @@ int hlac_lda_predict(const float feats25[25], float *out_best_score)
             s += g_hlac_lda_W[i][c] * z;
         }
 
+        scores[c] = s;
+
         if (s > best_score)
         {
             best_score = s;
@@ -605,5 +611,31 @@ int hlac_lda_predict(const float feats25[25], float *out_best_score)
     {
         *out_best_score = best_score;
     }
+
+    if (out_best_prob)
+    {
+        *out_best_prob = 0.0f;
+
+        if (compute_softmax_prob)
+        {
+            /* Stable softmax: exp(score - max_score). */
+            float sum_exp = 0.0f;
+            for (uint32_t c = 0; c < C; c++)
+            {
+                sum_exp += expf(scores[c] - best_score);
+            }
+
+            if (sum_exp > 0.0f)
+            {
+                *out_best_prob = 1.0f / sum_exp;
+            }
+        }
+    }
+
     return best;
+}
+
+int hlac_lda_predict(const float feats25[25], float *out_best_score)
+{
+    return hlac_lda_predict_ex(feats25, out_best_score, NULL, 0);
 }

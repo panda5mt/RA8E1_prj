@@ -20,6 +20,8 @@ function hlac_udp_inference(varargin)
 %   'use_sobel'              (default false) % must match training
 %   'hlac_order'             (default 2)    % 1 or 2
 %   'score_smoothing'         (default 0)   % 0=no smoothing, 0.8=strong EMA smoothing
+%   'compute_softmax_prob'    (default false) % compute best-class probability only when needed
+%   'min_best_prob'           (default 0)   % require best softmax prob >= this, else "uncertain"
 %   'min_margin'              (default 0)   % require top1-top2 >= this, else show "uncertain"
 %   'debug_print'             (default false)
 %   'debug_every'             (default 30)  % print every N inferences
@@ -35,6 +37,8 @@ p.addParameter('infer_on_rejected', false);
 p.addParameter('use_sobel', false);
 p.addParameter('hlac_order', 2);
 p.addParameter('score_smoothing', 0);
+p.addParameter('compute_softmax_prob', false);
+p.addParameter('min_best_prob', 0);
 p.addParameter('min_margin', 0);
 p.addParameter('debug_print', false);
 p.addParameter('debug_every', 30);
@@ -57,6 +61,7 @@ fprintf('Classes: %d, Features: %d\n', size(params.W,2), size(params.W,1));
 fprintf('Frame: %dx%d\n', opt.frame_width, opt.frame_height);
 fprintf('Missing threshold: %d (infer_on_rejected=%d)\n', opt.max_missing_chunks, opt.infer_on_rejected);
 fprintf('Preprocess: use_sobel=%d, hlac_order=%d\n', opt.use_sobel, opt.hlac_order);
+fprintf('Softmax prob: compute=%d, min_best_prob=%.3g\n', opt.compute_softmax_prob, opt.min_best_prob);
 fprintf('Quit: q\n');
 fprintf('====================================\n\n');
 
@@ -246,22 +251,45 @@ end
                 scores = scores_s;
             end
 
-            % Optional margin gate
+            % Optional confidence gates (margin / best softmax probability)
             cname = local_label_to_name(pred, params.class_names);
             margin = local_score_margin(scores);
-            if opt.min_margin > 0 && margin < opt.min_margin
-                title_str = sprintf('frame=%d  missing=%d  pred=uncertain (margin=%.3g)', cur_frame_id, missing, margin);
+            need_prob = opt.compute_softmax_prob || (opt.min_best_prob > 0);
+            best_prob = NaN;
+            if need_prob
+                probs = local_softmax(scores);
+                best_prob = probs(pred + 1);
+            end
+
+            pass_margin = ~(opt.min_margin > 0 && margin < opt.min_margin);
+            pass_prob = ~(opt.min_best_prob > 0 && (~isfinite(best_prob) || best_prob < opt.min_best_prob));
+
+            if ~(pass_margin && pass_prob)
+                if need_prob
+                    title_str = sprintf('frame=%d  missing=%d  pred=uncertain (margin=%.3g prob=%.3f)', cur_frame_id, missing, margin, best_prob);
+                else
+                    title_str = sprintf('frame=%d  missing=%d  pred=uncertain (margin=%.3g)', cur_frame_id, missing, margin);
+                end
                 pred_to_print = last_pred_label;
             else
-                title_str = sprintf('frame=%d  missing=%d  pred=%s (%d)  margin=%.3g', cur_frame_id, missing, cname, pred, margin);
+                if need_prob
+                    title_str = sprintf('frame=%d  missing=%d  pred=%s (%d)  margin=%.3g prob=%.3f', cur_frame_id, missing, cname, pred, margin, best_prob);
+                else
+                    title_str = sprintf('frame=%d  missing=%d  pred=%s (%d)  margin=%.3g', cur_frame_id, missing, cname, pred, margin);
+                end
                 last_pred_label = pred;
                 pred_to_print = pred;
             end
 
             infer_count = infer_count + 1;
             if opt.debug_print && mod(infer_count, max(1, opt.debug_every)) == 0
-                fprintf('infer #%d: frame=%d missing=%d pred=%d margin=%.3g scores=[%s]\n', ...
-                    infer_count, cur_frame_id, missing, pred_to_print, margin, local_scores_to_str(scores));
+                if need_prob
+                    fprintf('infer #%d: frame=%d missing=%d pred=%d margin=%.3g prob=%.3f scores=[%s]\n', ...
+                        infer_count, cur_frame_id, missing, pred_to_print, margin, best_prob, local_scores_to_str(scores));
+                else
+                    fprintf('infer #%d: frame=%d missing=%d pred=%d margin=%.3g scores=[%s]\n', ...
+                        infer_count, cur_frame_id, missing, pred_to_print, margin, local_scores_to_str(scores));
+                end
             end
 
             if opt.debug_feature_stats && mod(infer_count, max(1, opt.debug_every)) == 0
@@ -320,6 +348,19 @@ function [pred0, scores_out] = local_argmax(scores)
 scores_out = scores(:);
 [~, idx] = max(scores_out);
 pred0 = idx - 1;
+end
+
+function probs = local_softmax(scores)
+% Stable softmax: exp(scores - max(scores)) / sum(exp(...))
+scores = scores(:);
+mx = max(scores);
+e = exp(scores - mx);
+den = sum(e);
+if den <= 0 || ~isfinite(den)
+    probs = zeros(size(scores));
+else
+    probs = e ./ den;
+end
 end
 
 function s = local_scores_to_str(scores)
