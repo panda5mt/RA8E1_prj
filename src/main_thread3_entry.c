@@ -672,7 +672,7 @@ volatile uint32_t g_depth_size_bytes = 0;
  * 1: compute best-class softmax probability (extra CPU)
  */
 #ifndef HLAC_INFER_SOFTMAX_ENABLE
-#define HLAC_INFER_SOFTMAX_ENABLE (0)
+#define HLAC_INFER_SOFTMAX_ENABLE (1)
 #endif
 
 /*
