@@ -606,16 +606,16 @@ end
 function colors = local_class_colors(class_count)
 % Fixed palette (RGB in [0,1]) for clear visual separation.
 base = [
-    0.90, 0.20, 0.20;  % red
-    0.95, 0.65, 0.10;  % orange
-    0.95, 0.85, 0.15;  % yellow
-    0.25, 0.70, 0.30;  % green
-    0.20, 0.75, 0.75;  % cyan
-    0.20, 0.45, 0.90;  % blue
-    0.55, 0.35, 0.85;  % violet
-    0.90, 0.35, 0.70;  % magenta
-    0.60, 0.45, 0.30;  % brown
-    0.95, 0.95, 0.95   % white
+    1.00, 0.36, 0.48;  % candy pink-red
+    1.00, 0.62, 0.24;  % mango orange
+    1.00, 0.86, 0.30;  % lemon yellow
+    0.47, 0.88, 0.42;  % lime green
+    0.30, 0.88, 0.78;  % mint cyan
+    0.36, 0.63, 1.00;  % soda blue
+    0.62, 0.48, 1.00;  % grape violet
+    1.00, 0.46, 0.84;  % bubblegum magenta
+    0.82, 0.58, 0.30;  % caramel
+    0.98, 0.98, 1.00   % sugar white
 ];
 
 if class_count <= size(base, 1)
