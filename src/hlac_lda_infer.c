@@ -559,6 +559,156 @@ void hlac25_compute_from_u8_hyperram(uint32_t img_addr, uint32_t width, uint32_t
     }
 }
 
+void hlac25_compute_from_u8_hyperram_roi(uint32_t img_addr, uint32_t img_stride,
+                                         uint32_t x0, uint32_t y0,
+                                         uint32_t block_w, uint32_t block_h,
+                                         float out25[25])
+{
+    /* ROI-based HLAC extraction: extract features from a rectangular block
+     * within a larger image in HyperRAM.
+     *
+     * Similar to hlac25_compute_from_u8_hyperram but loads only the specified
+     * rectangular region and computes HLAC over that sub-image.
+     */
+
+    if (!out25 || block_w == 0U || block_h == 0U || block_w > HLAC_MAX_IMAGE_W)
+    {
+        return;
+    }
+
+    hlac25_init_pairs_once();
+    memset(out25, 0, 25U * sizeof(float));
+
+    const float inv255 = 1.0f / 255.0f;
+    const float inv255_2 = inv255 * inv255;
+    const float inv255_3 = inv255_2 * inv255;
+
+    uint8_t prev[HLAC_MAX_IMAGE_W];
+    uint8_t cur[HLAC_MAX_IMAGE_W];
+    uint8_t next[HLAC_MAX_IMAGE_W];
+
+    memset(prev, 0, block_w);
+    memset(cur, 0, block_w);
+    memset(next, 0, block_w);
+
+    /* Preload cur (y=y0) and next (y=y0+1). */
+    uint32_t y_img = y0;
+    (void)hyperram_b_read(cur, (void *)(img_addr + y_img * img_stride + x0), block_w);
+    if (block_h > 1U)
+    {
+        y_img = y0 + 1U;
+        (void)hyperram_b_read(next, (void *)(img_addr + y_img * img_stride + x0), block_w);
+    }
+
+    const uint32_t count = block_w * block_h;
+
+    uint32_t acc0_center = 0U;
+    uint64_t acc1_right = 0ULL;
+    uint64_t acc1_down = 0ULL;
+    uint64_t acc1_rd = 0ULL;
+    uint64_t acc1_ru = 0ULL;
+    uint64_t acc2[20];
+    memset(acc2, 0, sizeof(acc2));
+
+    int8_t pair_i_all[20];
+    int8_t pair_j_all[20];
+    for (int p = 0; p < 20; p++)
+    {
+        pair_i_all[p] = s_pair_idx[p][0];
+        pair_j_all[p] = s_pair_idx[p][1];
+    }
+
+    for (uint32_t ry = 0; ry < block_h; ry++)
+    {
+        /* 0th/1st order: same as full-image version, applied to cur/next window. */
+#if defined(__ARM_FEATURE_MVE) && (__ARM_FEATURE_MVE > 0)
+        acc0_center += hlac_sum_u8_mve(cur, block_w);
+        acc1_down += hlac_sumprod_u8_u8_mve(cur, next, block_w);
+        if (block_w > 1U)
+        {
+            acc1_right += hlac_sumprod_u8_u8_mve(cur, &cur[1], block_w - 1U);
+            acc1_rd += hlac_sumprod_u8_u8_mve(cur, &next[1], block_w - 1U);
+            acc1_ru += hlac_sumprod_u8_u8_mve(cur, &prev[1], block_w - 1U);
+        }
+#else
+        acc0_center += hlac_sum_u8_scalar(cur, block_w);
+        acc1_down += hlac_sumprod_u8_u8_scalar(cur, next, block_w);
+        if (block_w > 1U)
+        {
+            acc1_right += hlac_sumprod_u8_u8_scalar(cur, &cur[1], block_w - 1U);
+            acc1_rd += hlac_sumprod_u8_u8_scalar(cur, &next[1], block_w - 1U);
+            acc1_ru += hlac_sumprod_u8_u8_scalar(cur, &prev[1], block_w - 1U);
+        }
+#endif
+
+        /* 2nd order terms: same logic as full-image version. */
+        if (block_w == 1U)
+        {
+            uint8_t neigh_u8[8] = {0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U};
+            neigh_u8[1] = prev[0];
+            neigh_u8[6] = next[0];
+            uint64_t c = (uint64_t)cur[0];
+            for (int p = 0; p < 20; p++)
+            {
+                int i = (int)s_pair_idx[p][0];
+                int j = (int)s_pair_idx[p][1];
+                acc2[p] += c * (uint64_t)neigh_u8[i] * (uint64_t)neigh_u8[j];
+            }
+        }
+        else
+        {
+            /* For brevity, use scalar path for ROI (can be optimized with MVE later). */
+            for (uint32_t x = 0; x < block_w; x++)
+            {
+                uint8_t neigh_u8[8];
+                neigh_u8[0] = (x == 0U) ? 0U : prev[x - 1U];
+                neigh_u8[1] = prev[x];
+                neigh_u8[2] = (x + 1U >= block_w) ? 0U : prev[x + 1U];
+                neigh_u8[3] = (x == 0U) ? 0U : cur[x - 1U];
+                neigh_u8[4] = (x + 1U >= block_w) ? 0U : cur[x + 1U];
+                neigh_u8[5] = (x == 0U) ? 0U : next[x - 1U];
+                neigh_u8[6] = next[x];
+                neigh_u8[7] = (x + 1U >= block_w) ? 0U : next[x + 1U];
+
+                uint64_t c = (uint64_t)cur[x];
+                for (int p = 0; p < 20; p++)
+                {
+                    int i = (int)s_pair_idx[p][0];
+                    int j = (int)s_pair_idx[p][1];
+                    acc2[p] += c * (uint64_t)neigh_u8[i] * (uint64_t)neigh_u8[j];
+                }
+            }
+        }
+
+        /* Advance ring buffers. */
+        memcpy(prev, cur, block_w);
+        memcpy(cur, next, block_w);
+        if (ry + 2U < block_h)
+        {
+            y_img = y0 + ry + 2U;
+            (void)hyperram_b_read(next, (void *)(img_addr + y_img * img_stride + x0), block_w);
+        }
+        else
+        {
+            memset(next, 0, block_w);
+        }
+    }
+
+    if (count != 0U)
+    {
+        const float inv_count = 1.0f / (float)count;
+        out25[0] = (float)acc0_center * inv255 * inv_count;
+        out25[1] = (float)acc1_right * inv255_2 * inv_count;
+        out25[2] = (float)acc1_down * inv255_2 * inv_count;
+        out25[3] = (float)acc1_rd * inv255_2 * inv_count;
+        out25[4] = (float)acc1_ru * inv255_2 * inv_count;
+        for (int p = 0; p < 20; p++)
+        {
+            out25[5 + p] = (float)acc2[p] * inv255_3 * inv_count;
+        }
+    }
+}
+
 int hlac_lda_predict_ex(const float feats25[25],
                         float *out_best_score,
                         float *out_best_prob,

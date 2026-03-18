@@ -658,12 +658,34 @@ volatile uint32_t g_depth_size_bytes = 0;
 
 /* Print every N frames to avoid spamming USB CDC. */
 #ifndef HLAC_UART_LOG_PERIOD
-#define HLAC_UART_LOG_PERIOD (2U)
+#define HLAC_UART_LOG_PERIOD (1U)
 #endif
 
 /* If enabled, print only when the predicted label changes (and still honor LOG_PERIOD as a fallback). */
 #ifndef HLAC_UART_LOG_ON_CHANGE
-#define HLAC_UART_LOG_ON_CHANGE (0)
+#define HLAC_UART_LOG_ON_CHANGE (1)
+#endif
+
+/*
+ * Optional block-wise HLAC inference mode (spatial tiling).
+ * 0: traditional full-frame inference (default, minimal CPU overhead)
+ * 1: 4x4 block-wise inference with majority voting
+ */
+#ifndef HLAC_INFER_BLOCK_MODE
+#define HLAC_INFER_BLOCK_MODE (1)
+#endif
+
+#if HLAC_INFER_BLOCK_MODE
+/*
+ * Block grid configuration when HLAC_INFER_BLOCK_MODE=1.
+ * Divides the |P|+|Q| image into rows x cols blocks.
+ */
+#ifndef HLAC_BLOCK_ROWS
+#define HLAC_BLOCK_ROWS (4)
+#endif
+#ifndef HLAC_BLOCK_COLS
+#define HLAC_BLOCK_COLS (4)
+#endif
 #endif
 
 /*
@@ -681,6 +703,11 @@ volatile uint32_t g_depth_size_bytes = 0;
  */
 #ifndef HLAC_INFER_MIN_BEST_PROB
 #define HLAC_INFER_MIN_BEST_PROB (0.0f)
+#endif
+
+/* Maximum number of classes supported in block voting. */
+#ifndef HLAC_MAX_CLASSES
+#define HLAC_MAX_CLASSES (10)
 #endif
 
 #ifndef HLAC_PQ_MAG_SHIFT
@@ -1969,6 +1996,162 @@ static void fc128_compute_depth_and_store(uint32_t frame_base_offset, uint32_t f
 #endif
 
 #if HLAC_LDA_INFER_ENABLE
+
+#if HLAC_INFER_BLOCK_MODE
+    /* Block-wise HLAC inference with majority voting. */
+    {
+        uint32_t img_w = 0U;
+        uint32_t img_h = 0U;
+#if HLAC_PQ_MAG_TRUE_256
+        img_w = HLAC_PQ_MAG_TRUE_W;
+        img_h = HLAC_PQ_MAG_TRUE_H;
+#else
+        img_w = PQ128_SRC_W;
+        img_h = PQ128_SRC_H;
+#endif
+
+        uint32_t block_cols = HLAC_BLOCK_COLS;
+        uint32_t block_rows = HLAC_BLOCK_ROWS;
+        uint32_t block_w = img_w / block_cols;
+        uint32_t block_h = img_h / block_rows;
+
+        uint32_t C = HLAC_MAX_CLASSES;
+
+        int class_votes[HLAC_MAX_CLASSES];
+        memset(class_votes, 0, sizeof(class_votes));
+
+        /* Store per-block prediction for grid display. */
+        int block_grid[HLAC_BLOCK_ROWS][HLAC_BLOCK_COLS];
+
+        for (uint32_t br = 0; br < block_rows; br++)
+        {
+            for (uint32_t bc = 0; bc < block_cols; bc++)
+            {
+                uint32_t x0 = bc * block_w;
+                uint32_t y0 = br * block_h;
+                float feats[25];
+
+                hlac25_compute_from_u8_hyperram_roi(frame_base_offset + (uint32_t)DEPTH_OFFSET,
+                                                    img_w, x0, y0, block_w, block_h, feats);
+
+                float block_score = 0.0f;
+#if HLAC_INFER_SOFTMAX_ENABLE
+                float block_prob = 0.0f;
+                int block_pred = hlac_lda_predict_ex(feats, &block_score, &block_prob, 1);
+#else
+                int block_pred = hlac_lda_predict_ex(feats, &block_score, NULL, 0);
+#endif
+
+                block_grid[br][bc] = block_pred;
+                if (block_pred >= 0 && block_pred < (int)C)
+                {
+                    class_votes[block_pred]++;
+                }
+            }
+        }
+
+        /* Find class with most votes (majority voting). */
+        int pred = -1;
+        int max_votes = 0;
+        for (uint32_t c = 0; c < C; c++)
+        {
+            if (class_votes[c] > max_votes)
+            {
+                max_votes = class_votes[c];
+                pred = (int)c;
+            }
+        }
+
+        /* Estimate best_score and best_prob from voting statistics. */
+        float best_score = (max_votes > 0) ? ((float)max_votes / (float)(block_rows * block_cols)) : 0.0f;
+        float best_prob = best_score; /* Simplified: use voting fraction as confidence. */
+
+        {
+            static int s_last_pred = -9999;
+            static int s_stable_pred = -9999;
+            static uint32_t s_stable_count = 0U;
+            bool do_print = false;
+            if (HLAC_UART_LOG_ON_CHANGE)
+            {
+                if (pred != s_last_pred)
+                {
+                    do_print = true;
+                }
+            }
+            if (!do_print && (HLAC_UART_LOG_PERIOD > 0U))
+            {
+                if ((frame_seq % HLAC_UART_LOG_PERIOD) == 0U)
+                {
+                    do_print = true;
+                }
+            }
+            if (do_print)
+            {
+                /* ANSI: move cursor up (block_rows+1) lines to overwrite previous grid in-place.
+                 * ESC[<N>A = cursor up N lines.  Works in TeraTerm/PuTTY/VSCode with ANSI enabled.
+                 * s_grid_printed tracks whether we have already drawn the grid once.
+                 */
+                static bool s_grid_printed = false;
+                if (s_grid_printed)
+                {
+                    /* +1 for the header line */
+                    xprintf("\033[%dA\r", (int)(block_rows + 1));
+                }
+
+                xprintf("--- pred=%d votes=%d/%lu conf=%.2f ---\n",
+                        pred, max_votes, (unsigned long)(block_rows * block_cols), best_prob);
+                for (uint32_t br = 0; br < block_rows; br++)
+                {
+                    xprintf("|");
+                    for (uint32_t bc = 0; bc < block_cols; bc++)
+                    {
+                        int bp = block_grid[br][bc];
+                        if (bp == pred)
+                        {
+                            xprintf("[%d]", bp); /* winner highlighted with brackets */
+                        }
+                        else
+                        {
+                            xprintf(" %d ", bp);
+                        }
+                    }
+                    xprintf("|\n");
+                }
+                s_grid_printed = true;
+                s_last_pred = pred;
+            }
+
+            /* Motor command update: only post when pred is stable (same logic as full-frame mode). */
+            bool pass_prob = true;
+#if HLAC_INFER_SOFTMAX_ENABLE
+            pass_prob = (best_prob >= (float)HLAC_INFER_MIN_BEST_PROB);
+#endif
+            if ((best_score >= (float)MOTOR_PRED_MIN_BEST_SCORE) && pass_prob && pred >= 0)
+            {
+                if (pred == s_stable_pred)
+                {
+                    if (s_stable_count < 0xFFFFFFFFU)
+                    {
+                        s_stable_count++;
+                    }
+                }
+                else
+                {
+                    s_stable_pred = pred;
+                    s_stable_count = 1U;
+                }
+
+                if (s_stable_count >= (uint32_t)MOTOR_PRED_STABLE_COUNT)
+                {
+                    motor_control_post_pred(pred);
+                    s_stable_count = 0U;
+                }
+            }
+        }
+    }
+
+#else
+    /* Traditional full-frame HLAC inference. */
     float feats[25];
     hlac25_compute_from_u8_hyperram(frame_base_offset + (uint32_t)DEPTH_OFFSET,
 #if HLAC_PQ_MAG_TRUE_256
@@ -2051,6 +2234,7 @@ static void fc128_compute_depth_and_store(uint32_t frame_base_offset, uint32_t f
     __DMB();
     g_depth_seq = frame_seq;
     return;
+#endif
 #endif
 
 #if FC128_TIMING_ENABLE

@@ -18,7 +18,7 @@ function hlac_lda_workflow(varargin)
 % Options (name,value):
 %   'data_dir'     (default '../hlac_training_data')
 %   'output_dir'   (default '../lda_model')
-%   'class_names'  (default {'class0','class1','class2','class3','class4'})
+%   'class_names'  (default {'class0'...'class9'})
 %   'hlac_order'   (default 2)
 %   'use_sobel'    (default false)
 %   'do_capture'   (default false)  % run hlac_image_capture at Step1
@@ -29,7 +29,8 @@ clc;
 p = inputParser;
 p.addParameter('data_dir', './hlac_training_data');
 p.addParameter('output_dir', './lda_model');
-p.addParameter('class_names', {'class0', 'class1', 'class2', 'class3', 'class4'});
+p.addParameter('class_names', {'class0', 'class1', 'class2', 'class3', 'class4', ...
+                               'class5', 'class6', 'class7', 'class8', 'class9'});
 p.addParameter('hlac_order', 2);
 p.addParameter('use_sobel', false);
 p.addParameter('do_capture', false);

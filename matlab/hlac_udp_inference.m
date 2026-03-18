@@ -23,6 +23,13 @@ function hlac_udp_inference(varargin)
 %   'compute_softmax_prob'    (default false) % compute best-class probability only when needed
 %   'min_best_prob'           (default 0)   % require best softmax prob >= this, else "uncertain"
 %   'min_margin'              (default 0)   % require top1-top2 >= this, else show "uncertain"
+%   'block_inference'         (default false) % infer per block and overlay class colors
+%   'block_rows'              (default 4)   % block grid rows when block_inference=true
+%   'block_cols'              (default 4)   % block grid cols when block_inference=true
+%   'overlay_alpha'           (default 0.35)% color overlay strength [0..1]
+%   'overlay_temporal_smoothing' (default 0) % reserved for compatibility (unused)
+%   'block_score_smoothing'   (default 0.85)% temporal smoothing for per-block scores [0..0.99]
+%   'show_block_labels'       (default true)% draw class id text on each block
 %   'debug_print'             (default false)
 %   'debug_every'             (default 30)  % print every N inferences
 %   'debug_feature_stats'     (default false) % print feature/score decomposition
@@ -40,6 +47,13 @@ p.addParameter('score_smoothing', 0);
 p.addParameter('compute_softmax_prob', false);
 p.addParameter('min_best_prob', 0);
 p.addParameter('min_margin', 0);
+p.addParameter('block_inference', false);
+p.addParameter('block_rows', 4);
+p.addParameter('block_cols', 4);
+p.addParameter('overlay_alpha', 0.35);
+p.addParameter('overlay_temporal_smoothing', 0);
+p.addParameter('block_score_smoothing', 0.85);
+p.addParameter('show_block_labels', true);
 p.addParameter('debug_print', false);
 p.addParameter('debug_every', 30);
 p.addParameter('debug_feature_stats', false);
@@ -62,6 +76,9 @@ fprintf('Frame: %dx%d\n', opt.frame_width, opt.frame_height);
 fprintf('Missing threshold: %d (infer_on_rejected=%d)\n', opt.max_missing_chunks, opt.infer_on_rejected);
 fprintf('Preprocess: use_sobel=%d, hlac_order=%d\n', opt.use_sobel, opt.hlac_order);
 fprintf('Softmax prob: compute=%d, min_best_prob=%.3g\n', opt.compute_softmax_prob, opt.min_best_prob);
+fprintf('Block inference: enable=%d, grid=%dx%d, overlay_alpha=%.2f, block_smooth=%.2f\n', ...
+    opt.block_inference, opt.block_rows, opt.block_cols, opt.overlay_alpha, ...
+    opt.block_score_smoothing);
 fprintf('Quit: q\n');
 fprintf('====================================\n\n');
 
@@ -93,6 +110,10 @@ try
     infer_count = 0;
     smoothed_scores = [];
     last_pred_label = 0;
+    block_text_handles = gobjects(0);
+    block_smoothed_scores = [];
+    last_block_display_img = [];
+    last_block_title_str = '';
 
     % Display stabilization: keep last good frame to avoid flicker on packet loss.
     last_good_frame = [];
@@ -191,6 +212,7 @@ end
 
     function run_infer_and_show(frame, missing, cur_frame_id)
         do_infer = (missing <= opt.max_missing_chunks) || opt.infer_on_rejected;
+        scores = [];
 
         % Freeze display when too many chunks are missing (avoid flicker from zero-fill).
         show_frame = frame;
@@ -200,7 +222,19 @@ end
             show_frame = last_good_frame;
         end
 
-        if do_infer
+        display_img = show_frame;
+
+        if do_infer && opt.block_inference
+            [display_img, title_str, block_debug] = local_block_infer_overlay(frame, show_frame, cur_frame_id, missing);
+            last_block_display_img = display_img;
+            last_block_title_str = title_str;
+            infer_count = infer_count + 1;
+            if opt.debug_print && mod(infer_count, max(1, opt.debug_every)) == 0
+                fprintf('infer #%d: frame=%d missing=%d block=%s\n', infer_count, cur_frame_id, missing, block_debug);
+            end
+        elseif do_infer
+            block_smoothed_scores = [];
+            local_clear_block_text();
             feats = extract_hlac_features(frame, opt.hlac_order, opt.use_sobel);
             feats = feats(:);
 
@@ -299,19 +333,34 @@ end
             end
         else
             scores = [];
-            if missing <= opt.max_missing_chunks
-                title_str = sprintf('frame=%d  missing=%d  (skip infer)', cur_frame_id, missing);
+            if opt.block_inference && ~isempty(last_block_display_img)
+                display_img = last_block_display_img;
+                if isempty(last_block_title_str)
+                    title_str = sprintf('frame=%d missing=%d block=hold-last', cur_frame_id, missing);
+                else
+                    title_str = sprintf('%s  [hold]', last_block_title_str);
+                end
             else
-                title_str = sprintf('frame=%d  missing=%d  (skip infer: missing>%d, show last good)', cur_frame_id, missing, opt.max_missing_chunks);
+                block_smoothed_scores = [];
+                if missing <= opt.max_missing_chunks
+                    title_str = sprintf('frame=%d  missing=%d  (skip infer)', cur_frame_id, missing);
+                else
+                    title_str = sprintf('frame=%d  missing=%d  (skip infer: missing>%d, show last good)', cur_frame_id, missing, opt.max_missing_chunks);
+                end
+                local_clear_block_text();
             end
         end
 
         if isempty(img_handle) || ~ishandle(img_handle)
-            img_handle = imshow(show_frame, [], 'Parent', ax);
+            if ndims(display_img) == 3
+                img_handle = imshow(display_img, 'Parent', ax);
+            else
+                img_handle = imshow(display_img, [], 'Parent', ax);
+                colormap(ax, gray(256));
+            end
             axis(ax, 'image');
-            colormap(ax, gray(256));
         else
-            set(img_handle, 'CData', show_frame);
+            set(img_handle, 'CData', display_img);
         end
 
         title(ax, title_str);
@@ -320,6 +369,182 @@ end
         %#ok<NASGU>
         if ~isempty(scores)
             % keep for breakpoint/debug
+        end
+    end
+
+    function [rgb_img, title_str, debug_str] = local_block_infer_overlay(frame_for_infer, frame_for_show, cur_frame_id, missing)
+        rows = max(1, round(opt.block_rows));
+        cols = max(1, round(opt.block_cols));
+        alpha = max(0, min(1, opt.overlay_alpha));
+        block_smooth = max(0, min(0.99, opt.block_score_smoothing));
+
+        [h, w] = size(frame_for_show);
+        y_edges = round(linspace(1, h + 1, rows + 1));
+        x_edges = round(linspace(1, w + 1, cols + 1));
+
+        gray_norm = double(frame_for_show) / 255.0;
+        rgb_img = repmat(gray_norm, [1, 1, 3]);
+        class_colors = local_class_colors(size(params.W, 2));
+
+        class_counts = zeros(size(params.W, 2), 1);
+        uncertain_count = 0;
+        num_used = 0;
+        mean_margin = 0;
+        mean_prob = 0;
+
+        if opt.show_block_labels
+            local_ensure_block_text_handles(rows * cols);
+        else
+            local_clear_block_text();
+        end
+        text_idx = 0;
+
+        cls_n = size(params.W, 2);
+        block_n = rows * cols;
+        if block_smooth > 0
+            if isempty(block_smoothed_scores) || size(block_smoothed_scores, 1) ~= block_n || size(block_smoothed_scores, 2) ~= cls_n
+                block_smoothed_scores = NaN(block_n, cls_n);
+            end
+        else
+            block_smoothed_scores = [];
+        end
+
+        for br = 1:rows
+            y1 = y_edges(br);
+            y2 = y_edges(br + 1) - 1;
+            for bc = 1:cols
+                x1 = x_edges(bc);
+                x2 = x_edges(bc + 1) - 1;
+                if x2 < x1 || y2 < y1
+                    continue;
+                end
+
+                block = frame_for_infer(y1:y2, x1:x2);
+                feats = extract_hlac_features(block, opt.hlac_order, opt.use_sobel);
+                feats = feats(:);
+
+                if isfield(params, 'feature_mean') && isfield(params, 'feature_std')
+                    mu = params.feature_mean(:);
+                    sig = params.feature_std(:);
+                    if numel(mu) == numel(feats) && numel(sig) == numel(feats)
+                        sig(sig < 1e-12) = 1;
+                        feats = (feats - mu) ./ sig;
+                    end
+                end
+
+                if size(params.W, 1) ~= numel(feats)
+                    continue;
+                end
+
+                scores_b = (params.W.' * feats) + params.b(:);
+                blk_idx = (br - 1) * cols + bc;
+                if block_smooth > 0
+                    prev_s = block_smoothed_scores(blk_idx, :).';
+                    if all(isfinite(prev_s))
+                        scores_b = block_smooth * prev_s + (1 - block_smooth) * scores_b;
+                    end
+                    block_smoothed_scores(blk_idx, :) = scores_b.';
+                end
+
+                [pred_b, ~] = local_argmax(scores_b);
+                margin_b = local_score_margin(scores_b);
+                need_prob_b = opt.compute_softmax_prob || (opt.min_best_prob > 0);
+                best_prob_b = NaN;
+                if need_prob_b
+                    probs_b = local_softmax(scores_b);
+                    best_prob_b = probs_b(pred_b + 1);
+                end
+
+                pass_margin_b = ~(opt.min_margin > 0 && margin_b < opt.min_margin);
+                pass_prob_b = ~(opt.min_best_prob > 0 && (~isfinite(best_prob_b) || best_prob_b < opt.min_best_prob));
+                is_uncertain = ~(pass_margin_b && pass_prob_b);
+
+                if is_uncertain
+                    c = [0.55, 0.55, 0.55];
+                    uncertain_count = uncertain_count + 1;
+                    label_text = '?';
+                else
+                    c = class_colors(pred_b + 1, :);
+                    class_counts(pred_b + 1) = class_counts(pred_b + 1) + 1;
+                    label_text = sprintf('%d', pred_b);
+                end
+
+                num_used = num_used + 1;
+                mean_margin = mean_margin + margin_b;
+                if need_prob_b && isfinite(best_prob_b)
+                    mean_prob = mean_prob + best_prob_b;
+                end
+
+                for ch = 1:3
+                    region = rgb_img(y1:y2, x1:x2, ch);
+                    region = (1 - alpha) * region + alpha * c(ch);
+                    rgb_img(y1:y2, x1:x2, ch) = region;
+                end
+
+                text_idx = text_idx + 1;
+                if opt.show_block_labels
+                    cx = (x1 + x2) / 2;
+                    cy = (y1 + y2) / 2;
+                    set(block_text_handles(text_idx), ...
+                        'Position', [cx, cy, 0], 'String', label_text, 'Visible', 'on');
+                end
+            end
+        end
+
+        if opt.show_block_labels && text_idx < numel(block_text_handles)
+            for i = text_idx + 1:numel(block_text_handles)
+                set(block_text_handles(i), 'Visible', 'off');
+            end
+        end
+
+        % grid lines
+        for i = 2:numel(y_edges)-1
+            yy = y_edges(i);
+            yy = min(max(1, yy), h);
+            rgb_img(yy, :, :) = 1;
+        end
+        for i = 2:numel(x_edges)-1
+            xx = x_edges(i);
+            xx = min(max(1, xx), w);
+            rgb_img(:, xx, :) = 1;
+        end
+
+        if num_used > 0
+            mean_margin = mean_margin / num_used;
+            if opt.compute_softmax_prob || (opt.min_best_prob > 0)
+                mean_prob = mean_prob / num_used;
+                title_str = sprintf('frame=%d missing=%d block=%dx%d uncertain=%d margin=%.3g prob=%.3f', ...
+                    cur_frame_id, missing, rows, cols, uncertain_count, mean_margin, mean_prob);
+            else
+                title_str = sprintf('frame=%d missing=%d block=%dx%d uncertain=%d margin=%.3g', ...
+                    cur_frame_id, missing, rows, cols, uncertain_count, mean_margin);
+            end
+        else
+            title_str = sprintf('frame=%d missing=%d block=%dx%d (no valid block infer)', cur_frame_id, missing, rows, cols);
+        end
+
+        debug_parts = arrayfun(@(v) sprintf('%d', v), class_counts(:).', 'UniformOutput', false);
+        debug_str = sprintf('counts=[%s], uncertain=%d', strjoin(debug_parts, ','), uncertain_count);
+    end
+
+    function local_ensure_block_text_handles(n)
+        if numel(block_text_handles) ~= n || any(~isgraphics(block_text_handles))
+            local_clear_block_text();
+            block_text_handles = gobjects(n, 1);
+            for i = 1:n
+                block_text_handles(i) = text(ax, 1, 1, '', ...
+                    'Color', 'w', 'FontSize', 8, 'FontWeight', 'bold', ...
+                    'HorizontalAlignment', 'center', 'VerticalAlignment', 'middle', ...
+                    'Visible', 'off');
+            end
+        end
+    end
+
+    function local_clear_block_text()
+        if ~isempty(block_text_handles)
+            alive = isgraphics(block_text_handles);
+            delete(block_text_handles(alive));
+            block_text_handles = gobjects(0);
         end
     end
 
@@ -367,6 +592,31 @@ function s = local_scores_to_str(scores)
 scores = scores(:).';
 parts = arrayfun(@(v) sprintf('%.3g', v), scores, 'UniformOutput', false);
 s = strjoin(parts, ',');
+end
+
+function colors = local_class_colors(class_count)
+% Fixed palette (RGB in [0,1]) for clear visual separation.
+base = [
+    0.90, 0.20, 0.20;  % red
+    0.95, 0.65, 0.10;  % orange
+    0.95, 0.85, 0.15;  % yellow
+    0.25, 0.70, 0.30;  % green
+    0.20, 0.75, 0.75;  % cyan
+    0.20, 0.45, 0.90;  % blue
+    0.55, 0.35, 0.85;  % violet
+    0.90, 0.35, 0.70;  % magenta
+    0.60, 0.45, 0.30;  % brown
+    0.95, 0.95, 0.95   % white
+];
+
+if class_count <= size(base, 1)
+    colors = base(1:class_count, :);
+else
+    colors = zeros(class_count, 3);
+    for i = 1:class_count
+        colors(i, :) = base(mod(i - 1, size(base, 1)) + 1, :);
+    end
+end
 end
 
 function [frame, missing_count] = reconstruct_depth_frame(packets, total_chunks, total_size, width, height)
