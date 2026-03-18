@@ -23,7 +23,7 @@ function hlac_udp_inference(varargin)
 %   'compute_softmax_prob'    (default false) % compute best-class probability only when needed
 %   'min_best_prob'           (default 0)   % require best softmax prob >= this, else "uncertain"
 %   'min_margin'              (default 0)   % require top1-top2 >= this, else show "uncertain"
-%   'block_inference'         (default false) % infer per block and overlay class colors
+%   'block_inference'         (default true)  % infer per block and overlay class colors
 %   'block_rows'              (default 4)   % block grid rows when block_inference=true
 %   'block_cols'              (default 4)   % block grid cols when block_inference=true
 %   'overlay_alpha'           (default 0.35)% color overlay strength [0..1]
@@ -47,7 +47,7 @@ p.addParameter('score_smoothing', 0);
 p.addParameter('compute_softmax_prob', false);
 p.addParameter('min_best_prob', 0);
 p.addParameter('min_margin', 0);
-p.addParameter('block_inference', false);
+p.addParameter('block_inference', true);
 p.addParameter('block_rows', 4);
 p.addParameter('block_cols', 4);
 p.addParameter('overlay_alpha', 0.35);
