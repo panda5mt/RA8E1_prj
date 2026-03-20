@@ -30,6 +30,7 @@ function hlac_udp_inference(varargin)
 %   'overlay_temporal_smoothing' (default 0) % reserved for compatibility (unused)
 %   'block_score_smoothing'   (default 0.85)% temporal smoothing for per-block scores [0..0.99]
 %   'show_block_labels'       (default true)% draw class id text on each block
+%   'allowed_labels'          (default [])  % e.g. [0 1 2 3 4], others become uncertain
 %   'debug_print'             (default false)
 %   'debug_every'             (default 30)  % print every N inferences
 %   'debug_feature_stats'     (default false) % print feature/score decomposition
@@ -54,6 +55,7 @@ p.addParameter('overlay_alpha', 0.20);
 p.addParameter('overlay_temporal_smoothing', 0);
 p.addParameter('block_score_smoothing', 0.85);
 p.addParameter('show_block_labels', true);
+p.addParameter('allowed_labels', []);
 p.addParameter('debug_print', false);
 p.addParameter('debug_every', 30);
 p.addParameter('debug_feature_stats', false);
@@ -72,6 +74,10 @@ else
     fprintf('Model dir: %s\n', opt.model_dir);
 end
 fprintf('Classes: %d, Features: %d\n', size(params.W,2), size(params.W,1));
+fprintf('Class names: %s\n', strjoin(params.class_names, ', '));
+if ~isempty(opt.allowed_labels)
+    fprintf('Allowed labels: [%s]\n', strtrim(sprintf('%d ', opt.allowed_labels)));
+end
 fprintf('Frame: %dx%d\n', opt.frame_width, opt.frame_height);
 fprintf('Missing threshold: %d (infer_on_rejected=%d)\n', opt.max_missing_chunks, opt.infer_on_rejected);
 fprintf('Preprocess: use_sobel=%d, hlac_order=%d\n', opt.use_sobel, opt.hlac_order);
@@ -297,8 +303,9 @@ end
 
             pass_margin = ~(opt.min_margin > 0 && margin < opt.min_margin);
             pass_prob = ~(opt.min_best_prob > 0 && (~isfinite(best_prob) || best_prob < opt.min_best_prob));
+            pass_label = local_is_allowed_label(pred, opt.allowed_labels);
 
-            if ~(pass_margin && pass_prob)
+            if ~(pass_margin && pass_prob && pass_label)
                 if need_prob
                     title_str = sprintf('frame=%d  missing=%d  pred=uncertain (margin=%.3g prob=%.3f)', cur_frame_id, missing, margin, best_prob);
                 else
@@ -460,7 +467,8 @@ end
 
                 pass_margin_b = ~(opt.min_margin > 0 && margin_b < opt.min_margin);
                 pass_prob_b = ~(opt.min_best_prob > 0 && (~isfinite(best_prob_b) || best_prob_b < opt.min_best_prob));
-                is_uncertain = ~(pass_margin_b && pass_prob_b);
+                pass_label_b = local_is_allowed_label(pred_b, opt.allowed_labels);
+                is_uncertain = ~(pass_margin_b && pass_prob_b && pass_label_b);
 
                 if is_uncertain
                     c = [0.55, 0.55, 0.55];
@@ -582,6 +590,14 @@ function [pred0, scores_out] = local_argmax(scores)
 scores_out = scores(:);
 [~, idx] = max(scores_out);
 pred0 = idx - 1;
+end
+
+function tf = local_is_allowed_label(label0, allowed_labels)
+if isempty(allowed_labels)
+    tf = true;
+    return;
+end
+tf = any(label0 == allowed_labels(:));
 end
 
 function probs = local_softmax(scores)

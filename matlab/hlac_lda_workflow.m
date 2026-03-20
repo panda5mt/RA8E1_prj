@@ -170,9 +170,54 @@ else
 
         expected_dim = (config.hlac_order==1) * 5 + (config.hlac_order==2) * 25;
         actual_dim = width(features_table) - 2; % exclude Label/Filename
+        need_reextract = false;
+        reasons = {};
+
         if actual_dim ~= expected_dim
-            fprintf('警告: 保存済み特徴量の次元が不一致です (saved=%d, expected=%d)．特徴抽出を再実行します...\n\n', ...
-                actual_dim, expected_dim);
+            need_reextract = true;
+            reasons{end+1} = sprintf('特徴次元 mismatch (saved=%d, expected=%d)', actual_dim, expected_dim); %#ok<AGROW>
+        end
+
+        % Validate saved config if available (prevents stale class/data settings).
+        if isfield(s, 'config') && isstruct(s.config)
+            old_cfg = s.config;
+            if isfield(old_cfg, 'data_dir') && ~strcmp(char(old_cfg.data_dir), char(config.data_dir))
+                need_reextract = true;
+                reasons{end+1} = 'data_dir が前回保存時と異なる'; %#ok<AGROW>
+            end
+            if isfield(old_cfg, 'hlac_order') && old_cfg.hlac_order ~= config.hlac_order
+                need_reextract = true;
+                reasons{end+1} = 'hlac_order が前回保存時と異なる'; %#ok<AGROW>
+            end
+            if isfield(old_cfg, 'use_sobel') && logical(old_cfg.use_sobel) ~= logical(config.use_sobel)
+                need_reextract = true;
+                reasons{end+1} = 'use_sobel が前回保存時と異なる'; %#ok<AGROW>
+            end
+            if isfield(old_cfg, 'class_names') && ~isequal(old_cfg.class_names, config.class_names)
+                need_reextract = true;
+                reasons{end+1} = 'class_names が前回保存時と異なる'; %#ok<AGROW>
+            end
+        end
+
+        % Validate label set against currently available class folders.
+        try
+            saved_labels = unique(features_table.Label(:));
+            available_labels = local_available_labels(config.data_dir, config.class_names);
+            if any(~ismember(saved_labels, available_labels))
+                need_reextract = true;
+                reasons{end+1} = sprintf('保存特徴量のラベルに現在データセットに無い値がある (saved=[%s], available=[%s])', ...
+                    local_vec_to_str(saved_labels), local_vec_to_str(available_labels)); %#ok<AGROW>
+            end
+        catch ME
+            warning('%s', sprintf('保存特徴量ラベル検証をスキップ: %s', ME.message));
+        end
+
+        if need_reextract
+            fprintf('警告: 保存済み特徴量は再利用できません:\n');
+            for ri = 1:numel(reasons)
+                fprintf('  - %s\n', reasons{ri});
+            end
+            fprintf('特徴抽出を再実行します...\n\n');
             features_table = extract_hlac_from_dataset(config.data_dir, config.class_names, ...
                                                        config.hlac_order, config.use_sobel);
             save('hlac_features.mat', 'features_table', 'config');
@@ -187,6 +232,30 @@ else
         save('hlac_features.mat', 'features_table', 'config');
         fprintf('\n特徴量を hlac_features.mat に保存しました．\n\n');
     end
+end
+
+% Final safety check: ensure features labels match currently available dataset labels.
+available_labels = local_available_labels(config.data_dir, config.class_names);
+present_labels = unique(features_table.Label(:));
+invalid_labels = setdiff(present_labels, available_labels);
+
+fprintf('特徴量ラベル検証:\n');
+fprintf('  available labels in dataset: [%s]\n', local_vec_to_str(available_labels));
+fprintf('  present labels in features : [%s]\n', local_vec_to_str(present_labels));
+
+if ~isempty(invalid_labels)
+    fprintf('警告: 現在データセットに存在しないラベルを特徴量から除外します: [%s]\n', local_vec_to_str(invalid_labels));
+    keep_mask = ismember(features_table.Label, available_labels);
+    removed_n = sum(~keep_mask);
+    features_table = features_table(keep_mask, :);
+    fprintf('  除外サンプル数: %d\n', removed_n);
+
+    if isempty(features_table)
+        error('有効な特徴量サンプルが0件になりました。データセットと class_names を確認してください。');
+    end
+
+    save('hlac_features.mat', 'features_table', 'config');
+    fprintf('  除外後の特徴量を hlac_features.mat に再保存しました。\n');
 end
 
 %% Step 4: LDA Training
@@ -252,6 +321,30 @@ if strcmpi(choice, 'y')
     end
 end
 
+end
+
+function labels = local_available_labels(data_dir, class_names)
+labels = [];
+for i = 1:numel(class_names)
+    d = fullfile(data_dir, class_names{i});
+    if ~exist(d, 'dir')
+        continue;
+    end
+    n = numel(dir(fullfile(d, '*.png')));
+    if n > 0
+        labels(end+1, 1) = i - 1; %#ok<AGROW>
+    end
+end
+labels = unique(labels(:));
+end
+
+function s = local_vec_to_str(v)
+v = v(:).';
+if isempty(v)
+    s = '';
+    return;
+end
+s = strtrim(sprintf('%d ', v));
 end
 
 function resolved = local_resolve_dir(p)
